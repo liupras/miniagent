@@ -1,0 +1,14 @@
+[
+    {
+        "code": "admin",
+        "name": "Administrator",
+        "description": "拥有系统的全部权限",
+        "is_super": true
+    },
+    {
+        "code": "common",
+        "name": "Common User",
+        "description": "普通用户，拥有基本权限",
+        "is_super": false
+    }
+]

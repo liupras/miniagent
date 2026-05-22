@@ -1,0 +1,14 @@
+[
+    {
+        "_role_code": "common",
+        "_permission_code": "permission:btn:add"
+    },
+    {
+        "_role_code": "common",
+        "_permission_code": "permission:btn:edit"
+    },
+    {
+        "_role_code": "common",
+        "_permission_code": "permission:btn:view"
+    }
+]

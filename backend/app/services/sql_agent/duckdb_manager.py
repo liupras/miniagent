@@ -1,0 +1,19 @@
+#!/usr/bin/python
+# -*- coding:utf-8 -*-
+# @author  : Liu Lijun
+# @date    : 2026-05-03
+# @description: duckdb manager
+
+import duckdb
+
+import duckdb
+
+class DuckDBManager:
+    def __init__(self, db_path: str):
+        self.conn = duckdb.connect(db_path)
+
+    def execute(self, sql, params=None):
+        return self.conn.execute(sql, params or []).fetchall()
+
+    def close(self):
+        self.conn.close()

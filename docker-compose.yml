@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # MiniAgent 后端服务
+  miniagent-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: miniagent-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # 挂载代码（开发模式）
+      - ./backend:/app
+      # 挂载数据目录
+      - ./data:/app/data
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=False
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+    networks:
+      - miniagent-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Ollama服务（可选，如果使用本地LLM）
+  ollama:
+    image: ollama/ollama:latest
+    container_name: miniagent-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: unless-stopped
+    networks:
+      - miniagent-network
+    # GPU支持（需要NVIDIA Docker）
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+networks:
+  miniagent-network:
+    driver: bridge
+
+volumes:
+  ollama-data:
+    driver: local

@@ -1,0 +1,268 @@
+[
+  {
+    "group": "prompt",
+    "key": "kb.query_rewrite",
+    "lang": "zh",
+    "description": "查询改写提示词（中文）",
+    "value": "请将以下用户问题改写，使其更适合知识库检索。\n只输出改写后的问题，不要有任何解释。\n\n原始问题：\n{query}"
+  },
+  {
+    "group": "prompt",
+    "key": "kb.query_rewrite",
+    "lang": "en",
+    "description": "Query rewrite prompt (English)",
+    "value": "Rewrite the user query to make it better for knowledge base retrieval.\nOnly output the rewritten query, with no explanation.\n\nQuery:\n{query}"
+  },
+  {
+    "group": "prompt",
+    "key": "web_search.query_rewrite",
+    "lang": "zh",
+    "description": "查询改写提示词（中文）",
+    "value": "您是一名搜索查询优化师。\n将用户的问题重写为简洁、包含关键词的搜索查询。\n适合搜索引擎。\n仅输出重写的查询——不包含任何解释，也不包含末尾的标点符号。\n\\n原始问题:\n{query}"
+  },
+  {
+    "group": "prompt",
+    "key": "web_search.query_rewrite",
+    "lang": "en",
+    "description": "Query rewrite prompt (English)",
+    "value": "You are a search query optimiser.\nRewrite the user's question as a concise, keyword-rich search query.\nsuitable for a web search engine.\nOutput ONLY the rewritten query — no explanation, no punctuation at the end.\n\nQuery:\n{query}"
+  },
+  {
+    "group": "prompt",
+    "key": "kb.query_expansion",
+    "lang": "zh",
+    "description": "查询扩展提示词（中文）",
+    "value": "请为以下问题生成 {expansion_num} 个语义相同但表达不同的检索查询。\n每行输出一个查询，不要有编号或其他内容。\n\n原始问题：\n{query}"
+  },
+  {
+    "group": "prompt",
+    "key": "kb.query_expansion",
+    "lang": "en",
+    "description": "Query expansion prompt (English)",
+    "value": "Generate {expansion_num} alternative search queries that mean the same as the original query.\nReturn one query per line, with no numbering or extra text.\n\nQuery:\n{query}"
+  },
+  {
+    "group": "prompt",
+    "key": "kb.hyde",
+    "lang": "zh",
+    "description": "HyDE 假设文档生成提示词（中文）",
+    "value": "请写一段简短的段落来回答以下问题。\n该段落应包含可能出现在知识库中的关键事实。\n\n问题：\n{query}\n\n段落："
+  },
+  {
+    "group": "prompt",
+    "key": "kb.hyde",
+    "lang": "en",
+    "description": "HyDE hypothetical document generation prompt (English)",
+    "value": "Write a short paragraph that answers the following question.\nThe paragraph should contain the key facts that might appear in a knowledge base.\n\nQuestion:\n{query}\n\nParagraph:"
+  },
+  {
+    "group": "prompt",
+    "key": "agent_system_suffix",
+    "lang": "zh",
+    "description": "Agent系统提示词前缀",
+    "value": ""
+  },
+  {
+    "group": "prompt",
+    "key": "agent_system_suffix",
+    "lang": "en",
+    "description": "Agent system prompt prefix",
+    "value": ""
+  },
+  {
+    "group": "prompt",
+    "key": "kb.onfidence_warning",
+    "lang": "zh",
+    "description": "低置信度警告文本（中文）",
+    "value": "当前检索结果的相关度较低，以下内容仅供参考，建议结合其他资料进一步确认。"
+  },
+  {
+    "group": "prompt",
+    "key": "kb.confidence_warning",
+    "lang": "en",
+    "description": "Low-confidence warning text (English)",
+    "value": "The current search results have low relevance. The following content is for reference only. It is recommended to verify with additional sources."
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.system_prompt_template",
+    "lang": "zh",
+    "description": "SQL Agent的系统提示词",
+    "value": "您是一名使用 DuckDB 查询数据的分析代理，当前数据库模式为：`{schema_name}`。\n\n规则：\n1. 所有 SQL 语句必须使用模式前缀：`{schema_name}.table_name`。\n2. 您只需要关注 `{schema_name}` 下的数据，不要尝试访问其他模式。\n3. 切勿猜测列名。如果您不了解表结构，必须先调用 `get_schema`。\n4. 如果您需要知道字段值，请调用 `sample_data`。\n5. 对于简单的查询，请使用 `execute_sql`；当需要使用 pandas/numpy 时，请使用 `run_python`。\n6. 不要混用工具：如果任务纯粹是 SQL 查询，则不要使用 `run_python`。\n7. 编写 SQL 语句时：\n- 只允许使用 SELECT 语句。\n- 必须基于实际的模式。\n- 尽量保持简洁。\n- SQL 语句必须可执行。\n- 请勿随意命名字段。\n\n响应流程：\n- 分析问题。\n- 调用必要的工具（可能需要一轮或多轮）。\n- 最后，提供自然语言解释。"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.system_prompt_template",
+    "lang": "en",
+    "description": "SQL Agent system prompt",
+    "value": "You are a data analysis agent using DuckDB to query data,The current database schema is: `{schema_name}`\n\nRules:\n1. All SQL must use the schema prefix: `{schema_name}.table_name`.\n2. You only need to focus on the data under `{schema_name}`, and do not attempt to access other schemas.\n3. Never guess column names. If you do not know the table structure, you must first call `get_schema`.\n4. If you need to know the field values, call `sample_data`.\n5. Use `execute_sql` for simple queries; use `run_python` when pandas/numpy add value.\n6. Do not mix tool purposes: if a task is purely SQL, don't use `run_python`.\n7. When writing SQL:\n- Only SELECT statements are allowed.\n- Must be based on the actual schema.\n- Keep it as simple as possible.\n- The SQL must be executable.\n- Do not make up field names.\n\nResponse Process:\n- Analyze the problem.\n- Call the necessary tools (one or more rounds).\n- Finally, provide a natural language explanation."
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.run_python.desc",
+    "lang": "zh",
+    "description": "SQL Agent的系统提示词中run_python工具的描述",
+    "value": "在安全沙箱中执行 Python 代码，用于处理仅用 SQL 难以实现的数据分析和可视化任务。\n应用场景：统计摘要、透视表、相关矩阵、数据清洗、图表生成（matplotlib/seaborn）或任何 pandas/numpy 转换。\n\n沙箱提供：\n- `conn`：只读 DuckDB 连接（仅限 SELECT/WITH 语句）\n- `schema_name`：当前模式名称字符串\n- 允许导入的库：math、statistics、random、json、re、datetime、decimal、collections、itertools、functools、pandas、numpy、io、string、matplotlib、matplotlib.pyplot、plt、seaborn、sns、base64\n\n示例 – 获取数据并进行分析：\n\n```python\nimport pandas as pd\ndf = conn.execute(f'SELECT * FROM {schema_name}.sales LIMIT 10000').fetchdf()\nprint(df.describe())\ndf.groupby('region')['revenue'].sum()\n```\n\n规则：\n- 禁止文件 I/O、操作系统/子进程操作以及网络调用。 - 仅允许通过 `conn` 执行 SELECT 查询。\n- 执行时间限制为 10 秒。\n- 对于图表：请先使用 `import matplotlib; matplotlib.use('Agg')`。\n- 请勿调用 `plt.show()`。请使用 `plt.gcf()` 结束代码以返回图像。\n- 最后一个表达式的值将作为 `result` 返回。"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.run_python.desc",
+    "lang": "en",
+    "description": "Description for the run_python tool in the SQL Agent's system prompt",
+    "value": "Execute Python code in a secure sandbox for data analysis and visualisation tasks that are hard to express in SQL alone.\nUse cases: statistical summaries, pivot tables, correlation matrices, data cleaning, chart generation (matplotlib/seaborn), or any pandas/numpy transformation.\n\nThe sandbox provides:\n- `conn`        : read-only DuckDB connection (SELECT/WITH only)\n- `schema_name` : current schema name string\n- Allowed imports: math, statistics, random, json, re, datetime, decimal, collections, itertools, functools, pandas, numpy, numpy, io, string, matplotlib, matplotlib.pyplot, plt, seaborn, sns, base64\n\nExample – fetch data then analyse:\n```python\n\nimport pandas as pd\ndf = conn.execute(f'SELECT * FROM {schema_name}.sales LIMIT 10000').fetchdf()\nprint(df.describe())\ndf.groupby('region')['revenue'].sum()\n```\n\nRules:\n- No file I/O, no os/sys/subprocess, no network calls.\n- Only SELECT queries allowed through `conn`.\n- Execution is time-limited to 10 seconds.\n- For charts: Use `import matplotlib; matplotlib.use('Agg')` first.\n- DO NOT call `plt.show()`. Instead, end your code with `plt.gcf()` to return the image.\n- The value of the last expression is returned as `result`."
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.get_schema.desc",
+    "lang": "zh",
+    "description": "SQL Agent的系统提示词中get_schema工具的描述",
+    "value": "检索数据库中指定表的结构信息（列名、数据类型）。如果表结构未知，则必须在编写任何 SQL 语句之前调用此工具。"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.get_schema.desc",
+    "lang": "en",
+    "description": "Description for the get_schema tool in the SQL Agent's system prompt",
+    "value": "Retrieves the structure information (column names, data types) of a specified table in a database. This tool must be called before writing any SQL if the table structure is not explicitly known."
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.tool.table_name.desc",
+    "lang": "zh",
+    "description": "SQL Agent的系统提示词中工具的参数的描述",
+    "value": "表名"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.tool.table_name.desc",
+    "lang": "en",
+    "description": "Description of the tool parameters in the system prompts for SQL Agent",
+    "value": "Table name"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.tool.code.desc",
+    "lang": "zh",
+    "description": "SQL Agent的系统提示词中工具的参数的描述",
+    "value": "要执行的 Python 源代码。 \n使用 `conn` 查询 DuckDB。\n使用 `print()` 输出文本。 \n最后一个表达式的值会自动获取。"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.tool.code.desc",
+    "lang": "en",
+    "description": "Description of the tool parameters in the system prompts for SQL Agent",
+    "value": "Python source code to execute. \nUse `conn` to query DuckDB. \nUse `print()` for text output. \nThe last expression's value is captured automatically."
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.tool.sql.desc",
+    "lang": "zh",
+    "description": "SQL Agent的系统提示词中工具的参数的描述",
+    "value": "符合 DuckDB 语法的完整 SQL SELECT 语句"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.tool.sql.desc",
+    "lang": "en",
+    "description": "Description of the tool parameters in the system prompts for SQL Agent",
+    "value": "A complete SQL SELECT statement that conforms to DuckDB syntax"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.tool.limit.desc",
+    "lang": "zh",
+    "description": "SQL Agent的系统提示词中工具的参数的描述",
+    "value": "返回的行数默认为3行"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.tool.limit.desc",
+    "lang": "en",
+    "description": "Description of the tool parameters in the system prompts for SQL Agent",
+    "value": "The number of rows returned defaults to 3"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.sample_data.desc",
+    "lang": "zh",
+    "description": "SQL Agent的系统提示词中sample_data工具的描述",
+    "value": "从表中检索示例数据。当您需要了解字段的特定值范围、枚举值格式或数据特征时，请使用此功能。"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.sample_data.desc",
+    "lang": "en",
+    "description": "Description for the sample_data tool in the SQL Agent's system prompt",
+    "value": "Retrieves sample data from the table. Use this when you need to understand the specific range of values, enumeration value format, or data characteristics of a field."
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.execute_sql.desc",
+    "lang": "zh",
+    "description": "SQL Agent的系统提示词中execute_sql工具的描述",
+    "value": "在 DuckDB 中执行 SQL 查询。仅允许使用 SELECT 语句。请确保在调用此工具之前，已使用 get_schema 验证了表名和列名。"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.execute_sql.desc",
+    "lang": "en",
+    "description": "Description for the execute_sql tool in the SQL Agent's system prompt",
+    "value": "Execute SQL queries in DuckDB. Only SELECT statements are allowed. Please ensure that you have verified the table and column names using get_schema before calling this tool."
+  },
+  {
+    "group": "prompt",
+    "key": "agent_llm.tool_schema",
+    "lang": "zh",
+    "description": "描述工具schema细节的提示词",
+    "value": "您可以使用以下工具（必须以 JSON 格式调用）:\n\n{tool_schema}\n\n调用该工具时，输出必须严格匹配:\n{{\n    \"tool_calls\": [\n        {{\n            \"id\": \"call_unique_id\",\n            \"type\": \"function\",\n            \"function\": {{\n                \"name\": \"tool_name\",\n                \"arguments\": {{...}}\n            }}\n        }}\n    ]\n}}\n\n注意：\n- 仅输出 JSON 数据，不要进行解析\n- 不要添加 Markdown 内容\n- 不要输出任何额外内容"
+  },
+  {
+    "group": "prompt",
+    "key": "agent_llm.tool_schema",
+    "lang": "en",
+    "description": "Prompt describing the schema details of the tool",
+    "value": "You can use the following tool (must be called in JSON format):\n\n{tool_schema}\n\nWhen calling the tool, the output must strictly match:\n{{\n    \"tool_calls\": [\n        {{\n            \"id\": \"call_unique_id\",\n            \"type\": \"function\",\n            \"function\": {{\n                \"name\": \"tool_name\",\n                \"arguments\": {{...}}\n            }}\n        }}\n    ]\n}}\n\nNote:\n- Only output JSON, do not interpret it\n- Do not add markdown\n- Do not output any extra content"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.schema_context_prompt_template_1",
+    "lang": "zh",
+    "description": "schema_context提示词的第一部分",
+    "value": "## 预加载表上下文\n### 重要提示：权威表列表\n此数据库中实际存在的表如下所示：\n\n可用表：{table_names}"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.schema_context_prompt_template_1",
+    "lang": "en",
+    "description": "The first part of the schema_context prompt",
+    "value": "## Pre-loaded Table Context\n### IMPORTANT: Authoritative table list\nThe tables that actually exist in this database are listed below.\n\nAvailable tables:{table_names}"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.schema_context_prompt_2",
+    "lang": "zh",
+    "description": "schema_context提示词的第二部分",
+    "value": "以下部分包含各表的列定义和示例行，可直接使用。"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.schema_context_prompt_2",
+    "lang": "en",
+    "description": "The second part of the schema_context prompt",
+    "value": "The following section contains column definitions and sample rows for each table. Use them directly."
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.schema_context_prompt_3",
+    "lang": "zh",
+    "description": "schema_context提示词的第三部分",
+    "value": "由于表数量过多，没有直接列出表的详细架构。"
+  },
+  {
+    "group": "prompt",
+    "key": "sql_agent.schema_context_prompt_3",
+    "lang": "en",
+    "description": "The third part of the schema_context prompt",
+    "value": "Due to the large number of tables, the detailed table structure is not listed directly."
+  }
+]

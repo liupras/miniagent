@@ -1,0 +1,148 @@
+[
+  {
+    "name": "calculator",
+    "description": "Perform mathematical calculations",
+    "tool_type": "function",
+    "tool_schema": {
+      "type": "function",
+      "function": {
+        "name": "calculator",
+        "description": "Perform mathematical calculations",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "expression": {
+              "type": "string",
+              "description": "Mathematical expression to evaluate"
+            }
+          },
+          "required": [
+            "expression"
+          ]
+        }
+      }
+    },
+    "mcp_compatible": false,
+    "is_active": true
+  },
+  {
+    "name": "china_legal_kb_router",
+    "description": "回答与中国公司法和中国劳动合同法相关的问题，包括公司治理、股东权利、雇佣、解雇、赔偿和劳动纠纷。",
+    "tool_type": "smart_router",
+    "config": {
+      "router_config_id": "default",
+      "allowed_kb_ids": [
+        2,
+        3
+      ],
+      "max_chunks": 6,
+      "include_confidence": true
+    },
+    "tool_schema": {
+      "type": "function",
+      "function": {
+        "name": "china_legal_kb_router",
+        "description": "查询中国公司法和中国劳动合同法，并可选择进行元数据筛选。",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "与公司法或劳动法相关的用户问题"
+            }
+          },
+          "required": [
+            "query"
+          ]
+        }
+      }
+    },
+    "mcp_compatible": false,
+    "is_active": true
+  },
+  {
+    "name": "web_search",
+    "description": "通过互联网实时搜索，获取公开网页、新闻及政策文件等最新信息。当知识库（公司法、劳动法）中无法找到相关内容，或问题涉及近期动态、司法解释更新、地方性法规及具体案例时，优先调用本工具补充检索。",
+    "tool_type": "function",
+    "config": {
+      "callable_path": "skill.web_search_tool:web_search",
+      "is_async": true,
+      "enable_query_rewrite": false,
+      "ddg_max_results": 9,
+      "ddg_region": "cn-zh",
+      "ddg_safe_search": "moderate",
+      "fetch_top_k": 5,
+      "fetch_timeout": 8.0,
+      "fetch_max_content_len": 8100,
+      "use_playwright": false,
+      "rate_limit_rps": 2.0,
+      "rate_limit_burst": 4,
+      "enable_cache": true,
+      "cache_ttl_seconds": 7200,
+      "cache_max_size": 512,
+      "dedup_min_content_len": 100,
+      "rerank_mode": "bge",
+      "rerank_top_k": 3,
+      "final_top_k": 2,
+      "max_chars_per_result": 3000,
+      "max_total_chars": 9000,
+      "prompt_language": "zh",
+      "reranker": {
+        "backend": "local",
+        "model_name": "bge-reranker-base",
+        "max_length": 512,
+        "batch_size": 64,
+        "cache_dir": "./data/bge-reranking"
+      }
+    },
+    "tool_schema": {
+      "type": "function",
+      "function": {
+        "name": "web_search",
+        "description": "通过互联网实时搜索，获取公开网页、新闻及政策文件等最新信息。当知识库（公司法、劳动法）中无法找到相关内容，或问题涉及近期动态、司法解释更新、地方性法规及具体案例时，优先调用本工具补充检索。",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "用于互联网检索的查询语句。应使用简洁、具体的中文关键词或短句，包含核心法律术语、法规名称或事件要素，避免口语化表达。"
+            }
+          },
+          "required": [ "query"]
+        }
+      }
+    },
+    "mcp_compatible": false,
+    "is_active": true
+  },
+  {
+    "name": "sql_agent",
+    "description": "针对结构化数据进行查询分析的专用工具。",
+    "tool_type": "sql_agent",
+    "config": {
+      "callable_path": "sql_agent.sql_agent_tool:run",
+      "is_async": true,
+      "schema_name": "main",
+      "prompt_language": "zh"
+    },
+    "tool_schema": {
+      "type": "function",
+      "function": {
+        "name": "sql_agent_query",
+        "description": "针对结构化数据进行查询分析的专用工具。能够根据自然语言指令自动编写SQL查询数据，并支持使用Python进行复杂的统计分析（如相关性分析）及图表生成（如折线图、柱状图）。当用户询问关于数据库中的具体数值、趋势、比例或要求生成图表时，请调用此工具。",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "用户提出的自然语言问题。请明确指出需要查询的指标、涉及的表名（如果知道）、时间范围以及期望的图表类型（如折线图、饼图等）。"
+            }            
+          },
+          "required": ["query"]
+        }
+      }
+    },
+    "mcp_compatible": false,
+    "is_active": true
+  }
+]

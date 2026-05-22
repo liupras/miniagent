@@ -1,0 +1,17 @@
+[
+    {
+        "config_id":"default",
+        "selection_strategy":"keyword",
+        "max_kb_count":3
+    },
+    {
+        "config_id":"embedding",
+        "selection_strategy":"embedding",
+        "max_kb_count":3,
+        "extra_config":{
+            "embedding_provider_name":"ollama_bge-large-zh-v1.5",
+            "embedding_threshold":0.6,
+            "top_k_embedding":2
+        }
+    }
+]

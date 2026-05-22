@@ -1,0 +1,26 @@
+[
+  {
+    "key": "system_language",
+    "value": "zh",
+    "value_type": "string",
+    "group": "general",
+    "description": "Global default language for the UI and pipeline prompts. Supported values must match I18n rows with group='prompt'. e.g. zh / en. Individual KBs can override via StrategyConfig.prompt_language.",
+    "is_readonly": false
+  },
+  {
+    "key": "system_name",
+    "value": "MiniAgent",
+    "value_type": "string",
+    "group": "general",
+    "description": "Current system name.",
+    "is_readonly": false
+  },
+  {
+    "key": "system_version",
+    "value": "0.1.0",
+    "value_type": "string",
+    "group": "general",
+    "description": "Current system version. Managed by the application; do not edit manually.",
+    "is_readonly": true
+  }
+]

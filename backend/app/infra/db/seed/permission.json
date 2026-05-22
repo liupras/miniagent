@@ -1,0 +1,22 @@
+[
+    {
+        "code": "permission:btn:add",
+        "name": "Add Permission",
+        "description": "允许添加权限"
+    },
+    {
+        "code": "permission:btn:edit",
+        "name": "Edit Permission",
+        "description": "允许编辑权限"
+    },
+    {
+        "code": "permission:btn:delete",
+        "name": "Delete Permission",
+        "description": "允许删除权限"
+    },
+    {
+        "code": "permission:btn:view",
+        "name": "View Permission",
+        "description": "允许查看权限"
+    }
+]

@@ -1,0 +1,14 @@
+[
+    {
+        "_agent_name":"law_assistant",
+        "_tool_name":"china_legal_kb_router"
+    },
+    {
+        "_agent_name":"law_assistant",
+        "_tool_name":"web_search"
+    },
+    {
+        "_agent_name":"law_assistant",
+        "_tool_name":"sql_agent"
+    }
+]

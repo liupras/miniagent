@@ -1,0 +1,66 @@
+[
+  {
+    "_comment": "General-purpose domain. No extra document metadata required.",
+    "name": "general",
+    "type": "general",
+    "processor_class":"app.services.kb.SmallToBigProcessor",
+    "plugin_class":"app.services.kb.GeneralDomainPlugin",
+    "description": "通用知识库，适用于无特定领域要求的文档。使用标准递归字符分块策略。",
+    "metadata_schema": null
+  },
+  {
+    "_comment": "Legal / regulatory domain. Documents are structured by articles (第X条).",
+    "name": "law_cn",  
+    "type": "law",  
+    "processor_class":"app.services.kb.law.LawSmallToBigProcessor",
+    "plugin_class":"app.services.kb.law.LawDomainPlugin",
+    "description": "中华人民共和国的法律法规。",
+    "metadata_schema": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "title": "文件名称",
+          "description": "法律法规的完整名称，如《中华人民共和国数据安全法》"
+        },
+        "office": {
+          "type": "string",
+          "title": "发布机关",
+          "description": "颁布或发布该文件的机关，如全国人民代表大会常务委员会"
+        },
+        "publish_date": {
+          "type": "string",
+          "format": "date",
+          "title": "发布日期",
+          "description": "文件正式发布的日期，格式 YYYY-MM-DD"
+        },
+        "effective_date": {
+          "type": "string",
+          "format": "date",
+          "title": "生效日期",
+          "description": "文件正式生效的日期，格式 YYYY-MM-DD"
+        },
+        "implement_date": {
+          "type": "string",
+          "format": "date",
+          "title": "实施日期",
+          "description": "文件开始施行的日期，格式 YYYY-MM-DD（部分文件与生效日期相同）"
+        },
+        "type": {
+          "type": "string",
+          "title": "文件类型",
+          "enum": ["法律", "行政法规", "部门规章", "地方性法规", "司法解释", "规范性文件"],
+          "description": "法律文件的效力层级分类"
+        },
+        "status": {
+          "type": "string",
+          "title": "时效性",
+          "enum": ["现行有效", "已废止", "已修正", "尚未生效"],
+          "default": "现行有效",
+          "description": "文件当前的法律效力状态"
+        }
+      },
+      "required": ["title", "type", "status"]
+    }
+  }
+]

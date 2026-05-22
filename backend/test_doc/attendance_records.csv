@@ -1,0 +1,11 @@
+emp_id,emp_name,department,month,work_days,late_count,absence_days,sick_leave_days,personal_leave_days
+1001,Zhang Wei,Engineering,2026-01,22,1,0,0,0
+1002,Li Na,HR,2026-01,21,0,0,1,0
+1003,Wang Fang,Sales,2026-01,20,2,0,0,1
+1004,Zhao Jun,Engineering,2026-01,22,0,0,0,0
+1005,Liu Yang,Marketing,2026-01,19,5,1,0,1
+1001,Zhang Wei,Engineering,2026-02,20,0,0,2,0
+1002,Li Na,HR,2026-02,21,1,0,0,0
+1003,Wang Fang,Sales,2026-02,22,0,0,0,0
+1004,Zhao Jun,Engineering,2026-02,22,0,0,0,0
+1005,Liu Yang,Marketing,2026-02,21,2,0,0,0

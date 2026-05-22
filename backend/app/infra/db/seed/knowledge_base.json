@@ -1,0 +1,46 @@
+[
+  {
+    "name": "general_kb",
+    "description": "General Knowledge Base",
+    "collection_name": "kb_general_collection",    
+    "parent_size":1800,
+    "parent_overlap":200,
+    "chunk_size": 400,
+    "chunk_overlap": 80,
+    "is_active": true,
+    "_domain_name": "general",
+    "_llm_name": "ollama_qwen_4b",
+    "_embedding_name": "ollama_bge-large-zh-v1.5",
+    "_comment": "_llm_name and _embedding_name are resolved to llm.id and embedding.id at seed time"
+  },
+  {
+    "name": "kb_company_law_cn",
+    "keywords":["公司","股东","股权","股份","出资","注册资本","董事","监事","高管","法人","公司治理","股东会","董事会","监事会","公司章程","分红","利润分配","股权转让","公司设立","公司注销","公司解散","公司清算","控股股东","实际控制人","一人公司","有限责任公司","股份有限公司"],
+    "description": "中国公司法知识库（中华人民共和国公司法）。\n\n适用于以下问题：\n- 公司设立、注册资本、股东出资\n- 股权结构、股东权利义务\n- 董事会、监事会、公司治理\n- 公司合并、分立、解散、清算\n- 企业法人、公司法律责任\n\n典型问题示例：\n- 公司注册资本有什么要求？\n- 股东可以退股吗？\n- 董事会有哪些职责？\n\n不适用于：\n- 劳动合同、员工关系（请使用劳动法相关工具）\n- 社保、公积金、工资问题\n\n当用户问题涉及公司制度、股权或企业法律时使用本工具。",
+    "collection_name": "kb_collection_company_law_cn",   
+    "parent_size":1200,
+    "parent_overlap":0,
+    "chunk_size": 300,
+    "chunk_overlap": 60,
+    "is_active": true,
+    "_domain_name": "law_cn",
+    "_llm_name": "ollama_qwen_4b",
+    "_embedding_name": "ollama_bge-large-zh-v1.5",
+    "_comment": "_llm_name and _embedding_name are resolved to llm.id and embedding.id at seed time"
+  },
+  {
+    "name": "kb_labor_contract_law_cn",
+    "keywords":["劳动","劳动合同","劳动关系","员工","用工","入职","离职","辞职","辞退","开除","解除劳动合同","终止劳动合同","试用期","工资","薪资","加班","加班费","社保","五险一金","经济补偿","赔偿金","劳动仲裁","劳动争议","工伤","工时","年假","带薪休假"],
+    "description": "中国劳动合同法知识库（中华人民共和国劳动合同法）。\n\n适用于以下问题：\n- 劳动合同签订、解除、终止\n- 试用期、合同期限\n- 加班工资、工资支付\n- 社会保险、福利待遇\n- 用人单位与劳动者权利义务\n\n典型问题示例：\n- 加班工资怎么算？\n- 公司可以随意辞退员工吗？\n- 试用期最长多久？\n\n不适用于：\n- 公司股权、公司治理（请使用公司法工具）\n- 企业注册、资本结构\n\n当用户问题涉及员工、工资、劳动关系时使用本工具。",
+    "collection_name": "kb_collection_labor_contract_law_cn",    
+    "parent_size":1200,
+    "parent_overlap":0,
+    "chunk_size": 300,
+    "chunk_overlap": 60,
+    "is_active": true,
+    "_domain_name": "law_cn",
+    "_llm_name": "ollama_qwen_4b",
+    "_embedding_name": "ollama_bge-large-zh-v1.5",
+    "_comment": "_llm_name and _embedding_name are resolved to llm.id and embedding.id at seed time"
+  }
+]

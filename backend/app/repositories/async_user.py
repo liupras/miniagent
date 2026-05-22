@@ -1,0 +1,105 @@
+#!/usr/bin/python
+# -*- coding:utf-8 -*-
+# @author  : Liu Lijun
+# @date    : 2026-04-15
+# @description: User Database Management (Asynchronous)
+
+from datetime import datetime
+from typing import Optional, Dict, List
+from sqlalchemy import select
+
+from ..infra.db.async_base import AsyncBaseDatabase
+from ..infra.db.database import User
+from app.core.security import bcrypt_hash, verify_bcrypt
+
+class AsyncUserDatabase(AsyncBaseDatabase):
+
+    def _hash_password(self, password: str) -> str:
+        """Maintain synchronization, as encryption is typically a CPU-intensive operation."""
+        return bcrypt_hash(password)
+
+    async def create_user(self, user_id: str, password: str) -> bool:
+
+        async with self.get_session() as session:
+            existing_user = await session.get(User, user_id)
+            if existing_user:
+                return False
+
+            user = User(
+                user_id=user_id,
+                password_hash=self._hash_password(password),
+                created_at=datetime.now()
+            )
+
+            session.add(user)
+            # The context manager for async_base will automatically handle commits.
+            return True
+
+    async def verify_user(self, user_id: str, password: str) -> bool:
+        """Asynchronous user authentication"""
+        async with self.get_session() as session:
+            user = await session.get(User, user_id)
+
+            if not user or not user.is_active:
+                return False
+            
+            # verify_bcrypt is a synchronous salted verification.
+            if not verify_bcrypt(password, user.password_hash):
+                return False           
+
+            user.last_login = datetime.now()
+            return True
+
+    async def get_user_info(self, user_id: str) -> Optional[Dict]:
+
+        async with self.get_session() as session:
+            user = await session.get(User, user_id)
+            if not user:
+                return None
+
+            return {
+                "user_id": user.user_id,
+                "created_at": user.created_at,
+                "last_login": user.last_login,
+                "is_active": user.is_active
+            }
+
+    async def update_password(self, user_id: str, old_password: str, new_password: str) -> bool:
+
+        if not await self.verify_user(user_id, old_password):
+            return False
+
+        async with self.get_session() as session:
+            user = await session.get(User, user_id)
+            if user:
+                user.password_hash = self._hash_password(new_password)
+                return True
+            return False
+
+    async def deactivate_user(self, user_id: str) -> bool:
+
+        async with self.get_session() as session:
+            user = await session.get(User, user_id)
+            if not user:
+                return False
+
+            user.is_active = False
+            return True
+
+    async def get_all_users(self) -> List[Dict]:
+
+        async with self.get_session() as session:
+
+            stmt = select(User).order_by(User.created_at.desc())
+            result = await session.execute(stmt)
+            users = result.scalars().all()
+
+            return [
+                {
+                    "user_id": u.user_id,
+                    "created_at": u.created_at,
+                    "last_login": u.last_login,
+                    "is_active": u.is_active
+                }
+                for u in users
+            ]

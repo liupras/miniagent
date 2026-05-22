@@ -1,0 +1,10 @@
+[
+    {
+        "_username": "admin",
+        "_role_code": "admin"
+    },
+    {
+        "_username": "demo",
+        "_role_code": "common"
+    }
+]
