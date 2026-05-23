@@ -2,11 +2,15 @@
   {
     "username": "admin",
     "password": "1FaFkWt9",
+    "nickname": "管理员",
+    "avatar":"https://avatars.githubusercontent.com/u/6467665",
     "is_active": true
   },
   {
     "username": "demo",
     "password": "fIzF7JHK",
+    "avatar":"https://avatars.githubusercontent.com/u/6467666",
+    "nickname": "演示用户",
     "is_active": true
   }
 ]

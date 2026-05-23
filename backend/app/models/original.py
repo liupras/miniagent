@@ -9,7 +9,7 @@ from typing import Optional, Dict, List
 
 class LoginRequest(BaseModel):
     """Login Request Body Model"""
-    user_id: str = Field(..., min_length=3, max_length=50, description="user id")
+    username: str = Field(..., min_length=3, max_length=50, description="user name")
     password: str = Field(..., min_length=6, description="password")
 
 class LoginData(BaseModel):

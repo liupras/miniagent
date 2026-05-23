@@ -44,13 +44,13 @@ async def get_current_user(
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    user_id = payload
+    username = payload.get("username")
 
-    user_info = await user_db.get_user_info(user_id)
+    user_info = await user_db.get_user_info(username)
     if not user_info or not user_info.get("is_active"):
         raise HTTPException(status_code=403, detail="User not found or inactive")
 
-    return user_id
+    return username
 
 @router.post("/login", response_model=LoginResponse)
 async def login(
@@ -59,22 +59,22 @@ async def login(
     jwt_auth: JWTAuth = Depends(get_jwt_auth)
 ):
 
-    if not await user_db.verify_user(request.user_id, request.password):
+    if not await user_db.verify_user(request.username, request.password):
         return LoginResponse(
             success=False,
             data=None
         )
 
-    user_info = await user_db.get_user_info(request.user_id)
+    user_info = await user_db.get_user_info(request.username)
 
     # Generate access token and refresh token
     access_token = jwt_auth.create_token(
-        user_id=request.user_id,
+        user_id=request.username,
         token_type="access",
         expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
     )
     refresh_token = jwt_auth.create_token(
-        user_id=request.user_id,
+        user_id=request.username,
         token_type="refresh",
         expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     )
