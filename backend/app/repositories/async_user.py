@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.infra.db.async_base import AsyncBaseDatabase
-from app.infra.db.database import User
+from app.infra.db.database import Role, User
 from app.core.security import bcrypt_hash, verify_bcrypt
 
 class AsyncUserDatabase(AsyncBaseDatabase):
@@ -60,14 +60,31 @@ class AsyncUserDatabase(AsyncBaseDatabase):
 
     async def get_user_info(self, username: str) -> Optional[Dict]:
 
+        # Use chained selectinload to load roles and permissions simultaneously.
         async with self.get_session() as session:
 
-            stmt = select(User).options(selectinload(User.roles)).where(User.username == username)
+            stmt = (
+                select(User)
+                .options(
+                    selectinload(User.roles).selectinload(Role.permissions)
+                )
+                .where(User.username == username)
+            )
             result = await session.execute(stmt)
             user = result.scalar_one_or_none()
 
             if not user:
                 return None
+            
+            # 2. Calculate permission logic
+            is_super = any(role.is_super for role in user.roles)
+            
+            if is_super:
+                permissions = ["*:*:*"]
+            else:
+                # Use sets to remove duplicates (to prevent different roles from having the same permissions).
+                perms_set = {p.code for role in user.roles for p in role.permissions}
+                permissions = list(perms_set)
 
             return {
                 "id": user.id,
@@ -75,9 +92,10 @@ class AsyncUserDatabase(AsyncBaseDatabase):
                 "nickname": user.nickname,
                 "avatar": user.avatar,
                 "roles": [r.code for r in user.roles] if user.roles else ["common"],
+                "permissions": permissions or [],
                 "created_at": user.created_at,
                 "last_login": user.last_login,
-                "is_active": user.is_active,
+                "is_active": user.is_active,                
             }
 
     async def update_password(self, username: str, old_password: str, new_password: str) -> bool:
@@ -105,20 +123,37 @@ class AsyncUserDatabase(AsyncBaseDatabase):
     async def get_all_users(self) -> List[Dict]:
 
         async with self.get_session() as session:
-            stmt = select(User).options(selectinload(User.roles)).order_by(User.created_at.desc())
+            stmt = (
+                select(User)
+                .options(
+                    selectinload(User.roles).selectinload(Role.permissions)
+                )
+                .order_by(User.created_at.desc())
+            )
             result = await session.execute(stmt)
             users = result.scalars().all()
 
-            return [
-                {
+            user_list = []
+            for u in users:
+                # 同样的权限计算逻辑
+                is_super = any(role.is_super for role in u.roles)
+                
+                if is_super:
+                    permissions = ["*:*:*"]
+                else:
+                    perms_set = {p.code for role in u.roles for p in role.permissions}
+                    permissions = list(perms_set)
+
+                user_list.append({
                     "id": u.id,
                     "username": u.username,
                     "nickname": u.nickname,
                     "avatar": u.avatar,
-                    "roles": [r.name for r in u.roles] if u.roles else ["common"],
+                    "roles": [r.code for r in u.roles] if u.roles else ["common"],
+                    "permissions": permissions or [],
                     "created_at": u.created_at,
                     "last_login": u.last_login,
                     "is_active": u.is_active,
-                }
-                for u in users
-            ]
+                })
+            
+            return user_list

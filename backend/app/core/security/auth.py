@@ -82,7 +82,7 @@ async def login(
         "%Y/%m/%d %H:%M:%S"
     )
 
-    return LoginResponse(
+    response = LoginResponse(
         success=True,
         data={
             "avatar": user_info.get("avatar", ""),
@@ -95,3 +95,54 @@ async def login(
             "expires": expires,
         }
     )
+
+    return response
+
+@router.get("/get-async-routes")
+async def get_async_routes():
+
+    permission_router = {
+        "path": "/permission",
+        "meta": {
+            "title": "menus.purePermission",
+            "icon": "ep:lollipop",
+            "rank": 10
+        },
+        "children": [
+            {
+                "path": "/permission/page/index",
+                "name": "PermissionPage",
+                "meta": {
+                    "title": "menus.purePermissionPage",
+                    "roles": ["admin", "common"]
+                }
+            },
+            {
+                "path": "/permission/button",
+                "meta": {
+                    "title": "menus.purePermissionButton",
+                    "roles": ["admin", "common"]
+                },
+                "children": [
+                    {
+                        "path": "/permission/button/router",
+                        "component": "permission/button/index",
+                        "name": "PermissionButtonRouter",
+                        "meta": {
+                            "title": "menus.purePermissionButtonRouter",
+                            "auths": [
+                                "permission:btn:add",
+                                "permission:btn:edit",
+                                "permission:btn:delete"
+                            ]
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+
+    return {
+        "success": True,
+        "data": [permission_router]
+    }
