@@ -27,6 +27,7 @@ from app.repositories import (
     AsyncI18nDatabase,
     AsyncSystemSettingDatabase,
     AsyncLLMDatabase,
+    AsyncMenuDatabase,
 )
 
 from app.services.sql_agent import DuckDBManager
@@ -34,6 +35,7 @@ from app.services.sql_agent import DuckDBManager
 from app.services.kb.domain_registry import DomainRegistry
 from app.services.kb.smart_router import SmartRouter,RouterConfig
 from app.services.kb.service_smart_router import KBSmartRouterService
+from app.services.route_service import RouteService
 from app.runtime.agent_factory import AgentFactory
 from app.services.skill.service_web_search import WebSearchService
 from app.services.sql_agent import SQLAgentService
@@ -94,7 +96,7 @@ class ServiceContainer:
         self.i18n_db = AsyncI18nDatabase(self.engine, self.session_factory)
         self.setting_db = AsyncSystemSettingDatabase(self.engine, self.session_factory)
         self.llm_db = AsyncLLMDatabase(self.engine, self.session_factory)
-
+        self.menu_db = AsyncMenuDatabase(self.engine, self.session_factory)
         self.duckdb = DuckDBManager(settings.get_duck_db_path())        
 
         # ── Auth ───────────────────────────────────────────────────────────
@@ -124,7 +126,7 @@ class ServiceContainer:
         self.agent_factory = AgentFactory(self)
         self.web_search_service = WebSearchService(self)
         self.sql_agent_service=SQLAgentService(self)
-        
+        self.route_service = RouteService(self)
 
     async def start(self):
         await self.init_plugins()

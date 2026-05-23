@@ -111,8 +111,8 @@ onMounted(() => {
       </el-dropdown>
       <!-- 全屏 -->
       <LaySidebarFullScreen id="full-screen" />
-      <!-- 消息通知 -->
-      <LayNotice id="header-notice" />
+      <!-- 消息通知 
+      <LayNotice id="header-notice" />-->
       <!-- 退出登录 -->
       <el-dropdown trigger="click">
         <span class="el-dropdown-link navbar-bg-hover">

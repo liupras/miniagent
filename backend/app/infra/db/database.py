@@ -680,3 +680,29 @@ class Task(Base):
     def __repr__(self):
         return f"<Task(task_id='{self.task_id}', status='{self.status}')>"
 
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    username = Column(String(100), nullable=True)
+    ip_address = Column(String(50), nullable=True)
+
+    target_type = Column(String(50), nullable=False, comment="Module name, such as 'KnowledgeBase', 'Agent'")
+    target_id = Column(String(100), nullable=False, comment="Target object ID")
+
+    action = Column(String(20), nullable=False, comment="Operation type:CREATE, UPDATE, DELETE, EXECUTE")
+    before_value = Column(JSON, nullable=True, comment="Snapshot of data before modification")
+    after_value = Column(JSON, nullable=True, comment="Snapshot of data after modification")
+
+    description = Column(Text, nullable=True, comment="Operation description, e.g., 'Updated knowledge base chunking strategy'")
+    status = Column(String(20), default="success", comment="Operation result: success, failure")
+    
+    created_at = Column(DateTime, default=lambda: datetime.now())
+
+    __table_args__ = (
+        Index("idx_audit_target", "target_type", "target_id"),
+        Index("idx_audit_user", "user_id"),
+        Index("idx_audit_created", "created_at"),
+    )

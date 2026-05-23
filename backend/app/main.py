@@ -145,6 +145,9 @@ app.include_router(web_search_router,prefix="/api/v1/skill", tags=["Skill - Web 
 from app.core.security.auth import router as auth_router
 app.include_router(auth_router,prefix="/api/v1",tags=["Security"])
 
+from app.core.security.menu import router as menu_router
+app.include_router(menu_router,prefix="/api/v1",tags=["Security"])
+
 # ==================== Basic routing ====================
 
 @app.get("/",tags=["Operations and maintenance"])
