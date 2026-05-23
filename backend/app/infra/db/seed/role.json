@@ -8,7 +8,13 @@
     {
         "code": "common",
         "name": "Common User",
-        "description": "普通用户，拥有基本权限",
+        "description": "普通管理用户，拥有部分权限",
+        "is_super": false
+    },
+    {
+        "code": "visitor",
+        "name": "Visitor",
+        "description": "访客用户，只能使用智能体，没有后台管理权限",
         "is_super": false
     }
 ]

@@ -1,22 +1,37 @@
 [
     {
-        "code": "permission:btn:add",
+        "code": "agent.use_assigned",
+        "name": "Use Assigned Agent Permission",
+        "description": "使用分配的智能体权限"
+    },
+    {
+        "code": "agent:list:add",
         "name": "Add Permission",
-        "description": "允许添加权限"
+        "description": "智能体-新增"
     },
     {
-        "code": "permission:btn:edit",
+        "code": "agent:list:edit",
         "name": "Edit Permission",
-        "description": "允许编辑权限"
+        "description": "智能体-编辑"
     },
     {
-        "code": "permission:btn:delete",
+        "code": "agent:list:delete",
         "name": "Delete Permission",
-        "description": "允许删除权限"
+        "description": "智能体-删除"
     },
     {
-        "code": "permission:btn:view",
-        "name": "View Permission",
-        "description": "允许查看权限"
+        "code": "agent:skill:add",
+        "name": "Add Skill Permission",
+        "description": "智能体-技能-新增"
+    },
+    {
+        "code": "agent:skill:edit",
+        "name": "Edit Skill Permission",
+        "description": "智能体-技能-编辑"
+    },
+    {
+        "code": "agent:skill:delete",
+        "name": "Delete Skill Permission",
+        "description": "智能体-技能-删除"
     }
 ]

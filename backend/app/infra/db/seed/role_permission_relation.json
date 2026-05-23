@@ -1,14 +1,6 @@
 [
     {
-        "_role_code": "common",
-        "_permission_code": "permission:btn:add"
-    },
-    {
-        "_role_code": "common",
-        "_permission_code": "permission:btn:edit"
-    },
-    {
-        "_role_code": "common",
-        "_permission_code": "permission:btn:view"
+        "_role_code": "visitor",
+        "_permission_code": "agent.use_assigned"
     }
 ]

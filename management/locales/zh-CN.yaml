@@ -18,6 +18,20 @@ buttons:
   pureBackTop: 回到顶部
   pureOpenText: 开
   pureCloseText: 关
+  add: 添加
+  edit: 编辑
+  delete: 删除
+  save: 保存
+  cancel: 取消
+  reset: 重置
+  submit: 提交
+  expand: 展开
+  collapse: 折叠
+  search: 搜索
+  clear: 清空
+  refresh: 刷新
+  back: 返回
+  confirm: 确定
 search:
   pureTotal: 共
   pureHistory: 搜索历史
@@ -89,3 +103,7 @@ login:
   pureUsernameReg: 请输入账号
   purePassWordReg: 请输入密码
   purePassWordRuleReg: 密码格式应为8-18位数字、字母、符号的任意两种组合
+agentManagement:
+  agent: 智能体
+  skill: 技能
+  permission: 权限

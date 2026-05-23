@@ -18,6 +18,20 @@ buttons:
   pureBackTop: BackTop
   pureOpenText: Open
   pureCloseText: Close
+  add: Add
+  edit: Edit
+  delete: Delete
+  save: Save
+  cancel: Cancel
+  reset: Reset
+  submit: Submit
+  expand: Expand
+  collapse: Collapse
+  search: Search
+  clear: Clear
+  refresh: Refresh
+  back: Back
+  confirm: Confirm
 search:
   pureTotal: Total
   pureHistory: History
@@ -89,3 +103,7 @@ login:
   pureUsernameReg: Please enter username
   purePassWordReg: Please enter password
   purePassWordRuleReg: The password format should be any combination of 8-18 digits
+agentManagement:
+  agent: Agent
+  skill: Skill
+  permission: Permission
