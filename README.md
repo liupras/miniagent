@@ -13,6 +13,7 @@
 
 ## 技术栈
 
+- 前端: pureAdmin
 - 后端: FastAPI + Python 3.12+
 - 向量数据库: ChromaDB
 - 结构化数据: SQLite、DuckDB

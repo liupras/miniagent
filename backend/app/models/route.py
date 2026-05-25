@@ -4,10 +4,12 @@
 # @date    : 2026-05-23
 # @description: Route model definitions for frontend route management
 
-from typing import Optional
-from pydantic import BaseModel
+from typing import Generic, Optional, TypeVar
+from pydantic import BaseModel, ConfigDict
 
 class RouteMeta(BaseModel):
+    model_config = ConfigDict(exclude_none=True)
+
     title: str
     icon: Optional[str] = None
     rank: Optional[int] = None
@@ -15,6 +17,8 @@ class RouteMeta(BaseModel):
     auths: Optional[list[str]] = None
 
 class RouteItem(BaseModel):
+    model_config = ConfigDict(exclude_none=True)
+
     path: str
     name: Optional[str] = None
     component: Optional[str] = None
@@ -22,3 +26,12 @@ class RouteItem(BaseModel):
     children: Optional[list["RouteItem"]] = None
 
 RouteItem.model_rebuild()
+
+T = TypeVar("T")
+
+class ApiResponse(BaseModel, Generic[T]):
+    model_config = ConfigDict(exclude_none=True)
+    
+    success: bool = True
+    data: Optional[T] = None
+    message: Optional[str] = None

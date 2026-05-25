@@ -33,11 +33,11 @@ class JWTAuth:
         
         logger.debug(f"JWT Auth initialized - expire_days: {self.expire_days}, algorithm: {self.algorithm}")
     
-    def create_token(self, user_id: str, token_type:str="access", expires_delta: Optional[timedelta] = None) -> str:
+    def create_token(self, username: str, token_type:str="access", expires_delta: Optional[timedelta] = None) -> str:
         """
         Create JWT token
         
-        :param user_id: user id
+        :param username: Username
         :param token_type: Type of the token (e.g., "access", "refresh")
         :param expires_delta: Expiration interval (optional)
         :return: JWT token string
@@ -50,7 +50,7 @@ class JWTAuth:
         
         # build payload
         payload = {
-            "sub": user_id,  # subject: user_id
+            "sub": username,  # subject: username
             "exp": expire,    # expiration time
             "iat": datetime.now(timezone.utc),  # issued at
             "type": token_type  # token type
@@ -59,7 +59,7 @@ class JWTAuth:
         # create token
         try:
             token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
-            logger.debug(f"Token created for user: {user_id}, expires at: {expire}")
+            logger.debug(f"Token created for user: {username}, expires at: {expire}")
             return token
         except Exception as e:
             logger.error(f"Failed to create token: {str(e)}", exc_info=True)

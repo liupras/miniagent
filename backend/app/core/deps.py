@@ -32,12 +32,10 @@ async def get_current_user(
 
     token = match.group(1)
 
-    payload = jwt_auth.verify_token(token)
-    if not payload:
+    username = jwt_auth.verify_token(token)
+    if not username:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-
-    username = payload.get("username")
-
+  
     user_info = await user_db.get_user_info(username)
     if not user_info or not user_info.get("is_active"):
         raise HTTPException(status_code=403, detail="User not found or inactive")

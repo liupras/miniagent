@@ -41,12 +41,12 @@ async def login(
 
     # Generate access token and refresh token
     access_token = jwt_auth.create_token(
-        user_id=request.username,
+        username=request.username,
         token_type="access",
         expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
     )
     refresh_token = jwt_auth.create_token(
-        user_id=request.username,
+        username=request.username,
         token_type="refresh",
         expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     )

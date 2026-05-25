@@ -5,9 +5,10 @@
 # @description: Menu and permission management, providing dynamic route data for the frontend based on user permissions.
 
 from fastapi import Request,Depends,APIRouter
+import json
 
 from app.core.deps import get_current_user
-from app.models.route import RouteItem
+from app.models.route import ApiResponse, RouteItem
 from app.services.route_service import RouteService
 
 router = APIRouter()
@@ -17,7 +18,8 @@ def get_route_service(request: Request) -> RouteService:
 
 @router.get(
     "/get-async-routes",
-    response_model=list[RouteItem],
+    response_model=ApiResponse[list[RouteItem]],
+    response_model_exclude_none=True,
     summary="Get the current user's dynamic routing menu and permissions.",
 )
 async def get_async_routes(
@@ -25,9 +27,11 @@ async def get_async_routes(
     route_service: RouteService = Depends(get_route_service),
 ):
     routes = await route_service.get_user_routes(username)
-    return routes
+    json_string = json.dumps(routes, ensure_ascii=False, indent=2, default=vars)
+    print(json_string)
+    return ApiResponse(data=routes)
 
-@router.get("/get-async-routes-mock", summary="Mock version of the dynamic route menu and permissions for the current user.")
+@router.get("/get-async-routes_mock", summary="Mock version of the dynamic route menu and permissions for the current user.")
 async def get_async_routes_mock():
     """Mock version of the dynamic route menu and permissions for the current user."""
 
