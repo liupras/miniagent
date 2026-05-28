@@ -27,8 +27,8 @@ async def get_async_routes(
     route_service: RouteService = Depends(get_route_service),
 ):
     routes = await route_service.get_user_routes(username)
-    json_string = json.dumps(routes, ensure_ascii=False, indent=2, default=vars)
-    print(json_string)
+    #json_string = json.dumps(routes, ensure_ascii=False, indent=2, default=vars)
+    #print(json_string)
     return ApiResponse(data=routes)
 
 @router.get("/get-async-routes_mock", summary="Mock version of the dynamic route menu and permissions for the current user.")
