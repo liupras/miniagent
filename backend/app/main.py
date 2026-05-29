@@ -124,22 +124,25 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # ==================== API router====================
-from app.api.admin.kb_router import router as admin_kb_router
+from app.api.admin.agent import router as admin_agent_router
+app.include_router(admin_agent_router,prefix="/api/v1/admin/agent", tags=["Admin - Agent"])
+
+from app.api.admin.kb import router as admin_kb_router
 app.include_router(admin_kb_router,prefix="/api/v1/admin/kb", tags=["Admin - Knowledge Base"])
 
-from app.api.admin.sql_agent_router import router as admin_agent_router
-app.include_router(admin_agent_router,prefix="/api/v1/admin/sql-agent", tags=["Admin - SQL Agent"])
+from app.api.admin.sql_agent import router as admin_sql_agent_router
+app.include_router(admin_sql_agent_router,prefix="/api/v1/admin/sql-agent", tags=["Admin - SQL Agent"])
 
-from app.api.admin.web_search_router import router as admin_web_search_router
+from app.api.admin.web_search import router as admin_web_search_router
 app.include_router(admin_web_search_router,prefix="/api/v1/admin/skill", tags=["Admin - Skill - Web Search"])
 
-from app.api.user.kb_router import router as kb_router
+from app.api.user.kb import router as kb_router
 app.include_router(kb_router,prefix="/api/v1/kb", tags=["Knowledge Base"])
 
-from app.api.user.sql_agent_router import router as sql_agent_router
+from app.api.user.sql_agent import router as sql_agent_router
 app.include_router(sql_agent_router,prefix="/api/v1/sql-agent", tags=["SQL Agent"])
 
-from app.api.user.web_search_router import router as web_search_router
+from app.api.user.web_search import router as web_search_router
 app.include_router(web_search_router,prefix="/api/v1/skill", tags=["Skill - Web Search"])
 
 from app.api.auth.login import router as auth_router

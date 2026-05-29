@@ -7,8 +7,9 @@
 from fastapi import Request,Depends,APIRouter
 
 from app.core.deps import get_current_user
-from app.schemas.auth.route import ApiResponse, RouteItem
-from app.services.route_service import RouteService
+from app.schemas.ApiResponse import ApiResponse
+from app.schemas.auth.route import RouteItem
+from app.services.auth.route_service import RouteService
 
 router = APIRouter()
 

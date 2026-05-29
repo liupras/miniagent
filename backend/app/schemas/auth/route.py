@@ -26,12 +26,3 @@ class RouteItem(BaseModel):
     children: Optional[list["RouteItem"]] = None
 
 RouteItem.model_rebuild()
-
-T = TypeVar("T")
-
-class ApiResponse(BaseModel, Generic[T]):
-    model_config = ConfigDict(exclude_none=True)
-    
-    success: bool = True
-    data: Optional[T] = None
-    message: Optional[str] = None

@@ -35,11 +35,13 @@ from app.services.sql_agent import DuckDBManager
 from app.services.kb.domain_registry import DomainRegistry
 from app.services.kb.smart_router import SmartRouter,RouterConfig
 from app.services.kb.service_smart_router import KBSmartRouterService
-from app.services.route_service import RouteService
+from app.services.auth.route_service import RouteService
 from app.runtime.agent_factory import AgentFactory
 from app.services.skill.service_web_search import WebSearchService
 from app.services.sql_agent import SQLAgentService
 from app.storage.local import LocalStorageBackend
+
+from app.services.admin.agent import AgentService
 
 import importlib
 
@@ -127,6 +129,8 @@ class ServiceContainer:
         self.web_search_service = WebSearchService(self)
         self.sql_agent_service=SQLAgentService(self)
         self.route_service = RouteService(self)
+
+        self.agent_service = AgentService(db=self.agent_db)
 
     async def start(self):
         await self.init_plugins()
