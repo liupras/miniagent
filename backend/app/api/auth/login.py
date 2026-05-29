@@ -5,12 +5,11 @@
 # @description: User authentication
 
 from fastapi import Request,Depends,APIRouter,Body
-import re
 from datetime import datetime, timedelta
 
 from app.repositories import AsyncUserDatabase
 from app.core.security.jwt_auth import JWTAuth
-from app.models.original import LoginRequest, LoginResponse
+from app.schemas.auth.login import LoginRequest, LoginResponse
 from app.core.config import settings
 
 ACCESS_TOKEN_EXPIRE_DAYS = settings.access_token_expire_days

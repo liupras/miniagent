@@ -4,7 +4,7 @@
 # @date    : 2026-05-23
 # @description: route service
 
-from app.models.route import RouteItem, RouteMeta
+from app.schemas.auth.route import RouteItem, RouteMeta
 
 class RouteService:
 

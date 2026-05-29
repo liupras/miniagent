@@ -7,25 +7,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, List
 
-class LoginRequest(BaseModel):
-    """Login Request Body Model"""
-    username: str = Field(..., min_length=3, max_length=50, description="user name")
-    password: str = Field(..., min_length=6, description="password")
-
-class LoginData(BaseModel):
-    avatar: str
-    username: str      # = user_id value
-    nickname: str
-    roles: List[str]
-    permissions: List[str]
-    accessToken: str
-    refreshToken: str
-    expires: str       # format: "YYYY/MM/DD HH:MM:SS"
-
-class LoginResponse(BaseModel):
-    success: bool
-    data: Optional[LoginData] = None
-
 class SimpleChatRequest(BaseModel):
     """Chat Request (Simplified Version)"""   
     session_id: str = Field(default="default", description="Session ID, used to associate context.")

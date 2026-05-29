@@ -5,10 +5,9 @@
 # @description: Menu and permission management, providing dynamic route data for the frontend based on user permissions.
 
 from fastapi import Request,Depends,APIRouter
-import json
 
 from app.core.deps import get_current_user
-from app.models.route import ApiResponse, RouteItem
+from app.schemas.auth.route import ApiResponse, RouteItem
 from app.services.route_service import RouteService
 
 router = APIRouter()

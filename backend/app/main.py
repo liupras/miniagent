@@ -142,10 +142,10 @@ app.include_router(sql_agent_router,prefix="/api/v1/sql-agent", tags=["SQL Agent
 from app.api.user.web_search_router import router as web_search_router
 app.include_router(web_search_router,prefix="/api/v1/skill", tags=["Skill - Web Search"])
 
-from app.core.security.auth import router as auth_router
+from app.api.auth.login import router as auth_router
 app.include_router(auth_router,prefix="/api/v1",tags=["Security"])
 
-from app.core.security.menu import router as menu_router
+from app.api.auth.menu import router as menu_router
 app.include_router(menu_router,prefix="/api/v1",tags=["Security"])
 
 # ==================== Basic routing ====================
