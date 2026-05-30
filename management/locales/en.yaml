@@ -1,3 +1,16 @@
+common:
+  operation: Operation
+  activated: Activated
+  deactivated: Deactivated
+  deleteConfirm: Delete \"{name}\"?
+  batchDeleteConfirm: Delete {count} selected records?
+  status: Status
+  statusPlaceholder: All statuses
+  createdAt: Created at
+  addSuccess: Added successfully
+  editSuccess: Editing successful
+  deleteSuccess: Deletion successful
+  warning: warning
 buttons:
   pureLoginOut: LoginOut
   pureLogin: Login
@@ -32,6 +45,9 @@ buttons:
   refresh: Refresh
   back: Back
   confirm: Confirm
+  active: Active
+  inactive: Inactive  
+  batchDelete: Batch delete
 search:
   pureTotal: Total
   pureHistory: History
@@ -86,6 +102,11 @@ menus:
   purePermissionButton: Button Permission
   purePermissionButtonRouter: Route return button permission
   purePermissionButtonLogin: Login interface return button permission
+  agentManagement: 
+    default: Agent Management
+    agent: Agent
+    skill: Skill
+    permission: Permission
 status:
   pureLoad: Loading...
   pureMessage: Message
@@ -104,6 +125,18 @@ login:
   purePassWordReg: Please enter password
   purePassWordRuleReg: The password format should be any combination of 8-18 digits
 agentManagement:
-  agent: Agent
-  skill: Skill
-  permission: Permission
+  tableTitle: Agent Management
+  name: Name
+  namePlaceholder: Please enter agent name
+  nameRequired: Agent name is required
+  nameMaxLength: Name must be 100 characters or fewer
+  description: Description
+  descriptionPlaceholder: Please enter description (optional)
+  systemPrompt: System Prompt
+  systemPromptPlaceholder: Please enter system prompt
+  systemPromptRequired: System prompt is required
+  llm: LLM
+  llmPlaceholder: Please select LLM
+  user: User
+  userPlaceholder: Please select user
+  boundUsers: Bound Users 

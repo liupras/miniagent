@@ -93,7 +93,7 @@ class Menu(Base):
     component = Column(String(200))
     icon = Column(String(100))
     sort_order = Column(Integer, default=0)
-    menu_type = Column(String(20),nullable=False,default="menu",comment="directory/menu/button")
+    menu_type = Column(String(20),nullable=False,default="menu",comment="menu/button")
 
     is_visible = Column(Boolean, default=True)
     is_active = Column(Boolean, default=True)
