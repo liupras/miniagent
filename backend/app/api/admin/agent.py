@@ -1,18 +1,19 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
+# @author  : Liu Lijun
+# @date    : 2026-05-29
 # @description: Agent API Router – HTTP layer only, all logic lives in AgentService
 
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from app.schemas.ApiResponse import ApiResponse
+from app.schemas.common import ApiResponse,PageResult
 from app.schemas.admin.agent import (
     AgentCreate,
     AgentUpdate,
     AgentOut,
     AgentListParams,
-    PageResult,    
 )
 from app.services.admin.agent import AgentService, AgentNotFoundError, AgentNameConflictError
 from app.core.service_container import ServiceContainer

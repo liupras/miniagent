@@ -124,8 +124,14 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # ==================== API router====================
+from app.api.admin.llm import router as admin_llm_router
+app.include_router(admin_llm_router,prefix="/api/v1/admin/llms", tags=["Admin - LLM"])
+
+from app.api.admin.user import router as admin_user_router
+app.include_router(admin_user_router,prefix="/api/v1/admin/users", tags=["Admin - User"])
+
 from app.api.admin.agent import router as admin_agent_router
-app.include_router(admin_agent_router,prefix="/api/v1/admin/agent", tags=["Admin - Agent"])
+app.include_router(admin_agent_router,prefix="/api/v1/admin/agents", tags=["Admin - Agent"])
 
 from app.api.admin.kb import router as admin_kb_router
 app.include_router(admin_kb_router,prefix="/api/v1/admin/kb", tags=["Admin - Knowledge Base"])

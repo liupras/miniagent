@@ -11,6 +11,7 @@ common:
   editSuccess: 编辑成功
   deleteSuccess: 删除成功
   warning: 警告
+  loadingError: 数据加载失败，请检查网络或联系管理员
 buttons:
   pureLoginOut: 退出系统
   pureLogin: 登录

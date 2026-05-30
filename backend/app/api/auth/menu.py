@@ -7,7 +7,7 @@
 from fastapi import Request,Depends,APIRouter
 
 from app.core.deps import get_current_user
-from app.schemas.ApiResponse import ApiResponse
+from app.schemas.common import ApiResponse
 from app.schemas.auth.route import RouteItem
 from app.services.auth.route_service import RouteService
 

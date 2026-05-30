@@ -11,6 +11,7 @@ common:
   editSuccess: Editing successful
   deleteSuccess: Deletion successful
   warning: warning
+  loadingError: Data loading failed. Please check your network or contact your administrator.
 buttons:
   pureLoginOut: LoginOut
   pureLogin: Login

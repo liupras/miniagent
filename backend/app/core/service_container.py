@@ -42,6 +42,8 @@ from app.services.sql_agent import SQLAgentService
 from app.storage.local import LocalStorageBackend
 
 from app.services.admin.agent import AgentService
+from app.services.admin.llm import LLMService
+from app.services.admin.user import UserService
 
 import importlib
 
@@ -131,6 +133,8 @@ class ServiceContainer:
         self.route_service = RouteService(self)
 
         self.agent_service = AgentService(db=self.agent_db)
+        self.llm_service = LLMService(db=self.llm_db)
+        self.user_service = UserService(db=self.user_db)
 
     async def start(self):
         await self.init_plugins()

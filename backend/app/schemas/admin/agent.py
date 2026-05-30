@@ -11,16 +11,15 @@ from pydantic import BaseModel, Field
 class LLMBrief(BaseModel):
     id: int
     name: str
-
+ 
     model_config = {"from_attributes": True}
-
-
+ 
+ 
 class UserBrief(BaseModel):
     id: int
     username: str
-
+ 
     model_config = {"from_attributes": True}
-
 
 class AgentBase(BaseModel):
     name: str = Field(..., max_length=100, description="Agent name (unique)")
@@ -32,7 +31,6 @@ class AgentBase(BaseModel):
 
 class AgentCreate(AgentBase):
     pass
-
 
 class AgentUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=100)
@@ -60,10 +58,3 @@ class AgentListParams(BaseModel):
     llm_id: Optional[int] = None
     user_id: Optional[int] = None
     is_active: Optional[bool] = None
-
-
-class PageResult(BaseModel):
-    total: int
-    page: int
-    page_size: int
-    data: List[AgentOut]

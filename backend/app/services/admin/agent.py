@@ -12,8 +12,8 @@ from sqlalchemy.orm import selectinload
 
 from app.infra.db.database import Agent, User
 from app.repositories.async_agent import AsyncAgentDatabase
-from app.schemas.admin.agent import AgentCreate, AgentUpdate, AgentListParams, AgentOut, PageResult
-
+from app.schemas.admin.agent import AgentCreate, AgentUpdate, AgentListParams, AgentOut
+from app.schemas.common import PageResult
 
 class AgentNotFoundError(Exception):
     """Raised when the requested agent does not exist."""
