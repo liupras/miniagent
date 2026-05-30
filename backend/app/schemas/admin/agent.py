@@ -45,7 +45,7 @@ class AgentOut(AgentBase):
     created_at: datetime
     updated_at: datetime
     llm: Optional[LLMBrief] = None
-    users: List[UserBrief] = []
+    #users: List[UserBrief] = []
 
     model_config = {"from_attributes": True}
 

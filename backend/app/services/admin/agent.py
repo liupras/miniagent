@@ -6,6 +6,7 @@
 
 from typing import List, Optional
 
+from loguru import logger
 from sqlalchemy import select, func, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
@@ -104,7 +105,8 @@ class AgentService:
             try:
                 await session.commit()
                 await session.refresh(agent)
-            except IntegrityError:
+            except Exception as e:
+                logger.error(f"❌ create_agent failed: {e}")
                 await session.rollback()
                 raise AgentNameConflictError(payload.name)
 

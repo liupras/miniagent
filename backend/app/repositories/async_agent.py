@@ -21,6 +21,7 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
             stmt = (
                 select(Agent)
                 .options(selectinload(Agent.llm))
+                #.options(selectinload(Agent.users))
                 .where(Agent.id == agent_id)
             )
             result = await session.execute(stmt)
