@@ -25,3 +25,6 @@ class LoginData(BaseModel):
 class LoginResponse(BaseModel):
     success: bool
     data: Optional[LoginData] = None
+
+class RefreshTokenRequest(BaseModel):
+    refreshToken:str

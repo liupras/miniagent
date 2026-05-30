@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 from app.repositories import AsyncUserDatabase
 from app.core.security.jwt_auth import JWTAuth
-from app.schemas.auth.login import LoginRequest, LoginResponse
+from app.schemas.auth.login import LoginRequest, LoginResponse,RefreshTokenRequest
 from app.core.config import settings
 
 ACCESS_TOKEN_EXPIRE_DAYS = settings.access_token_expire_days
@@ -68,3 +68,43 @@ async def login(
     )
 
     return response
+
+@router.post("/refresh-token", response_model=LoginResponse)
+async def refresh_token(
+    request: RefreshTokenRequest = Body(...),
+    jwt_auth: JWTAuth = Depends(get_jwt_auth)
+):
+
+    if not request.refreshToken:
+        return LoginResponse(success=False, data={})
+
+    token_data = jwt_auth.decode_token(request.refreshToken)
+    if not token_data or token_data.get("token_type") != "refresh":
+        return LoginResponse(success=False, data={})
+
+    username = token_data.get("username")
+
+    new_access_token = jwt_auth.create_token(
+        username=username,
+        token_type="access",
+        expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+    )
+    new_refresh_token = jwt_auth.create_token(
+        username=username,
+        token_type="refresh",
+        expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    )
+
+    expires = (datetime.now() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)).strftime(
+        "%Y/%m/%d %H:%M:%S"
+    )
+
+    # 4. 返回符合 ApiResponse 包装的结果
+    return LoginResponse(
+        success=True,
+        data={
+            "accessToken": new_access_token,
+            "refreshToken": new_refresh_token,
+            "expires": expires,
+        }
+    )
