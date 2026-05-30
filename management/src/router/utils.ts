@@ -210,6 +210,7 @@ function initRouter() {
     } else {
       return new Promise(resolve => {
         getAsyncRoutes().then(({ data }) => {
+          //console.log("async routes raw:", JSON.stringify(data, null, 2));
           handleAsyncRoutes(cloneDeep(data));
           storageLocal().setItem(key, data);
           resolve(router);
@@ -219,6 +220,7 @@ function initRouter() {
   } else {
     return new Promise(resolve => {
       getAsyncRoutes().then(({ data }) => {
+        //console.log("async routes raw:", JSON.stringify(data, null, 2));
         handleAsyncRoutes(cloneDeep(data));
         resolve(router);
       });
@@ -325,6 +327,14 @@ function addAsyncRoutes(arrRoutes: Array<RouteRecordRaw>) {
       const index = v?.component
         ? modulesRoutesKeys.findIndex(ev => ev.includes(v.component as any))
         : modulesRoutesKeys.findIndex(ev => ev.includes(v.path));
+      /*console.log(
+        "component:",
+        v.component,
+        "matched index:",
+        index,
+        "matched key:",
+        modulesRoutesKeys[index]
+      );*/
       v.component = modulesRoutes[modulesRoutesKeys[index]];
     }
     if (v?.children && v.children.length) {
