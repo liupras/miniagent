@@ -32,6 +32,8 @@ from app.repositories import (
 
 from app.services.sql_agent import DuckDBManager
 
+from app.core.security.auth_permission import AuthPermission
+
 from app.services.kb.domain_registry import DomainRegistry
 from app.services.kb.smart_router import SmartRouter,RouterConfig
 from app.services.kb.service_smart_router import KBSmartRouterService
@@ -118,6 +120,13 @@ class ServiceContainer:
         self.vector_registry = VectorStoreRegistry(self)  
         self.domain_registry = DomainRegistry()
         self.storage = LocalStorageBackend(root_dir="./data/storage")
+
+        self.auth: AuthPermission = AuthPermission(
+            self,
+            # Optionally override defaults:
+            # cache_max_size=5000,
+            # cache_ttl_seconds=600.0,
+        )
 
         # ── KB service singletons ──────────────────────────────────────────
         # Both services receive the full VectorStoreRegistry so they can

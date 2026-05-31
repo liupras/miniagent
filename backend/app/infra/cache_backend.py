@@ -3,36 +3,7 @@
 # @author  : Liu Lijun
 # @date    : 2026-02-19
 # @description: A cache backend that implements the LangChain BaseStore interface and supports the LRU eviction mechanism.
-#
-# TTL extension (added 2026-04-24)
-# ─────────────────────────────────
-# The original mget / mset / mdelete / yield_keys interface is UNCHANGED so
-# existing callers are not affected.
-#
-# Two new methods expose optional TTL semantics:
-#
-#   mset_with_ttl(pairs, ttl_seconds)
-#       Write entries that expire after ttl_seconds.
-#       Internally stores (value_bytes, expire_at) instead of bare bytes.
-#
-#   mget_ttl(keys)
-#       Read entries, performing lazy expiry check.
-#       Expired entries are deleted on first read and returned as None.
-#
-# Internal storage layout
-# ───────────────────────
-# Every cache slot holds a tuple:  (bytes, float | None)
-#   • float  → monotonic timestamp after which the entry is considered stale
-#   • None   → no expiry (written by plain mset, lives until LRU eviction)
-#
-# The original mget still works: it unpacks the tuple transparently, so code
-# that never calls mset_with_ttl / mget_ttl sees no behavioural change.
-#
-# Redis migration path
-# ────────────────────
-# When create_cache_backend("redis", ttl=N, ...) is called, the factory
-# returns a RedisStore whose constructor-level ttl is set.  Redis handles
-# expiry natively, so mget_ttl / mset_with_ttl are not needed there.
+
 
 from typing import List, Optional, Sequence,Tuple,Iterator
 import threading

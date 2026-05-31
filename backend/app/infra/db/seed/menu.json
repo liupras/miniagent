@@ -2,7 +2,7 @@
     {
         "id": 1,
         "parent_id": null,
-        "name": "AgentManagement", 
+        "name": "agent:default", 
         "title_key": "menus.agentManagement.default",
         "path": "/agentManagement",        
         "icon": "ep:cpu",
@@ -11,7 +11,7 @@
     {
         "id": 2,
         "parent_id": 1,
-        "name": "Agent", 
+        "name": "agent:list", 
         "title_key": "menus.agentManagement.agent",
         "path": "/agentManagement/agent",
         "component": "agentManagement/agent/index",
@@ -20,7 +20,7 @@
     {
         "id": 3,
         "parent_id": 1,
-        "name": "AgentSkill", 
+        "name": "agent:skill:list", 
         "title_key": "menus.agentManagement.skill",
         "path": "/agentManagement/skill",
         "component": "agentManagement/skill/index",
@@ -29,7 +29,7 @@
     {
         "id": 4,
         "parent_id": 1,
-        "name": "AgentPermission", 
+        "name": "agent:permission:list", 
         "title_key": "menus.agentManagement.permission",
         "path": "/agentManagement/permission",
         "component": "agentManagement/permission/index",  

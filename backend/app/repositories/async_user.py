@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.infra.db.async_base import AsyncBaseDatabase
-from app.infra.db.database import Role, User
+from app.infra.db.database import Role, User,Menu, RoleMenuRelation
 from app.core.security import bcrypt_hash, verify_bcrypt
 
 class AsyncUserDatabase(AsyncBaseDatabase):
@@ -157,3 +157,16 @@ class AsyncUserDatabase(AsyncBaseDatabase):
                 })
             
             return user_list
+        
+    async def get_user_resource_codes(self,user_id: int) -> set[str]:
+        """Retrieve all menu/button names owned by this user at once."""
+        async with self.get_session() as session:
+            stmt = (
+                select(Menu.name)
+                .join(RoleMenuRelation, Menu.id == RoleMenuRelation.menu_id)
+                .join(Role, RoleMenuRelation.role_id == Role.id)
+                .join(User.roles)
+                .where(User.id == user_id)
+            )
+            result = await session.execute(stmt)
+            return set(result.scalars().all())
