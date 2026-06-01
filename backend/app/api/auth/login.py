@@ -7,7 +7,6 @@
 from fastapi import Request,Depends,APIRouter,Body
 from datetime import datetime, timedelta
 
-from app.repositories import AsyncUserDatabase
 from app.core.security.jwt_auth import JWTAuth
 from app.schemas.auth.login import LoginRequest, LoginResponse,RefreshTokenRequest
 from app.core.config import settings
@@ -57,11 +56,11 @@ async def login(
     response = LoginResponse(
         success=True,
         data={
-            "avatar": user_info.get("avatar", ""),
-            "username": user_info.get("username"), 
-            "nickname": user_info.get("nickname", user_info.get("username")),
-            "roles": user_info.get("roles", ["common"]),
-            "permissions": user_info.get("permissions", []),
+            "avatar": user_info.avatar,
+            "username": user_info.username, 
+            "nickname": user_info.nickname,
+            "roles": user_info.roles,
+            "permissions": user_info.permissions,
             "accessToken": access_token,
             "refreshToken": refresh_token,
             "expires": expires,

@@ -5,13 +5,14 @@
 # @description: User Database Management (Asynchronous)
 
 from datetime import datetime
-from typing import Optional, Dict
+from typing import Optional, Dict,List
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload,func
 
 from app.infra.db.async_base import AsyncBaseDatabase
 from app.infra.db.database import User
 from app.core.security import bcrypt_hash, verify_bcrypt
+from app.schemas.admin.user import UserListParams
 
 class AsyncUserDatabase(AsyncBaseDatabase):
 
@@ -109,3 +110,50 @@ class AsyncUserDatabase(AsyncBaseDatabase):
 
             user.is_active = False
             return True
+        
+    async def get_options(
+        self,
+        is_active: bool | None = True
+    ) -> list[User]:
+
+        async with self.get_session() as session:
+
+            stmt = select(User).order_by(User.username)
+
+            if is_active is not None:
+                stmt = stmt.where(User.is_active == is_active)
+
+            result = await session.execute(stmt)
+
+            return list(result.scalars().all())
+        
+    async def list_users(
+        self,
+        params: UserListParams
+    ) -> tuple[list[User], int]:
+        
+        async with self._user_db.get_session() as session:
+            stmt = select(User).options(
+                selectinload(User.roles)
+            )
+
+            if params.username:
+                stmt = stmt.where(User.username.ilike(f"%{params.username}%"))
+            if params.is_active is not None:
+                stmt = stmt.where(User.is_active == params.is_active)
+
+            total: int = (
+                await session.execute(
+                    select(func.count()).select_from(stmt.subquery())
+                )
+            ).scalar_one()
+
+            offset = (params.page - 1) * params.page_size
+            stmt = (
+                stmt.order_by(User.created_at.desc())
+                .offset(offset)
+                .limit(params.page_size)
+            )
+            rows: List[User] = list((await session.execute(stmt)).scalars().all())
+
+            return rows, total

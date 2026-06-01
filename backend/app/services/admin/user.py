@@ -9,12 +9,11 @@ from typing import List, Optional
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
-from app.infra.db.database import Role, User
+from app.infra.db.database import User
 from app.repositories.async_user import AsyncUserDatabase
 from app.repositories.async_menu import AsyncMenuDatabase
 from app.schemas.common import PageResult
 from app.schemas.admin.user import UserListParams, UserOptionItem, UserOut
-from app.core.constants import SUPER_PERMISSION
 
 
 # ──────────────────────────────────────────────
@@ -27,18 +26,6 @@ class UserNotFoundError(Exception):
         super().__init__(f"User '{username}' not found")
 
 
-# ──────────────────────────────────────────────
-# Permission helper (mirrors async_user.py logic)
-# ──────────────────────────────────────────────
-
-def _calc_permissions(user: User) -> List[str]:
-    """Derive the flat permission list from a User's loaded roles."""
-    if any(role.is_super for role in user.roles):
-        return [SUPER_PERMISSION]
-    perms: set[str] = {p.code for role in user.roles for p in role.permissions}
-    return list(perms)
-
-
 def _to_user_out(user: User) -> UserOut:
     return UserOut(
         id=user.id,
@@ -48,8 +35,7 @@ def _to_user_out(user: User) -> UserOut:
         is_active=user.is_active,
         created_at=user.created_at,
         last_login=user.last_login,
-        roles=[r.code for r in user.roles] if user.roles else ["common"],
-        permissions=_calc_permissions(user),
+        roles=[r.code for r in user.roles] if user.roles else ["common"]       
     )
 
 
@@ -82,47 +68,25 @@ class UserService:
         By default only active users are returned (is_active=True).
         Pass is_active=None to return all users regardless of status.
         """
-        async with self._user_db.get_session() as session:
-            stmt = select(User).order_by(User.username)
-            if is_active is not None:
-                stmt = stmt.where(User.is_active == is_active)
-            rows: List[User] = list((await session.execute(stmt)).scalars().all())
+        users = await self._user_db.get_options(is_active)
 
-        return [UserOptionItem.model_validate(r) for r in rows]
+        return [
+            UserOptionItem.model_validate(u)
+            for u in users
+        ]
 
     # ── Paginated list ────────────────────────────────────────────────────
 
     async def list_users(self, params: UserListParams) -> PageResult[UserOut]:
-        """Paginated + filtered user list with roles and permissions."""
-        async with self._user_db.get_session() as session:
-            stmt = select(User).options(
-                selectinload(User.roles).selectinload(Role.permissions)
-            )
+        """Paginated + filtered user list with roles."""
 
-            if params.username:
-                stmt = stmt.where(User.username.ilike(f"%{params.username}%"))
-            if params.is_active is not None:
-                stmt = stmt.where(User.is_active == params.is_active)
+        rows, total = await self._user_db.list_users(params)
 
-            total: int = (
-                await session.execute(
-                    select(func.count()).select_from(stmt.subquery())
-                )
-            ).scalar_one()
-
-            offset = (params.page - 1) * params.page_size
-            stmt = (
-                stmt.order_by(User.created_at.desc())
-                .offset(offset)
-                .limit(params.page_size)
-            )
-            rows: List[User] = list((await session.execute(stmt)).scalars().all())
-
-        return PageResult[UserOut](
+        return PageResult(
             total=total,
             page=params.page,
             page_size=params.page_size,
-            data=[_to_user_out(r) for r in rows],
+            data=[_to_user_out(r) for r in rows]
         )
 
     # ── Single user ───────────────────────────────────────────────────────
@@ -134,7 +98,7 @@ class UserService:
             raise UserNotFoundError(username)
         permissions = await self._menu_db.get_user_resource_codes(info["id"])
         info["permissions"] = list(permissions)
-        return info
+        return UserOut.model_validate(info)
     
     async def verify_user(self, username: str, password: str) -> bool:
         """Verify username/password for login."""
