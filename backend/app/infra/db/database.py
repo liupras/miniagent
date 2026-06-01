@@ -42,8 +42,7 @@ class Role(Base):
     description = Column(Text, nullable=True)
     is_super = Column(Boolean, default=False)
 
-    users = relationship("User", secondary="user_role_relations", back_populates="roles")
-    permissions = relationship("Permission", secondary="role_permission_relations", back_populates="roles")
+    users = relationship("User", secondary="user_role_relations", back_populates="roles")    
     menus = relationship("Menu", secondary="role_menu_relations", back_populates="roles")
 
     def __repr__(self):
@@ -58,29 +57,6 @@ class UserRoleRelation(Base):
     def __repr__(self):
         return f"<UserRoleRelation(user_id='{self.user_id}', role_id='{self.role_id}')>"
 
-
-class Permission(Base):
-    __tablename__ = "permissions"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    code = Column(String(100), unique=True, nullable=False)
-    name = Column(String(100), nullable=False)
-    description = Column(Text, nullable=True)
-
-    roles = relationship("Role", secondary="role_permission_relations", back_populates="permissions")
-
-    def __repr__(self):
-        return f"<Permission(permission_id='{self.id}')>"
-
-class RolePermissionRelation(Base):
-    __tablename__ = "role_permission_relations"
-
-    role_id = Column(ForeignKey("roles.id"), primary_key=True)
-    permission_id = Column(ForeignKey("permissions.id"), primary_key=True)
-
-    def __repr__(self):
-        return f"<RolePermissionRelation(role_id='{self.role_id}', permission_id='{self.permission_id}')>"
-
 class Menu(Base):
     __tablename__ = "menus"
 
@@ -94,6 +70,7 @@ class Menu(Base):
     icon = Column(String(100))
     sort_order = Column(Integer, default=0)
     menu_type = Column(String(20),nullable=False,default="menu",comment="menu/button")
+    description = Column(Text, nullable=True)
 
     is_visible = Column(Boolean, default=True)
     is_active = Column(Boolean, default=True)

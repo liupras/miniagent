@@ -49,6 +49,7 @@ buttons:
   active: Active
   inactive: Inactive  
   batchDelete: Batch delete
+  asign: Asign
 search:
   pureTotal: Total
   pureHistory: History
@@ -107,7 +108,10 @@ menus:
     default: Agent Management
     agent: Agent
     skill: Skill
-    permission: Permission
+    assignment: Assignment
+  system:
+    default: System Management
+    cache: Cache Management
 status:
   pureLoad: Loading...
   pureMessage: Message

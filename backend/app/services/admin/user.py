@@ -11,8 +11,10 @@ from sqlalchemy.orm import selectinload
 
 from app.infra.db.database import Role, User
 from app.repositories.async_user import AsyncUserDatabase
+from app.repositories.async_menu import AsyncMenuDatabase
 from app.schemas.common import PageResult
 from app.schemas.admin.user import UserListParams, UserOptionItem, UserOut
+from app.core.constants import SUPER_PERMISSION
 
 
 # ──────────────────────────────────────────────
@@ -32,7 +34,7 @@ class UserNotFoundError(Exception):
 def _calc_permissions(user: User) -> List[str]:
     """Derive the flat permission list from a User's loaded roles."""
     if any(role.is_super for role in user.roles):
-        return ["*:*:*"]
+        return [SUPER_PERMISSION]
     perms: set[str] = {p.code for role in user.roles for p in role.permissions}
     return list(perms)
 
@@ -63,8 +65,9 @@ class UserService:
     AsyncUserDatabase and owns the queries that need pagination / extra joins.
     """
 
-    def __init__(self, db: AsyncUserDatabase) -> None:
-        self._db = db
+    def __init__(self, user_db: AsyncUserDatabase, menu_db: AsyncMenuDatabase) -> None:
+        self._user_db = user_db
+        self._menu_db = menu_db
 
     # ── Options endpoint ──────────────────────────────────────────────────
 
@@ -79,7 +82,7 @@ class UserService:
         By default only active users are returned (is_active=True).
         Pass is_active=None to return all users regardless of status.
         """
-        async with self._db.get_session() as session:
+        async with self._user_db.get_session() as session:
             stmt = select(User).order_by(User.username)
             if is_active is not None:
                 stmt = stmt.where(User.is_active == is_active)
@@ -91,7 +94,7 @@ class UserService:
 
     async def list_users(self, params: UserListParams) -> PageResult[UserOut]:
         """Paginated + filtered user list with roles and permissions."""
-        async with self._db.get_session() as session:
+        async with self._user_db.get_session() as session:
             stmt = select(User).options(
                 selectinload(User.roles).selectinload(Role.permissions)
             )
@@ -126,7 +129,13 @@ class UserService:
 
     async def get_user(self, username: str) -> UserOut:
         """Return full user info or raise UserNotFoundError."""
-        info = await self._db.get_user_info(username)
+        info = await self._user_db.get_user_info(username)        
         if info is None:
             raise UserNotFoundError(username)
-        return UserOut(**info)
+        permissions = await self._menu_db.get_user_resource_codes(info["id"])
+        info["permissions"] = list(permissions)
+        return info
+    
+    async def verify_user(self, username: str, password: str) -> bool:
+        """Verify username/password for login."""
+        return await self._user_db.verify_user(username, password)

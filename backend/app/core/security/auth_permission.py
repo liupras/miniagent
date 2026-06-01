@@ -14,11 +14,12 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from loguru import logger
 
-from app.infra.cache_backend import MemoryCacheStore,create_cache_backend
+from app.infra.cache_backend import create_cache_backend
 
 # ── Module-level constants ─────────────────────────────────────────────────────
 
-SUPER_PERMISSION  = "*:*:*"
+from app.core.constants import SUPER_PERMISSION
+
 CACHE_TTL_SECONDS = 3600.0         # Permission TTL: 60 min
 CACHE_KEY_PREFIX  = "user_perms:" # "user_perms:<user_id>"
 
@@ -31,19 +32,6 @@ _bearer_scheme = HTTPBearer(auto_error=True)
 class AuthPermission:
     """
     Unified JWT authentication + permission enforcement service.
-
-    Usage in routes
-    ───────────────
-    Three equivalent patterns (pick whichever fits the endpoint style):
-
-    1. ``Depends(container.auth.require("system:user:list"))``
-       — composable dependency, works with OpenAPI security UI.
-
-    2. ``@container.auth.guard("system:user:delete")``
-       — decorator, for endpoints where decorator style is preferred.
-
-    3. ``router = APIRouter(dependencies=[Depends(container.auth.require(...))])``
-       — router-level, protects every route in the router at once.
     """
 
     def __init__(
@@ -58,7 +46,8 @@ class AuthPermission:
         
         self._jwt_auth  = container.jwt_auth
         self._user_db   = container.user_db
-        self._cache     = MemoryCacheStore(max_size=cache_max_size)
+        self._menu_db   = container.menu_db
+        self._cache     = create_cache_backend(max_size=cache_max_size)
         self._cache_ttl = cache_ttl_seconds
         logger.info(
             "AuthPermission initialised — cache max_size=%d, ttl=%.0fs",
@@ -131,7 +120,8 @@ class AuthPermission:
 
     async def _load_permissions(self, user_id: int) -> Set[str]:
         """DB → cache write-through. Returns the fresh permission set."""
-        perms: Set[str] = await self._user_db.get_user_resource_codes(user_id)
+
+        perms: Set[str] = await self._menu_db.get_user_resource_codes(user_id)
         self._cache.mset_with_ttl(
             [(self._cache_key(user_id), self._encode(perms))],
             ttl_seconds=self._cache_ttl,
@@ -152,7 +142,7 @@ class AuthPermission:
 
     async def check(self, user_id: int, required: str) -> None:
         """
-        Raise HTTP 403 unless *user_id* holds *required* (or ``*:*:*``).
+        Raise HTTP 403 unless *user_id* holds *required* (or `SUPER_PERMISSION`).
         """
         perms = await self.get_permissions(user_id)
         if SUPER_PERMISSION in perms or required in perms:
@@ -165,54 +155,77 @@ class AuthPermission:
 
     # ── FastAPI dependency factories ───────────────────────────────────────
 
-    def get_user_id(self) -> Callable:
+    def get_user_id(self) -> "AuthPermission.CurrentUser":
         """
-        Return a FastAPI dependency that resolves the current user_id.
+        Return a FastAPI dependency that only verifies the token and resolves
+        ``user_id`` — **no** permission check.
+
+        The returned ``CurrentUser`` instance is self-contained and can be
+        built at module level (no container required at import time).
 
         Usage::
+
+            # Module level — build once, reuse everywhere
+            current_user = Permission("*")          # or:
+            current_user = AuthPermission.CurrentUser()
 
             @router.get("/me")
             async def me(user_id: int = Depends(container.auth.get_user_id())):
                 ...
         """
-        auth = self  # capture for closure
+        return AuthPermission.CurrentUser()
 
-        async def _dep(
+    class CurrentUser:
+        """
+        Callable dependency produced by ``AuthPermission.get_user_id()``.
+        Resolves auth from ``request.app.state.container.auth`` at call time.
+        """
+
+        __slots__ = ()
+
+        async def __call__(
+            self,
             request: Request,
             credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
         ) -> int:
+            auth: "AuthPermission" = request.app.state.container.auth
             return await auth.resolve_user_id(credentials.credentials)
 
-        return _dep
-
-    def require(self, permission_code: str) -> Callable:
+    def require(self, permission_code: str) -> "AuthPermission.Permission":
         """
-        Return a FastAPI dependency that enforces *permission_code*.
-
-        Resolves the token and checks the permission in one shot, so no
-        separate ``get_user_id`` dependency is needed when using this pattern.
-
-        Usage::
-
-            @router.get("/users", dependencies=[Depends(container.auth.require("system:user:list"))])
-            async def list_users(): ...
-
-            # or inject user_id at the same time:
-            @router.get("/users")
-            async def list_users(user_id: int = Depends(container.auth.require("system:user:list"))):
-                ...
+        Return a FastAPI-compatible dependency that verifies the Bearer token
+        **and** enforces *permission_code* in a single step.
         """
-        auth = self
+        return AuthPermission.Permission(permission_code)
 
-        async def _dep(
+    class Permission:
+        """
+        Callable FastAPI dependency produced by ``AuthPermission.require()``.
+
+        Self-contained: resolves ``AuthPermission`` from
+        ``request.app.state.container.auth`` at call time, so instances can be
+        created at **module level** without the container being available yet.
+
+        FastAPI inspects ``__call__``'s signature statically at startup, which
+        is why this must be a class rather than a plain closure — closures with
+        inner ``Depends()`` calls are not visible to the DI introspection.
+        """
+
+        __slots__ = ("_code",)
+
+        def __init__(self, permission_code: str) -> None:
+            self._code = permission_code
+
+        async def __call__(
+            self,
             request: Request,
             credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
         ) -> int:
-            user_id = await auth.resolve_user_id(credentials.credentials)
-            await auth.check(user_id, permission_code)
-            return user_id  # pass through so routes can use it if needed
-
-        return _dep
+            """Verify token → resolve user_id → check permission → return user_id."""
+            auth: "AuthPermission" = request.app.state.container.auth
+            user_id: int = await auth.resolve_user_id(credentials.credentials)
+            await auth.check(user_id, self._code)
+            return user_id
 
     def guard(self, permission_code: str) -> Callable:
         """

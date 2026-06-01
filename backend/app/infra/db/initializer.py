@@ -14,7 +14,7 @@ from sqlalchemy.orm import sessionmaker, Session
 
 from app.core.config import settings
 from app.infra.db.database import (
-    Base, Menu, Permission, Role, RoleMenuRelation, RolePermissionRelation, User, LLM, Embedding, Agent, KnowledgeBase, Tool,Domain,
+    Base, Menu, Role, RoleMenuRelation, User, LLM, Embedding, Agent, KnowledgeBase, Tool,Domain,
     UserAgentRelation, AgentToolRelation, StrategyConfig, I18n, SystemSetting,
     RouterConfig, UserRoleRelation
 )
@@ -182,12 +182,10 @@ class DatabaseManager:
                 (self._seed_strategy_config, "StrategyConfig"),
                 (self._seed_agent,           "Agent"),
                 (self._seed_role,              "Role"),
-                (self._seed_permission,        "Permission"),
                 (self._seed_menu,              "Menu"),           
                 (self._seed_user_agent_relation,        "UserAgentRelation"),
                 (self._seed_agent_tool_relation,        "AgentToolRelation"),                
-                (self._seed_user_role_relation, "UserRoleRelation"),
-                (self._seed_role_permission_relation, "RolePermissionRelation"),
+                (self._seed_user_role_relation, "UserRoleRelation"),               
                 (self._seed_role_menu_relation, "RoleMenuRelation"),
             ]
 
@@ -540,24 +538,7 @@ class DatabaseManager:
             else:
                 db.add(Role(**row))
                 logger.info(f"   + Create Role: {row['code']}")
-
-    def _seed_permission(self, db: Session, force: bool):
-        logger.info("📝 Seeding permissions...")
-        for raw in _load("permission.json"):
-            row = _strip_meta(raw)
-            existing = db.query(Permission).filter_by(code=row["code"]).first()
-            if existing:
-                if force:
-                    for k, v in row.items():
-                        if k != "code":
-                            setattr(existing, k, v)
-                    logger.info(f"   ✓ Update permission: {row['code']}")
-                else:
-                    logger.info(f"   - Skip permission: {row['code']}")
-            else:
-                db.add(Permission(**row))
-                logger.info(f"   + Create permission: {row['code']}")
-
+    
     def _seed_menu(self, db: Session, force: bool):
         logger.info("📝 Seeding menus...")
         # The seeding of Menu and RolePermissionRelation is interleaved in order to resolve the menu_id FK in RolePermissionRelation.   
@@ -720,53 +701,6 @@ class DatabaseManager:
             else:
                 db.add(UserRoleRelation(**row))
                 logger.info(f"   + Create UserRoleRelation: {row['user_id']} , {row['role_id']}")
-
-    def _seed_role_permission_relation(self, db: Session, force: bool):
-
-        logger.info("📝 Seeding role permission relation...")
-        for raw in _load("role_permission_relation.json"):
-            row = _strip_meta(raw)
-
-            role_code = raw.get("_role_code")
-            if role_code:
-                role = db.query(Role).filter_by(
-                    code=role_code
-                ).first()
-                if role:
-                    row["role_id"] = role.id
-                else:
-                    logger.warning(
-                        f"   ⚠️ RolePermissionRelation role_id not found "
-                        f"for RolePermissionRelation '{row['role_code']}', skipping"
-                    )
-                    continue
-
-            permission_code = raw.get("_permission_code")
-            if permission_code:
-                permission = db.query(Permission).filter_by(
-                    code=permission_code
-                ).first()
-                if permission:
-                    row["permission_id"] = permission.id
-                else:
-                    logger.warning(
-                        f"   ⚠️ RolePermissionRelation permission_id not found "
-                        f"for RolePermissionRelation '{row['permission_code']}', skipping"
-                    )
-                    continue
-
-            existing = db.query(RolePermissionRelation).filter_by(
-                permission_id=row["permission_id"],
-                role_id=row["role_id"]).first()
-            if existing:
-                if force:
-                    for k, v in row.items():
-                        if k not in ("permission_id", "role_id"):
-                            setattr(existing, k, v)
-                    logger.info(f"   ✓ Update RolePermissionRelation: {row['role_id']} , {row['permission_id']}")
-            else:
-                db.add(RolePermissionRelation(**row))
-                logger.info(f"   - Skip RolePermissionRelation: {row['role_id']} , {row['permission_id']}")
 
     def _seed_role_menu_relation(self, db: Session, force: bool):
 

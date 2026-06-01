@@ -11,6 +11,7 @@ from app.repositories import AsyncUserDatabase
 from app.core.security.jwt_auth import JWTAuth
 from app.schemas.auth.login import LoginRequest, LoginResponse,RefreshTokenRequest
 from app.core.config import settings
+from app.services.admin.user import UserService
 
 ACCESS_TOKEN_EXPIRE_DAYS = settings.access_token_expire_days
 REFRESH_TOKEN_EXPIRE_DAYS = settings.refresh_token_expire_days
@@ -20,23 +21,23 @@ router = APIRouter()
 def get_jwt_auth(request: Request) -> JWTAuth:
     return request.app.state.container.jwt_auth
 
-def get_user_db(request: Request) -> AsyncUserDatabase:
-    return request.app.state.container.user_db
+def get_user_service(request: Request) -> UserService:
+    return request.app.state.container.user_service
 
 @router.post("/login", response_model=LoginResponse)
 async def login(
     request: LoginRequest = Body(...),
-    user_db: AsyncUserDatabase = Depends(get_user_db),
+    user_service: UserService = Depends(get_user_service),
     jwt_auth: JWTAuth = Depends(get_jwt_auth)
 ):
 
-    if not await user_db.verify_user(request.username, request.password):
+    if not await user_service.verify_user(request.username, request.password):
         return LoginResponse(
             success=False,
             data=None
         )
 
-    user_info = await user_db.get_user_info(request.username)
+    user_info = await user_service.get_user(request.username)
 
     # Generate access token and refresh token
     access_token = jwt_auth.create_token(

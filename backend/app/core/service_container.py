@@ -143,7 +143,7 @@ class ServiceContainer:
 
         self.agent_service = AgentService(db=self.agent_db)
         self.llm_service = LLMService(db=self.llm_db)
-        self.user_service = UserService(db=self.user_db)
+        self.user_service = UserService(user_db=self.user_db, menu_db=self.menu_db)
 
     async def start(self):
         await self.init_plugins()

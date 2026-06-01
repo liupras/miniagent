@@ -5,6 +5,7 @@
 # @description: route service
 
 from app.schemas.auth.route import RouteItem, RouteMeta
+from app.core.constants import SUPER_PERMISSION
 
 class RouteService:
 
@@ -23,7 +24,7 @@ class RouteService:
 
         def build_tree(parent_id: int | None) -> list[RouteItem]:
 
-            # 需求3：过滤掉 button 类型，button 只用于收集 auths，不作为路由节点
+            # Buttons are filtered out; they are only used to collect authentication data and not as route nodes.
             children_menus = sorted(
                 [m for m in menu_map.values()
                  if m.parent_id == parent_id and m.menu_type != "button"],
@@ -33,24 +34,23 @@ class RouteService:
             nodes: list[RouteItem] = []
             for menu in children_menus:
 
-                # 需求3：收集当前节点下 button 子节点的 name 作为 auths
+                # Collect the names of the button's child nodes under the current node as auths.
                 button_auths = [
                     m.name
                     for m in menu_map.values()
                     if m.parent_id == menu.id
                     and m.menu_type == "button"
-                    and (m.name in perm_codes or "*:*:*" in perm_codes)  # ← 修复超级管理员判断
+                    and (m.name in perm_codes or SUPER_PERMISSION in perm_codes)
                 ] or None
 
-                subtree = build_tree(menu.id) or None  # 空列表转 None，配合 exclude_none 不输出 children 字段（需求2）
+                subtree = build_tree(menu.id) or None
 
                 meta = RouteMeta(
                     title=menu.title_key,
                     icon=menu.icon or None,
-                    # 需求1：仅顶级菜单输出 rank，sort_order 为 null 时兜底 1000
                     rank=(menu.sort_order or 1000) if menu.parent_id is None else None,
                     roles=role_codes or None,
-                    auths=button_auths,   # None 时 exclude_none 自动去掉（需求4）
+                    auths=button_auths,
                 )
 
                 node = RouteItem(
@@ -58,7 +58,7 @@ class RouteService:
                     name=menu.name if menu.menu_type != "directory" else None,
                     component=menu.component or None,
                     meta=meta,
-                    children=subtree,     # None 时 exclude_none 自动去掉（需求2）
+                    children=subtree, 
                 )
                 nodes.append(node)
 
