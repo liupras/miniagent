@@ -7,10 +7,10 @@
       :model="searchForm"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
-      <el-form-item :label="t('agentManagement.name')" prop="name">
+      <el-form-item :label="t('agent.name')" prop="name">
         <el-input
           v-model="searchForm.name"
-          :placeholder="t('agentManagement.namePlaceholder')"
+          :placeholder="t('agent.namePlaceholder')"
           clearable
           class="w-45!"
           @keyup.enter="onSearch"
@@ -215,6 +215,16 @@
             >
               {{ t("agentManagement.boundUsers") }}
             </el-button>
+            <el-button
+              v-auth="'agent:edit'"
+              type="warning"
+              link
+              size="small"
+              :icon="Link"
+              @click="openToolDialog(row)"
+            >
+              {{ t("agentManagement.boundSkills") }}
+            </el-button>
           </template>
         </pure-table>
       </template>
@@ -233,34 +243,28 @@
         :rules="dialogRules"
         label-width="110px"
       >
-        <el-form-item :label="t('agentManagement.name')" prop="name">
+        <el-form-item :label="t('agent.name')" prop="name">
           <el-input
             v-model="dialogForm.name"
-            :placeholder="t('agentManagement.namePlaceholder')"
+            :placeholder="t('agent.namePlaceholder')"
           />
         </el-form-item>
 
-        <el-form-item
-          :label="t('agentManagement.description')"
-          prop="description"
-        >
+        <el-form-item :label="t('agent.description')" prop="description">
           <el-input
             v-model="dialogForm.description"
             type="textarea"
             :rows="2"
-            :placeholder="t('agentManagement.descriptionPlaceholder')"
+            :placeholder="t('agent.descriptionPlaceholder')"
           />
         </el-form-item>
 
-        <el-form-item
-          :label="t('agentManagement.systemPrompt')"
-          prop="system_prompt"
-        >
+        <el-form-item :label="t('agent.systemPrompt')" prop="system_prompt">
           <el-input
             v-model="dialogForm.system_prompt"
             type="textarea"
             :rows="5"
-            :placeholder="t('agentManagement.systemPromptPlaceholder')"
+            :placeholder="t('agent.systemPromptPlaceholder')"
           />
         </el-form-item>
 
@@ -330,6 +334,52 @@
         </el-button>
       </template>
     </el-dialog>
+    <el-dialog
+      v-model="toolDialogVisible"
+      :title="t('agentManagement.boundSkills')"
+      width="560px"
+    >
+      <el-select
+        v-model="selectedToolIds"
+        multiple
+        filterable
+        collapse-tags
+        collapse-tags-tooltip
+        :max-collapse-tags="3"
+        class="w-full"
+      >
+        <el-option
+          v-for="tool in toolOptions"
+          :key="tool.id"
+          :label="tool.name"
+          :value="tool.id"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <span>{{ tool.name }}</span>
+            <el-tag size="small" type="info" effect="plain">
+              {{ tool.tool_type }}
+            </el-tag>
+          </div>
+          <div v-if="tool.description" class="truncate text-xs text-gray-400">
+            {{ tool.description }}
+          </div>
+        </el-option>
+      </el-select>
+
+      <template #footer>
+        <el-button @click="toolDialogVisible = false">
+          {{ t("buttons.cancel") }}
+        </el-button>
+
+        <el-button
+          type="primary"
+          :loading="toolDialogLoading"
+          @click="saveAgentTools"
+        >
+          {{ t("buttons.save") }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -349,6 +399,7 @@ import Plus from "~icons/ep/plus";
 import Delete from "~icons/ep/delete";
 import EditPen from "~icons/ep/edit-pen";
 import Connection from "~icons/ep/connection";
+import Link from "~icons/ep/link";
 
 import {
   getAgentList,
@@ -359,7 +410,10 @@ import {
   toggleAgentActive,
   getLLMOptions,
   getUserOptions,
-  updateAgentUsers
+  updateAgentUsers,
+  getToolOptions,
+  getAgentTools,
+  updateAgentTools
 } from "@/api/agent";
 
 defineOptions({ name: "AgentManagement" });
@@ -377,6 +431,15 @@ const dialogFormRef = ref<FormInstance>();
 
 const llmOptions = ref<{ id: number; name: string }[]>([]);
 const userOptions = ref<{ id: number; username: string }[]>([]);
+const toolOptions = ref<
+  {
+    id: number;
+    name: string;
+    description?: string;
+    tool_type: string;
+    is_active: boolean;
+  }[]
+>([]);
 
 const searchForm = reactive({
   name: "",
@@ -397,6 +460,9 @@ const pagination = reactive({
 const userDialogVisible = ref(false);
 const currentAgentId = ref<number>();
 const selectedUserIds = ref<number[]>([]);
+const toolDialogVisible = ref(false);
+const toolDialogLoading = ref(false);
+const selectedToolIds = ref<number[]>([]);
 
 // ── Dialog ─────────────────────────────────────────────────────────────────
 const dialogVisible = ref(false);
@@ -415,19 +481,19 @@ const dialogRules: FormRules = {
   name: [
     {
       required: true,
-      message: () => t("agentManagement.nameRequired"),
+      message: () => t("agent.nameRequired"),
       trigger: "blur"
     },
     {
       max: 100,
-      message: () => t("agentManagement.nameMaxLength"),
+      message: () => t("agent.nameMaxLength"),
       trigger: "blur"
     }
   ],
   system_prompt: [
     {
       required: true,
-      message: () => t("agentManagement.systemPromptRequired"),
+      message: () => t("agent.systemPromptRequired"),
       trigger: "blur"
     }
   ]
@@ -437,15 +503,15 @@ const dialogRules: FormRules = {
 const columns: TableColumnList = [
   { type: "selection", width: 55, fixed: "left", reserveSelection: true },
   { label: "ID", prop: "id", width: 70 },
-  { label: t("agentManagement.name"), prop: "name", minWidth: 140 },
+  { label: t("agent.name"), prop: "name", minWidth: 140 },
   {
-    label: t("agentManagement.description"),
+    label: t("agent.description"),
     prop: "description",
     minWidth: 160,
     showOverflowTooltip: true
   },
   {
-    label: t("agentManagement.systemPrompt"),
+    label: t("agent.systemPrompt"),
     prop: "system_prompt",
     minWidth: 200,
     slot: "system_prompt"
@@ -478,7 +544,7 @@ const columns: TableColumnList = [
   {
     label: t("common.operation"),
     prop: "operation",
-    width: 140,
+    width: 220,
     fixed: "right",
     slot: "operation"
   }
@@ -623,22 +689,42 @@ async function openUserDialog(row: any) {
 
 async function saveAgentUsers() {
   await updateAgentUsers(currentAgentId.value!, selectedUserIds.value);
-  ElMessage.success(t("agentManagement.assignSuccess"));
+  ElMessage.success(t("agentManagement.boundUsersSuccess"));
   userDialogVisible.value = false;
 
   fetchData();
+}
+
+async function openToolDialog(row: any) {
+  currentAgentId.value = row.id;
+  toolDialogVisible.value = true;
+  const res = await getAgentTools(row.id);
+  selectedToolIds.value = res.data.map(tool => tool.id);
+}
+
+async function saveAgentTools() {
+  toolDialogLoading.value = true;
+  try {
+    await updateAgentTools(currentAgentId.value!, selectedToolIds.value);
+    ElMessage.success(t("agentManagement.boundSkillsSuccess"));
+    toolDialogVisible.value = false;
+  } finally {
+    toolDialogLoading.value = false;
+  }
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
 onMounted(async () => {
   try {
     await fetchData();
-    const [llmRes, userRes] = await Promise.all([
+    const [llmRes, userRes, toolRes] = await Promise.all([
       getLLMOptions(),
-      getUserOptions()
+      getUserOptions(),
+      getToolOptions()
     ]);
     llmOptions.value = llmRes.data;
     userOptions.value = userRes.data;
+    toolOptions.value = toolRes.data;
   } catch (error) {
     console.error("AgentManagement 页面初始化失败:", error);
     ElMessage.error(t("common.loadingError"));

@@ -8,8 +8,10 @@ from typing import List
 
 from app.infra.db.database import Agent
 from app.repositories.async_agent import AsyncAgentDatabase
+from app.repositories.async_agent_tool_relation import AsyncAgentToolRelationDatabase
+from app.repositories.async_tool import AsyncToolDatabase
 from app.repositories.async_user_agent_relation import AsyncAgentUserRelationDatabase
-from app.schemas.admin.agent import AgentCreate, AgentUpdate, AgentListParams, AgentOut
+from app.schemas.admin.agent import AgentCreate, AgentUpdate, AgentListParams, AgentOut, ToolBrief
 from app.schemas.common import PageResult
 from app.schemas.admin.user import UserOptionItem
 
@@ -27,14 +29,31 @@ class AgentNameConflictError(Exception):
         super().__init__(f"Agent with name '{name}' already exists")
 
 
+class ToolNotFoundError(Exception):
+    """Raised when one or more requested tools do not exist."""
+    def __init__(self, tool_ids: list[int]):
+        self.tool_ids = tool_ids
+        super().__init__(f"Tool(s) not found: {tool_ids}")
+
+
 class AgentService:
     """
     Encapsulates all business logic for the Agent resource.
     """
 
-    def __init__(self, agent_db: AsyncAgentDatabase,user_agent_relation_db: AsyncAgentUserRelationDatabase) -> None:
+    def __init__(
+        self,
+        agent_db: AsyncAgentDatabase,
+        user_agent_relation_db: AsyncAgentUserRelationDatabase,
+        agent_tool_relation_db: AsyncAgentToolRelationDatabase,
+        tool_db: AsyncToolDatabase,
+        agent_factory=None,
+    ) -> None:
         self._agent_db = agent_db
         self._user_agent_relation_db = user_agent_relation_db
+        self._agent_tool_relation_db = agent_tool_relation_db
+        self._tool_db = tool_db
+        self._agent_factory = agent_factory
 
     # ──────────────────────────────────────────────
     # Read
@@ -74,7 +93,6 @@ class AgentService:
     async def create_agent(self, payload: AgentCreate) -> AgentOut:
         """
         Persist a new Agent record.
-        Raises AgentNameConflictError on duplicate name.
         """
         agent = await self._agent_db.create_agent(payload.model_dump())
         created = await self._agent_db.get_agent(agent.id)
@@ -148,7 +166,43 @@ class AgentService:
         agent_id: int,
         user_ids: list[int]
     ):
+        await self.get_agent(agent_id)
         await self._user_agent_relation_db.update_agent_users(
             agent_id,
             user_ids
         )
+
+    async def list_active_tools(self) -> List[ToolBrief]:
+        tools = await self._tool_db.list_active_tools()
+        return [ToolBrief.model_validate(t) for t in tools]
+
+    async def get_agent_tools(self, agent_id: int) -> List[ToolBrief]:
+        await self.get_agent(agent_id)
+        relations = await self._agent_tool_relation_db.get_relations_for_agent(agent_id)
+        tool_ids = [r.tool_id for r in relations]
+        tools = await self._tool_db.get_tools_by_ids(tool_ids)
+        tools_by_id = {tool.id: tool for tool in tools}
+        return [
+            ToolBrief.model_validate(tools_by_id[tool_id])
+            for tool_id in tool_ids
+            if tool_id in tools_by_id
+        ]
+
+    async def update_agent_tools(self, agent_id: int, tool_ids: list[int]) -> None:
+        await self.get_agent(agent_id)
+
+        unique_tool_ids = list(dict.fromkeys(tool_ids))
+        tools = await self._tool_db.get_tools_by_ids(unique_tool_ids)
+        found_tool_ids = {tool.id for tool in tools}
+        missing_tool_ids = [
+            tool_id for tool_id in unique_tool_ids if tool_id not in found_tool_ids
+        ]
+        if missing_tool_ids:
+            raise ToolNotFoundError(missing_tool_ids)
+
+        await self._agent_tool_relation_db.update_agent_tools(
+            agent_id,
+            unique_tool_ids,
+        )
+        if self._agent_factory:
+            self._agent_factory.invalidate(agent_id)

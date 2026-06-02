@@ -19,6 +19,14 @@ export interface UserOptionItem {
   nickname: string;
 }
 
+export interface ToolOptionItem {
+  id: number;
+  name: string;
+  description?: string;
+  tool_type: string;
+  is_active: boolean;
+}
+
 export interface Agent {
   id: number;
   name: string;
@@ -138,6 +146,29 @@ export const updateAgentUsers = (agentId: number, userIds: number[]) =>
     {
       data: {
         user_ids: userIds
+      }
+    }
+  );
+
+export const getToolOptions = () =>
+  http.request<ApiResponse<ToolOptionItem[]>>(
+    "get",
+    baseUrlApi("admin/agents/tools/options")
+  );
+
+export const getAgentTools = (agentId: number) =>
+  http.request<ApiResponse<ToolOptionItem[]>>(
+    "get",
+    baseUrlApi(`admin/agents/${agentId}/tools`)
+  );
+
+export const updateAgentTools = (agentId: number, toolIds: number[]) =>
+  http.request<ApiResponse<any>>(
+    "put",
+    baseUrlApi(`admin/agents/${agentId}/tools`),
+    {
+      data: {
+        tool_ids: toolIds
       }
     }
   );

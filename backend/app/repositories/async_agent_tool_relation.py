@@ -6,10 +6,10 @@
 
 from typing import List
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from ..infra.db.async_base import AsyncBaseDatabase
-from ..infra.db.database import AgentToolRelation
+from ..infra.db.database import AgentToolRelation, Tool
 
 class AsyncAgentToolRelationDatabase(AsyncBaseDatabase):
     """Read operations for the AgentToolRelation association table."""
@@ -24,25 +24,38 @@ class AsyncAgentToolRelationDatabase(AsyncBaseDatabase):
         """
         async with self.get_session() as session:
             stmt = (
-                select(AgentToolRelation)
-                .where(AgentToolRelation.agent_id == agent_id)
+                select(AgentToolRelation, Tool.name.label("tool_name"))
+                .join(Tool, Tool.id == AgentToolRelation.tool_id)
+                .where(AgentToolRelation.agent_id == agent_id and Tool.is_active == True) 
                 .order_by(AgentToolRelation.priority.asc())
             )
             result = await session.execute(stmt)
-            return list(result.scalars().all())
+            relations = []
+            for relation, tool_name in result.all():
+                relation.tool_name = tool_name
+                relations.append(relation)
+            return relations
 
-    async def get_enabled_relations_for_agent(
-        self, agent_id: int
-    ) -> List[AgentToolRelation]:
-        """Return only enabled relations, ordered by priority."""
+    async def update_agent_tools(self, agent_id: int, tool_ids: list[int]) -> None:
+        """
+        Replace an agent's tool relations.
+
+        Priority follows the selected order from the client.
+        """
         async with self.get_session() as session:
-            stmt = (
-                select(AgentToolRelation)
-                .where(
-                    AgentToolRelation.agent_id == agent_id,
-                    AgentToolRelation.enabled == True,  # noqa: E712
+            await session.execute(
+                delete(AgentToolRelation).where(
+                    AgentToolRelation.agent_id == agent_id
                 )
-                .order_by(AgentToolRelation.priority.asc())
             )
-            result = await session.execute(stmt)
-            return list(result.scalars().all())
+
+            for priority, tool_id in enumerate(tool_ids):
+                session.add(
+                    AgentToolRelation(
+                        agent_id=agent_id,
+                        tool_id=tool_id,                        
+                        priority=priority,
+                    )
+                )
+
+            await session.commit()

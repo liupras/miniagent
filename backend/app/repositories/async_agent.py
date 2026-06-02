@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.schemas.admin.agent import AgentListParams
 from ..infra.db.async_base import AsyncBaseDatabase
-from ..infra.db.database import Agent, User
+from ..infra.db.database import Agent, Tool, User
 
 class AsyncAgentDatabase(AsyncBaseDatabase):
     """Read/write operations for the Agent table."""
@@ -44,7 +44,11 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
         async with self.get_session() as session:
             stmt = (
                 select(Agent)
-                .options(selectinload(Agent.llm), selectinload(Agent.users))
+                .options(
+                    selectinload(Agent.llm), 
+                    selectinload(Agent.users),
+                    #selectinload(Agent.tools.and_(Tool.is_active == True))
+                )
             )
 
             if params.name:
@@ -63,7 +67,7 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
             # paginate
             offset = (params.page - 1) * params.page_size
             stmt = stmt.order_by(Agent.id).offset(offset).limit(params.page_size)
-            rows: List[Agent] = list((await session.execute(stmt)).scalars().all())
+            rows: List[Agent] = list((await session.execute(stmt)).scalars().unique().all())
 
             return rows, total
     

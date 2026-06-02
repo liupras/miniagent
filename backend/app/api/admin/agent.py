@@ -9,8 +9,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.schemas.common import ApiResponse
-from app.schemas.admin.agent import AgentCreate, AgentUpdate, AgentOut, AgentListParams,AgentUserUpdate
-from app.services.admin.agent import AgentService, AgentNotFoundError, AgentNameConflictError
+from app.schemas.admin.agent import AgentCreate, AgentUpdate, AgentOut, AgentListParams,AgentUserUpdate, AgentToolUpdate
+from app.services.admin.agent import AgentService, AgentNotFoundError, AgentNameConflictError, ToolNotFoundError
 from app.core.security.auth_permission import AuthPermission
 
 router = APIRouter()
@@ -44,6 +44,9 @@ def _raise_not_found(exc: AgentNotFoundError) -> None:
 def _raise_conflict(exc: AgentNameConflictError) -> None:
     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
 
+def _raise_tool_not_found(exc: ToolNotFoundError) -> None:
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
 # ──────────────────────────────────────────────
 # Routes
 # ──────────────────────────────────────────────
@@ -68,7 +71,6 @@ async def list_agents(
     result = ApiResponse(data=list)
     return result
 
-
 @router.get("/{agent_id}", response_model=ApiResponse, summary="Get agent by id  [agent:list]")
 async def get_agent(
     agent_id:  int,
@@ -89,10 +91,8 @@ async def create_agent(
     svc:       AgentService = Depends(get_agent_service),
     caller_id: int          = Depends(_add),
 ):
-    try:
-        agent_out = await svc.create_agent(payload)
-    except AgentNameConflictError as exc:
-        _raise_conflict(exc)
+    
+    agent_out = await svc.create_agent(payload)    
     return ApiResponse(data=agent_out)
 
 
@@ -103,12 +103,8 @@ async def update_agent(
     svc:       AgentService = Depends(get_agent_service),
     caller_id: int          = Depends(_edit),
 ):
-    try:
-        agent_out = await svc.update_agent(agent_id, payload)
-    except AgentNotFoundError as exc:
-        _raise_not_found(exc)
-    except AgentNameConflictError as exc:
-        _raise_conflict(exc)
+   
+    agent_out = await svc.update_agent(agent_id, payload)
     return ApiResponse(data=agent_out)
 
 
@@ -119,10 +115,8 @@ async def toggle_agent_active(
     svc:       AgentService = Depends(get_agent_service),
     caller_id: int          = Depends(_edit),
 ):
-    try:
-        new_state: bool = await svc.toggle_active(agent_id)
-    except AgentNotFoundError as exc:
-        _raise_not_found(exc)
+
+    new_state: bool = await svc.toggle_active(agent_id)
     verb = "activated" if new_state else "deactivated"
     return ApiResponse(message=f"Agent {verb} successfully")
 
@@ -177,4 +171,33 @@ async def update_agent_users(
         data.user_ids
     )
 
+    return ApiResponse()
+
+@router.get("/tools/options", response_model=ApiResponse, summary="Get active tool options [agent:list]")
+async def get_tool_options(
+    svc: AgentService = Depends(get_agent_service),
+    caller_id: int = Depends(_list),
+):
+    tools = await svc.list_active_tools()
+    return ApiResponse(data=tools)
+
+@router.get("/{agent_id}/tools", response_model=ApiResponse, summary="Get tools bound to agent [agent:list]")
+async def get_tools_by_agent(
+    agent_id: int,
+    svc: AgentService = Depends(get_agent_service),
+    caller_id: int = Depends(_list),
+):
+
+    tools = await svc.get_agent_tools(agent_id)
+    return ApiResponse(data=tools)
+
+
+@router.put("/{agent_id}/tools", response_model=ApiResponse[None], summary="Update agent tools [agent:edit]")
+async def update_agent_tools(
+    agent_id: int,
+    data: AgentToolUpdate,
+    svc: AgentService = Depends(get_agent_service),
+    caller_id: int = Depends(_edit),
+):
+    await svc.update_agent_tools(agent_id, data.tool_ids)
     return ApiResponse()

@@ -130,7 +130,16 @@ login:
   purePassWordReg: Please enter password
   purePassWordRuleReg: The password format should be any combination of 8-18 digits
 agentManagement:
-  tableTitle: Agent Management
+  tableTitle: Agent Management  
+  llm: LLM
+  llmPlaceholder: Please select LLM
+  user: User
+  userPlaceholder: Please select user
+  boundUsers: Bound Users 
+  boundUsersSuccess: Agent users updated successfully
+  boundSkills: Bound Skills
+  boundSkillsSuccess: Agent skills updated successfully
+agent:
   name: Name
   namePlaceholder: Please enter agent name
   nameRequired: Agent name is required
@@ -140,9 +149,7 @@ agentManagement:
   systemPrompt: System Prompt
   systemPromptPlaceholder: Please enter system prompt
   systemPromptRequired: System prompt is required
-  llm: LLM
-  llmPlaceholder: Please select LLM
-  user: User
-  userPlaceholder: Please select user
-  boundUsers: Bound Users 
-  assignSuccess: Agent users updated successfully
+tool:
+  name: Name
+  tool_type: Type
+  description: Description

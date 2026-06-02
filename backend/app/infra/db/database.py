@@ -620,7 +620,6 @@ class AgentToolRelation(Base):
     agent_id = Column(Integer, ForeignKey("agents.id", ondelete="CASCADE"), nullable=False)
     tool_id = Column(Integer, ForeignKey("tools.id", ondelete="CASCADE"), nullable=False)
 
-    enabled = Column(Boolean, default=True)
     priority = Column(Integer, default=0, comment="Priority,the smaller the number, the higher the priority.")
     config_override = Column(JSON, comment="Tool configuration override for this agent, JSON format string")
     created_at = Column(DateTime, default=lambda: datetime.now())

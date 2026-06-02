@@ -144,7 +144,13 @@ class ServiceContainer:
         self.sql_agent_service=SQLAgentService(self)
         self.route_service = RouteService(self)
 
-        self.agent_service = AgentService(agent_db=self.agent_db, user_agent_relation_db=self.agent_user_relation_db)
+        self.agent_service = AgentService(
+            agent_db=self.agent_db,
+            user_agent_relation_db=self.agent_user_relation_db,
+            agent_tool_relation_db=self.agent_tool_relation_db,
+            tool_db=self.tool_db,
+            agent_factory=self.agent_factory,
+        )
         self.llm_service = LLMService(db=self.llm_db)
         self.user_service = UserService(user_db=self.user_db, menu_db=self.menu_db)
 

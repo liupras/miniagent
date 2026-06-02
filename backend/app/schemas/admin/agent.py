@@ -22,6 +22,16 @@ class UserBrief(BaseModel):
  
     model_config = {"from_attributes": True}
 
+
+class ToolBrief(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    tool_type: str
+    is_active: bool
+
+    model_config = {"from_attributes": True}
+
 class AgentBase(BaseModel):
     name: str = Field(..., max_length=100, description="Agent name (unique)")
     description: Optional[str] = Field(None, description="Agent description")
@@ -61,3 +71,7 @@ class AgentListParams(BaseModel):
 
 class AgentUserUpdate(BaseModel):
     user_ids: list[int]
+
+
+class AgentToolUpdate(BaseModel):
+    tool_ids: list[int]
