@@ -131,9 +131,9 @@ login:
   purePassWordRuleReg: 密码格式应为8-18位数字、字母、符号的任意两种组合
 agentManagement:
   tableTitle: 智能体管理   
-  llm: 绑定大语言模型
+  llm: 大语言模型
   llmPlaceholder: 请选择大语言模型
-  user: 关联用户
+  user: 用户
   userPlaceholder: 请选择用户
   boundUsers: 绑定用户
   boundUsersSuccess: 绑定用户更新成功

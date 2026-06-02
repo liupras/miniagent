@@ -210,7 +210,7 @@
               type="success"
               link
               size="small"
-              :icon="Connection"
+              :icon="Link"
               @click="openUserDialog(row)"
             >
               {{ t("agentManagement.boundUsers") }}
@@ -523,7 +523,7 @@ const columns: TableColumnList = [
     slot: "llm"
   },
   {
-    label: t("agentManagement.boundUsers"),
+    label: t("agentManagement.user"),
     prop: "users",
     minWidth: 160,
     slot: "users"
