@@ -13,6 +13,12 @@ export interface UserBrief {
   username: string;
 }
 
+export interface UserOptionItem {
+  id: number;
+  username: string;
+  nickname: string;
+}
+
 export interface Agent {
   id: number;
   name: string;
@@ -117,4 +123,21 @@ export const getUserOptions = () =>
   http.request<ApiResponse<UserBrief[]>>(
     "get",
     baseUrlApi("admin/users/options")
+  );
+
+export const getAgentUsers = (agentId: number) =>
+  http.request<ApiResponse<UserOptionItem[]>>(
+    "get",
+    baseUrlApi(`admin/agents/${agentId}/users`)
+  );
+
+export const updateAgentUsers = (agentId: number, userIds: number[]) =>
+  http.request<ApiResponse<any>>(
+    "put",
+    baseUrlApi(`admin/agents/${agentId}/users`),
+    {
+      data: {
+        user_ids: userIds
+      }
+    }
   );

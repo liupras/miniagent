@@ -61,7 +61,6 @@ class AsyncUserDatabase(AsyncBaseDatabase):
 
     async def get_user_info(self, username: str) -> Optional[Dict]:
 
-        # Use chained selectinload to load roles and permissions simultaneously.
         async with self.get_session() as session:
 
             stmt = (

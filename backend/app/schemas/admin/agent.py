@@ -39,13 +39,12 @@ class AgentUpdate(BaseModel):
     llm_id: Optional[int] = None
     is_active: Optional[bool] = None
 
-
 class AgentOut(AgentBase):
     id: int
     created_at: datetime
     updated_at: datetime
     llm: Optional[LLMBrief] = None
-    #users: List[UserBrief] = []
+    users: List[UserBrief] = []
 
     model_config = {"from_attributes": True}
 
@@ -58,3 +57,6 @@ class AgentListParams(BaseModel):
     llm_id: Optional[int] = None
     user_id: Optional[int] = None
     is_active: Optional[bool] = None
+
+class AgentUserUpdate(BaseModel):
+    user_ids: list[int]

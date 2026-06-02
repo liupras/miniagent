@@ -8,10 +8,9 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
-from app.schemas.common import ApiResponse, PageResult
-from app.schemas.admin.agent import AgentCreate, AgentUpdate, AgentOut, AgentListParams
+from app.schemas.common import ApiResponse
+from app.schemas.admin.agent import AgentCreate, AgentUpdate, AgentOut, AgentListParams,AgentUserUpdate
 from app.services.admin.agent import AgentService, AgentNotFoundError, AgentNameConflictError
-from app.core.service_container import ServiceContainer
 from app.core.security.auth_permission import AuthPermission
 
 router = APIRouter()
@@ -65,7 +64,9 @@ async def list_agents(
         name=name, llm_id=llm_id,
         user_id=user_id, is_active=is_active,
     )
-    return ApiResponse(data=await svc.list_agents(params))
+    list = await svc.list_agents(params)
+    result = ApiResponse(data=list)
+    return result
 
 
 @router.get("/{agent_id}", response_model=ApiResponse, summary="Get agent by id  [agent:list]")
@@ -147,3 +148,33 @@ async def batch_delete_agents(
 ):
     deleted_count = await svc.batch_delete_agents(ids)
     return ApiResponse(message=f"Deleted {deleted_count} agents")
+
+@router.get("/{agent_id}/users", response_model=ApiResponse, summary="Get users bound to agent [agent:list]")
+async def get_users_by_agent(
+    agent_id: int,
+    svc: AgentService = Depends(get_agent_service),
+    caller_id: int = Depends(_list),
+):
+    """
+    Retrieves a list of all users associated with the specified Agent.
+    """
+ 
+    users = await svc.get_users_by_agent(agent_id)        
+    return ApiResponse(data=users)
+
+@router.put(
+    "/{agent_id}/users",
+    response_model=ApiResponse[None]
+)
+async def update_agent_users(
+    agent_id: int,
+    data: AgentUserUpdate,
+    svc: AgentService = Depends(get_agent_service),    
+    caller_id: int = Depends(_edit),    
+):
+    await svc.update_agent_users(
+        agent_id,
+        data.user_ids
+    )
+
+    return ApiResponse()

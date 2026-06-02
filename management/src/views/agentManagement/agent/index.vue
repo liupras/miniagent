@@ -102,103 +102,105 @@
           {{ t("buttons.batchDelete") }}
         </el-button>
       </template>
-      <!-- ── Table ── -->
-      <pure-table
-        ref="tableRef"
-        row-key="id"
-        :data="tableData"
-        :columns="columns"
-        :loading="loading"
-        :pagination="pagination"
-        :paginationSmall="true"
-        align-whole="center"
-        @selection-change="handleSelectionChange"
-        @page-size-change="handleSizeChange"
-        @page-current-change="handleCurrentChange"
-      >
-        <!-- Status column -->
-        <template #is_active="{ row }">
-          <el-switch
-            v-model="row.is_active"
-            v-auth="'agent:edit'"
-            :active-text="t('buttons.active')"
-            :inactive-text="t('buttons.inactive')"
-            :loading="row._toggling"
-            @change="onToggleActive(row)"
-          />
-        </template>
-
-        <!-- LLM column -->
-        <template #llm="{ row }">
-          <el-tag v-if="row.llm" type="info" effect="plain">
-            {{ row.llm.name }}
-          </el-tag>
-          <span v-else class="text-gray-400">—</span>
-        </template>
-
-        <!-- Users column -->
-        <template #users="{ row }">
-          <template v-if="row.users && row.users.length">
-            <el-tag
-              v-for="u in row.users.slice(0, 2)"
-              :key="u.id"
-              class="mr-1"
-              size="small"
-            >
-              {{ u.username }}
-            </el-tag>
-            <el-tag v-if="row.users.length > 2" size="small" type="info">
-              +{{ row.users.length - 2 }}
-            </el-tag>
+      <template #default="{ size, dynamicColumns }">
+        <pure-table
+          ref="tableRef"
+          row-key="id"
+          :data="tableData"
+          :columns="dynamicColumns"
+          :size="size"
+          :loading="loading"
+          :pagination="pagination"
+          :paginationSmall="true"
+          align-whole="center"
+          @selection-change="handleSelectionChange"
+          @page-size-change="handleSizeChange"
+          @page-current-change="handleCurrentChange"
+        >
+          <!-- Status column -->
+          <template #is_active="{ row }">
+            <el-switch
+              v-model="row.is_active"
+              v-auth="'agent:edit'"
+              :active-text="t('buttons.active')"
+              :inactive-text="t('buttons.inactive')"
+              :loading="row._toggling"
+              @change="onToggleActive(row)"
+            />
           </template>
-          <span v-else class="text-gray-400">—</span>
-        </template>
 
-        <!-- System prompt – truncated -->
-        <template #system_prompt="{ row }">
-          <el-tooltip
-            :content="row.system_prompt"
-            placement="top"
-            :show-after="400"
-          >
-            <span
-              class="truncate max-w-45 inline-block align-middle cursor-default"
-            >
-              {{ row.system_prompt }}
-            </span>
-          </el-tooltip>
-        </template>
+          <!-- LLM column -->
+          <template #llm="{ row }">
+            <el-tag v-if="row.llm" type="info" effect="plain">
+              {{ row.llm.name }}
+            </el-tag>
+            <span v-else class="text-gray-400">—</span>
+          </template>
 
-        <!-- Actions column -->
-        <template #operation="{ row }">
-          <el-button
-            v-auth="'agent:edit'"
-            type="primary"
-            link
-            size="small"
-            :icon="EditPen"
-            @click="openDialog('edit', row)"
-          >
-            {{ t("buttons.edit") }}
-          </el-button>
-          <el-popconfirm
-            :title="t('common.deleteConfirm', { name: row.name })"
-            @confirm="onDelete(row)"
-          >
-            <template #reference>
-              <el-button
-                v-auth="'agent:delete'"
-                type="danger"
-                link
+          <!-- Users column -->
+          <template #users="{ row }">
+            <template v-if="row.users && row.users.length">
+              <el-tag
+                v-for="u in row.users.slice(0, 2)"
+                :key="u.id"
+                class="mr-1"
                 size="small"
-                :icon="Delete"
               >
-                {{ t("buttons.delete") }}
-              </el-button>
+                {{ u.username }}
+              </el-tag>
+              <el-tag v-if="row.users.length > 2" size="small" type="info">
+                +{{ row.users.length - 2 }}
+              </el-tag>
             </template>
-          </el-popconfirm>
-        </template>
-      </pure-table>
+            <span v-else class="text-gray-400">—</span>
+          </template>
+
+          <!-- System prompt – truncated -->
+          <template #system_prompt="{ row }">
+            <el-tooltip
+              :content="row.system_prompt"
+              placement="top"
+              :show-after="400"
+            >
+              <span
+                class="truncate max-w-45 inline-block align-middle cursor-default"
+              >
+                {{ row.system_prompt }}
+              </span>
+            </el-tooltip>
+          </template>
+
+          <!-- Actions column -->
+          <template #operation="{ row }">
+            <el-button
+              v-auth="'agent:edit'"
+              type="primary"
+              link
+              size="small"
+              :icon="EditPen"
+              @click="openDialog('edit', row)"
+            >
+              {{ t("buttons.edit") }}
+            </el-button>
+            <el-popconfirm
+              :title="t('common.deleteConfirm', { name: row.name })"
+              @confirm="onDelete(row)"
+            >
+              <template #reference>
+                <el-button
+                  v-auth="'agent:delete'"
+                  type="danger"
+                  link
+                  size="small"
+                  :icon="Delete"
+                >
+                  {{ t("buttons.delete") }}
+                </el-button>
+              </template>
+            </el-popconfirm>
+          </template>
+        </pure-table>
+      </template>
     </PureTableBar>
 
     <!-- ── Dialog: Add / Edit ── -->

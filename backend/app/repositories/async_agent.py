@@ -6,11 +6,12 @@
 
 from typing import List,Optional
 
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import selectinload
 
+from app.schemas.admin.agent import AgentListParams
 from ..infra.db.async_base import AsyncBaseDatabase
-from ..infra.db.database import Agent
+from ..infra.db.database import Agent, User
 
 class AsyncAgentDatabase(AsyncBaseDatabase):
     """Read/write operations for the Agent table."""
@@ -26,26 +27,116 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
             )
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
+        
+    from sqlalchemy import select
 
-    async def get_agent_by_name(self, name: str) -> Optional[Agent]:
-        """Return Agent by unique name, eagerly loading LLM relationship."""
+    async def get_agent_users(self, agent_id: int):
+        async with self.get_session() as session:            
+            stmt = (
+                select(User.id, User.username, User.nickname)
+                .join(User.agents)
+                .where(Agent.id == agent_id)
+            )
+            result = await session.execute(stmt)            
+            return result.all()
+
+    async def list_agents_paginated(self, params: AgentListParams):
         async with self.get_session() as session:
             stmt = (
                 select(Agent)
-                .options(selectinload(Agent.llm))
-                .where(Agent.name == name)
+                .options(selectinload(Agent.llm), selectinload(Agent.users))
             )
-            result = await session.execute(stmt)
-            return result.scalar_one_or_none()
 
-    async def list_active_agents(self) -> List[Agent]:
-        """Return all active agents (is_active=True)."""
+            if params.name:
+                stmt = stmt.where(Agent.name.ilike(f"%{params.name}%"))
+            if params.llm_id is not None:
+                stmt = stmt.where(Agent.llm_id == params.llm_id)
+            if params.is_active is not None:
+                stmt = stmt.where(Agent.is_active == params.is_active)
+            if params.user_id is not None:
+                stmt = stmt.where(Agent.users.any(User.id == params.user_id))
+
+            # total count (before pagination)
+            count_stmt = select(func.count()).select_from(stmt.subquery())
+            total: int = (await session.execute(count_stmt)).scalar_one()
+
+            # paginate
+            offset = (params.page - 1) * params.page_size
+            stmt = stmt.order_by(Agent.id).offset(offset).limit(params.page_size)
+            rows: List[Agent] = list((await session.execute(stmt)).scalars().all())
+
+            return rows, total
+    
+    async def create_agent(self, agent_data: dict) -> Agent:
+        """
+        负责将数据持久化到数据库。
+        接收 dict 类型数据，返回 ORM 对象。
+        """
+        agent = Agent(**agent_data)
         async with self.get_session() as session:
-            stmt = (
-                select(Agent)
-                .options(selectinload(Agent.llm))
-                .where(Agent.is_active == True)  # noqa: E712
-                .order_by(Agent.id)
-            )
+            session.add(agent)
+            await session.commit()
+            await session.refresh(agent)               
+            return agent
+        
+    async def update_agent(self, agent_id: int, update_data: dict) -> Agent:
+
+        async with self.get_session() as session:
+            stmt = select(Agent).options(selectinload(Agent.llm)).where(Agent.id == agent_id)
             result = await session.execute(stmt)
-            return list(result.scalars().all())
+            agent = result.scalar_one_or_none()
+
+            if agent is None:
+                return None
+            
+            for key, value in update_data.items():
+                setattr(agent, key, value)
+
+            await session.commit()
+            await session.refresh(agent)
+            return agent
+
+    async def toggle_active(self, agent_id: int) -> bool:
+        """
+        Flip the is_active flag of an agent.
+        Returns the new is_active value.
+        """
+        async with self.get_session() as session:
+            result = await session.execute(select(Agent).where(Agent.id == agent_id))
+            agent: Optional[Agent] = result.scalar_one_or_none()
+
+            if agent is None:
+                return None
+
+            agent.is_active = not agent.is_active
+            new_state = agent.is_active
+            await session.commit()
+
+            return new_state
+    
+    async def delete_agent(self, agent_id: int) -> bool:
+        """
+        Delete a single agent by primary key.
+        Returns True if the agent was found and deleted, False otherwise.
+        """
+        async with self.get_session() as session:
+            result = await session.execute(select(Agent).where(Agent.id == agent_id))
+            agent: Optional[Agent] = result.scalar_one_or_none()
+
+            if agent is None:
+                return False
+            await session.delete(agent)
+            await session.commit()
+            return True
+        
+    async def batch_delete_agents(self, ids: List[int]) -> int:
+        """
+        Delete multiple agents by a list of primary keys.
+        Returns the number of rows deleted.
+        """
+        async with self.get_session() as session:
+            result = await session.execute(
+                delete(Agent).where(Agent.id.in_(ids))
+            )
+            await session.commit()
+            return result.rowcount

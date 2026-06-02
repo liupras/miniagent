@@ -28,15 +28,6 @@
     },
     {
         "id": 4,
-        "parent_id": 1,
-        "name": "agent:assignment:list", 
-        "title_key": "menus.agentManagement.assignment",
-        "path": "/agentManagement/assignment",
-        "component": "agentManagement/assignment/index",  
-        "sort_order": 4
-    },
-    {
-        "id": 5,
         "parent_id": null,
         "name": "system:default", 
         "title_key": "menus.system.default",
@@ -45,8 +36,8 @@
         "sort_order": 5
     },
     {
-        "id": 6,
-        "parent_id": 5,
+        "id": 5,
+        "parent_id": 4,
         "name": "system:cache:list", 
         "title_key": "menus.system.cache",
         "path": "/system/cache",        
@@ -121,23 +112,12 @@
     },
     {
         "id":1006,
-        "parent_id": 4,
-        "name": "agent:assignment:asign",
-        "title_key": "buttons:asign",
-        "path": "/agentManagement/assignment/asign",
-        "icon": "ep:connection",
-        "sort_order": 1006,
-        "menu_type": "button",
-        "description": "智能体-指派用户"
-    },
-    {
-        "id":1007,
-        "parent_id": 6,
+        "parent_id": 5,
         "name": "system:cache:refresh",
         "title_key": "buttons:refresh",
         "path": "/system/cache/refresh",
         "icon": "ep:refresh",
-        "sort_order": 1007,
+        "sort_order": 1006,
         "menu_type": "button",
         "description": "刷新缓存"
     }

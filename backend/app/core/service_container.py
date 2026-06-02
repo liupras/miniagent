@@ -28,6 +28,7 @@ from app.repositories import (
     AsyncSystemSettingDatabase,
     AsyncLLMDatabase,
     AsyncMenuDatabase,
+    AsyncAgentUserRelationDatabase,
 )
 
 from app.services.sql_agent import DuckDBManager
@@ -87,6 +88,8 @@ class ServiceContainer:
         )
 
         # ── Databases ──────────────────────────────────────────────────────
+        self.duckdb = DuckDBManager(settings.get_duck_db_path())
+
         self.user_db  = AsyncUserDatabase(self.engine, self.session_factory)
         self.chat_db  = AsyncChatDatabase(self.engine, self.session_factory)
         self.kb_db    = AsyncKnowledgeBaseDatabase(self.engine, self.session_factory)
@@ -102,8 +105,8 @@ class ServiceContainer:
         self.i18n_db = AsyncI18nDatabase(self.engine, self.session_factory)
         self.setting_db = AsyncSystemSettingDatabase(self.engine, self.session_factory)
         self.llm_db = AsyncLLMDatabase(self.engine, self.session_factory)
-        self.menu_db = AsyncMenuDatabase(self.engine, self.session_factory)
-        self.duckdb = DuckDBManager(settings.get_duck_db_path())        
+        self.menu_db = AsyncMenuDatabase(self.engine, self.session_factory)                
+        self.agent_user_relation_db = AsyncAgentUserRelationDatabase(self.engine, self.session_factory)
 
         # ── Auth ───────────────────────────────────────────────────────────
         self.jwt_auth = JWTAuth(
@@ -141,7 +144,7 @@ class ServiceContainer:
         self.sql_agent_service=SQLAgentService(self)
         self.route_service = RouteService(self)
 
-        self.agent_service = AgentService(db=self.agent_db)
+        self.agent_service = AgentService(agent_db=self.agent_db, user_agent_relation_db=self.agent_user_relation_db)
         self.llm_service = LLMService(db=self.llm_db)
         self.user_service = UserService(user_db=self.user_db, menu_db=self.menu_db)
 

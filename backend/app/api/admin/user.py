@@ -61,8 +61,8 @@ async def get_user_options(
     Default behaviour: only active users are returned.
     """
     options: List[UserOptionItem] = await svc.get_options(is_active=is_active)
-    return ApiResponse(data=options)
-
+    result = ApiResponse(data=options)
+    return result
 
 @router.get(
     "",
