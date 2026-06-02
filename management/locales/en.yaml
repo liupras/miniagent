@@ -145,3 +145,4 @@ agentManagement:
   user: User
   userPlaceholder: Please select user
   boundUsers: Bound Users 
+  assignSuccess: Agent users updated successfully

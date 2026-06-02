@@ -32,8 +32,7 @@ class BM25Manager:
         max_cache_size: int = 1000,
         small_corpus_threshold: int = 3
     ):
-        self.storage_dir = storage_dir
-        os.makedirs(storage_dir, exist_ok=True)
+        self.storage_dir = storage_dir      
 
         self.cache = cache_backend or create_cache_backend(
             backend_type,

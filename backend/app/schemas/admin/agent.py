@@ -18,6 +18,7 @@ class LLMBrief(BaseModel):
 class UserBrief(BaseModel):
     id: int
     username: str
+    nickname: Optional[str] = None
  
     model_config = {"from_attributes": True}
 

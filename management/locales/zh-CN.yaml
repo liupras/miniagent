@@ -145,3 +145,4 @@ agentManagement:
   user: 关联用户
   userPlaceholder: 请选择用户
   boundUsers: 关联用户
+  assignSuccess: 关联用户更新成功

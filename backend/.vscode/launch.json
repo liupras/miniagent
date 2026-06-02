@@ -6,7 +6,6 @@
             "name": "FastAPI",
             "type": "debugpy",
             "request": "launch",
-
             "module": "uvicorn",
 
             "args": [
@@ -16,9 +15,7 @@
             ],
 
             "cwd": "${workspaceFolder}",
-
             "console": "integratedTerminal",
-
             "jinja": true
         }
     ]

@@ -139,19 +139,26 @@
 
           <!-- Users column -->
           <template #users="{ row }">
-            <template v-if="row.users && row.users.length">
-              <el-tag
-                v-for="u in row.users.slice(0, 2)"
-                :key="u.id"
-                class="mr-1"
-                size="small"
-              >
-                {{ u.username }}
-              </el-tag>
-              <el-tag v-if="row.users.length > 2" size="small" type="info">
-                +{{ row.users.length - 2 }}
-              </el-tag>
-            </template>
+            <el-tooltip
+              v-if="row.users?.length"
+              :content="row.users.map(u => u.username).join(', ')"
+            >
+              <div class="inline-flex items-center">
+                <el-tag
+                  v-for="u in row.users.slice(0, 3)"
+                  :key="u.id"
+                  class="mr-1"
+                  size="small"
+                >
+                  {{ u.username }}
+                </el-tag>
+
+                <el-tag v-if="row.users.length > 3" size="small" type="info">
+                  +{{ row.users.length - 3 }}
+                </el-tag>
+              </div>
+            </el-tooltip>
+
             <span v-else class="text-gray-400">—</span>
           </template>
 
@@ -198,6 +205,16 @@
                 </el-button>
               </template>
             </el-popconfirm>
+            <el-button
+              v-auth="'agent:edit'"
+              type="success"
+              link
+              size="small"
+              :icon="Connection"
+              @click="openUserDialog(row)"
+            >
+              {{ t("agentManagement.boundUsers") }}
+            </el-button>
           </template>
         </pure-table>
       </template>
@@ -281,11 +298,43 @@
         </el-button>
       </template>
     </el-dialog>
+    <el-dialog
+      v-model="userDialogVisible"
+      :title="t('agentManagement.boundUsers')"
+      width="500px"
+    >
+      <el-select
+        v-model="selectedUserIds"
+        multiple
+        filterable
+        collapse-tags
+        collapse-tags-tooltip
+        :max-collapse-tags="3"
+        class="w-full"
+      >
+        <el-option
+          v-for="user in userOptions"
+          :key="user.id"
+          :label="user.username"
+          :value="user.id"
+        />
+      </el-select>
+
+      <template #footer>
+        <el-button @click="userDialogVisible = false">
+          {{ t("buttons.cancel") }}
+        </el-button>
+
+        <el-button type="primary" @click="saveAgentUsers">
+          {{ t("buttons.save") }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   ElMessage,
@@ -299,6 +348,7 @@ import Refresh from "~icons/ep/refresh";
 import Plus from "~icons/ep/plus";
 import Delete from "~icons/ep/delete";
 import EditPen from "~icons/ep/edit-pen";
+import Connection from "~icons/ep/connection";
 
 import {
   getAgentList,
@@ -308,7 +358,8 @@ import {
   batchDeleteAgents,
   toggleAgentActive,
   getLLMOptions,
-  getUserOptions
+  getUserOptions,
+  updateAgentUsers
 } from "@/api/agent";
 
 defineOptions({ name: "AgentManagement" });
@@ -342,6 +393,10 @@ const pagination = reactive({
   layout: "total, sizes, prev, pager, next, jumper",
   pageSizes: [10, 20, 50, 100]
 });
+
+const userDialogVisible = ref(false);
+const currentAgentId = ref<number>();
+const selectedUserIds = ref<number[]>([]);
 
 // ── Dialog ─────────────────────────────────────────────────────────────────
 const dialogVisible = ref(false);
@@ -558,6 +613,20 @@ async function onToggleActive(row: any) {
   } finally {
     row._toggling = false;
   }
+}
+
+async function openUserDialog(row: any) {
+  currentAgentId.value = row.id;
+  selectedUserIds.value = row.users?.map(u => u.id) ?? [];
+  userDialogVisible.value = true;
+}
+
+async function saveAgentUsers() {
+  await updateAgentUsers(currentAgentId.value!, selectedUserIds.value);
+  ElMessage.success(t("agentManagement.assignSuccess"));
+  userDialogVisible.value = false;
+
+  fetchData();
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
