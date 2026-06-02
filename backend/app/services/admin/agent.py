@@ -4,14 +4,11 @@
 # @date    : 2026-05-29
 # @description: Agent Service – business logic layer (no HTTP / FastAPI imports)
 
-from typing import List
+from typing import List, Optional
 
 from app.infra.db.database import Agent
-from app.repositories.async_agent import AsyncAgentDatabase
-from app.repositories.async_agent_tool_relation import AsyncAgentToolRelationDatabase
-from app.repositories.async_tool import AsyncToolDatabase
-from app.repositories.async_user_agent_relation import AsyncAgentUserRelationDatabase
 from app.schemas.admin.agent import AgentCreate, AgentUpdate, AgentListParams, AgentOut, ToolBrief
+from app.schemas.admin.llm import LLMOptionItem
 from app.schemas.common import PageResult
 from app.schemas.admin.user import UserOptionItem
 
@@ -21,20 +18,17 @@ class AgentNotFoundError(Exception):
         self.agent_id = agent_id
         super().__init__(f"Agent {agent_id} not found")
 
-
-class AgentNameConflictError(Exception):
-    """Raised when an agent name collides with an existing record."""
-    def __init__(self, name: str):
-        self.name = name
-        super().__init__(f"Agent with name '{name}' already exists")
-
-
 class ToolNotFoundError(Exception):
     """Raised when one or more requested tools do not exist."""
-    def __init__(self, tool_ids: list[int]):
+    def __init__(self, tool_ids: List[int]):
         self.tool_ids = tool_ids
-        super().__init__(f"Tool(s) not found: {tool_ids}")
+        super().__init__(f"Tools not found: {tool_ids}")
 
+class LLMNotFoundError(Exception):
+    """Raised when the specified LLM does not exist."""
+    def __init__(self, llm_id: int):
+        self.llm_id = llm_id
+        super().__init__(f"LLM {llm_id} not found")
 
 class AgentService:
     """
@@ -43,17 +37,18 @@ class AgentService:
 
     def __init__(
         self,
-        agent_db: AsyncAgentDatabase,
-        user_agent_relation_db: AsyncAgentUserRelationDatabase,
-        agent_tool_relation_db: AsyncAgentToolRelationDatabase,
-        tool_db: AsyncToolDatabase,
-        agent_factory=None,
+        container,
     ) -> None:
-        self._agent_db = agent_db
-        self._user_agent_relation_db = user_agent_relation_db
-        self._agent_tool_relation_db = agent_tool_relation_db
-        self._tool_db = tool_db
-        self._agent_factory = agent_factory
+        
+        from app.core.service_container import ServiceContainer
+        if not isinstance(container, ServiceContainer):
+            raise TypeError(f"Expected ServiceContainer, got {type(container)}")
+        
+        self._agent_db = container.agent_db
+        self._user_agent_relation_db = container.user_agent_relation_db
+        self._agent_tool_relation_db = container.agent_tool_relation_db
+        self._tool_db = container.tool_db
+        self._agent_factory = container.agent_factory
 
     # ──────────────────────────────────────────────
     # Read
@@ -62,19 +57,11 @@ class AgentService:
     async def get_agent(self, agent_id: int) -> Agent:
         """Return an Agent ORM object or raise AgentNotFoundError."""
         agent = await self._agent_db.get_agent(agent_id)
-        if agent is None:
-            raise AgentNotFoundError(agent_id)
         return agent
 
     async def list_agents(self, params: AgentListParams) -> PageResult:
         """
         Return a paginated + filtered list of agents.
-
-        Filters applied when the corresponding param is not None:
-        - name      → case-insensitive LIKE
-        - llm_id    → exact match on Agent.llm_id
-        - user_id   → any-of match through the user_agent_relations join table
-        - is_active → exact boolean match
         """
         
         rows, total = await self._agent_db.list_agents_paginated(params)
@@ -120,21 +107,25 @@ class AgentService:
         Returns the new is_active value.
         Raises AgentNotFoundError if the agent does not exist.
         """
-        return await self._agent_db.toggle_active(agent_id)
+        state = await self._agent_db.toggle_active(agent_id)
+        if state is None:
+            raise AgentNotFoundError(agent_id)
+        return state
 
     # ──────────────────────────────────────────────
     # Delete
     # ──────────────────────────────────────────────
 
-    async def delete_agent(self, agent_id: int) -> None:
+    async def delete_agent(self, agent_id: int) -> bool:
         """
         Delete a single agent by primary key.
         Raises AgentNotFoundError if the record does not exist.
         """
         result = await self._agent_db.delete_agent(agent_id)
-        if not result:
+        if result is None:
             raise AgentNotFoundError(agent_id)
-        
+        return result
+    
     async def batch_delete_agents(self, ids: List[int]) -> int:
         """
         Delete multiple agents by a list of primary keys.
@@ -188,7 +179,7 @@ class AgentService:
             if tool_id in tools_by_id
         ]
 
-    async def update_agent_tools(self, agent_id: int, tool_ids: list[int]) -> None:
+    async def update_agent_tools(self, agent_id: int, tool_ids: list[int]) -> bool:
         await self.get_agent(agent_id)
 
         unique_tool_ids = list(dict.fromkeys(tool_ids))
@@ -206,3 +197,17 @@ class AgentService:
         )
         if self._agent_factory:
             self._agent_factory.invalidate(agent_id)
+        return True
+
+    async def get_agent_llm(self, agent_id: int) -> Optional[LLMOptionItem]:
+        llm = await self._agent_db.get_agent_llm(agent_id)
+        if not llm:
+            return None
+        return LLMOptionItem.model_validate(llm)
+    
+    async def update_agent_llm(self, agent_id: int, llm_id: int) -> bool:
+
+        agent = await self._agent_db.update_agent_llm(agent_id, llm_id)
+        if agent is None:
+            raise AgentNotFoundError(agent_id)
+        return agent is not None

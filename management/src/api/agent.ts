@@ -172,3 +172,11 @@ export const updateAgentTools = (agentId: number, toolIds: number[]) =>
       }
     }
   );
+
+export const getAgentLLM = (agent_id: number) =>
+  http.request<any>("get", baseUrlApi(`admin/agents/${agent_id}/llm`));
+
+export const updateAgentLLM = (agent_id: number, llm_id: number) =>
+  http.request<any>("put", baseUrlApi(`admin/agents/${agent_id}/llm`), {
+    params: { llm_id }
+  });

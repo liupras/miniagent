@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.schemas.admin.agent import AgentListParams
 from ..infra.db.async_base import AsyncBaseDatabase
-from ..infra.db.database import Agent, Tool, User
+from ..infra.db.database import LLM, Agent, Tool, User
 
 class AsyncAgentDatabase(AsyncBaseDatabase):
     """Read/write operations for the Agent table."""
@@ -28,8 +28,6 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
         
-    from sqlalchemy import select
-
     async def get_agent_users(self, agent_id: int):
         async with self.get_session() as session:            
             stmt = (
@@ -72,10 +70,7 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
             return rows, total
     
     async def create_agent(self, agent_data: dict) -> Agent:
-        """
-        负责将数据持久化到数据库。
-        接收 dict 类型数据，返回 ORM 对象。
-        """
+
         agent = Agent(**agent_data)
         async with self.get_session() as session:
             session.add(agent)
@@ -100,7 +95,7 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
             await session.refresh(agent)
             return agent
 
-    async def toggle_active(self, agent_id: int) -> bool:
+    async def toggle_active(self, agent_id: int) -> bool | None:
         """
         Flip the is_active flag of an agent.
         Returns the new is_active value.
@@ -118,7 +113,7 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
 
             return new_state
     
-    async def delete_agent(self, agent_id: int) -> bool:
+    async def delete_agent(self, agent_id: int) -> bool|None:
         """
         Delete a single agent by primary key.
         Returns True if the agent was found and deleted, False otherwise.
@@ -128,7 +123,7 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
             agent: Optional[Agent] = result.scalar_one_or_none()
 
             if agent is None:
-                return False
+                return None
             await session.delete(agent)
             await session.commit()
             return True
@@ -144,3 +139,26 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
             )
             await session.commit()
             return result.rowcount
+        
+    async def get_agent_llm(self, agent_id: int) -> Optional[LLM]:
+
+        async with self.get_session() as session:
+            stmt = select(Agent).options(selectinload(Agent.llm)).where(Agent.id == agent_id)
+            result = await session.execute(stmt)
+            agent = result.scalar_one_or_none()
+            
+            if not agent:
+                return None
+                
+            return agent.llm
+        
+    async def update_agent_llm(self, agent_id: int, llm_id: int) -> None:
+
+        async with self.get_session() as session:
+            agent = await session.get(Agent, agent_id)
+            if not agent:
+                return None            
+
+            agent.llm_id = llm_id
+            await session.commit()
+            return agent

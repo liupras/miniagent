@@ -217,13 +217,23 @@
             </el-button>
             <el-button
               v-auth="'agent:edit'"
-              type="warning"
+              type="success"
               link
               size="small"
               :icon="Link"
               @click="openToolDialog(row)"
             >
               {{ t("agentManagement.boundSkills") }}
+            </el-button>
+            <el-button
+              v-auth="'agent:edit'"
+              type="success"
+              link
+              size="small"
+              :icon="Link"
+              @click="openLLMDialog(row)"
+            >
+              {{ t("agentManagement.boundLLM") }}
             </el-button>
           </template>
         </pure-table>
@@ -380,6 +390,39 @@
         </el-button>
       </template>
     </el-dialog>
+    <el-dialog
+      v-model="llmDialogVisible"
+      :title="t('agentManagement.boundLLM')"
+      width="400px"
+    >
+      <el-select
+        v-model="selectedLlmId"
+        clearable
+        filterable
+        class="w-full"
+        :placeholder="t('agentManagement.llmPlaceholder')"
+      >
+        <el-option
+          v-for="llm in llmOptions"
+          :key="llm.id"
+          :label="llm.name"
+          :value="llm.id"
+        />
+      </el-select>
+
+      <template #footer>
+        <el-button @click="llmDialogVisible = false">{{
+          t("buttons.cancel")
+        }}</el-button>
+        <el-button
+          type="primary"
+          :loading="llmDialogLoading"
+          @click="saveAgentLLM"
+        >
+          {{ t("buttons.save") }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -398,7 +441,6 @@ import Refresh from "~icons/ep/refresh";
 import Plus from "~icons/ep/plus";
 import Delete from "~icons/ep/delete";
 import EditPen from "~icons/ep/edit-pen";
-import Connection from "~icons/ep/connection";
 import Link from "~icons/ep/link";
 
 import {
@@ -413,7 +455,9 @@ import {
   updateAgentUsers,
   getToolOptions,
   getAgentTools,
-  updateAgentTools
+  updateAgentTools,
+  getAgentLLM,
+  updateAgentLLM
 } from "@/api/agent";
 
 defineOptions({ name: "AgentManagement" });
@@ -460,9 +504,14 @@ const pagination = reactive({
 const userDialogVisible = ref(false);
 const currentAgentId = ref<number>();
 const selectedUserIds = ref<number[]>([]);
+
 const toolDialogVisible = ref(false);
 const toolDialogLoading = ref(false);
 const selectedToolIds = ref<number[]>([]);
+
+const llmDialogVisible = ref(false);
+const llmDialogLoading = ref(false);
+const selectedLlmId = ref<number>();
 
 // ── Dialog ─────────────────────────────────────────────────────────────────
 const dialogVisible = ref(false);
@@ -710,6 +759,33 @@ async function saveAgentTools() {
     toolDialogVisible.value = false;
   } finally {
     toolDialogLoading.value = false;
+  }
+}
+
+async function openLLMDialog(row: any) {
+  currentAgentId.value = row.id;
+  try {
+    const res = await getAgentLLM(row.id);
+    selectedLlmId.value = res.data?.id;
+  } catch {
+    selectedLlmId.value = undefined;
+  }
+  llmDialogVisible.value = true;
+}
+
+async function saveAgentLLM() {
+  if (!currentAgentId.value || selectedLlmId.value === undefined) {
+    ElMessage.warning(t("agentManagement.llmSelectionRequired"));
+    return;
+  }
+  llmDialogLoading.value = true;
+  try {
+    await updateAgentLLM(currentAgentId.value, selectedLlmId.value);
+    ElMessage.success(t("agentManagement.boundLLMSuccess"));
+    llmDialogVisible.value = false;
+    fetchData();
+  } finally {
+    llmDialogLoading.value = false;
   }
 }
 

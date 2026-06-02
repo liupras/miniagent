@@ -139,6 +139,9 @@ agentManagement:
   boundUsersSuccess: Agent users updated successfully
   boundSkills: Bound Skills
   boundSkillsSuccess: Agent skills updated successfully
+  boundLLM: Bound LLM
+  boundLLMSuccess: Agent LLM updated successfully
+  llmSelectionRequired: Please select at least one LLM
 agent:
   name: Name
   namePlaceholder: Please enter agent name

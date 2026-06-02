@@ -59,11 +59,7 @@ async def get_llm_options(
     provider_name: Optional[str] = Query(None, description="Filter by provider"),
     svc: LLMService = Depends(get_llm_service),
 ):
-    """
-    Lightweight endpoint consumed by frontend selectors.
-    Returns id, name, provider_name, model_name for every LLM,
-    optionally filtered by provider_name.
-    """
+
     options: List[LLMOptionItem] = await svc.get_options(provider_name)
     return ApiResponse(data=options)
 
