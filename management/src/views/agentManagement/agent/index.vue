@@ -63,10 +63,15 @@
       </el-form-item>
 
       <el-form-item>
-        <el-button type="primary" :icon="Search" @click="onSearch">
+        <el-button
+          v-auth="'agent:list'"
+          type="primary"
+          :icon="Search"
+          @click="onSearch"
+        >
           {{ t("buttons.search") }}
         </el-button>
-        <el-button :icon="Refresh" @click="onReset">
+        <el-button v-auth="'agent:list'" :icon="Refresh" @click="onReset">
           {{ t("buttons.reset") }}
         </el-button>
       </el-form-item>
@@ -79,10 +84,16 @@
       @refresh="onSearch"
     >
       <template #buttons>
-        <el-button type="primary" :icon="Plus" @click="openDialog('add')">
+        <el-button
+          v-auth="'agent:add'"
+          type="primary"
+          :icon="Plus"
+          @click="openDialog('add')"
+        >
           {{ t("buttons.add") }}
         </el-button>
         <el-button
+          v-auth="'agent:delete'"
           type="danger"
           :icon="Delete"
           :disabled="!selectedIds.length"
@@ -109,6 +120,7 @@
         <template #is_active="{ row }">
           <el-switch
             v-model="row.is_active"
+            v-auth="'agent:edit'"
             :active-text="t('buttons.active')"
             :inactive-text="t('buttons.inactive')"
             :loading="row._toggling"
@@ -160,6 +172,7 @@
         <!-- Actions column -->
         <template #operation="{ row }">
           <el-button
+            v-auth="'agent:edit'"
             type="primary"
             link
             size="small"
@@ -173,7 +186,13 @@
             @confirm="onDelete(row)"
           >
             <template #reference>
-              <el-button type="danger" link size="small" :icon="Delete">
+              <el-button
+                v-auth="'agent:delete'"
+                type="danger"
+                link
+                size="small"
+                :icon="Delete"
+              >
                 {{ t("buttons.delete") }}
               </el-button>
             </template>

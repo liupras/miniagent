@@ -34,7 +34,6 @@ class RouteService:
             nodes: list[RouteItem] = []
             for menu in children_menus:
 
-                # Collect the names of the button's child nodes under the current node as auths.
                 button_auths = [
                     m.name
                     for m in menu_map.values()
@@ -42,6 +41,8 @@ class RouteService:
                     and m.menu_type == "button"
                     and (m.name in perm_codes or SUPER_PERMISSION in perm_codes)
                 ] or None
+                menu_auth = menu.name
+                auths = button_auths or [] + [menu_auth]                 
 
                 subtree = build_tree(menu.id) or None
 
@@ -50,12 +51,12 @@ class RouteService:
                     icon=menu.icon or None,
                     rank=(menu.sort_order or 1000) if menu.parent_id is None else None,
                     roles=role_codes or None,
-                    auths=button_auths,
+                    auths=auths or [],
                 )
 
                 node = RouteItem(
                     path=menu.path,
-                    name=menu.name if menu.menu_type != "directory" else None,
+                    name=menu.name,
                     component=menu.component or None,
                     meta=meta,
                     children=subtree, 

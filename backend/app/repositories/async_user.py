@@ -6,8 +6,8 @@
 
 from datetime import datetime
 from typing import Optional, Dict,List
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload,func
+from sqlalchemy import select,func
+from sqlalchemy.orm import selectinload
 
 from app.infra.db.async_base import AsyncBaseDatabase
 from app.infra.db.database import User

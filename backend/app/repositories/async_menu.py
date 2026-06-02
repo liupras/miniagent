@@ -96,18 +96,13 @@ class AsyncMenuDatabase(AsyncBaseDatabase):
             perm_codes: set[str] = set()
 
             for role in user.roles:
-
                 for menu in role.menus:
-
                     if not menu.is_active:
                         continue
-
                     if not menu.is_visible:
                         continue
 
                     menu_map[menu.id] = menu
-
-                    if menu.menu_type == "button":
-                        perm_codes.add(menu.name)
+                    perm_codes.add(menu.name)   # The permissions include the name with menu_type="menu".
 
             return role_codes, menu_map, perm_codes
