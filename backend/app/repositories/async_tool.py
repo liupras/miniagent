@@ -146,7 +146,10 @@ class AsyncToolDatabase(AsyncBaseDatabase):
     ) -> Tool:
         
         async with self.get_session() as session:
-            tool = await self.get_by_id(tool_id)
+            stmt = select(Tool).where(Tool.id == tool_id)
+            result = await session.execute(stmt)
+            tool = result.scalar_one_or_none()
+
             if not tool:
                 return None
             for field, value in data.items():

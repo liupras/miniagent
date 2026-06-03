@@ -590,7 +590,7 @@ async function onBatchDelete() {
   );
   await bulkDeleteTools(selectedIds.value);
   ElMessage.success("删除成功");
-  tableRef.value?.clearSelection();
+
   fetchData();
 }
 
