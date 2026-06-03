@@ -48,6 +48,7 @@ from app.storage.local import LocalStorageBackend
 from app.services.admin.agent import AgentService
 from app.services.admin.llm import LLMService
 from app.services.admin.user import UserService
+from app.services.admin.tool import ToolService
 
 import importlib
 
@@ -149,6 +150,7 @@ class ServiceContainer:
         self.agent_service = AgentService(self)
         self.llm_service = LLMService(db=self.llm_db)
         self.user_service = UserService(user_db=self.user_db, menu_db=self.menu_db)
+        self.tool_service = ToolService(self)
 
     async def start(self):
         await self.init_plugins()

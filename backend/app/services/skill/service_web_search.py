@@ -155,7 +155,7 @@ class WebSearchService:
     async def _build_pipeline(self, tool_name: str,llm_provider_id:int) -> WebSearchPipeline:
         """Load Tool + LLM rows from DB and construct a WebSearchPipeline."""
         # ── 1. Load Tool ─────────────────────────────────────────────────
-        tool: Optional[Tool] = await self._tool_db.get_tool(tool_name)
+        tool: Optional[Tool] = await self._tool_db.get_by_name(tool_name)
         if tool is None:
             raise ValueError(f"Tool {tool_name!r} not found in database.")
         if not tool.is_active:

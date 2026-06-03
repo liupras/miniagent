@@ -20,7 +20,7 @@
     {
         "id": 3,
         "parent_id": 1,
-        "name": "agent:skill:list", 
+        "name": "tool:list", 
         "title_key": "menus.agentManagement.skill",
         "path": "/agentManagement/skill",
         "component": "agentManagement/skill/index",
@@ -80,7 +80,7 @@
     {
         "id":1003,
         "parent_id": 3,
-        "name": "agent:skill:add",
+        "name": "tool:add",
         "title_key": "buttons.add",
         "path": "/agentManagement/skill/add",
         "icon": "ep:plus",
@@ -91,7 +91,7 @@
     {
         "id":1004,
         "parent_id": 3,
-        "name": "agent:skill:edit",
+        "name": "tool:edit",
         "title_key": "buttons.edit",
         "path": "/agentManagement/skill/edit",
         "icon": "ep:edit",
@@ -102,7 +102,7 @@
     {
         "id":1005,
         "parent_id": 3,
-        "name": "agent:skill:delete",
+        "name": "tool:delete",
         "title_key": "buttons.delete",
         "path": "/agentManagement/skill/delete",
         "icon": "ep:delete",

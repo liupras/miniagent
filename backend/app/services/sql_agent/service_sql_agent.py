@@ -249,7 +249,7 @@ class SQLAgentService:
         # ── 4. Optionally resolve Tool row ───────────────────────────────
         tool: Optional[Tool] = None
         if tool_name:
-            tool = await self._tool_db.get_tool(tool_name)
+            tool = await self._tool_db.get_by_name(tool_name)
             if tool is None:
                 raise ValueError(f"Tool {tool_name!r} not found in database.")
             if not tool.is_active:

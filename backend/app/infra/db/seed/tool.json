@@ -1,30 +1,4 @@
-[
-  {
-    "name": "calculator",
-    "description": "Perform mathematical calculations",
-    "tool_type": "function",
-    "tool_schema": {
-      "type": "function",
-      "function": {
-        "name": "calculator",
-        "description": "Perform mathematical calculations",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "expression": {
-              "type": "string",
-              "description": "Mathematical expression to evaluate"
-            }
-          },
-          "required": [
-            "expression"
-          ]
-        }
-      }
-    },
-    "mcp_compatible": false,
-    "is_active": true
-  },
+[  
   {
     "name": "china_legal_kb_router",
     "description": "回答与中国公司法和中国劳动合同法相关的问题，包括公司治理、股东权利、雇佣、解雇、赔偿和劳动纠纷。",

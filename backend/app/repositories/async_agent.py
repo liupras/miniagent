@@ -6,12 +6,12 @@
 
 from typing import List,Optional
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import selectinload
 
 from app.schemas.admin.agent import AgentListParams
 from ..infra.db.async_base import AsyncBaseDatabase
-from ..infra.db.database import LLM, Agent, Tool, User
+from ..infra.db.database import LLM, Agent, User
 
 class AsyncAgentDatabase(AsyncBaseDatabase):
     """Read/write operations for the Agent table."""
@@ -22,7 +22,7 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
             stmt = (
                 select(Agent)
                 .options(selectinload(Agent.llm))
-                #.options(selectinload(Agent.users))
+                .options(selectinload(Agent.users))
                 .where(Agent.id == agent_id)
             )
             result = await session.execute(stmt)
@@ -73,12 +73,10 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
 
         agent = Agent(**agent_data)
         async with self.get_session() as session:
-            session.add(agent)
-            await session.commit()
-            await session.refresh(agent)               
+            session.add(agent)            
             return agent
         
-    async def update_agent(self, agent_id: int, update_data: dict) -> Agent:
+    async def update_agent(self, agent_id: int, update_data: dict) -> Agent|None:
 
         async with self.get_session() as session:
             stmt = select(Agent).options(selectinload(Agent.llm)).where(Agent.id == agent_id)
@@ -90,44 +88,24 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
             
             for key, value in update_data.items():
                 setattr(agent, key, value)
-
-            await session.commit()
-            await session.refresh(agent)
+  
             return agent
 
-    async def toggle_active(self, agent_id: int) -> bool | None:
-        """
-        Flip the is_active flag of an agent.
-        Returns the new is_active value.
-        """
+    async def toggle_active(self, agent_id: int) -> None:
         async with self.get_session() as session:
-            result = await session.execute(select(Agent).where(Agent.id == agent_id))
-            agent: Optional[Agent] = result.scalar_one_or_none()
-
-            if agent is None:
-                return None
-
-            agent.is_active = not agent.is_active
-            new_state = agent.is_active
-            await session.commit()
-
-            return new_state
+            await session.execute(
+                update(Agent)
+                .where(Agent.id == agent_id)
+                .values(is_active=~Agent.is_active)
+            ) 
     
-    async def delete_agent(self, agent_id: int) -> bool|None:
-        """
-        Delete a single agent by primary key.
-        Returns True if the agent was found and deleted, False otherwise.
-        """
+    async def delete_agent(self, agent_id: int) -> int:
         async with self.get_session() as session:
-            result = await session.execute(select(Agent).where(Agent.id == agent_id))
-            agent: Optional[Agent] = result.scalar_one_or_none()
-
-            if agent is None:
-                return None
-            await session.delete(agent)
-            await session.commit()
-            return True
-        
+            result = await session.execute(
+                delete(Agent).where(Agent.id == agent_id)
+            )        
+            return result.rowcount    
+ 
     async def batch_delete_agents(self, ids: List[int]) -> int:
         """
         Delete multiple agents by a list of primary keys.
@@ -137,7 +115,6 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
             result = await session.execute(
                 delete(Agent).where(Agent.id.in_(ids))
             )
-            await session.commit()
             return result.rowcount
         
     async def get_agent_llm(self, agent_id: int) -> Optional[LLM]:
@@ -160,5 +137,5 @@ class AsyncAgentDatabase(AsyncBaseDatabase):
                 return None            
 
             agent.llm_id = llm_id
-            await session.commit()
+
             return agent

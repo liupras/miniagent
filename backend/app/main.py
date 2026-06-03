@@ -130,6 +130,9 @@ app.include_router(admin_llm_router,prefix="/api/v1/admin/llms", tags=["Admin - 
 from app.api.admin.user import router as admin_user_router
 app.include_router(admin_user_router,prefix="/api/v1/admin/users", tags=["Admin - User"])
 
+from app.api.admin.tool import router as admin_tool_router
+app.include_router(admin_tool_router,prefix="/api/v1/admin/tools", tags=["Admin - Tool"])
+
 from app.api.admin.agent import router as admin_agent_router
 app.include_router(admin_agent_router,prefix="/api/v1/admin/agents", tags=["Admin - Agent"])
 
