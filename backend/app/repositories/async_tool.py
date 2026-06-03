@@ -151,15 +151,15 @@ class AsyncToolDatabase(AsyncBaseDatabase):
                 return None
             for field, value in data.items():
                 setattr(tool, field, value)
-            await session.flush()
-            await session.refresh(tool)
+
             return tool
 
-    async def delete_tool(self,  tool_id: int) -> None:
+    async def delete_tool(self,  tool_id: int) -> int:
         async with self.get_session() as session:
-            await session.execute(
+            result = await session.execute(
                 delete(Tool).where(Tool.id == tool_id)
             )
+            return result.rowcount
 
     async def bulk_delete_tools(
         self, tool_ids: list[int]

@@ -611,6 +611,7 @@ async function fetchData() {
       user_id: searchForm.user_id,
       is_active: searchForm.is_active
     };
+    //console.log("fetch params:", params);
     const res = await getAgentList(params);
     tableData.value = res.data.data;
     pagination.total = res.data.total;
@@ -712,7 +713,7 @@ async function onBatchDelete() {
   );
   await batchDeleteAgents(selectedIds.value);
   ElMessage.success(t("common.deleteSuccess"));
-  tableRef.value?.clearSelection();
+
   fetchData();
 }
 
