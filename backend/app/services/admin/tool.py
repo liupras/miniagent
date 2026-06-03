@@ -73,13 +73,10 @@ class ToolService:
             self._agent_factory.invalidate()
         return tool
 
-    async def toggle_active(self, tool_id: int, is_active: bool) -> Tool | None:        
-        tool = await self._db.update_fields(tool_id, {"is_active": is_active})
-        if tool is None:
-            raise ToolNotFoundError(tool_id)
+    async def toggle_active(self, tool_id: int) -> None:        
+        await self._db.toggle_active(tool_id)
         if self._agent_factory:
             self._agent_factory.invalidate()
-        return tool
 
     async def delete(self, tool_id: int) -> None:
         await self._db.delete_tool(tool_id)

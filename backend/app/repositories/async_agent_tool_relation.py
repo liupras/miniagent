@@ -57,5 +57,3 @@ class AsyncAgentToolRelationDatabase(AsyncBaseDatabase):
                         priority=priority,
                     )
                 )
-
-            await session.commit()

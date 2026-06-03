@@ -53,6 +53,4 @@ class AsyncAgentUserRelationDatabase(AsyncBaseDatabase):
                     )
                 )
 
-            await session.commit()
-
             

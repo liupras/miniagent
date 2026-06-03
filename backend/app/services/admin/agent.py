@@ -89,18 +89,15 @@ class AgentService:
             self._agent_factory.invalidate(agent_id)
         return AgentOut.model_validate(updated)
 
-    async def toggle_active(self, agent_id: int) -> bool:
+    async def toggle_active(self, agent_id: int) -> None:
         """
         Flip the is_active flag of an agent.
         Returns the new is_active value.
         Raises AgentNotFoundError if the agent does not exist.
         """
-        state = await self._agent_db.toggle_active(agent_id)
-        if state is None:
-            raise AgentNotFoundError(agent_id)
+        await self._agent_db.toggle_active(agent_id)
         if self._agent_factory:
             self._agent_factory.invalidate(agent_id)
-        return state
 
     # ──────────────────────────────────────────────
     # Delete

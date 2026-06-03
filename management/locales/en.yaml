@@ -142,6 +142,13 @@ agentManagement:
   boundLLM: Bound LLM
   boundLLMSuccess: Agent LLM updated successfully
   llmSelectionRequired: Please select at least one LLM
+toolManagement:
+  name: Name
+  namePlaceholder: Search name or description
+  toolType: Type
+  toolTypePlaceholder: All Types
+  status: Status
+  statusPlaceholder: All Statuses
 agent:
   name: Name
   namePlaceholder: Please enter agent name

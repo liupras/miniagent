@@ -11,7 +11,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.core.security.auth_permission import AuthPermission
-from app.schemas.common import PageResult
+from app.schemas.common import ApiResponse, PageResult
 from app.schemas.admin.tool import ToolCreate, ToolRead, ToolUpdate
 from app.services.admin.tool import ToolNotFoundError, ToolService
 
@@ -101,17 +101,14 @@ async def update_tool(
     return tool
 
 
-@router.patch("/{tool_id}/toggle", response_model=ToolRead, summary="Toggle active status")
+@router.patch("/{tool_id}/toggle", response_model=ApiResponse, summary="Toggle active status")
 async def toggle_tool(
-    tool_id: int, 
-    is_active: bool = Query(...),
+    tool_id: int,    
     svc:       ToolService   = Depends(get_tool_service),
     caller_id: int            = Depends(_edit),
 ):
-    tool = await svc.toggle_active(tool_id, is_active)
-    if not tool:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tool not found")
-    return tool
+    await svc.toggle_active(tool_id)    
+    return ApiResponse(message="Tool active status updated successfully")
 
 
 @router.delete("/{tool_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete tool")

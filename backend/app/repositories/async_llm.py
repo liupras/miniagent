@@ -153,8 +153,6 @@ class AsyncLLMDatabase(AsyncBaseDatabase):
                 capabilities  = capabilities,
             )
             session.add(row)
-            await session.flush()   # populate row.id before context exits
-            await session.refresh(row)
 
         logger.info(
             f"[DB] LLM created: id={row.id} "
@@ -213,9 +211,6 @@ class AsyncLLMDatabase(AsyncBaseDatabase):
                     f"provider='{provider_name}' model='{model_name}'"
                 )
 
-            await session.flush()
-            await session.refresh(row)
-
         return row
 
     async def update(self, llm_id: int, **fields: Any) -> Optional[LLM]:
@@ -248,9 +243,6 @@ class AsyncLLMDatabase(AsyncBaseDatabase):
 
             for field, value in fields.items():
                 setattr(row, field, value)
-
-            await session.flush()
-            await session.refresh(row)
 
         logger.info(f"[DB] LLM updated: id={llm_id} fields={list(fields)}")
         return row

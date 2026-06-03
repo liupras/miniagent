@@ -7,20 +7,20 @@
       :model="searchForm"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
-      <el-form-item label="名称" prop="keyword">
+      <el-form-item :label="t('toolManagement.name')" prop="keyword">
         <el-input
           v-model="searchForm.keyword"
-          placeholder="搜索名称或描述"
+          :placeholder="t('toolManagement.namePlaceholder')"
           clearable
           class="w-45!"
           @keyup.enter="onSearch"
         />
       </el-form-item>
 
-      <el-form-item label="类型" prop="tool_type">
+      <el-form-item :label="t('toolManagement.toolType')" prop="tool_type">
         <el-select
           v-model="searchForm.tool_type"
-          placeholder="全部类型"
+          :placeholder="t('toolManagement.toolTypePlaceholder')"
           clearable
           class="w-36!"
         >
@@ -33,15 +33,15 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="状态" prop="is_active">
+      <el-form-item :label="t('toolManagement.status')" prop="is_active">
         <el-select
           v-model="searchForm.is_active"
-          placeholder="全部状态"
+          :placeholder="t('toolManagement.statusPlaceholder')"
           clearable
           class="w-32.5!"
         >
-          <el-option label="启用" :value="true" />
-          <el-option label="禁用" :value="false" />
+          <el-option :label="t('buttons.active')" :value="true" />
+          <el-option :label="t('buttons.inactive')" :value="false" />
         </el-select>
       </el-form-item>
 
@@ -289,6 +289,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   ElMessage,
   ElMessageBox,
@@ -313,6 +314,8 @@ import {
   type ToolType,
   type ToolListParams
 } from "@/api/tool";
+
+const { t } = useI18n();
 
 import { PureTableBar } from "@/components/RePureTableBar";
 

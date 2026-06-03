@@ -4,9 +4,8 @@
 # @date    : 2026-04-17
 # @description: Tool Database Management (Asynchronous Version)
 
-from typing import Any, List,Optional,Dict
-
-from sqlalchemy import delete, func, select
+from typing import Any, Dict, List, Optional
+from sqlalchemy import delete, func, select, update
 
 from ..infra.db.async_base import AsyncBaseDatabase
 from ..infra.db.database import Tool
@@ -177,3 +176,10 @@ class AsyncToolDatabase(AsyncBaseDatabase):
                     deleted += 1
             return deleted
 
+    async def toggle_active(self, tool_id: int) -> None:
+        async with self.get_session() as session:
+            await session.execute(
+                update(Tool)
+                .where(Tool.id == tool_id)
+                .values(is_active=~Tool.is_active)
+            )

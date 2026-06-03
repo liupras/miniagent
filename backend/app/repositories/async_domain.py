@@ -104,10 +104,6 @@ class AsyncDomainDatabase(AsyncBaseDatabase):
         
         async with self.get_session() as session:
             session.add(domain)
-            # flush ensures ID generation and allows refresh.
-            await session.flush()
-            await session.refresh(domain)
-
         logger.info(f"[DB] Domain created: name='{name}' id={domain.id}")
         return domain
 
@@ -132,9 +128,6 @@ class AsyncDomainDatabase(AsyncBaseDatabase):
                 domain.description = description
             if metadata_schema is not None:
                 domain.metadata_schema = metadata_schema
-
-            await session.flush()
-            await session.refresh(domain)
 
         logger.info(f"[DB] Domain updated: domain_id={domain_id}")
         return domain

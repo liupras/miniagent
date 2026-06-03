@@ -100,9 +100,8 @@ async def toggle_agent_active(
     caller_id: int          = Depends(_edit),
 ):
 
-    new_state: bool = await svc.toggle_active(agent_id)
-    verb = "activated" if new_state else "deactivated"
-    return ApiResponse(message=f"Agent {verb} successfully")
+    await svc.toggle_active(agent_id)
+    return ApiResponse(message="Agent active status updated successfully")
 
 
 @router.delete("/{agent_id}", response_model=ApiResponse, summary="Delete agent  [agent:delete]")

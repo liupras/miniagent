@@ -152,6 +152,13 @@ agent:
   systemPrompt: 系统提示词
   systemPromptPlaceholder: 请输入系统提示词
   systemPromptRequired: 请填写系统提示词
+toolManagement:
+  name: 名称
+  namePlaceholder: 搜索名称或描述
+  toolType: 类型
+  toolTypePlaceholder: 全部类型
+  status: 状态
+  statusPlaceholder: 全部状态
 tool:
   name: 名称
   tool_type: 类型

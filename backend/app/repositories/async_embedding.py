@@ -91,10 +91,8 @@ class AsyncEmbeddingDatabase(AsyncBaseDatabase):
             
             for key, value in kwargs.items():
                 if value is not None:
-                    setattr(embedding, key, value)
-            
-            await s.flush()
-            await s.refresh(embedding)
+                    setattr(embedding, key, value)            
+
             return embedding
 
     # =========================================================================
