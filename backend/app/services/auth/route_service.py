@@ -42,7 +42,9 @@ class RouteService:
                     and (m.name in perm_codes or SUPER_PERMISSION in perm_codes)
                 ] or None
                 menu_auth = menu.name
-                auths = button_auths or [] + [menu_auth]                 
+
+                auths = button_auths or []
+                auths.append(menu_auth)              
 
                 subtree = build_tree(menu.id) or None
 

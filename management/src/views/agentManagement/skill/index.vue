@@ -352,7 +352,6 @@ const TYPE_LABEL_MAP: Record<string, string> = {
 const loading = ref(false);
 const tableData = ref<Tool[]>([]);
 const selectedIds = ref<number[]>([]);
-const tableRef = ref();
 const searchFormRef = ref<FormInstance>();
 const dialogFormRef = ref<FormInstance>();
 
