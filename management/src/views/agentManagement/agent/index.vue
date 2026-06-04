@@ -462,6 +462,7 @@ import {
 
 defineOptions({ name: "AgentManagement" });
 import { PureTableBar } from "@/components/RePureTableBar";
+import { hasAuth } from "@/router/utils";
 
 const { t } = useI18n();
 
@@ -581,7 +582,8 @@ const columns: TableColumnList = [
     label: t("common.status"),
     prop: "is_active",
     width: 140,
-    slot: "is_active"
+    slot: "is_active",
+    hide: !hasAuth("agent:edit")
   },
   {
     label: t("common.createdAt"),
@@ -595,7 +597,8 @@ const columns: TableColumnList = [
     prop: "operation",
     width: 220,
     fixed: "right",
-    slot: "operation"
+    slot: "operation",
+    hide: !hasAuth("agent:edit") && !hasAuth("agent:delete")
   }
 ];
 

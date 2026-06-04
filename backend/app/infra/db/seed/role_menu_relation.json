@@ -6,5 +6,9 @@
     {
         "_role_code": "common",
         "menu_id": 2
+    },
+    {
+        "_role_code": "common",
+        "menu_id": 3
     }
 ]

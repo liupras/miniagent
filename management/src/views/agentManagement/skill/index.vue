@@ -328,6 +328,7 @@ import {
 const { t } = useI18n();
 
 import { PureTableBar } from "@/components/RePureTableBar";
+import { hasAuth } from "@/router/utils";
 
 defineOptions({ name: "ToolManagement" });
 
@@ -468,13 +469,15 @@ const columns: TableColumnList = [
     label: t("tool.mcpCompatible"),
     prop: "mcp_compatible",
     width: 80,
-    slot: "mcp_compatible"
+    slot: "mcp_compatible",
+    hide: true
   },
   {
     label: t("common.status"),
     prop: "is_active",
     width: 140,
-    slot: "is_active"
+    slot: "is_active",
+    hide: !hasAuth("tool:edit")
   },
   {
     label: t("common.updatedAt"),
@@ -488,7 +491,8 @@ const columns: TableColumnList = [
     prop: "operation",
     width: 160,
     fixed: "right",
-    slot: "operation"
+    slot: "operation",
+    hide: !hasAuth("tool:edit") && !hasAuth("tool:delete")
   }
 ];
 
