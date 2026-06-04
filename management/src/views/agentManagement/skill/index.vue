@@ -52,16 +52,20 @@
           :icon="Search"
           @click="onSearch"
         >
-          搜索
+          {{ t("buttons.search") }}
         </el-button>
         <el-button v-auth="'tool:list'" :icon="Refresh" @click="onReset">
-          重置
+          {{ t("buttons.reset") }}
         </el-button>
       </el-form-item>
     </el-form>
 
     <!-- ── Toolbar + Table ── -->
-    <PureTableBar title="能力管理" :columns="columns" @refresh="onSearch">
+    <PureTableBar
+      :title="t('toolManagement.tableTitle')"
+      :columns="columns"
+      @refresh="onSearch"
+    >
       <template #buttons>
         <el-button
           v-auth="'tool:add'"
@@ -69,7 +73,7 @@
           :icon="Plus"
           @click="openDialog('add')"
         >
-          新增
+          {{ t("buttons.add") }}
         </el-button>
         <el-button
           v-auth="'tool:delete'"
@@ -78,7 +82,7 @@
           :disabled="!selectedIds.length"
           @click="onBatchDelete"
         >
-          批量删除
+          {{ t("buttons.batchDelete") }}
         </el-button>
       </template>
 
@@ -126,8 +130,8 @@
             <el-switch
               v-model="row.is_active"
               v-auth="'tool:edit'"
-              active-text="启用"
-              inactive-text="禁用"
+              :active-text="t('buttons.active')"
+              :inactive-text="t('buttons.inactive')"
               :loading="row._toggling"
               @change="onToggleActive(row)"
             />
@@ -159,10 +163,10 @@
               :icon="EditPen"
               @click="openDialog('edit', row)"
             >
-              编辑
+              {{ t("buttons.edit") }}
             </el-button>
             <el-popconfirm
-              :title="`确认删除「${row.name}」？`"
+              :title="t('common.deleteConfirm', { name: row.name })"
               @confirm="onDelete(row)"
             >
               <template #reference>
@@ -173,7 +177,7 @@
                   size="small"
                   :icon="Delete"
                 >
-                  删除
+                  {{ t("buttons.delete") }}
                 </el-button>
               </template>
             </el-popconfirm>
@@ -185,7 +189,11 @@
     <!-- ── Add / Edit Dialog ── -->
     <el-dialog
       v-model="dialogVisible"
-      :title="dialogType === 'add' ? '新增能力' : '编辑能力'"
+      :title="
+        dialogType === 'add'
+          ? t('toolManagement.new')
+          : t('toolManagement.edit')
+      "
       width="680px"
       destroy-on-close
     >
@@ -195,18 +203,18 @@
         :rules="dialogRules"
         label-width="110px"
       >
-        <el-form-item label="名称" prop="name">
+        <el-form-item :label="t('tool.name')" prop="name">
           <el-input
             v-model="dialogForm.name"
-            placeholder="字母、数字和下划线，字母开头"
+            :placeholder="t('tool.namePlaceholder')"
             :disabled="dialogType === 'edit'"
           />
         </el-form-item>
 
-        <el-form-item label="类型" prop="tool_type">
+        <el-form-item :label="t('tool.toolType')" prop="tool_type">
           <el-select
             v-model="dialogForm.tool_type"
-            placeholder="请选择类型"
+            :placeholder="t('tool.toolTypePlaceholder')"
             class="w-full"
           >
             <el-option
@@ -218,22 +226,22 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="描述" prop="description">
+        <el-form-item :label="t('tool.description')" prop="description">
           <el-input
             v-model="dialogForm.description"
             type="textarea"
             :rows="2"
-            placeholder="描述该能力的用途"
+            :placeholder="t('tool.descriptionPlaceholder')"
           />
         </el-form-item>
 
-        <el-form-item label="Tool Schema" prop="tool_schema">
+        <el-form-item :label="t('tool.toolSchema')" prop="tool_schema">
           <div class="w-full">
             <el-input
               v-model="dialogForm.tool_schema"
               type="textarea"
               :rows="9"
-              placeholder="JSON Schema 定义"
+              :placeholder="t('tool.toolSchemaPlaceholder')"
               class="font-mono text-xs"
               @blur="validateJsonField('tool_schema')"
             />
@@ -243,13 +251,13 @@
           </div>
         </el-form-item>
 
-        <el-form-item label="Config">
+        <el-form-item :label="t('tool.config')">
           <div class="w-full">
             <el-input
               v-model="dialogForm.config"
               type="textarea"
               :rows="5"
-              placeholder="可选 JSON 配置"
+              :placeholder="t('tool.configPlaceholder')"
               class="font-mono text-xs"
               @blur="validateJsonField('config')"
             />
@@ -261,16 +269,16 @@
 
         <el-row :gutter="0">
           <el-col :span="12">
-            <el-form-item label="MCP 兼容">
+            <el-form-item :label="t('tool.mcpCompatible')">
               <el-switch v-model="dialogForm.mcp_compatible" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="状态">
+            <el-form-item :label="t('common.status')">
               <el-switch
                 v-model="dialogForm.is_active"
-                active-text="启用"
-                inactive-text="禁用"
+                :active-text="t('buttons.active')"
+                :inactive-text="t('buttons.inactive')"
               />
             </el-form-item>
           </el-col>
@@ -278,9 +286,11 @@
       </el-form>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="dialogVisible = false">{{
+          t("buttons.cancel")
+        }}</el-button>
         <el-button type="primary" :loading="dialogLoading" @click="onSubmit">
-          确定
+          {{ t("buttons.confirm") }}
         </el-button>
       </template>
     </el-dialog>
@@ -397,7 +407,8 @@ const DEFAULT_SCHEMA = JSON.stringify(
 function validateJsonField(field: "tool_schema" | "config") {
   const val = dialogForm[field].trim();
   if (!val) {
-    jsonError[field] = field === "tool_schema" ? "Schema 不能为空" : "";
+    jsonError[field] =
+      field === "tool_schema" ? t("tool.toolSchemaRequired") : "";
     return field !== "tool_schema";
   }
   try {
@@ -405,24 +416,26 @@ function validateJsonField(field: "tool_schema" | "config") {
     jsonError[field] = "";
     return true;
   } catch {
-    jsonError[field] = "JSON 格式有误";
+    jsonError[field] = t("common.jsonFormatError");
     return false;
   }
 }
 
 const dialogRules: FormRules = {
   name: [
-    { required: true, message: "请输入名称", trigger: "blur" },
-    { max: 100, message: "名称最多 100 个字符", trigger: "blur" },
+    { required: true, message: t("tool.nameRequired"), trigger: "blur" },
+    { max: 100, message: t("tool.nameMaxLength"), trigger: "blur" },
     {
       pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/,
-      message: "字母开头，仅允许字母、数字和下划线",
+      message: t("tool.namePattern"),
       trigger: "blur"
     }
   ],
-  tool_type: [{ required: true, message: "请选择类型", trigger: "change" }],
+  tool_type: [
+    { required: true, message: t("tool.toolTypeRequired"), trigger: "change" }
+  ],
   tool_schema: [
-    { required: true, message: "Schema 不能为空", trigger: "blur" },
+    { required: true, message: t("tool.toolSchemaRequired"), trigger: "blur" },
     {
       validator: (_rule, _val, callback) => {
         if (!validateJsonField("tool_schema"))
@@ -439,25 +452,40 @@ const dialogRules: FormRules = {
 const columns: TableColumnList = [
   { type: "selection", width: 55, fixed: "left", reserveSelection: true },
   { label: "ID", prop: "id", width: 70 },
-  { label: "名称", prop: "name", minWidth: 160 },
-  { label: "类型", prop: "tool_type", width: 130, slot: "tool_type" },
+  { label: t("tool.name"), prop: "name", minWidth: 160 },
   {
-    label: "描述",
+    label: t("tool.toolType"),
+    prop: "tool_type",
+    width: 130,
+    slot: "tool_type"
+  },
+  {
+    label: t("tool.description"),
     prop: "description",
     minWidth: 200,
     slot: "description"
   },
-  { label: "MCP", prop: "mcp_compatible", width: 80, slot: "mcp_compatible" },
-  { label: "状态", prop: "is_active", width: 140, slot: "is_active" },
   {
-    label: "更新时间",
+    label: t("tool.mcpCompatible"),
+    prop: "mcp_compatible",
+    width: 80,
+    slot: "mcp_compatible"
+  },
+  {
+    label: t("common.status"),
+    prop: "is_active",
+    width: 140,
+    slot: "is_active"
+  },
+  {
+    label: t("common.updatedAt"),
     prop: "updated_at",
     width: 170,
     formatter: ({ updated_at }) =>
       updated_at ? new Date(updated_at).toLocaleString() : "—"
   },
   {
-    label: "操作",
+    label: t("common.operation"),
     prop: "operation",
     width: 160,
     fixed: "right",
@@ -564,10 +592,10 @@ async function onSubmit() {
 
     if (dialogType.value === "add") {
       await createTool(payload);
-      ElMessage.success("新增成功");
+      ElMessage.success(t("common.addSuccess"));
     } else {
       await updateTool(dialogForm.id!, payload);
-      ElMessage.success("编辑成功");
+      ElMessage.success(t("common.editSuccess"));
     }
 
     dialogVisible.value = false;
@@ -581,18 +609,18 @@ async function onSubmit() {
 
 async function onDelete(row: Tool) {
   await deleteTool(row.id);
-  ElMessage.success("删除成功");
+  ElMessage.success(t("common.deleteSuccess"));
   fetchData();
 }
 
 async function onBatchDelete() {
   await ElMessageBox.confirm(
-    `确认删除选中的 ${selectedIds.value.length} 条记录？`,
-    "警告",
+    t("common.batchDeleteConfirm", { count: selectedIds.value.length }),
+    t("common.warning"),
     { type: "warning" }
   );
   await bulkDeleteTools(selectedIds.value);
-  ElMessage.success("删除成功");
+  ElMessage.success(t("common.deleteSuccess"));
 
   fetchData();
 }
@@ -601,7 +629,9 @@ async function onToggleActive(row: any) {
   row._toggling = true;
   try {
     await toggleTool(row.id);
-    ElMessage.success(row.is_active ? "已启用" : "已禁用");
+    ElMessage.success(
+      row.is_active ? t("common.activated") : t("common.deactivated")
+    );
   } catch {
     row.is_active = !row.is_active; // revert on error
   } finally {

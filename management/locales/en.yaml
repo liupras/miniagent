@@ -12,6 +12,8 @@ common:
   deleteSuccess: Deletion successful
   warning: warning
   loadingError: Data loading failed. Please check your network or contact your administrator.
+  jsonFormatError: JSON format error
+  updatedAt: Updated at
 buttons:
   pureLoginOut: LoginOut
   pureLogin: Login
@@ -142,13 +144,6 @@ agentManagement:
   boundLLM: Bound LLM
   boundLLMSuccess: Agent LLM updated successfully
   llmSelectionRequired: Please select at least one LLM
-toolManagement:
-  name: Name
-  namePlaceholder: Search name or description
-  toolType: Type
-  toolTypePlaceholder: All Types
-  status: Status
-  statusPlaceholder: All Statuses
 agent:
   name: Name
   namePlaceholder: Please enter agent name
@@ -159,7 +154,30 @@ agent:
   systemPrompt: System Prompt
   systemPromptPlaceholder: Please enter system prompt
   systemPromptRequired: System prompt is required
+toolManagement:
+  tableTitle: Skill Management
+  name: Name
+  namePlaceholder: Search name or description
+  toolType: Type
+  toolTypePlaceholder: All Types
+  status: Status
+  statusPlaceholder: All Statuses
+  new: New Skill
+  edit: Edit Skill
 tool:
   name: Name
-  tool_type: Type
+  namePlaceholder: Letters, numbers, and underscores, starting with a letter
+  nameRequired: Please enter skill name
+  nameMaxLength: Name must be 100 characters or fewer
+  namePattern: Must start with a letter, and can only contain letters, numbers, and underscores
+  toolType: Type
+  toolTypePlaceholder: Please select type
+  toolTypeRequired: Please select skill type
   description: Description
+  descriptionPlaceholder: Describe the purpose of this skill
+  toolSchema: Skill Schema
+  toolSchemaPlaceholder: Please provide the input and output format, parameter description
+  toolSchemaRequired: Schema cannot be empty
+  config: Config
+  configPlaceholder: Json format, provide description of skill configuration items
+  mcpCompatible: MCP Compatible

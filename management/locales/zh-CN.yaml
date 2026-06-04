@@ -12,6 +12,8 @@ common:
   deleteSuccess: 删除成功
   warning: 警告
   loadingError: 数据加载失败，请检查网络或联系管理员
+  jsonFormatError: JSON 格式有误
+  updatedAt: 更新时间
 buttons:
   pureLoginOut: 退出系统
   pureLogin: 登录
@@ -153,13 +155,29 @@ agent:
   systemPromptPlaceholder: 请输入系统提示词
   systemPromptRequired: 请填写系统提示词
 toolManagement:
+  tableTitle: 技能管理
   name: 名称
   namePlaceholder: 搜索名称或描述
   toolType: 类型
   toolTypePlaceholder: 全部类型
   status: 状态
   statusPlaceholder: 全部状态
+  new: 新增技能
+  edit: 编辑技能
 tool:
   name: 名称
-  tool_type: 类型
+  namePlaceholder: 字母、数字和下划线，字母开头
+  nameRequired: 请填写技能名称
+  nameMaxLength: 名称最多100个字符
+  namePattern: 字母开头，仅允许字母、数字和下划线
+  toolType: 类型
+  toolTypePlaceholder: 请选择类型
+  toolTypeRequired: 请选择技能类型
   description: 描述
+  descriptionPlaceholder: 描述该技能的用途
+  toolSchema: 技能Schema
+  toolSchemaPlaceholder: 请提供技能的输入输出格式、参数说明
+  toolSchemaRequired: Schema 不能为空
+  config: 配置
+  configPlaceholder: JSON格式，提供技能配置项的说明
+  mcpCompatible: MCP兼容
