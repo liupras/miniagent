@@ -17,10 +17,10 @@
         />
       </el-form-item>
 
-      <el-form-item :label="t('agentManagement.llm')" prop="llm_id">
+      <el-form-item :label="t('agent.llm')" prop="llm_id">
         <el-select
           v-model="searchForm.llm_id"
-          :placeholder="t('agentManagement.llmPlaceholder')"
+          :placeholder="t('agent.llmPlaceholder')"
           clearable
           class="w-40!"
         >
@@ -33,10 +33,10 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item :label="t('agentManagement.user')" prop="user_id">
+      <el-form-item :label="t('agent.user')" prop="user_id">
         <el-select
           v-model="searchForm.user_id"
-          :placeholder="t('agentManagement.userPlaceholder')"
+          :placeholder="t('agent.userPlaceholder')"
           clearable
           filterable
           class="w-40!"
@@ -79,7 +79,7 @@
 
     <!-- ── Toolbar ── -->
     <PureTableBar
-      :title="t('agentManagement.tableTitle')"
+      :title="t('agent.tableTitle')"
       :columns="columns"
       @refresh="onSearch"
     >
@@ -213,7 +213,7 @@
               :icon="Link"
               @click="openUserDialog(row)"
             >
-              {{ t("agentManagement.boundUsers") }}
+              {{ t("agent.boundUsers") }}
             </el-button>
             <el-button
               v-auth="'agent:edit'"
@@ -223,7 +223,7 @@
               :icon="Link"
               @click="openToolDialog(row)"
             >
-              {{ t("agentManagement.boundSkills") }}
+              {{ t("agent.boundSkills") }}
             </el-button>
             <el-button
               v-auth="'agent:edit'"
@@ -233,7 +233,7 @@
               :icon="Link"
               @click="openLLMDialog(row)"
             >
-              {{ t("agentManagement.boundLLM") }}
+              {{ t("agent.boundLLM") }}
             </el-button>
           </template>
         </pure-table>
@@ -278,11 +278,11 @@
           />
         </el-form-item>
 
-        <el-form-item :label="t('agentManagement.llm')" prop="llm_id">
+        <el-form-item :label="t('agent.llm')" prop="llm_id">
           <el-select
             v-model="dialogForm.llm_id"
             clearable
-            :placeholder="t('agentManagement.llmPlaceholder')"
+            :placeholder="t('agent.llmPlaceholder')"
             class="w-full"
           >
             <el-option
@@ -314,7 +314,7 @@
     </el-dialog>
     <el-dialog
       v-model="userDialogVisible"
-      :title="t('agentManagement.boundUsers')"
+      :title="t('agent.boundUsers')"
       width="500px"
     >
       <el-select
@@ -346,7 +346,7 @@
     </el-dialog>
     <el-dialog
       v-model="toolDialogVisible"
-      :title="t('agentManagement.boundSkills')"
+      :title="t('agent.boundSkills')"
       width="560px"
     >
       <el-select
@@ -392,7 +392,7 @@
     </el-dialog>
     <el-dialog
       v-model="llmDialogVisible"
-      :title="t('agentManagement.boundLLM')"
+      :title="t('agent.boundLLM')"
       width="400px"
     >
       <el-select
@@ -400,7 +400,7 @@
         clearable
         filterable
         class="w-full"
-        :placeholder="t('agentManagement.llmPlaceholder')"
+        :placeholder="t('agent.llmPlaceholder')"
       >
         <el-option
           v-for="llm in llmOptions"
@@ -567,13 +567,13 @@ const columns: TableColumnList = [
     slot: "system_prompt"
   },
   {
-    label: t("agentManagement.llm"),
+    label: t("agent.llm"),
     prop: "llm",
     width: 140,
     slot: "llm"
   },
   {
-    label: t("agentManagement.user"),
+    label: t("agent.user"),
     prop: "users",
     minWidth: 160,
     slot: "users"
@@ -742,7 +742,7 @@ async function openUserDialog(row: any) {
 
 async function saveAgentUsers() {
   await updateAgentUsers(currentAgentId.value!, selectedUserIds.value);
-  ElMessage.success(t("agentManagement.boundUsersSuccess"));
+  ElMessage.success(t("agent.boundUsersSuccess"));
   userDialogVisible.value = false;
 
   fetchData();
@@ -759,7 +759,7 @@ async function saveAgentTools() {
   toolDialogLoading.value = true;
   try {
     await updateAgentTools(currentAgentId.value!, selectedToolIds.value);
-    ElMessage.success(t("agentManagement.boundSkillsSuccess"));
+    ElMessage.success(t("agent.boundSkillsSuccess"));
     toolDialogVisible.value = false;
   } finally {
     toolDialogLoading.value = false;
@@ -779,13 +779,13 @@ async function openLLMDialog(row: any) {
 
 async function saveAgentLLM() {
   if (!currentAgentId.value || selectedLlmId.value === undefined) {
-    ElMessage.warning(t("agentManagement.llmSelectionRequired"));
+    ElMessage.warning(t("agent.llmSelectionRequired"));
     return;
   }
   llmDialogLoading.value = true;
   try {
     await updateAgentLLM(currentAgentId.value, selectedLlmId.value);
-    ElMessage.success(t("agentManagement.boundLLMSuccess"));
+    ElMessage.success(t("agent.boundLLMSuccess"));
     llmDialogVisible.value = false;
     fetchData();
   } finally {
@@ -806,7 +806,7 @@ onMounted(async () => {
     userOptions.value = userRes.data;
     toolOptions.value = toolRes.data;
   } catch (error) {
-    console.error("AgentManagement 页面初始化失败:", error);
+    console.error("t('common.initError')", error);
     ElMessage.error(t("common.loadingError"));
   }
 });

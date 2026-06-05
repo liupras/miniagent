@@ -14,6 +14,7 @@ common:
   loadingError: Data loading failed. Please check your network or contact your administrator.
   jsonFormatError: JSON format error
   updatedAt: Updated at
+  initError: Page initialization failed
 buttons:
   pureLoginOut: LoginOut
   pureLogin: Login
@@ -111,6 +112,9 @@ menus:
     agent: Agent
     skill: Skill
     assignment: Assignment
+  kb:
+    default: Knowledge Base Management
+    domain: Domain
   system:
     default: System Management
     cache: Cache Management
@@ -131,7 +135,7 @@ login:
   pureUsernameReg: Please enter username
   purePassWordReg: Please enter password
   purePassWordRuleReg: The password format should be any combination of 8-18 digits
-agentManagement:
+agent:
   tableTitle: Agent Management  
   llm: LLM
   llmPlaceholder: Please select LLM
@@ -144,7 +148,6 @@ agentManagement:
   boundLLM: Bound LLM
   boundLLMSuccess: Agent LLM updated successfully
   llmSelectionRequired: Please select at least one LLM
-agent:
   name: Name
   namePlaceholder: Please enter agent name
   nameRequired: Agent name is required
@@ -154,23 +157,20 @@ agent:
   systemPrompt: System Prompt
   systemPromptPlaceholder: Please enter system prompt
   systemPromptRequired: System prompt is required
-toolManagement:
+tool:
   tableTitle: Skill Management
-  name: Name
-  namePlaceholder: Search name or description
-  toolType: Type
-  toolTypePlaceholder: All Types
   status: Status
   statusPlaceholder: All Statuses
   new: New Skill
   edit: Edit Skill
-tool:
   name: Name
+  nameSearchPlaceholder: Search name or description
   namePlaceholder: Letters, numbers, and underscores, starting with a letter
   nameRequired: Please enter skill name
   nameMaxLength: Name must be 100 characters or fewer
   namePattern: Must start with a letter, and can only contain letters, numbers, and underscores
   toolType: Type
+  toolTypeSearchPlaceholder: All Types
   toolTypePlaceholder: Please select type
   toolTypeRequired: Please select skill type
   description: Description
@@ -181,3 +181,20 @@ tool:
   config: Config
   configPlaceholder: Json format, provide description of skill configuration items
   mcpCompatible: MCP Compatible
+domain:
+  title: Domain Management
+  name: Name
+  namePlaceholder: Please enter name
+  type: Type
+  typePlaceholder: Please select type
+  processorClass: Processor Class
+  pluginClass: Plugin Class
+  description: Description
+  metadataSchema: Metadata Schema
+  tableTitle: Domain List
+  new: New Domain
+  edit: Edit Domain
+  nameRequired: Name is required
+  nameNoSpace: Name cannot contain spaces
+  typeRequired: Type is required
+  classRequired: Class path is required

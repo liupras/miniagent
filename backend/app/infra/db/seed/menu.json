@@ -29,27 +29,26 @@
     {
         "id": 4,
         "parent_id": null,
-        "name": "system:default", 
-        "title_key": "menus.system.default",
-        "path": "/system",        
-        "icon": "ep:setting",
+        "name": "kb:default", 
+        "title_key": "menus.kb.default",
+        "path": "/kbManagement",        
+        "icon": "ep:document-copy",
         "sort_order": 5
     },
     {
         "id": 5,
         "parent_id": 4,
-        "name": "system:cache:list", 
-        "title_key": "menus.system.cache",
-        "path": "/system/cache",        
-        "component": "system/cache/index",  
+        "name": "domain:list", 
+        "title_key": "menus.kb.domain",
+        "path": "/kbManagement/domain",        
+        "component": "kbManagement/domain/index",  
         "sort_order": 6
     },
     {
         "id":1000,
         "parent_id": 2,
         "name": "agent:add",
-        "title_key": "buttons.add",
-        "path": "/agentManagement/agent/add",  
+        "title_key": "buttons.add", 
         "icon": "ep:plus",
         "sort_order": 1000,
         "menu_type": "button",
@@ -59,8 +58,7 @@
         "id":1001,
         "parent_id": 2,
         "name": "agent:edit",
-        "title_key": "buttons.edit",
-        "path": "/agentManagement/agent/edit",        
+        "title_key": "buttons.edit",     
         "icon": "ep:edit",
         "sort_order": 1001,
         "menu_type": "button",
@@ -70,8 +68,7 @@
         "id":1002,
         "parent_id": 2,
         "name": "agent:delete",
-        "title_key": "buttons.delete",
-        "path": "/agentManagement/agent/delete",       
+        "title_key": "buttons.delete",   
         "icon": "ep:delete",
         "sort_order": 1002,
         "menu_type": "button",
@@ -82,43 +79,59 @@
         "parent_id": 3,
         "name": "tool:add",
         "title_key": "buttons.add",
-        "path": "/agentManagement/skill/add",
         "icon": "ep:plus",
         "sort_order": 1003,
         "menu_type": "button",
-        "description": "智能体-技能-新增"
+        "description": "技能-新增"
     },
     {
         "id":1004,
         "parent_id": 3,
         "name": "tool:edit",
         "title_key": "buttons.edit",
-        "path": "/agentManagement/skill/edit",
         "icon": "ep:edit",
         "sort_order": 1004,
         "menu_type": "button",
-        "description": "智能体-技能-编辑"
+        "description": "技能-编辑"
     },
     {
         "id":1005,
         "parent_id": 3,
         "name": "tool:delete",
         "title_key": "buttons.delete",
-        "path": "/agentManagement/skill/delete",
         "icon": "ep:delete",
         "sort_order": 1005,
         "menu_type": "button",
-        "description": "智能体-技能-删除"
+        "description": "技能-删除"
     },
     {
         "id":1006,
         "parent_id": 5,
-        "name": "system:cache:refresh",
-        "title_key": "buttons:refresh",
-        "path": "/system/cache/refresh",
-        "icon": "ep:refresh",
+        "name": "domain:add",
+        "title_key": "buttons:add",
+        "icon": "ep:plus",
         "sort_order": 1006,
         "menu_type": "button",
-        "description": "刷新缓存"
+        "description": "领域-添加"
+    },
+    {
+        "id":1007,
+        "parent_id": 5,
+        "name": "domain:edit",
+        "title_key": "buttons.edit",
+        "icon": "ep:edit",
+        "sort_order": 1007,
+        "menu_type": "button",
+        "description": "领域-编辑"
+    },
+    {
+        "id":1008,
+        "parent_id": 5,
+        "name": "domain:delete",
+        "title_key": "buttons.delete",
+        "icon": "ep:delete",
+        "sort_order": 1008,
+        "menu_type": "button",
+        "description": "领域-删除"
     }
 ]

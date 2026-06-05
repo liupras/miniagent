@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.repositories.async_tool import AsyncToolDatabase
 from app.infra.db.database import Tool
 from app.schemas.admin.tool import ToolCreate, ToolUpdate
 from app.schemas.common import create_exception_pair

@@ -49,6 +49,7 @@ from app.services.admin.agent import AgentService
 from app.services.admin.llm import LLMService
 from app.services.admin.user import UserService
 from app.services.admin.tool import ToolService
+from app.services.admin.domain import DomainService
 
 import importlib
 
@@ -151,6 +152,7 @@ class ServiceContainer:
         self.llm_service = LLMService(db=self.llm_db)
         self.user_service = UserService(user_db=self.user_db, menu_db=self.menu_db)
         self.tool_service = ToolService(self)
+        self.domain_service = DomainService(self.domain_db)
 
     async def start(self):
         await self.init_plugins()

@@ -14,6 +14,7 @@ common:
   loadingError: 数据加载失败，请检查网络或联系管理员
   jsonFormatError: JSON 格式有误
   updatedAt: 更新时间
+  initError: 页面初始化失败
 buttons:
   pureLoginOut: 退出系统
   pureLogin: 登录
@@ -111,6 +112,9 @@ menus:
     agent: 智能体
     skill: 技能
     assignment: 指派用户
+  kb:
+    default: 知识库管理
+    domain: 领域
   system:
     default: 系统管理
     cache: 缓存
@@ -131,7 +135,7 @@ login:
   pureUsernameReg: 请输入账号
   purePassWordReg: 请输入密码
   purePassWordRuleReg: 密码格式应为8-18位数字、字母、符号的任意两种组合
-agentManagement:
+agent:
   tableTitle: 智能体管理   
   llm: 大模型
   llmPlaceholder: 请选择大模型
@@ -144,7 +148,6 @@ agentManagement:
   boundLLM: 绑定大模型
   boundLLMSuccess: 绑定大模型更新成功
   llmSelectionRequired: 请至少选择一个大模型
-agent:
   name: 智能体名称
   namePlaceholder: 请输入智能体名称
   nameRequired: 请填写智能体名称
@@ -154,23 +157,20 @@ agent:
   systemPrompt: 系统提示词
   systemPromptPlaceholder: 请输入系统提示词
   systemPromptRequired: 请填写系统提示词
-toolManagement:
-  tableTitle: 技能管理
-  name: 名称
-  namePlaceholder: 搜索名称或描述
-  toolType: 类型
-  toolTypePlaceholder: 全部类型
+tool:
+  tableTitle: 技能管理  
   status: 状态
   statusPlaceholder: 全部状态
   new: 新增技能
   edit: 编辑技能
-tool:
   name: 名称
+  nameSearchPlaceholder: 搜索名称或描述
   namePlaceholder: 字母、数字和下划线，字母开头
   nameRequired: 请填写技能名称
   nameMaxLength: 名称最多100个字符
   namePattern: 字母开头，仅允许字母、数字和下划线
   toolType: 类型
+  toolTypeSearchPlaceholder: 全部类型
   toolTypePlaceholder: 请选择类型
   toolTypeRequired: 请选择技能类型
   description: 描述
@@ -181,3 +181,20 @@ tool:
   config: 配置
   configPlaceholder: JSON格式，提供技能配置项的说明
   mcpCompatible: MCP兼容
+domain:
+  title: 领域管理
+  name: 领域名称
+  namePlaceholder: 请输入领域名称
+  type: 领域类型
+  typePlaceholder: 请选择领域类型
+  processorClass: 处理器类
+  pluginClass: 插件类
+  description: 描述
+  metadataSchema: 元数据 Schema
+  tableTitle: 领域列表
+  new: 新增领域
+  edit: 编辑领域
+  nameRequired: 请输入领域名称
+  nameNoSpace: 领域名称不能包含空格
+  typeRequired: 请选择领域类型
+  classRequired: 请输入完整的类路径

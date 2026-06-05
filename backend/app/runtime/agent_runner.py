@@ -9,38 +9,6 @@ AgentRunner lifecycle
 ─────────────────────
 One AgentRunner is created per agent_id by AgentFactory (see agent_factory.py).
 It is immutable after construction; tools and prompts are fixed at build time.
-
-The runner exposes two methods:
-    invoke(query, history)   → str          (one-shot, full response)
-    stream(query, history)   → AsyncGen     (token-by-token streaming)
-
-Multi-turn conversation (persistent memory)
-───────────────────────────────────────────
-When user_id + session_id are supplied, the runner will:
-  1. Load recent history from the DB via AsyncChatDatabase.
-  2. Merge caller-supplied history (takes precedence) with DB history so that
-     stateless REST calls can still pass an explicit history list.
-  3. Save the user message and the agent reply to the DB automatically.
-  4. Truncate the combined context with func.truncate_messages() so the total
-     token count never exceeds the LLM's max_tokens budget.
-
-Context-window budget
-─────────────────────
-  budget = llm_config.max_tokens  (from the Agent → LLM row)
-  A safety margin of CONTEXT_TOKEN_RESERVE is subtracted to leave room for the
-  model's output.  The remainder is the maximum allowed input token count.
-
-History format follows the LangChain/LangGraph messages convention:
-    [{"role": "user"|"assistant"|"system", "content": "..."}]
-
-System prompt resolution
-────────────────────────
-1. Agent.system_prompt from the DB  (mandatory)
-2. PromptLoader injects i18n-aware extra guidance from the I18n table.
-   The special key ``agent_system_suffix`` (if present) is appended to the
-   base system prompt.  This lets admins customise the agent's behaviour from
-   the admin UI without a code deploy.
-
 """
 
 from __future__ import annotations
@@ -68,15 +36,6 @@ class AgentRunner:
     """
     Thin wrapper around a compiled LangChain agent with optional persistent
     multi-turn memory backed by AsyncChatDatabase.
-
-    Attributes
-    ──────────
-    agent_id        DB primary key (int).
-    agent_name      Human-readable name (for logging).
-    _agent         Compiled LangChain agent.
-    _system_prompt  Fully resolved system prompt string.
-    _chat_db        AsyncChatDatabase instance (injected at build time).
-    _max_tokens     LLM max_tokens; used for context-window budgeting.
     """
 
     def __init__(

@@ -7,20 +7,20 @@
       :model="searchForm"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
-      <el-form-item :label="t('toolManagement.name')" prop="keyword">
+      <el-form-item :label="t('tool.name')" prop="keyword">
         <el-input
           v-model="searchForm.keyword"
-          :placeholder="t('toolManagement.namePlaceholder')"
+          :placeholder="t('tool.nameSearchPlaceholder')"
           clearable
           class="w-45!"
           @keyup.enter="onSearch"
         />
       </el-form-item>
 
-      <el-form-item :label="t('toolManagement.toolType')" prop="tool_type">
+      <el-form-item :label="t('tool.toolType')" prop="tool_type">
         <el-select
           v-model="searchForm.tool_type"
-          :placeholder="t('toolManagement.toolTypePlaceholder')"
+          :placeholder="t('tool.toolTypeSearchPlaceholder')"
           clearable
           class="w-36!"
         >
@@ -33,10 +33,10 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item :label="t('toolManagement.status')" prop="is_active">
+      <el-form-item :label="t('tool.status')" prop="is_active">
         <el-select
           v-model="searchForm.is_active"
-          :placeholder="t('toolManagement.statusPlaceholder')"
+          :placeholder="t('tool.statusPlaceholder')"
           clearable
           class="w-32.5!"
         >
@@ -62,7 +62,7 @@
 
     <!-- ── Toolbar + Table ── -->
     <PureTableBar
-      :title="t('toolManagement.tableTitle')"
+      :title="t('tool.tableTitle')"
       :columns="columns"
       @refresh="onSearch"
     >
@@ -189,11 +189,7 @@
     <!-- ── Add / Edit Dialog ── -->
     <el-dialog
       v-model="dialogVisible"
-      :title="
-        dialogType === 'add'
-          ? t('toolManagement.new')
-          : t('toolManagement.edit')
-      "
+      :title="dialogType === 'add' ? t('tool.new') : t('tool.edit')"
       width="680px"
       destroy-on-close
     >

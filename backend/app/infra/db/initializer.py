@@ -550,12 +550,12 @@ class DatabaseManager:
                     for k, v in row.items():
                         if k not in ("parent_id", "name"):
                             setattr(existing, k, v)
-                    logger.info(f"   ✓ Update Menu: {row['path']}")
+                    logger.info(f"   ✓ Update Menu: {row['name']}")
                 else:
-                    logger.info(f"   - Skip Menu: {row['path']}")
+                    logger.info(f"   - Skip Menu: {row['name']}")
             else:
                 db.add(Menu(**row))
-                logger.info(f"   + Create Menu: {row['path']}")
+                logger.info(f"   + Create Menu: {row['name']}")
 
     def _seed_user_agent_relation(self, db: Session, force: bool):
 
