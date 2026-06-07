@@ -50,6 +50,7 @@ from app.services.admin.llm import LLMService
 from app.services.admin.user import UserService
 from app.services.admin.tool import ToolService
 from app.services.admin.domain import DomainService
+from app.services.admin.router_config import RouterConfigService
 
 import importlib
 
@@ -153,6 +154,7 @@ class ServiceContainer:
         self.user_service = UserService(user_db=self.user_db, menu_db=self.menu_db)
         self.tool_service = ToolService(self)
         self.domain_service = DomainService(self.domain_db)
+        self.router_config_service = RouterConfigService(self)
 
     async def start(self):
         await self.init_plugins()
@@ -254,7 +256,7 @@ class SmartRouterFactory:
             return self._cache[router_config_id]
 
         # 1. Load RouterConfig from DB
-        router_config_orm = await self.container.router_config_db.get_config(router_config_id)
+        router_config_orm = await self.container.router_config_db.get_by_id(router_config_id)
         if not router_config_orm:
             raise ValueError(f"RouterConfig {router_config_id} not found")
 

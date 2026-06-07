@@ -21,7 +21,7 @@ router = APIRouter()
 # Service dependency
 # ──────────────────────────────────────────────
 
-def get_tool_service(request: Request) -> ToolService:
+def get_service(request: Request) -> ToolService:
     return request.app.state.container.tool_service
 
 _list   = AuthPermission.Permission("tool:list")
@@ -40,7 +40,7 @@ async def list_tools(
     tool_type: str | None = Query(None),
     is_active: bool | None = Query(None),
     keyword: str | None = Query(None),
-    svc:       ToolService   = Depends(get_tool_service),
+    svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_list),
 ):
     total, items = await svc.list(
@@ -56,7 +56,7 @@ async def list_tools(
 
 @router.get("/stats", response_model=dict[str, Any], summary="Aggregate stats")
 async def get_stats(
-    svc:       ToolService   = Depends(get_tool_service),
+    svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_list),
 ):
     return await svc.stats()
@@ -65,7 +65,7 @@ async def get_stats(
 @router.get("/{tool_id}", response_model=ToolRead, summary="Get a single tool")
 async def get_tool(
     tool_id: int,
-    svc:       ToolService   = Depends(get_tool_service),
+    svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_list),
 ):
     tool = await svc.get(tool_id)
@@ -77,7 +77,7 @@ async def get_tool(
 @router.post("", response_model=ToolRead, status_code=status.HTTP_201_CREATED, summary="Create tool")
 async def create_tool(
     payload: ToolCreate,
-    svc:       ToolService   = Depends(get_tool_service),
+    svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_add),
 ):
     try:
@@ -89,7 +89,7 @@ async def create_tool(
 async def update_tool(
     tool_id: int, 
     payload: ToolUpdate,
-    svc:       ToolService   = Depends(get_tool_service),
+    svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_edit),
 ):
     try:
@@ -104,7 +104,7 @@ async def update_tool(
 @router.patch("/{tool_id}/toggle", response_model=ApiResponse, summary="Toggle active status")
 async def toggle_tool(
     tool_id: int,    
-    svc:       ToolService   = Depends(get_tool_service),
+    svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_edit),
 ):
     await svc.toggle_active(tool_id)    
@@ -114,7 +114,7 @@ async def toggle_tool(
 @router.delete("/{tool_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete tool")
 async def delete_tool(
     tool_id: int,
-    svc:       ToolService   = Depends(get_tool_service),
+    svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_delete),
 ):
     try:
@@ -126,7 +126,7 @@ async def delete_tool(
 @router.post("/bulk-delete", status_code=status.HTTP_200_OK, summary="Bulk delete tools")
 async def bulk_delete_tools(
     tool_ids: list[int],
-    svc:       ToolService   = Depends(get_tool_service),
+    svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_delete),
 ):
     deleted = await svc.bulk_delete(tool_ids)

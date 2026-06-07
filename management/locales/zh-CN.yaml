@@ -15,6 +15,11 @@ common:
   jsonFormatError: JSON 格式有误
   updatedAt: 更新时间
   initError: 页面初始化失败
+  yes: 是
+  no: 否
+  actions: 操作
+  saveSuccess: 保存成功
+  saveFailed: 保存失败，请重试
 buttons:
   pureLoginOut: 退出系统
   pureLogin: 登录
@@ -115,6 +120,7 @@ menus:
   kb:
     default: 知识库管理
     domain: 领域
+    routerConfig: 路由策略
   system:
     default: 系统管理
     cache: 缓存
@@ -198,3 +204,31 @@ domain:
   nameNoSpace: 领域名称不能包含空格
   typeRequired: 请选择领域类型
   classRequired: 请输入完整的类路径
+routerConfig:
+  # 页面标题 & 面包屑
+  title: 路由策略配置
+  subtitle: 管理知识库路由策略
+
+  # 表格列
+  configId: 配置 ID
+  selectionStrategy: 选择策略
+  fallbackToAll: 兜底查全库
+  maxKbCount: 最大 KB 数
+  extraConfig: 扩展配置  
+
+  # 策略枚举标签
+  strategy:
+    keyword: 关键词
+    embedding: 向量嵌入
+
+  # 表单
+  editTitle: 编辑路由策略
+  selectionStrategyPlaceholder: 请选择选择策略
+  maxKbCountPlaceholder: 请输入最大 KB 数
+  extraConfigPlaceholder: 请输入 JSON 格式的扩展配置（可选）
+  extraConfigFormatBtn: 格式化 JSON
+  extraConfigInvalid: 扩展配置格式不合法，请检查 JSON 语法
+
+  # 提示 & 校验
+  maxKbCountMin: 最大 KB 数不能小于 1
+  required: 此字段为必填项

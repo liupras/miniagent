@@ -19,7 +19,7 @@ router = APIRouter()
 # Service dependency
 # ──────────────────────────────────────────────
 
-def get_agent_service(request: Request) -> AgentService:
+def get_service(request: Request) -> AgentService:
     return request.app.state.container.agent_service
 
 # ──────────────────────────────────────────────
@@ -46,7 +46,7 @@ async def list_agents(
     llm_id:    Optional[int]  = Query(None,               description="Filter by LLM id"),
     user_id:   Optional[int]  = Query(None,               description="Filter by bound user id"),
     is_active: Optional[bool] = Query(None,               description="Filter by active status"),
-    svc:       AgentService   = Depends(get_agent_service),
+    svc:       AgentService   = Depends(get_service),
     caller_id: int            = Depends(_list),
 ):
     params = AgentListParams(
@@ -61,7 +61,7 @@ async def list_agents(
 @router.get("/{agent_id}", response_model=ApiResponse, summary="Get agent by id  [agent:list]")
 async def get_agent(
     agent_id:  int,
-    svc:       AgentService = Depends(get_agent_service),
+    svc:       AgentService = Depends(get_service),
     caller_id: int          = Depends(_list),
 ):
     agent = await svc.get_agent(agent_id)
@@ -72,7 +72,7 @@ async def get_agent(
              summary="Create agent  [agent:add]")
 async def create_agent(
     payload:   AgentCreate,
-    svc:       AgentService = Depends(get_agent_service),
+    svc:       AgentService = Depends(get_service),
     caller_id: int          = Depends(_add),
 ):
     
@@ -84,7 +84,7 @@ async def create_agent(
 async def update_agent(
     agent_id:  int,
     payload:   AgentUpdate,
-    svc:       AgentService = Depends(get_agent_service),
+    svc:       AgentService = Depends(get_service),
     caller_id: int          = Depends(_edit),
 ):
    
@@ -96,7 +96,7 @@ async def update_agent(
               summary="Toggle agent active status  [agent:edit]")
 async def toggle_agent_active(
     agent_id:  int,
-    svc:       AgentService = Depends(get_agent_service),
+    svc:       AgentService = Depends(get_service),
     caller_id: int          = Depends(_edit),
 ):
 
@@ -107,7 +107,7 @@ async def toggle_agent_active(
 @router.delete("/{agent_id}", response_model=ApiResponse, summary="Delete agent  [agent:delete]")
 async def delete_agent(
     agent_id:  int,
-    svc:       AgentService = Depends(get_agent_service),
+    svc:       AgentService = Depends(get_service),
     caller_id: int          = Depends(_delete),
 ):
 
@@ -118,7 +118,7 @@ async def delete_agent(
 @router.delete("", response_model=ApiResponse, summary="Batch delete agents  [agent:delete]")
 async def batch_delete_agents(
     ids:       List[int],
-    svc:       AgentService = Depends(get_agent_service),
+    svc:       AgentService = Depends(get_service),
     caller_id: int          = Depends(_delete),
 ):
     deleted_count = await svc.batch_delete_agents(ids)
@@ -127,7 +127,7 @@ async def batch_delete_agents(
 @router.get("/{agent_id}/users", response_model=ApiResponse, summary="Get users bound to agent [agent:list]")
 async def get_users_by_agent(
     agent_id: int,
-    svc: AgentService = Depends(get_agent_service),
+    svc: AgentService = Depends(get_service),
     caller_id: int = Depends(_list),
 ):
     """
@@ -144,7 +144,7 @@ async def get_users_by_agent(
 async def update_agent_users(
     agent_id: int,
     data: AgentUserUpdate,
-    svc: AgentService = Depends(get_agent_service),    
+    svc: AgentService = Depends(get_service),    
     caller_id: int = Depends(_edit),    
 ):
     await svc.update_agent_users(
@@ -156,7 +156,7 @@ async def update_agent_users(
 
 @router.get("/tools/options", response_model=ApiResponse, summary="Get active tool options [agent:list]")
 async def get_tool_options(
-    svc: AgentService = Depends(get_agent_service),
+    svc: AgentService = Depends(get_service),
     caller_id: int = Depends(_list),
 ):
     tools = await svc.list_active_tools()
@@ -165,7 +165,7 @@ async def get_tool_options(
 @router.get("/{agent_id}/tools", response_model=ApiResponse, summary="Get tools bound to agent [agent:list]")
 async def get_tools_by_agent(
     agent_id: int,
-    svc: AgentService = Depends(get_agent_service),
+    svc: AgentService = Depends(get_service),
     caller_id: int = Depends(_list),
 ):
 
@@ -176,7 +176,7 @@ async def get_tools_by_agent(
 async def update_agent_tools(
     agent_id: int,
     data: AgentToolUpdate,
-    svc: AgentService = Depends(get_agent_service),
+    svc: AgentService = Depends(get_service),
     caller_id: int = Depends(_edit),
 ):
     await svc.update_agent_tools(agent_id, data.tool_ids)
@@ -186,7 +186,7 @@ async def update_agent_tools(
 @router.get("/{agent_id}/llm", response_model=ApiResponse, summary="Get LLM bound to agent [agent:list]")
 async def get_agent_llm(
     agent_id: int,
-    svc: AgentService = Depends(get_agent_service),
+    svc: AgentService = Depends(get_service),
     caller_id: int = Depends(_list),
 ):
 
@@ -197,7 +197,7 @@ async def get_agent_llm(
 async def update_agent_llm(
     agent_id: int,
     llm_id: int,
-    svc: AgentService = Depends(get_agent_service),
+    svc: AgentService = Depends(get_service),
     caller_id: int = Depends(_edit),
 ):
     await svc.update_agent_llm(agent_id, llm_id)

@@ -139,6 +139,9 @@ app.include_router(admin_agent_router,prefix="/api/v1/admin/agents", tags=["Admi
 from app.api.admin.domain import router as admin_domain_router
 app.include_router(admin_domain_router,prefix="/api/v1/admin/domains", tags=["Admin - Domain"])
 
+from app.api.admin.router_config import router as admin_router_config
+app.include_router(admin_router_config,prefix="/api/v1/admin/router-configs", tags=["Admin - Router Config"])
+
 from app.api.admin.kb import router as admin_kb_router
 app.include_router(admin_kb_router,prefix="/api/v1/admin/kb", tags=["Admin - Knowledge Base"])
 

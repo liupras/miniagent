@@ -45,6 +45,15 @@
         "sort_order": 6
     },
     {
+        "id": 6,
+        "parent_id": 4,
+        "name": "router_config:list", 
+        "title_key": "menus.kb.routerConfig",
+        "path": "/kbManagement/router_config",        
+        "component": "kbManagement/router_config/index",  
+        "sort_order": 6
+    },
+    {
         "id":1000,
         "parent_id": 2,
         "name": "agent:add",
@@ -133,5 +142,15 @@
         "sort_order": 1008,
         "menu_type": "button",
         "description": "领域-删除"
+    },
+    {
+        "id":1009,
+        "parent_id": 6,
+        "name": "router_config:edit",
+        "title_key": "buttons.edit",
+        "icon": "ep:edit",
+        "sort_order": 1009,
+        "menu_type": "button",
+        "description": "路由策略-编辑"
     }
 ]

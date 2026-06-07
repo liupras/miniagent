@@ -15,6 +15,11 @@ common:
   jsonFormatError: JSON format error
   updatedAt: Updated at
   initError: Page initialization failed
+  yes: Yes
+  no: No
+  actions: Actions
+  saveSuccess: Saved successfully
+  saveFailed: Save failed, please try again
 buttons:
   pureLoginOut: LoginOut
   pureLogin: Login
@@ -115,6 +120,7 @@ menus:
   kb:
     default: Knowledge Base Management
     domain: Domain
+    routerConfig: Router Config
   system:
     default: System Management
     cache: Cache Management
@@ -198,3 +204,32 @@ domain:
   nameNoSpace: Name cannot contain spaces
   typeRequired: Type is required
   classRequired: Class path is required
+routerConfig:
+  # Page title & breadcrumb
+  title: Router Policy Config
+  subtitle: Manage knowledge base routing policies
+
+  # Table columns
+  configId: Config ID
+  selectionStrategy: Selection Strategy
+  fallbackToAll: Fallback to All KBs
+  maxKbCount: Max KB Count
+  extraConfig: Extra Config
+
+
+  # Strategy enum labels
+  strategy:
+    keyword: Keyword
+    embedding: Embedding
+
+  # Form
+  editTitle: Edit Router Policy
+  selectionStrategyPlaceholder: Select a strategy
+  maxKbCountPlaceholder: Enter max KB count
+  extraConfigPlaceholder: Optional JSON extra config
+  extraConfigFormatBtn: Format JSON
+  extraConfigInvalid: Invalid JSON – please check the syntax
+
+  # Messages & validation
+  maxKbCountMin: Max KB count must be at least 1
+  required: This field is required

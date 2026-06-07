@@ -50,38 +50,27 @@ class AsyncRouterConfigDatabase(AsyncBaseDatabase):
             await session.flush()
             return cid
 
-    async def get_config(self, config_id: str) -> Optional[RouterConfig]:
+    async def get_by_id(self, config_id: str) -> Optional[RouterConfig]:
 
         async with self.get_session() as session:
             config = await session.get(RouterConfig, config_id)
             return config
 
-    async def update_config(self, config_id: str, **kwargs) -> bool:
-        """
-        Updates the specified field and returns a success or failure message.
-        Updateable fields: selection_strategy / fallback_to_all / allow_multi_kb / max_kb_count / extra_config
-        """
-        allowed_fields = {
-            "selection_strategy",
-            "fallback_to_all",
-            "allow_multi_kb",
-            "max_kb_count",
-            "extra_config",
-        }
-        updates = {k: v for k, v in kwargs.items() if k in allowed_fields}
-        if not updates:
-            return False
-
+    async def update(self, config_id: str, data: dict) -> RouterConfig:
         async with self.get_session() as session:
-            config = await session.get(RouterConfig, config_id)
-            if not config:
-                return False
+            result = await session.execute(
+                select(RouterConfig).where(RouterConfig.config_id == config_id)
+            )
+            record: Optional[RouterConfig] = result.scalar_one_or_none()
 
-            for field, value in updates.items():
-                setattr(config, field, value)
-            
-            await session.flush()
-            return True
+            if record is None:
+                return None
+
+            for field, value in data.items():
+                if value is not None:
+                    setattr(record, field, value)
+
+            return record
 
     async def delete_config(self, config_id: str) -> bool:
         """Delete configuration; returns False if it does not exist."""
@@ -93,15 +82,13 @@ class AsyncRouterConfigDatabase(AsyncBaseDatabase):
             await session.delete(config)
             return True
 
-    async def get_all_configs(self) -> List[Dict]:
-        """
-        Retrieve all configurations, sorted in descending order of creation time.
-        """
+    async def list_all(self) -> list[RouterConfig]:
+        """Query all route configurations (limited number of records, no pagination)."""
         async with self.get_session() as session:
-            stmt = select(RouterConfig).order_by(RouterConfig.created_at.desc())
-            result = await session.execute(stmt)
-            configs = result.scalars().all()
-            return [self._to_dict(c) for c in configs]
+            result = await session.execute(
+                select(RouterConfig).order_by(RouterConfig.created_at.desc())
+            )
+            return list(result.scalars().all())
 
     async def get_configs_by_strategy(self, strategy: str) -> List[Dict]:
         """
@@ -119,7 +106,7 @@ class AsyncRouterConfigDatabase(AsyncBaseDatabase):
 
     async def exists(self, config_id: str) -> bool:
 
-        config = await self.get_config(config_id)
+        config = await self.get_by_id(config_id)
         return config is not None
 
     # ---------- Internal tools ----------
