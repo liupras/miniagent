@@ -407,8 +407,7 @@ class StrategyConfig(Base):
     enable_query_hyde = Column(Boolean, default=False)
     enable_vector = Column(Boolean, default=True)
     enable_bm25 = Column(Boolean, default=True)
-    enable_reranker = Column(Boolean, default=True)
-    enable_structured_filter = Column(Boolean, default=False, comment="Use the structured search component?")
+    enable_reranker = Column(Boolean, default=True)    
     enable_small_to_big = Column(Boolean, default=True)
     require_citation = Column(Boolean, default=True, comment="Mandatory source tracing?")
 

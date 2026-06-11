@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 # @author  : Liu Lijun
 # @date    : 2026-06-08
-# @description: Tool/Skill API Router – HTTP layer only
+# @description: Tool/Skill API Router
 
 from fastapi import APIRouter, Depends, Request
 

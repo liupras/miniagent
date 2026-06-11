@@ -13,6 +13,7 @@
 			"*.csv": "duckdb.dataFileViewer",
 			"*.tsv": "duckdb.dataFileViewer",
 			"*.xlsx": "duckdb.dataFileViewer"
-		}
+		},
+		"i18n-ally.keystyle": "nested"
 	}
 }

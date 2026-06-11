@@ -142,6 +142,9 @@ app.include_router(admin_domain_router,prefix="/api/v1/admin/domains", tags=["Ad
 from app.api.admin.router_config import router as admin_router_config
 app.include_router(admin_router_config,prefix="/api/v1/admin/router-configs", tags=["Admin - Router Config"])
 
+from app.api.admin.strategy_config import router as admin_strategy_config
+app.include_router(admin_strategy_config,prefix="/api/v1/admin/strategy-configs", tags=["Admin - Strategy Config"])
+
 from app.api.admin.kb import router as admin_kb_router
 app.include_router(admin_kb_router,prefix="/api/v1/admin/kb", tags=["Admin - Knowledge Base"])
 

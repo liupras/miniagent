@@ -20,6 +20,8 @@ common:
   actions: Actions
   saveSuccess: Saved successfully
   saveFailed: Save failed, please try again
+  actionSuccess: Operation successful
+  createdBy: Created by
 buttons:
   pureLoginOut: LoginOut
   pureLogin: Login
@@ -121,6 +123,7 @@ menus:
     default: Knowledge Base Management
     domain: Domain
     routerConfig: Router Config
+    strategyConfig: Strategy Config
   system:
     default: System Management
     cache: Cache Management
@@ -233,3 +236,62 @@ routerConfig:
   # Messages & validation
   maxKbCountMin: Max KB count must be at least 1
   required: This field is required
+strategyConfig:
+  title: Strategy Config Management
+  tableTitle: Strategy Config List
+  new: New Strategy Config
+  edit: Edit Strategy Config
+  
+  basic:
+    title: Basic Settings
+    configId: Config ID
+    kbId: KB ID
+    version: Version
+    isActive: Is Active
+    promptLanguage: Prompt Language
+    configIdRequired: Config ID is required
+    configIdMax: Length should be less than 100
+    kbIdRequired: Knowledge Base ID is required
+    versionRequired: Version is required
+
+  # Prompt
+  activeSuccess: Activation successful
+  
+  # Component Switches
+  switches:
+    title: Function Switches
+    enableQueryRewrite: Enable Query Rewrite
+    enableQueryExpansion: Enable Query Expansion
+    enableQueryHyde: Enable Query HyDE
+    enableVector: Enable Vector
+    enableBm25: Enable BM25
+    enableReranker: Enable Reranker
+    enableSmallToBig: Enable Small to Big
+    requireCitation: Require Citation
+
+  # Search Parameters
+  params:
+    title: Search Parameters
+    queryExpansionNum: Query Expansion Num"
+    maxTransformQueries: Max Transform Queries
+    vectorTopK: Vector TopK
+    bm25TopK: BM25 TopK
+    rrfMode: RRF Mode
+    rrfK: RRF K
+    rrfTopK: RRF TopK
+    vectorWeight: Vector Weight
+    rerankingMode: Reranking Mode
+    rerankTopK: Rerank TopK
+    finalTopK: Final TopK
+
+  # Thresholds
+  thresholds:
+    title: Thresholds & Confidence
+    vectorScoreThreshold: Vector Score Threshold
+    bm25ScoreThreshold: BM25 Score Threshold
+    highScoreThreshold: High Score Threshold
+    minHighConfCount: Min High Conf Count
+    lowScoreThreshold: Low Score Threshold
+  extra:
+   title: Additional configuration
+   placeholder: Please enter the standard JSON format configuration.

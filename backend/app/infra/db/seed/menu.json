@@ -54,12 +54,20 @@
         "sort_order": 6
     },
     {
+        "id": 7,
+        "parent_id": 4,
+        "name": "strategy_config:list", 
+        "title_key": "menus.kb.strategyConfig",
+        "path": "/kbManagement/strategy_config",        
+        "component": "kbManagement/strategy_config/index",  
+        "sort_order": 7
+    },
+    {
         "id":1000,
         "parent_id": 2,
         "name": "agent:add",
         "title_key": "buttons.add", 
-        "icon": "ep:plus",
-        "sort_order": 1000,
+        "icon": "ep:plus",       
         "menu_type": "button",
         "description": "智能体-新增"
     },
@@ -68,8 +76,7 @@
         "parent_id": 2,
         "name": "agent:edit",
         "title_key": "buttons.edit",     
-        "icon": "ep:edit",
-        "sort_order": 1001,
+        "icon": "ep:edit",       
         "menu_type": "button",
         "description": "智能体-编辑"
     },
@@ -78,8 +85,7 @@
         "parent_id": 2,
         "name": "agent:delete",
         "title_key": "buttons.delete",   
-        "icon": "ep:delete",
-        "sort_order": 1002,
+        "icon": "ep:delete",        
         "menu_type": "button",
         "description": "智能体-删除"
     },
@@ -88,8 +94,7 @@
         "parent_id": 3,
         "name": "tool:add",
         "title_key": "buttons.add",
-        "icon": "ep:plus",
-        "sort_order": 1003,
+        "icon": "ep:plus",       
         "menu_type": "button",
         "description": "技能-新增"
     },
@@ -98,8 +103,7 @@
         "parent_id": 3,
         "name": "tool:edit",
         "title_key": "buttons.edit",
-        "icon": "ep:edit",
-        "sort_order": 1004,
+        "icon": "ep:edit",       
         "menu_type": "button",
         "description": "技能-编辑"
     },
@@ -108,8 +112,7 @@
         "parent_id": 3,
         "name": "tool:delete",
         "title_key": "buttons.delete",
-        "icon": "ep:delete",
-        "sort_order": 1005,
+        "icon": "ep:delete",        
         "menu_type": "button",
         "description": "技能-删除"
     },
@@ -118,8 +121,7 @@
         "parent_id": 5,
         "name": "domain:add",
         "title_key": "buttons:add",
-        "icon": "ep:plus",
-        "sort_order": 1006,
+        "icon": "ep:plus",       
         "menu_type": "button",
         "description": "领域-添加"
     },
@@ -128,8 +130,7 @@
         "parent_id": 5,
         "name": "domain:edit",
         "title_key": "buttons.edit",
-        "icon": "ep:edit",
-        "sort_order": 1007,
+        "icon": "ep:edit",       
         "menu_type": "button",
         "description": "领域-编辑"
     },
@@ -138,8 +139,7 @@
         "parent_id": 5,
         "name": "domain:delete",
         "title_key": "buttons.delete",
-        "icon": "ep:delete",
-        "sort_order": 1008,
+        "icon": "ep:delete",        
         "menu_type": "button",
         "description": "领域-删除"
     },
@@ -148,9 +148,35 @@
         "parent_id": 6,
         "name": "router_config:edit",
         "title_key": "buttons.edit",
-        "icon": "ep:edit",
-        "sort_order": 1009,
+        "icon": "ep:edit",        
         "menu_type": "button",
         "description": "路由策略-编辑"
+    },
+    {
+        "id":1010,
+        "parent_id": 7,
+        "name": "strategy_config:add",
+        "title_key": "buttons:add",
+        "icon": "ep:plus",       
+        "menu_type": "button",
+        "description": "检索策略-添加"
+    },
+    {
+        "id":1011,
+        "parent_id": 7,
+        "name": "strategy_config:edit",
+        "title_key": "buttons.edit",
+        "icon": "ep:edit",        
+        "menu_type": "button",
+        "description": "检索策略-编辑"
+    },
+    {
+        "id":1012,
+        "parent_id": 7,
+        "name": "strategy_config:delete",
+        "title_key": "buttons.delete",
+        "icon": "ep:delete",        
+        "menu_type": "button",
+        "description": "检索策略-删除"
     }
 ]

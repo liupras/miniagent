@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
-# @author  : Gemini (Modified from Liu Lijun)
+# @author  : Liu Lijun
 # @date    : 2026-04-15
 # @description: RouterConfig Database Management (Asynchronous Version)
 
@@ -9,8 +9,8 @@ from datetime import datetime
 from typing import Optional, Dict, List, Any
 
 from sqlalchemy import select
-from ..infra.db.async_base import AsyncBaseDatabase
-from ..infra.db.database import RouterConfig
+from app.infra.db.async_base import AsyncBaseDatabase
+from app.infra.db.database import RouterConfig
 
 
 class AsyncRouterConfigDatabase(AsyncBaseDatabase):

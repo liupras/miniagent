@@ -20,6 +20,8 @@ common:
   actions: 操作
   saveSuccess: 保存成功
   saveFailed: 保存失败，请重试
+  actionSuccess: 操作成功
+  createdBy: 创建者
 buttons:
   pureLoginOut: 退出系统
   pureLogin: 登录
@@ -121,6 +123,7 @@ menus:
     default: 知识库管理
     domain: 领域
     routerConfig: 路由策略
+    strategyConfig: 检索策略
   system:
     default: 系统管理
     cache: 缓存
@@ -232,3 +235,62 @@ routerConfig:
   # 提示 & 校验
   maxKbCountMin: 最大 KB 数不能小于 1
   required: 此字段为必填项
+strategyConfig:
+  title: 策略配置管理
+  tableTitle: 策略配置列表
+  new: 新建策略配置
+  edit: 编辑策略配置
+  
+  basic:
+    title: 基础设置
+    configId: 配置ID
+    kbId: 知识库ID
+    version: 版本号
+    isActive: 当前激活
+    promptLanguage: 提示词语言
+    configIdRequired: Config ID 是必填项
+    configIdMax: 长度应小于100
+    kbIdRequired: Knowledge Base ID 是必填项
+    versionRequired: Version 是必填项
+
+  # 提示
+  activeSuccess: 激活成功
+  
+  # 功能开关
+  switches:
+    title: 功能开关
+    enableQueryRewrite: 重写查询
+    enableQueryExpansion: 扩展查询
+    enableQueryHyde: HyDE 查询
+    enableVector: 向量检索
+    enableBm25: BM25 检索
+    enableReranker: 重排序
+    enableSmallToBig: 小到大模型
+    requireCitation: 需要引用
+
+  # 参数设置
+  params:
+    title: 检索参数
+    queryExpansionNum: 查询扩展数量
+    maxTransformQueries: 最大转换查询数
+    vectorTopK: 向量 TopK
+    bm25TopK: BM25 TopK
+    rrfMode: RRF 模式
+    rrfK: RRF K值
+    rrfTopK: RRF TopK
+    vectorWeight: 向量权重
+    rerankingMode: 重排序模式
+    rerankTopK: 重排序 TopK
+    finalTopK: 最终 TopK
+
+  # 阈值与配置
+  thresholds:
+    title: 阈值与置信度
+    vectorScoreThreshold: 向量分数阈值
+    bm25ScoreThreshold: BM25 分数阈值
+    highScoreThreshold: 高置信度阈值
+    minHighConfCount: 最少高置信度数
+    lowScoreThreshold: 低置信度阈值
+  extra:
+    title: 其他设置
+    placeholder: 请输入标准的JSON格式配置

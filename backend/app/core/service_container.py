@@ -30,6 +30,7 @@ from app.repositories import (
     AsyncMenuDatabase,
     AsyncAgentUserRelationDatabase,
     AsyncAgentUserRelationDatabase,
+    AsyncStrategyConfigDatabase,
 )
 
 from app.services.sql_agent import DuckDBManager
@@ -51,6 +52,7 @@ from app.services.admin.user import UserService
 from app.services.admin.tool import ToolService
 from app.services.admin.domain import DomainService
 from app.services.admin.router_config import RouterConfigService
+from app.services.admin.strategy_config import StrategyConfigService
 
 import importlib
 
@@ -112,6 +114,7 @@ class ServiceContainer:
         self.menu_db = AsyncMenuDatabase(self.engine, self.session_factory)                
         self.agent_user_relation_db = AsyncAgentUserRelationDatabase(self.engine, self.session_factory)
         self.user_agent_relation_db = AsyncAgentUserRelationDatabase(self.engine, self.session_factory)
+        self.strategy_config_db = AsyncStrategyConfigDatabase(self.engine, self.session_factory)
 
         # ── Auth ───────────────────────────────────────────────────────────
         self.jwt_auth = JWTAuth(
@@ -155,6 +158,7 @@ class ServiceContainer:
         self.tool_service = ToolService(self)
         self.domain_service = DomainService(self.domain_db)
         self.router_config_service = RouterConfigService(self)
+        self.strategy_config_service = StrategyConfigService(db=self.strategy_config_db)
 
     async def start(self):
         await self.init_plugins()

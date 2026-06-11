@@ -19,6 +19,7 @@ from .async_tool import AsyncToolDatabase
 from .async_llm import AsyncLLMDatabase
 from .async_menu import AsyncMenuDatabase
 from .async_user_agent_relation import AsyncAgentUserRelationDatabase
+from .async_strategy_config import AsyncStrategyConfigDatabase
 
 __all__ = [
     "AsyncUserDatabase",
@@ -37,6 +38,7 @@ __all__ = [
     "AsyncToolDatabase",
     "AsyncLLMDatabase",
     "AsyncMenuDatabase",
-    "AsyncAgentUserRelationDatabase"
+    "AsyncAgentUserRelationDatabase",
+    "AsyncStrategyConfigDatabase"
 ]
 
