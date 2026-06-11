@@ -12,11 +12,10 @@ from fastapi import APIRouter, Depends, Query, Request, status
 from app.core.security.auth_permission import AuthPermission
 from app.schemas.admin.domain import (
     DomainCreate,
-    DomainListResponse,
-    DomainRead,
     DomainUpdate
 )
 from app.services.admin.domain import DomainService
+from app.schemas.common import ApiResponse
 
 _list   = AuthPermission.Permission("domain:list")
 _add    = AuthPermission.Permission("domain:add")
@@ -34,7 +33,7 @@ def get_service(request: Request) -> DomainService:
 
 @router.get(
     "",
-    response_model=DomainListResponse,
+    response_model=ApiResponse,  # Change the response model to ApiResponse
     summary="List domains",
     description="Return a paginated list of all domains, optionally filtered by type.",
 )
@@ -44,40 +43,42 @@ async def list_domains(
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     svc:       DomainService   = Depends(get_service),
     caller_id: int            = Depends(_list),
-) -> DomainListResponse:
-    return await svc.list_domains(type_filter=type, page=page, page_size=page_size)
+) -> ApiResponse:
+    domains = await svc.list_domains(type_filter=type, page=page, page_size=page_size)
+    return ApiResponse(data=domains)
 
 
 @router.get(
     "/{domain_id}",
-    response_model=DomainRead,
+    response_model=ApiResponse,
     summary="Get domain by id",
 )
 async def get_domain(
     domain_id: int, 
     svc:       DomainService   = Depends(get_service),
     caller_id: int            = Depends(_list),
-) -> DomainRead:
-    return await svc.get_domain(domain_id)
+) -> ApiResponse:
+    domain = await svc.get_domain(domain_id)
+    return ApiResponse(data=domain)
 
 
 @router.post(
     "",
-    response_model=DomainRead,
-    status_code=status.HTTP_201_CREATED,
+    response_model=ApiResponse,    
     summary="Create a new domain",
 )
 async def create_domain(
     payload: DomainCreate, 
     svc:       DomainService   = Depends(get_service),
     caller_id: int            = Depends(_add),
-) -> DomainRead:
-    return await svc.create_domain(payload)
+) -> ApiResponse:
+    domain = await svc.create_domain(payload)
+    return ApiResponse(data=domain)
 
 
 @router.patch(
     "/{domain_id}",
-    response_model=DomainRead,
+    response_model=ApiResponse,
     summary="Partially update a domain",
 )
 async def update_domain(
@@ -85,27 +86,29 @@ async def update_domain(
     payload: DomainUpdate,
     svc:       DomainService   = Depends(get_service),
     caller_id: int            = Depends(_edit),
-) -> DomainRead:
-    return await svc.update_domain(domain_id, payload)
+) -> ApiResponse:
+    domain = await svc.update_domain(domain_id, payload)
+    return ApiResponse(data=domain)
 
 
 @router.delete(
     "/{domain_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a domain",
 )
 async def delete_domain(
     domain_id: int, 
     svc:       DomainService   = Depends(get_service),
     caller_id: int            = Depends(_delete),
-) -> None:
+) -> ApiResponse:
     await svc.delete_domain(domain_id)
+    return ApiResponse(message="Domain deleted successfully")
 
-@router.post("/bulk-delete", status_code=status.HTTP_200_OK, summary="Bulk delete domains")
+
+@router.post("/bulk-delete", summary="Bulk delete domains")
 async def bulk_delete_tools(
     ids: list[int],
     svc:       DomainService   = Depends(get_service),
     caller_id: int            = Depends(_delete),
 ):
     deleted = await svc.bulk_delete(ids)
-    return {"deleted": deleted}
+    return ApiResponse(data={"deleted": deleted})

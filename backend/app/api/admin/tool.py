@@ -33,7 +33,7 @@ _delete = AuthPermission.Permission("tool:delete")
 # Routes
 # ---------------------------------------------------------------------------
 
-@router.get("", response_model=PageResult, summary="List tools (paginated)")
+@router.get("", response_model=ApiResponse, summary="List tools (paginated)")
 async def list_tools(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -51,18 +51,19 @@ async def list_tools(
         keyword=keyword,
     )
     result = PageResult[ToolRead](total=total, page=page, page_size=page_size, data=items)
-    return result
+    return ApiResponse(data=result)
 
 
-@router.get("/stats", response_model=dict[str, Any], summary="Aggregate stats")
+@router.get("/stats", response_model=ApiResponse, summary="Aggregate stats")
 async def get_stats(
     svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_list),
 ):
-    return await svc.stats()
+    stats = await svc.stats()
+    return await ApiResponse(data=stats)
 
 
-@router.get("/{tool_id}", response_model=ToolRead, summary="Get a single tool")
+@router.get("/{tool_id}", response_model=ApiResponse, summary="Get a single tool")
 async def get_tool(
     tool_id: int,
     svc:       ToolService   = Depends(get_service),
@@ -71,21 +72,22 @@ async def get_tool(
     tool = await svc.get(tool_id)
     if not tool:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tool not found")
-    return tool
+    return ApiResponse(data=tool)
 
 
-@router.post("", response_model=ToolRead, status_code=status.HTTP_201_CREATED, summary="Create tool")
+@router.post("", response_model=ApiResponse, summary="Create tool")
 async def create_tool(
     payload: ToolCreate,
     svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_add),
 ):
     try:
-        return await svc.create(payload)
+        tool= await svc.create(payload)
+        return ApiResponse(data=tool)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
 
-@router.patch("/{tool_id}", response_model=ToolRead, summary="Partially update tool")
+@router.patch("/{tool_id}", response_model=ApiResponse, summary="Partially update tool")
 async def update_tool(
     tool_id: int, 
     payload: ToolUpdate,
@@ -98,7 +100,7 @@ async def update_tool(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
     if not tool:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tool not found")
-    return tool
+    return ApiResponse(data=tool)
 
 
 @router.patch("/{tool_id}/toggle", response_model=ApiResponse, summary="Toggle active status")
@@ -111,23 +113,24 @@ async def toggle_tool(
     return ApiResponse(message="Tool active status updated successfully")
 
 
-@router.delete("/{tool_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete tool")
+@router.delete("/{tool_id}", response_model=ApiResponse, summary="Delete tool")
 async def delete_tool(
     tool_id: int,
     svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_delete),
 ):
     try:
-        await svc.delete(tool_id)
+        deleted = await svc.delete(tool_id)
+        return ApiResponse(data={"deleted": deleted})
     except ToolNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tool not found")
 
 
-@router.post("/bulk-delete", status_code=status.HTTP_200_OK, summary="Bulk delete tools")
+@router.post("/bulk-delete", response_model=ApiResponse, summary="Bulk delete tools")
 async def bulk_delete_tools(
     tool_ids: list[int],
     svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_delete),
 ):
     deleted = await svc.bulk_delete(tool_ids)
-    return {"deleted": deleted}
+    return ApiResponse(data= {"deleted": deleted})

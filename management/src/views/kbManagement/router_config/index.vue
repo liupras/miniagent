@@ -170,7 +170,6 @@ import {
   type RouterConfigUpdatePayload
 } from "@/api/router_config";
 
-import Refresh from "~icons/ep/refresh";
 import EditPen from "~icons/ep/edit-pen";
 import { hasAuth } from "@/router/utils";
 
@@ -250,7 +249,7 @@ const columns: TableColumnList = [
     fixed: "right",
     width: 90,
     slot: "operation",
-    hide: !hasAuth("tool:edit") && !hasAuth("tool:delete")
+    hide: !hasAuth("router_config:edit")
   }
 ];
 
@@ -260,7 +259,7 @@ async function fetchList() {
   loading.value = true;
   try {
     const res = await getRouterConfigList();
-    tableData.value = res.data ?? [];
+    tableData.value = res ?? [];
     pagination.total = tableData.value.length;
   } finally {
     loading.value = false;

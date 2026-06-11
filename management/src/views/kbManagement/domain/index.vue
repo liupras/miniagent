@@ -292,7 +292,7 @@ const columns: TableColumnList = [
     width: 150,
     fixed: "right",
     slot: "operation",
-    hide: !hasAuth("tool:edit") && !hasAuth("tool:delete")
+    hide: !hasAuth("domain:edit") && !hasAuth("domain:delete")
   }
 ];
 

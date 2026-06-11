@@ -374,6 +374,7 @@ function getAuths(): Array<string> {
 
 /** 是否有按钮级别的权限（根据路由`meta`中的`auths`字段进行判断）*/
 function hasAuth(value: string | Array<string>): boolean {
+  //console.log(value);
   if (!value) return false;
   /** 从当前路由的`meta`字段里获取按钮级别的所有自定义`code`值 */
   const metaAuths = getAuths();

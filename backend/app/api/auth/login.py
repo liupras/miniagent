@@ -31,10 +31,11 @@ async def login(
 ):
 
     if not await user_service.verify_user(request.username, request.password):
-        return LoginResponse(
+        res = LoginResponse(
             success=False,
             data=None
         )
+        return res
 
     user_info = await user_service.get_user(request.username)
 
@@ -53,7 +54,7 @@ async def login(
         "%Y/%m/%d %H:%M:%S"
     )
 
-    response = LoginResponse(
+    res = LoginResponse(
         success=True,
         data={
             "avatar": user_info.avatar,
@@ -67,7 +68,7 @@ async def login(
         }
     )
 
-    return response
+    return res
 
 @router.post("/refresh-token", response_model=LoginResponse)
 async def refresh_token(

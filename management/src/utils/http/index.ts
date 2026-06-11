@@ -118,6 +118,31 @@ class PureHttp {
     instance.interceptors.response.use(
       (response: PureHttpResponse) => {
         const $config = response.config;
+
+        const skipUnwrapList = [
+          "/login",
+          "/get-async-routes",
+          "/refresh-token"
+        ];
+        const isSkip = skipUnwrapList.some(url =>
+          response.config.url?.endsWith(url)
+        );
+
+        if (!isSkip) {
+          const res = response.data; // 原始响应体 { code, message, data }
+
+          // 1. 统一校验：如果后端业务逻辑报错 (code != 200)
+          if (res && res.code !== 200) {
+            // 这里可以进行全局错误提示
+            console.error("业务错误:", res.message);
+            return Promise.reject(res);
+          }
+
+          // 2. 提取数据：将 res.data 赋值回 response.data
+          // 这样后续的任何 callback 拿到的 response.data 已经是“干净”的数据了
+          response.data = res.data;
+        }
+
         // 优先判断post/get等方法是否传入回调，否则执行初始化设置等回调
         if (typeof $config.beforeResponseCallback === "function") {
           $config.beforeResponseCallback(response);

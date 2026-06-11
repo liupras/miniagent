@@ -66,54 +66,41 @@ export interface PageResult<T> {
   data: T[];
 }
 
-export interface ApiResponse<T = any> {
-  code: number;
-  message: string;
-  data: T;
-}
-
 // ── Agent CRUD ─────────────────────────────────────────────────────────────
 
 /** Paginated agent list with optional filters */
 export const getAgentList = (params: AgentListParams) =>
-  http.request<ApiResponse<PageResult<Agent>>>(
-    "get",
-    baseUrlApi("admin/agents"),
-    {
-      params
-    }
-  );
+  http.request<PageResult<Agent>>("get", baseUrlApi("admin/agents"), {
+    params
+  });
 
 /** Single agent by id */
 export const getAgentById = (id: number) =>
-  http.request<ApiResponse<Agent>>("get", baseUrlApi(`admin/agents/${id}`));
+  http.request<Agent>("get", baseUrlApi(`admin/agents/${id}`));
 
 /** Create a new agent */
 export const createAgent = (data: AgentCreatePayload) =>
-  http.request<ApiResponse<Agent>>("post", baseUrlApi("admin/agents"), {
+  http.request<Agent>("post", baseUrlApi("admin/agents"), {
     data
   });
 
 /** Update an existing agent */
 export const updateAgent = (id: number, data: AgentUpdatePayload) =>
-  http.request<ApiResponse<Agent>>("put", baseUrlApi(`admin/agents/${id}`), {
+  http.request<Agent>("put", baseUrlApi(`admin/agents/${id}`), {
     data
   });
 
 /** Toggle is_active for an agent */
 export const toggleAgentActive = (id: number) =>
-  http.request<ApiResponse<null>>(
-    "patch",
-    baseUrlApi(`admin/agents/${id}/toggle`)
-  );
+  http.request<void>("patch", baseUrlApi(`admin/agents/${id}/toggle`));
 
 /** Delete a single agent */
 export const deleteAgent = (id: number) =>
-  http.request<ApiResponse<null>>("delete", baseUrlApi(`admin/agents/${id}`));
+  http.request<void>("delete", baseUrlApi(`admin/agents/${id}`));
 
 /** Batch delete agents by id list */
 export const batchDeleteAgents = (ids: number[]) =>
-  http.request<ApiResponse<null>>("delete", baseUrlApi("admin/agents"), {
+  http.request<void>("delete", baseUrlApi("admin/agents"), {
     data: ids
   });
 
@@ -121,57 +108,43 @@ export const batchDeleteAgents = (ids: number[]) =>
 
 /** Fetch all LLMs as id+name pairs for select dropdown */
 export const getLLMOptions = () =>
-  http.request<ApiResponse<LLMBrief[]>>(
-    "get",
-    baseUrlApi("admin/llms/options")
-  );
+  http.request<LLMBrief[]>("get", baseUrlApi("admin/llms/options"));
 
 /** Fetch all users as id+username pairs for select dropdown */
 export const getUserOptions = () =>
-  http.request<ApiResponse<UserBrief[]>>(
-    "get",
-    baseUrlApi("admin/users/options")
-  );
+  http.request<UserBrief[]>("get", baseUrlApi("admin/users/options"));
 
 export const getAgentUsers = (agentId: number) =>
-  http.request<ApiResponse<UserOptionItem[]>>(
+  http.request<UserOptionItem[]>(
     "get",
     baseUrlApi(`admin/agents/${agentId}/users`)
   );
 
 export const updateAgentUsers = (agentId: number, userIds: number[]) =>
-  http.request<ApiResponse<any>>(
-    "put",
-    baseUrlApi(`admin/agents/${agentId}/users`),
-    {
-      data: {
-        user_ids: userIds
-      }
+  http.request<any>("put", baseUrlApi(`admin/agents/${agentId}/users`), {
+    data: {
+      user_ids: userIds
     }
-  );
+  });
 
 export const getToolOptions = () =>
-  http.request<ApiResponse<ToolOptionItem[]>>(
+  http.request<ToolOptionItem[]>(
     "get",
     baseUrlApi("admin/agents/tools/options")
   );
 
 export const getAgentTools = (agentId: number) =>
-  http.request<ApiResponse<ToolOptionItem[]>>(
+  http.request<ToolOptionItem[]>(
     "get",
     baseUrlApi(`admin/agents/${agentId}/tools`)
   );
 
 export const updateAgentTools = (agentId: number, toolIds: number[]) =>
-  http.request<ApiResponse<any>>(
-    "put",
-    baseUrlApi(`admin/agents/${agentId}/tools`),
-    {
-      data: {
-        tool_ids: toolIds
-      }
+  http.request<any>("put", baseUrlApi(`admin/agents/${agentId}/tools`), {
+    data: {
+      tool_ids: toolIds
     }
-  );
+  });
 
 export const getAgentLLM = (agent_id: number) =>
   http.request<any>("get", baseUrlApi(`admin/agents/${agent_id}/llm`));

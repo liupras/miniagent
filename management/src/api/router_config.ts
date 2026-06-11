@@ -20,10 +20,7 @@ export interface RouterConfigUpdatePayload {
 }
 
 export const getRouterConfigList = () =>
-  http.request<{ data: RouterConfigItem[] }>(
-    "get",
-    baseUrlApi("admin/router-configs/")
-  );
+  http.request<RouterConfigItem[]>("get", baseUrlApi("admin/router-configs/"));
 
 export const getRouterConfigById = (configId: string) =>
   http.request<{ data: RouterConfigItem }>(

@@ -7,7 +7,7 @@
 from fastapi import APIRouter, Depends, Request
 
 from app.core.security.auth_permission import AuthPermission
-from app.schemas.admin.router_config import RouterConfigResponse, RouterConfigUpdate
+from app.schemas.admin.router_config import RouterConfigUpdate
 from app.services.admin.router_config import RouterConfigService
 from app.schemas.common import ApiResponse
 

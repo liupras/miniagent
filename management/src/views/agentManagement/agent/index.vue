@@ -470,7 +470,6 @@ const { t } = useI18n();
 const loading = ref(false);
 const tableData = ref<any[]>([]);
 const selectedIds = ref<number[]>([]);
-const tableRef = ref();
 const searchFormRef = ref<FormInstance>();
 const dialogFormRef = ref<FormInstance>();
 
@@ -616,8 +615,8 @@ async function fetchData() {
     };
     //console.log("fetch params:", params);
     const res = await getAgentList(params);
-    tableData.value = res.data.data;
-    pagination.total = res.data.total;
+    tableData.value = res.data;
+    pagination.total = res.total;
   } finally {
     loading.value = false;
   }
@@ -752,7 +751,7 @@ async function openToolDialog(row: any) {
   currentAgentId.value = row.id;
   toolDialogVisible.value = true;
   const res = await getAgentTools(row.id);
-  selectedToolIds.value = res.data.map(tool => tool.id);
+  selectedToolIds.value = res.map(tool => tool.id);
 }
 
 async function saveAgentTools() {
@@ -770,7 +769,7 @@ async function openLLMDialog(row: any) {
   currentAgentId.value = row.id;
   try {
     const res = await getAgentLLM(row.id);
-    selectedLlmId.value = res.data?.id;
+    selectedLlmId.value = res?.id;
   } catch {
     selectedLlmId.value = undefined;
   }
@@ -802,9 +801,9 @@ onMounted(async () => {
       getUserOptions(),
       getToolOptions()
     ]);
-    llmOptions.value = llmRes.data;
-    userOptions.value = userRes.data;
-    toolOptions.value = toolRes.data;
+    llmOptions.value = llmRes;
+    userOptions.value = userRes;
+    toolOptions.value = toolRes;
   } catch (error) {
     console.error("t('common.initError')", error);
     ElMessage.error(t("common.loadingError"));
