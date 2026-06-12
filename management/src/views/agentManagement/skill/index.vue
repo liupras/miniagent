@@ -480,7 +480,16 @@ const columns: TableColumnList = [
     prop: "updated_at",
     width: 170,
     formatter: ({ updated_at }) =>
-      updated_at ? new Date(updated_at).toLocaleString() : "—"
+      updated_at
+        ? new Date(updated_at).toLocaleString("zh-CN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          })
+        : "—"
   },
   {
     label: t("common.operation"),

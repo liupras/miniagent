@@ -121,8 +121,8 @@ async def delete_strategy_config(
     svc: StrategyConfigService = Depends(get_service),
     caller_id: int            = Depends(_delete),
 ) -> ApiResponse[int]:
-    rows = await svc.delete(config_id)
-    return ApiResponse(data=rows, message="Deleted successfully")
+    kb_id = await svc.delete(config_id)
+    return ApiResponse(data=kb_id, message="Deleted successfully")
 
 
 @router.post(

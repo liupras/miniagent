@@ -589,7 +589,16 @@ const columns: TableColumnList = [
     prop: "created_at",
     width: 170,
     formatter: ({ created_at }) =>
-      created_at ? new Date(created_at).toLocaleString() : "—"
+      created_at
+        ? new Date(created_at).toLocaleString("zh-CN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          })
+        : "—"
   },
   {
     label: t("common.operation"),

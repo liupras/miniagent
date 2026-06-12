@@ -17,6 +17,7 @@ class RouterConfigService:
             raise TypeError(f"Expected ServiceContainer, got {type(container)}")
         
         self._db = container.router_config_db
+        self._smart_router_service = container.smart_router_service
 
     async def get(self, config_id: str) -> RouterConfigResponse:
         record = await self._db.get_by_id(config_id)
@@ -41,5 +42,8 @@ class RouterConfigService:
         record = await self._db.update(config_id, update_data)
         if record is None:
             raise RouterConfigNotFoundError(config_id)
+        
+        if not self._smart_router_service:
+            self._smart_router_service.invalidate(router_config_id=config_id)
 
         return RouterConfigResponse.model_validate(record)

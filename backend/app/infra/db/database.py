@@ -420,7 +420,7 @@ class StrategyConfig(Base):
     rrf_k = Column(Integer, default=60, comment="k value when rrf_mode == rrf")
     rrf_top_k = Column(Integer, default=20)
     vector_weight = Column(Float, default=0.6, comment="vector weight when rrf_mode == weighted")
-    reranking_mode = Column(String(20), default="hybrid", comment="vector,bm25,hybrid,rerank")
+    reranking_mode = Column(String(20), default="hybrid", comment="vector,bm25,hybrid,rerank,llm")
     rerank_top_k = Column(Integer, default=10)
     final_top_k = Column(Integer, default=3)
 

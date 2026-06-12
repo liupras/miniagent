@@ -3,42 +3,7 @@
 # @author  : Liu Lijun
 # @date    : 2026-03-13
 # @description: Retrieval pipeline — dynamically assembled from StrategyConfig.
-#
-# Architecture
-# ────────────
-#   RetrievalPipeline          ← entry point, built from StrategyConfig
-#     ├── VectorStage          ← dense retrieval via Chroma
-#     ├── BM25Stage            ← sparse retrieval via BM25Manager
-#     ├── FusionStage          ← RRF or weighted merge (when both sources active)
-#     ├── SmallToBigStage      ← child-chunk → parent-chunk text expansion
-#     └── RerankStage          ← re-scores & re-orders by reranking_mode
-#           ├── "vector"  — sort by vector_score only
-#           ├── "bm25"    — sort by bm25_score only
-#           ├── "hybrid"  — sort by fusion score (rrf / weighted)
-#           ├── "rerank"  — call external cross-encoder / Cohere reranker
-#           └── "llm"     — call LLM to score relevance (most accurate, slowest)
-#
-# Each stage is an async callable: List[RetrievedChunk] -> List[RetrievedChunk]
-# Pipeline.run() chains them, making it trivial to add / remove / swap stages.
-#
-# Internationalisation (i18n)
-# ───────────────────────────
-# All LLM-facing prompt strings are resolved at pipeline construction time by
-# PromptLoader.  Templates are stored in the I18n table (group="prompt") and
-# keyed by (group="prompt", key, lang).
-#
-# Active language resolution order (highest priority first):
-#   1. StrategyConfig.prompt_language       (non-NULL KB-level override)
-#   2. AsyncSystemSettingDatabase.get_language() (global default, changeable at runtime)
-#   3. Hard-coded fallback "zh"             (last resort if DB is empty)
-#
-# PromptLoader template resolution order for each key:
-#   1. I18n DB row  (group="prompt", key=<key>, lang=resolved_lang)
-#        loaded via I18nDatabase.as_dict_for_group_lang("prompt", lang)
-#   2. PromptLoader.BUILTIN_FALLBACKS[resolved_lang][key]
-#   3. PromptLoader.BUILTIN_FALLBACKS["en"][key]  (cross-language last resort)
-#
-# confidence_warning is just another prompt key — no special handling needed.
+
 
 from __future__ import annotations
 
@@ -1282,7 +1247,7 @@ class RetrievalPipeline:
         reranker_config = extra.get("reranker")
 
         # Rerank stage
-        if cfg.enable_reranker and reranker_config:            
+        if cfg.enable_reranker:            
             try:
                 mode = RerankMode.SCORE
                 if cfg.ranking_mode == KBRankingMode.LLM:

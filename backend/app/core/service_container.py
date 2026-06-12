@@ -158,7 +158,7 @@ class ServiceContainer:
         self.tool_service = ToolService(self)
         self.domain_service = DomainService(self.domain_db)
         self.router_config_service = RouterConfigService(self)
-        self.strategy_config_service = StrategyConfigService(db=self.strategy_config_db)
+        self.strategy_config_service = StrategyConfigService(self)
 
     async def start(self):
         await self.init_plugins()

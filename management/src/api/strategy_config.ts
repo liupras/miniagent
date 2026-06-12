@@ -56,7 +56,10 @@ export const getStrategyList = (
   kb_id: number,
   params?: { page?: number; page_size?: number }
 ) => {
-  return http.request("get", baseUrlApi(`admin/strategy-configs/kb/${kb_id}`), {
+  return http.request<{
+    total: number;
+    items: StrategyConfig[];
+  }>("get", baseUrlApi(`admin/strategy-configs/kb/${kb_id}`), {
     params
   });
 };

@@ -272,7 +272,7 @@ strategyConfig:
   # Search Parameters
   params:
     title: Search Parameters
-    queryExpansionNum: Query Expansion Num"
+    queryExpansionNum: Query Expansion Num
     maxTransformQueries: Max Transform Queries
     vectorTopK: Vector TopK
     bm25TopK: BM25 TopK

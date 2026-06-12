@@ -316,7 +316,13 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item :label="t('strategyConfig.params.rerankingMode')">
-                  <el-input v-model="dialogForm.reranking_mode" />
+                  <el-select v-model="dialogForm.reranking_mode" class="w-full">
+                    <el-option label="Vector" value="vector" />
+                    <el-option label="BM25" value="bm25" />
+                    <el-option label="Hybrid" value="hybrid" />
+                    <el-option label="Rerank" value="rerank" />
+                    <el-option label="LLM" value="llm" />
+                  </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -442,6 +448,7 @@ import Refresh from "~icons/ep/refresh";
 import Plus from "~icons/ep/plus";
 import Delete from "~icons/ep/delete";
 import EditPen from "~icons/ep/edit-pen";
+import { hasAuth } from "@/router/utils";
 
 const { t } = useI18n();
 
@@ -552,19 +559,26 @@ const columns: TableColumnList = [
   {
     label: t("common.createdAt") || "Created At",
     prop: "created_at",
-    width: 180
-  },
-  {
-    label: t("common.createdBy") || "Created By",
-    prop: "created_by",
-    width: 120
+    width: 180,
+    formatter: ({ created_at }) =>
+      created_at
+        ? new Date(created_at).toLocaleString("zh-CN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          })
+        : "—"
   },
   {
     label: t("common.operation"),
     prop: "operation",
     slot: "operation",
     fixed: "right",
-    width: 220
+    width: 220,
+    hide: !hasAuth("strategy_config:edit") && !hasAuth("strategy_config:delete")
   }
 ];
 
@@ -576,10 +590,10 @@ async function fetchData() {
       page: pagination.currentPage,
       page_size: pagination.pageSize
     });
-    // 适配后端包装的 ApiResponse 结构
-    if (res && res.data) {
-      tableData.value = res.data.items || [];
-      pagination.total = res.data.total || 0;
+
+    if (res) {
+      tableData.value = res.items || [];
+      pagination.total = res.total || 0;
     }
   } catch (error) {
     console.error(error);

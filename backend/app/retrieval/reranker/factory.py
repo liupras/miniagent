@@ -34,7 +34,7 @@ class RerankerFactory:
         reranker_config :Optional[dict] = None,
         llm_config      :LLM = None,
     ):
-        if not reranker_config:
+        if mode != RerankMode.SCORE and not reranker_config:
             raise ValueError("[Reranker] config is empty")
 
         if mode == RerankMode.BGE:

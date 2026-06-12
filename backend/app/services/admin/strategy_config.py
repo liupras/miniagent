@@ -22,8 +22,13 @@ StrategyConfigNotFoundError, StrategyConfigAlreadyExistsError = create_exception
 class StrategyConfigService:
     """Business logic for StrategyConfig."""
 
-    def __init__(self, db: AsyncStrategyConfigDatabase):
-        self._db = db
+    def __init__(self, container):
+        from app.core.service_container import ServiceContainer
+        if not isinstance(container, ServiceContainer):
+            raise TypeError(f"Expected ServiceContainer, got {type(container)}")
+        
+        self._db = container.strategy_config_db
+        self._retrieval_service = container.retrieval_service
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -63,20 +68,25 @@ class StrategyConfigService:
         )
 
     async def update(self, config_id: str, payload: StrategyConfigUpdate) -> StrategyConfigOut:
-        # Verify existence first
-        await self._get_or_404(config_id)
         data = payload.model_dump(exclude_none=True)
         if not data:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No fields provided for update.",
             )
-        await self._db.update(config_id, data)
+        obj = await self._get_or_404(config_id)
+        if not obj:
+            raise StrategyConfigNotFoundError(config_id)
+        if not self._retrieval_service:
+            self._retrieval_service.invalidate(kb_id=obj.kb_id)
+        await self._db.update(config_id,data)
         return await self._get_or_404(config_id)
 
     async def delete(self, config_id: str) -> int:
-        await self._get_or_404(config_id)
-        return await self._db.delete(config_id)
+        kb_id = await self._db.delete(config_id)
+        if not self._retrieval_service:
+            self._retrieval_service.invalidate(kb_id=kb_id)
+        return kb_id
 
     # ------------------------------------------------------------------
     # Activate
@@ -90,4 +100,6 @@ class StrategyConfigService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Activation failed.",
             )
+        if not self._retrieval_service:
+            self._retrieval_service.invalidate(kb_id=obj.kb_id)
         return await self._get_or_404(config_id)

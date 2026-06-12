@@ -71,19 +71,28 @@ class AsyncStrategyConfigDatabase(AsyncBaseDatabase):
 
     async def update(self, config_id: str, data: dict[str, Any]) -> int:
         async with self.get_session() as session:
-            result = await session.execute(
+            update_result = await session.execute(
                 update(StrategyConfig)
                 .where(StrategyConfig.config_id == config_id)
                 .values(**data)
             )
-            return result.rowcount
+            return update_result.rowcount
 
     async def delete(self, config_id: str) -> int:
+        """To facilitate cache refresh, return kb_id"""        
         async with self.get_session() as session:
             result = await session.execute(
+                select(StrategyConfig.kb_id).where(StrategyConfig.config_id == config_id)
+            )
+            kb_id = result.scalar_one_or_none()
+            
+            if kb_id is None:
+                return 0  # Record does not exist
+            
+            delete_result = await session.execute(
                 delete(StrategyConfig).where(StrategyConfig.config_id == config_id)
             )
-            return result.rowcount
+            return kb_id
 
     # ------------------------------------------------------------------
     # Activate helpers
