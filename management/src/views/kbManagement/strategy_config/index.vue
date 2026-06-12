@@ -6,14 +6,21 @@
       :model="searchForm"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
-      <el-form-item :label="t('strategyConfig.basic.kbId')" prop="kb_id">
-        <el-input-number
+      <el-form-item :label="t('strategyConfig.basic.kbName')" prop="kb_id">
+        <el-select
           v-model="searchForm.kb_id"
-          :min="1"
-          controls-position="right"
-          class="w-45!"
-          @keyup.enter="onSearch"
-        />
+          clearable
+          :placeholder="t('strategyConfig.kbNamePlaceholder')"
+          class="w-50!"
+          @change="onSearch"
+        >
+          <el-option
+            v-for="item in kbOptions"
+            :key="item.id"
+            :label="item.name"
+            :value="item.id"
+          />
+        </el-select>
       </el-form-item>
 
       <el-form-item>
@@ -145,15 +152,22 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item
-                  :label="t('strategyConfig.basic.kbId')"
+                  :label="t('strategyConfig.basic.kbName')"
                   prop="kb_id"
                 >
-                  <el-input-number
+                  <el-select
                     v-model="dialogForm.kb_id"
                     :disabled="dialogType === 'edit'"
-                    :min="1"
+                    placeholder="t('strategyConfig.basic.kbNamePlaceholder')"
                     class="w-full"
-                  />
+                  >
+                    <el-option
+                      v-for="item in kbOptions"
+                      :key="item.id"
+                      :label="item.name"
+                      :value="item.id"
+                    />
+                  </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -439,7 +453,9 @@ import {
   createStrategy,
   updateStrategy,
   activateStrategy,
-  deleteStrategy
+  deleteStrategy,
+  getKnowledgeBaseOptions,
+  type KnowledgeBaseOption
 } from "@/api/strategy_config";
 
 // Icons
@@ -454,7 +470,6 @@ const { t } = useI18n();
 
 // Refs
 const dialogFormRef = ref<FormInstance>();
-const searchFormRef = ref<FormInstance>();
 
 // Loading & Visibility states
 const loading = ref(false);
@@ -465,8 +480,11 @@ const activeTab = ref("basic");
 
 // Pagination & Data states
 const tableData = ref([]);
+const kbOptions = ref<KnowledgeBaseOption[]>([]);
 const extraConfigStr = ref("{}");
-const searchForm = reactive({ kb_id: 1 });
+
+// 优化3: 默认搜索设置为 null，实现无感查询全部策略
+const searchForm = reactive({ kb_id: null });
 
 const pagination = reactive({
   total: 0,
@@ -478,7 +496,7 @@ const pagination = reactive({
 // 全量默认初始值（严格映射 Pydantic 默认参数）
 const defaultFormData = {
   config_id: "",
-  kb_id: 1,
+  kb_id: null as number, // 初始化为 null 提示用户必须通过下拉框选择
   version: 1,
   prompt_language: "zh",
   enable_query_rewrite: true,
@@ -528,7 +546,7 @@ const formRules = reactive<FormRules>({
     {
       required: true,
       message: "t('strategyConfig.basic.kbIdRequired')",
-      trigger: "blur"
+      trigger: "change" // 下拉选择校验触发规则变更为 change
     }
   ],
   version: [
@@ -542,8 +560,21 @@ const formRules = reactive<FormRules>({
 
 // Table columns mapping
 const columns: TableColumnList = [
-  { label: "Config ID", prop: "config_id", width: 140, align: "left" },
-  { label: t("strategyConfig.basic.kbId"), prop: "kb_id", width: 100 },
+  {
+    label: t('strategyConfig.basic.configId'),
+    prop: "config_id",
+    width: 140,
+    align: "left"
+  },
+  {
+    label: t("strategyConfig.basic.kbName"),
+    prop: "kb_id",
+    width: 150,
+    formatter: ({ kb_id }) => {
+      const option = kbOptions.value.find(item => item.id === kb_id);
+      return option ? option.name : `ID: ${kb_id}`;
+    }
+  },
   { label: t("strategyConfig.basic.version"), prop: "version", width: 90 },
   {
     label: t("strategyConfig.basic.promptLanguage"),
@@ -583,13 +614,29 @@ const columns: TableColumnList = [
 ];
 
 // Actions & Handlers
+
+/** 获取知识库下拉选项 */
+async function fetchKbOptions() {
+  try {
+    const res = await getKnowledgeBaseOptions();
+    //console.log(res);
+    if (res) {
+      kbOptions.value = res;
+    }
+  } catch (error) {
+    console.error("t('strategyConfig.kbLoadError'):", error);
+  }
+}
+
 async function fetchData() {
   loading.value = true;
   try {
+    // 完美的单点统一调用
     const res: any = await getStrategyList(searchForm.kb_id, {
       page: pagination.currentPage,
       page_size: pagination.pageSize
     });
+    console.log(res.items);
 
     if (res) {
       tableData.value = res.items || [];
@@ -607,8 +654,9 @@ function onSearch() {
   fetchData();
 }
 
+// 优化5: 重置将 kb_id 归于 null 状态从而刷新出全量列表
 function onReset() {
-  searchForm.kb_id = 1;
+  searchForm.kb_id = null;
   pagination.currentPage = 1;
   fetchData();
 }
@@ -630,10 +678,8 @@ function openDialog(type: "add" | "edit", row?: any) {
 
   if (type === "edit" && row) {
     Object.assign(dialogForm, row);
-    // 优雅处理并美化高级 JSON 配置数据输入展现
     extraConfigStr.value = JSON.stringify(row.extra_config || {}, null, 2);
   } else {
-    // 完美重置为默认创建状态，规避上一次编辑缓存残留风险
     Object.assign(dialogForm, defaultFormData);
     extraConfigStr.value = "{}";
   }
@@ -647,7 +693,7 @@ async function handleActivate(row: any) {
     ElMessage.success(
       t("strategyConfig.activeSuccess") || "Activated successfully"
     );
-    fetchData(); // 重新拉取以更新其他互斥策略的激活标记
+    fetchData();
   } catch (error) {
     console.error(error);
   } finally {
@@ -655,7 +701,6 @@ async function handleActivate(row: any) {
   }
 }
 
-// 严谨校验高级 JSON 配置框输入的合法性
 function validateJsonField(): boolean {
   try {
     if (!extraConfigStr.value.trim()) {
@@ -666,7 +711,7 @@ function validateJsonField(): boolean {
     return true;
   } catch (e) {
     ElMessage.error("t('common.jsonFormatError')");
-    activeTab.value = "extra"; // 自动高亮切至对应的异常 Tab 页签
+    activeTab.value = "extra";
     return false;
   }
 }
@@ -674,7 +719,6 @@ function validateJsonField(): boolean {
 async function onSubmit() {
   if (!dialogFormRef.value) return;
 
-  // 结合 Element 基础规范与 JSON 预处理逻辑完成组合拦截校验
   const valid = await dialogFormRef.value.validate();
   if (!valid || !validateJsonField()) return;
 
@@ -709,7 +753,9 @@ async function onDelete(row: any) {
   }
 }
 
-onMounted(() => {
+// 初始化时：并行动调选项获取和业务列表加载
+onMounted(async () => {
+  await fetchKbOptions();
   fetchData();
 });
 </script>

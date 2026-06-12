@@ -124,6 +124,7 @@ menus:
     domain: Domain
     routerConfig: Router Config
     strategyConfig: Strategy Config
+    kownledgeBase: knowledge Base
   system:
     default: System Management
     cache: Cache Management
@@ -241,11 +242,15 @@ strategyConfig:
   tableTitle: Strategy Config List
   new: New Strategy Config
   edit: Edit Strategy Config
+  kbNamePlaceholder: All Knowledge Base
+  kbLoadError: Loading knowledge base option failed
   
   basic:
     title: Basic Settings
     configId: Config ID
     kbId: KB ID
+    kbName: KB Name
+    kbNamePlaceholder: Please select a knowledge base
     version: Version
     isActive: Is Active
     promptLanguage: Prompt Language

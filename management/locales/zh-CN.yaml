@@ -124,6 +124,7 @@ menus:
     domain: 领域
     routerConfig: 路由策略
     strategyConfig: 检索策略
+    kownledgeBase: 知识库基本信息
   system:
     default: 系统管理
     cache: 缓存
@@ -240,11 +241,15 @@ strategyConfig:
   tableTitle: 策略配置列表
   new: 新建策略配置
   edit: 编辑策略配置
+  kbNamePlaceholder: 全部知识库
+  kbLoadError: 加载知识库选项失败
   
   basic:
     title: 基础设置
     configId: 配置ID
     kbId: 知识库ID
+    kbName: 知识库名称
+    kbNamePlaceholder: 请选择知识库   
     version: 版本号
     isActive: 当前激活
     promptLanguage: 提示词语言

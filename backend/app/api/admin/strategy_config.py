@@ -98,7 +98,7 @@ async def list_strategy_configs(
 
 @router.get(
     "",
-    response_model=StrategyConfigListOut,
+    response_model=ApiResponse,
     summary="List all strategy configs (paginated)",
     description="Return a paginated list of all strategy configs, optionally filtered by kb_id or is_active.",
 )
@@ -109,7 +109,7 @@ async def list_all_strategy_configs(
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     svc:       StrategyConfigService   = Depends(get_service),
     caller_id: int            = Depends(_list),
-) -> StrategyConfigListOut:
+) -> ApiResponse:
     data = await svc.list_all(
         kb_id=kb_id,
         is_active=is_active,

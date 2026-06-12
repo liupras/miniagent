@@ -66,14 +66,17 @@ export const getKnowledgeBaseOptions = () => {
 
 /** 获取知识库下的策略列表 (带分页) */
 export const getStrategyList = (
-  kb_id: number,
+  kb_id?: number | null,
   params?: { page?: number; page_size?: number }
 ) => {
   return http.request<{
     total: number;
     items: StrategyConfig[];
-  }>("get", baseUrlApi(`admin/strategy-configs/kb/${kb_id}`), {
-    params
+  }>("get", baseUrlApi("admin/strategy-configs"), {
+    params: {
+      kb_id: kb_id ?? undefined,
+      ...params
+    }
   });
 };
 

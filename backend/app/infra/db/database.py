@@ -317,7 +317,6 @@ class KnowledgeBase(Base):
         Index("idx_kb_embedding_id", "embedding_id"),
         Index("idx_kb_is_active", "is_active"),
         Index("idx_kb_domain_id", "domain_id"),
-        Index("idx_kb_mode", "mode"),
         Index("idx_kb_llm_id", "llm_id"),
     )
 

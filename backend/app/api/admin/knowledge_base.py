@@ -10,6 +10,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.core.security.auth_permission import AuthPermission
+from app.schemas.common import ApiResponse
 from app.schemas.admin.knowledge_base import (
     KnowledgeBaseCreate,
     KnowledgeBaseListOut,
@@ -61,15 +62,16 @@ async def list_kbs(
 
 @router.get(
     "/options",
-    response_model=list[KnowledgeBaseOption],
+    response_model=ApiResponse,
     summary="Get knowledge base options",
     description="Return a list of knowledge bases for dropdown selection.",
 )
 async def get_kb_options(
     svc:       KnowledgeBaseService   = Depends(get_service),
     caller_id: int            = Depends(_list),
-) -> list[KnowledgeBaseOption]:
-    return await svc.get_kb_options()
+) -> ApiResponse:
+    data = await svc.get_kb_options()
+    return ApiResponse(data=data)
 
 
 @router.get(

@@ -146,7 +146,7 @@ from app.api.admin.strategy_config import router as admin_strategy_config
 app.include_router(admin_strategy_config,prefix="/api/v1/admin/strategy-configs", tags=["Admin - Strategy Config"])
 
 from app.api.admin.knowledge_base import router as admin_kownledge_base
-app.include_router(admin_kownledge_base,prefix="/api/v1/admin/kownledge-bases", tags=["Admin - Knowledge Base"])
+app.include_router(admin_kownledge_base,prefix="/api/v1/admin/knowledge-bases", tags=["Admin - Knowledge Base"])
 
 from app.api.admin.kb import router as admin_kb_router
 app.include_router(admin_kb_router,prefix="/api/v1/admin/kb", tags=["Admin - Knowledge Base"])
