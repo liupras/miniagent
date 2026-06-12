@@ -58,6 +58,35 @@ class AsyncStrategyConfigDatabase(AsyncBaseDatabase):
             )
             items = list(rows_result.scalars().all())
             return total, items
+        
+    async def list_all(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        kb_id: int | None = None,
+        is_active: bool | None = None
+    ) -> tuple[int, list[StrategyConfig]]:
+        """List all strategy configs with optional filters."""
+        async with self.get_session() as session:
+            base_q = select(StrategyConfig)
+            
+            if kb_id is not None:
+                base_q = base_q.where(StrategyConfig.kb_id == kb_id)
+            if is_active is not None:
+                base_q = base_q.where(StrategyConfig.is_active == is_active)
+            
+            total_result = await session.execute(
+                select(func.count()).select_from(base_q.subquery())
+            )
+            total: int = total_result.scalar_one()
+
+            rows_result = await session.execute(
+                base_q.order_by(StrategyConfig.created_at.desc())
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+            )
+            items = list(rows_result.scalars().all())
+            return total, items
 
     # ------------------------------------------------------------------
     # Write

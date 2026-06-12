@@ -53,6 +53,7 @@ from app.services.admin.tool import ToolService
 from app.services.admin.domain import DomainService
 from app.services.admin.router_config import RouterConfigService
 from app.services.admin.strategy_config import StrategyConfigService
+from app.services.admin.knowledge_base import KnowledgeBaseService
 
 import importlib
 
@@ -159,6 +160,7 @@ class ServiceContainer:
         self.domain_service = DomainService(self.domain_db)
         self.router_config_service = RouterConfigService(self)
         self.strategy_config_service = StrategyConfigService(self)
+        self.kb_service = KnowledgeBaseService(self)
 
     async def start(self):
         await self.init_plugins()

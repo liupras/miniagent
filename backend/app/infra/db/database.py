@@ -280,8 +280,7 @@ class KnowledgeBase(Base):
     __tablename__ = "knowledge_bases"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(100), nullable=False, unique=True)
-    mode = Column(String(20), nullable=False, default="rag", comment="Knowledge base mode: rag, recommend, hybrid")
+    name = Column(String(100), nullable=False, unique=True)    
     domain_id = Column(Integer, ForeignKey("domains.id", ondelete="RESTRICT"), nullable=False,
                        comment="Domain this KB belongs to — determines the DomainPlugin used at indexing time")
     keywords = Column(
@@ -306,9 +305,6 @@ class KnowledgeBase(Base):
     chunk_overlap = Column(Integer, default=80, comment="Block overlap (number of characters)")
     parent_size = Column(Integer, default=1800, comment="Parent block size (number of characters)")
     parent_overlap = Column(Integer, default=200, comment="Parent block overlap (number of characters)")
-
-    vector_dim = Column(Integer, default=1024, comment="dimension of vector")
-    index_type = Column(String(50), default="IVF_FLAT", comment="Index type: FLAT,IVF_FLAT,HNSW ")
 
     llm_id = Column(Integer, ForeignKey("llms.id", ondelete="SET NULL"), nullable=True)
 

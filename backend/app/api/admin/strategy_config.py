@@ -6,8 +6,9 @@
 
 
 from __future__ import annotations
+from typing import Optional
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.core.security.auth_permission import AuthPermission
 from app.schemas.common import ApiResponse
@@ -95,6 +96,27 @@ async def list_strategy_configs(
     data = await svc.list(kb_id, page, page_size)
     return ApiResponse(data=data)
 
+@router.get(
+    "",
+    response_model=StrategyConfigListOut,
+    summary="List all strategy configs (paginated)",
+    description="Return a paginated list of all strategy configs, optionally filtered by kb_id or is_active.",
+)
+async def list_all_strategy_configs(
+    kb_id: Optional[int] = Query(None, description="Filter by knowledge base ID"),
+    is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    page: int = Query(1, ge=1, description="1-based page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    svc:       StrategyConfigService   = Depends(get_service),
+    caller_id: int            = Depends(_list),
+) -> StrategyConfigListOut:
+    data = await svc.list_all(
+        kb_id=kb_id,
+        is_active=is_active,
+        page=page,
+        page_size=page_size
+    )
+    return ApiResponse(data=data)
 
 @router.patch(
     "/{config_id}",

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from fastapi import HTTPException, status
 
-from app.repositories.async_strategy_config import AsyncStrategyConfigDatabase
 from app.schemas.admin.strategy_config import (
     StrategyConfigCreate,
     StrategyConfigListOut,
@@ -43,6 +42,22 @@ class StrategyConfigService:
     # ------------------------------------------------------------------
     # CRUD
     # ------------------------------------------------------------------
+
+    async def list_all(
+        self,
+        page: int = 1,
+        page_size: int = 20,
+        kb_id: int | None = None,
+        is_active: bool | None = None
+    ) -> StrategyConfigListOut:
+        """List all strategy configs with optional filters."""
+        total, items = await self._db.list_all(
+            page=page,
+            page_size=page_size,
+            kb_id=kb_id,
+            is_active=is_active
+        )
+        return StrategyConfigListOut(total=total, page=page, page_size=page_size, items=[StrategyConfigOut.model_validate(item) for item in items])
 
     async def create(self, payload: StrategyConfigCreate) -> StrategyConfigOut:
         data = payload.model_dump()
