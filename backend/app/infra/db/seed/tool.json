@@ -31,7 +31,6 @@
         }
       }
     },
-    "mcp_compatible": false,
     "is_active": true
   },
   {
@@ -86,7 +85,6 @@
         }
       }
     },
-    "mcp_compatible": false,
     "is_active": true
   },
   {
@@ -116,7 +114,6 @@
         }
       }
     },
-    "mcp_compatible": false,
     "is_active": true
   }
 ]

@@ -10,7 +10,6 @@ export interface Tool {
   description: string | null;
   tool_type: ToolType;
   tool_schema: Record<string, unknown>;
-  mcp_compatible: boolean;
   config: Record<string, unknown> | null;
   is_active: boolean;
   created_at: string;
@@ -35,7 +34,6 @@ export interface ToolListParams {
 export interface ToolStats {
   total: number;
   active: number;
-  mcp_compatible: number;
   by_type: Record<string, number>;
 }
 

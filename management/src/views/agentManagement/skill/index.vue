@@ -7,20 +7,20 @@
       :model="searchForm"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
-      <el-form-item :label="t('tool.name')" prop="keyword">
+      <el-form-item :label="t('form.name.label')" prop="keyword">
         <el-input
           v-model="searchForm.keyword"
-          :placeholder="t('tool.nameSearchPlaceholder')"
+          :placeholder="t('search.name.placeholder')"
           clearable
           class="w-45!"
           @keyup.enter="onSearch"
         />
       </el-form-item>
 
-      <el-form-item :label="t('tool.toolType')" prop="tool_type">
+      <el-form-item :label="t('form.type.label')" prop="tool_type">
         <el-select
           v-model="searchForm.tool_type"
-          :placeholder="t('tool.toolTypeSearchPlaceholder')"
+          :placeholder="t('search.type.placeholder')"
           clearable
           class="w-36!"
         >
@@ -33,10 +33,10 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item :label="t('tool.status')" prop="is_active">
+      <el-form-item :label="t('labels.status')" prop="is_active">
         <el-select
           v-model="searchForm.is_active"
-          :placeholder="t('tool.statusPlaceholder')"
+          :placeholder="t('search.status.placeholder')"
           clearable
           class="w-32.5!"
         >
@@ -112,19 +112,6 @@
             </el-tag>
           </template>
 
-          <!-- mcp_compatible -->
-          <template #mcp_compatible="{ row }">
-            <el-tag
-              v-if="row.mcp_compatible"
-              type="warning"
-              effect="plain"
-              size="small"
-            >
-              MCP
-            </el-tag>
-            <span v-else class="text-gray-400">—</span>
-          </template>
-
           <!-- is_active -->
           <template #is_active="{ row }">
             <el-switch
@@ -166,7 +153,7 @@
               {{ t("buttons.edit") }}
             </el-button>
             <el-popconfirm
-              :title="t('common.deleteConfirm', { name: row.name })"
+              :title="t('messages.deleteConfirm', { name: row.name })"
               @confirm="onDelete(row)"
             >
               <template #reference>
@@ -199,18 +186,18 @@
         :rules="dialogRules"
         label-width="110px"
       >
-        <el-form-item :label="t('tool.name')" prop="name">
+        <el-form-item :label="t('form.name.label')" prop="name">
           <el-input
             v-model="dialogForm.name"
-            :placeholder="t('tool.namePlaceholder')"
+            :placeholder="t('tool.name.placeholder')"
             :disabled="dialogType === 'edit'"
           />
         </el-form-item>
 
-        <el-form-item :label="t('tool.toolType')" prop="tool_type">
+        <el-form-item :label="t('form.type.label')" prop="tool_type">
           <el-select
             v-model="dialogForm.tool_type"
-            :placeholder="t('tool.toolTypePlaceholder')"
+            :placeholder="t('form.type.selectPlaceholder')"
             class="w-full"
           >
             <el-option
@@ -222,12 +209,12 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item :label="t('tool.description')" prop="description">
+        <el-form-item :label="t('form.description')" prop="description">
           <el-input
             v-model="dialogForm.description"
             type="textarea"
             :rows="2"
-            :placeholder="t('tool.descriptionPlaceholder')"
+            :placeholder="t('form.description.placeholder')"
           />
         </el-form-item>
 
@@ -237,7 +224,7 @@
               v-model="dialogForm.tool_schema"
               type="textarea"
               :rows="9"
-              :placeholder="t('tool.toolSchemaPlaceholder')"
+              :placeholder="t('tool.toolSchema.placeholder')"
               class="font-mono text-xs"
               @blur="validateJsonField('tool_schema')"
             />
@@ -247,13 +234,13 @@
           </div>
         </el-form-item>
 
-        <el-form-item :label="t('tool.config')">
+        <el-form-item :label="t('tool.config.label')">
           <div class="w-full">
             <el-input
               v-model="dialogForm.config"
               type="textarea"
               :rows="5"
-              :placeholder="t('tool.configPlaceholder')"
+              :placeholder="t('tool.config.placeholder')"
               class="font-mono text-xs"
               @blur="validateJsonField('config')"
             />
@@ -262,23 +249,6 @@
             </div>
           </div>
         </el-form-item>
-
-        <el-row :gutter="0">
-          <el-col :span="12">
-            <el-form-item :label="t('tool.mcpCompatible')">
-              <el-switch v-model="dialogForm.mcp_compatible" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item :label="t('common.status')">
-              <el-switch
-                v-model="dialogForm.is_active"
-                :active-text="t('buttons.active')"
-                :inactive-text="t('buttons.inactive')"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
       </el-form>
 
       <template #footer>
@@ -381,7 +351,6 @@ const dialogForm = reactive({
   tool_type: "function" as ToolType,
   tool_schema: "",
   config: "",
-  mcp_compatible: false,
   is_active: true
 });
 
@@ -403,8 +372,7 @@ const DEFAULT_SCHEMA = JSON.stringify(
 function validateJsonField(field: "tool_schema" | "config") {
   const val = dialogForm[field].trim();
   if (!val) {
-    jsonError[field] =
-      field === "tool_schema" ? t("tool.toolSchemaRequired") : "";
+    jsonError[field] = field === "tool_schema" ? t("validation.required") : "";
     return field !== "tool_schema";
   }
   try {
@@ -412,26 +380,30 @@ function validateJsonField(field: "tool_schema" | "config") {
     jsonError[field] = "";
     return true;
   } catch {
-    jsonError[field] = t("common.jsonFormatError");
+    jsonError[field] = t("messages.jsonFormatError");
     return false;
   }
 }
 
 const dialogRules: FormRules = {
   name: [
-    { required: true, message: t("tool.nameRequired"), trigger: "blur" },
-    { max: 100, message: t("tool.nameMaxLength"), trigger: "blur" },
+    { required: true, message: t("validation.required"), trigger: "blur" },
+    {
+      max: 100,
+      message: t("validation.maxLength", { count: 100 }),
+      trigger: "blur"
+    },
     {
       pattern: /^[a-zA-Z][a-zA-Z0-9_]*$/,
-      message: t("tool.namePattern"),
+      message: t("tool.name.pattern"),
       trigger: "blur"
     }
   ],
   tool_type: [
-    { required: true, message: t("tool.toolTypeRequired"), trigger: "change" }
+    { required: true, message: t("validation.required"), trigger: "change" }
   ],
   tool_schema: [
-    { required: true, message: t("tool.toolSchemaRequired"), trigger: "blur" },
+    { required: true, message: t("validation.required"), trigger: "blur" },
     {
       validator: (_rule, _val, callback) => {
         if (!validateJsonField("tool_schema"))
@@ -448,35 +420,28 @@ const dialogRules: FormRules = {
 const columns: TableColumnList = [
   { type: "selection", width: 55, fixed: "left", reserveSelection: true },
   { label: "ID", prop: "id", width: 70 },
-  { label: t("tool.name"), prop: "name", minWidth: 160 },
+  { label: t("form.name.label"), prop: "name", minWidth: 160 },
   {
-    label: t("tool.toolType"),
+    label: t("form.type.label"),
     prop: "tool_type",
     width: 130,
     slot: "tool_type"
   },
   {
-    label: t("tool.description"),
+    label: t("form.description"),
     prop: "description",
     minWidth: 200,
     slot: "description"
   },
   {
-    label: t("tool.mcpCompatible"),
-    prop: "mcp_compatible",
-    width: 80,
-    slot: "mcp_compatible",
-    hide: true
-  },
-  {
-    label: t("common.status"),
+    label: t("form.status"),
     prop: "is_active",
     width: 140,
     slot: "is_active",
     hide: !hasAuth("tool:edit")
   },
   {
-    label: t("common.updatedAt"),
+    label: t("form.updatedAt"),
     prop: "updated_at",
     width: 170,
     formatter: ({ updated_at }) =>
@@ -492,7 +457,7 @@ const columns: TableColumnList = [
         : "—"
   },
   {
-    label: t("common.operation"),
+    label: t("labels.operation"),
     prop: "operation",
     width: 160,
     fixed: "right",
@@ -563,7 +528,6 @@ function openDialog(type: "add" | "edit", row?: Tool) {
       tool_type: row.tool_type,
       tool_schema: JSON.stringify(row.tool_schema, null, 2),
       config: row.config ? JSON.stringify(row.config, null, 2) : "",
-      mcp_compatible: row.mcp_compatible,
       is_active: row.is_active
     });
   } else {
@@ -574,7 +538,6 @@ function openDialog(type: "add" | "edit", row?: Tool) {
       tool_type: "function",
       tool_schema: DEFAULT_SCHEMA,
       config: "",
-      mcp_compatible: false,
       is_active: true
     });
   }
@@ -594,16 +557,15 @@ async function onSubmit() {
       tool_type: dialogForm.tool_type,
       tool_schema: JSON.parse(dialogForm.tool_schema),
       config: dialogForm.config.trim() ? JSON.parse(dialogForm.config) : null,
-      mcp_compatible: dialogForm.mcp_compatible,
       is_active: dialogForm.is_active
     };
 
     if (dialogType.value === "add") {
       await createTool(payload);
-      ElMessage.success(t("common.addSuccess"));
+      ElMessage.success(t("messages.addSuccess"));
     } else {
       await updateTool(dialogForm.id!, payload);
-      ElMessage.success(t("common.editSuccess"));
+      ElMessage.success(t("messages.editSuccess"));
     }
 
     dialogVisible.value = false;
@@ -617,18 +579,18 @@ async function onSubmit() {
 
 async function onDelete(row: Tool) {
   await deleteTool(row.id);
-  ElMessage.success(t("common.deleteSuccess"));
+  ElMessage.success(t("messages.deleteSuccess"));
   fetchData();
 }
 
 async function onBatchDelete() {
   await ElMessageBox.confirm(
-    t("common.batchDeleteConfirm", { count: selectedIds.value.length }),
-    t("common.warning"),
+    t("messages.batchDeleteConfirm", { count: selectedIds.value.length }),
+    t("messages.warning"),
     { type: "warning" }
   );
   await bulkDeleteTools(selectedIds.value);
-  ElMessage.success(t("common.deleteSuccess"));
+  ElMessage.success(t("messages.deleteSuccess"));
 
   fetchData();
 }
@@ -638,7 +600,7 @@ async function onToggleActive(row: any) {
   try {
     await toggleTool(row.id);
     ElMessage.success(
-      row.is_active ? t("common.activated") : t("common.deactivated")
+      row.is_active ? t("labels.activated") : t("labels.deactivated")
     );
   } catch {
     row.is_active = !row.is_active; // revert on error

@@ -74,7 +74,7 @@
           <template #is_active="{ row }">
             <el-tag :type="row.is_active ? 'success' : 'info'">
               {{
-                row.is_active ? t("common.activated") : t("common.deactivated")
+                row.is_active ? t("labels.activated") : t("labels.deactivated")
               }}
             </el-tag>
           </template>
@@ -99,7 +99,7 @@
               {{ t("buttons.edit") }}
             </el-button>
             <el-popconfirm
-              :title="t('common.deleteConfirm')"
+              :title="t('messages.deleteConfirm')"
               @confirm="onDelete(row)"
             >
               <template #reference>
@@ -158,7 +158,7 @@
                   <el-select
                     v-model="dialogForm.kb_id"
                     :disabled="dialogType === 'edit'"
-                    placeholder="t('strategyConfig.basic.kbNamePlaceholder')"
+                    placeholder="t('strategyConfig.kbNamePlaceholder')"
                     class="w-full"
                   >
                     <el-option
@@ -173,10 +173,7 @@
             </el-row>
             <el-row :gutter="20">
               <el-col :span="12">
-                <el-form-item
-                  :label="t('strategyConfig.basic.version')"
-                  prop="version"
-                >
+                <el-form-item :label="t('labels.version')" prop="version">
                   <el-input-number
                     v-model="dialogForm.version"
                     :min="1"
@@ -533,26 +530,26 @@ const formRules = reactive<FormRules>({
   config_id: [
     {
       required: true,
-      message: "t('strategyConfig.basic.configIdRequired')",
+      message: "t('validation.required')",
       trigger: "blur"
     },
     {
       max: 100,
-      message: "t('strategyConfig.basic.configIdRequired')",
+      message: "t('validation.required')",
       trigger: "blur"
     }
   ],
   kb_id: [
     {
       required: true,
-      message: "t('strategyConfig.basic.kbIdRequired')",
+      message: "t('validation.required')",
       trigger: "change" // 下拉选择校验触发规则变更为 change
     }
   ],
   version: [
     {
       required: true,
-      message: "t('strategyConfig.basic.versionRequired')",
+      message: "t('validation.required')",
       trigger: "blur"
     }
   ]
@@ -561,7 +558,7 @@ const formRules = reactive<FormRules>({
 // Table columns mapping
 const columns: TableColumnList = [
   {
-    label: t('strategyConfig.basic.configId'),
+    label: t("strategyConfig.basic.configId"),
     prop: "config_id",
     width: 140,
     align: "left"
@@ -575,20 +572,20 @@ const columns: TableColumnList = [
       return option ? option.name : `ID: ${kb_id}`;
     }
   },
-  { label: t("strategyConfig.basic.version"), prop: "version", width: 90 },
+  { label: t("labels.version"), prop: "version", width: 90 },
   {
     label: t("strategyConfig.basic.promptLanguage"),
     prop: "prompt_language",
     width: 130
   },
   {
-    label: t("strategyConfig.basic.isActive"),
+    label: t("labels.isActive"),
     prop: "is_active",
     slot: "is_active",
     width: 110
   },
   {
-    label: t("common.createdAt") || "Created At",
+    label: t("form.createdAt") || "Created At",
     prop: "created_at",
     width: 180,
     formatter: ({ created_at }) =>
@@ -604,7 +601,7 @@ const columns: TableColumnList = [
         : "—"
   },
   {
-    label: t("common.operation"),
+    label: t("labels.operation"),
     prop: "operation",
     slot: "operation",
     fixed: "right",
@@ -690,9 +687,7 @@ async function handleActivate(row: any) {
   loading.value = true;
   try {
     await activateStrategy(row.config_id);
-    ElMessage.success(
-      t("strategyConfig.activeSuccess") || "Activated successfully"
-    );
+    ElMessage.success(t("messages.activeSuccess") || "Activated successfully");
     fetchData();
   } catch (error) {
     console.error(error);
@@ -710,7 +705,7 @@ function validateJsonField(): boolean {
     dialogForm.extra_config = JSON.parse(extraConfigStr.value);
     return true;
   } catch (e) {
-    ElMessage.error("t('common.jsonFormatError')");
+    ElMessage.error("t('messages.jsonFormatError')");
     activeTab.value = "extra";
     return false;
   }
@@ -726,10 +721,10 @@ async function onSubmit() {
   try {
     if (dialogType.value === "add") {
       await createStrategy(dialogForm as any);
-      ElMessage.success(t("common.addSuccess"));
+      ElMessage.success(t("messages.addSuccess"));
     } else {
       await updateStrategy(dialogForm.config_id, dialogForm);
-      ElMessage.success(t("common.editSuccess"));
+      ElMessage.success(t("messages.editSuccess"));
     }
     dialogVisible.value = false;
     fetchData();
@@ -744,7 +739,7 @@ async function onDelete(row: any) {
   loading.value = true;
   try {
     await deleteStrategy(row.config_id);
-    ElMessage.success(t("common.deleteSuccess"));
+    ElMessage.success(t("messages.deleteSuccess"));
     fetchData();
   } catch (error) {
     console.error(error);

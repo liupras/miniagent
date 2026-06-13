@@ -1,27 +1,3 @@
-common:
-  operation: 操作
-  activated: 已启用
-  deactivated: 已禁用
-  deleteConfirm: 确认删除「{name}」吗？
-  batchDeleteConfirm: 确认批量删除 {count} 条记录吗？  
-  status: 状态
-  statusPlaceholder: 全部状态
-  createdAt: 创建时间
-  addSuccess: 添加成功
-  editSuccess: 编辑成功
-  deleteSuccess: 删除成功
-  warning: 警告
-  loadingError: 数据加载失败，请检查网络或联系管理员
-  jsonFormatError: JSON 格式有误
-  updatedAt: 更新时间
-  initError: 页面初始化失败
-  yes: 是
-  no: 否
-  actions: 操作
-  saveSuccess: 保存成功
-  saveFailed: 保存失败，请重试
-  actionSuccess: 操作成功
-  createdBy: 创建者
 buttons:
   pureLoginOut: 退出系统
   pureLogin: 登录
@@ -42,6 +18,7 @@ buttons:
   pureBackTop: 回到顶部
   pureOpenText: 开
   pureCloseText: 关
+
   add: 添加
   edit: 编辑
   delete: 删除
@@ -60,13 +37,9 @@ buttons:
   inactive: 禁用  
   batchDelete: 批量删除 
   asign: 指派   
-search:
-  pureTotal: 共
-  pureHistory: 搜索历史
-  pureCollect: 收藏
-  pureDragSort: （可拖拽排序）
-  pureEmpty: 暂无搜索结果
-  purePlaceholder: 搜索菜单（支持拼音搜索）
+  toggle: 切换状态
+  stats: 统计
+
 panel:
   pureSystemSet: 系统配置
   pureCloseSystemSet: 关闭配置
@@ -102,6 +75,7 @@ panel:
   pureHiddenTags: 隐藏标签页
   pureHiddenFooter: 隐藏页脚
   pureMultiTagsCache: 页签持久化
+
 menus:
   pureHome: 首页
   pureLogin: 登录
@@ -114,6 +88,7 @@ menus:
   purePermissionButton: 按钮权限
   purePermissionButtonRouter: 路由返回按钮权限
   purePermissionButtonLogin: 登录接口返回按钮权限
+
   agentManagement: 
     default: 智能体管理
     agent: 智能体
@@ -128,6 +103,7 @@ menus:
   system:
     default: 系统管理
     cache: 缓存
+
 status:
   pureLoad: 加载中...
   pureMessage: 消息
@@ -136,6 +112,7 @@ status:
   pureNoMessage: 暂无消息
   pureNoNotify: 暂无通知
   pureNoTodo: 暂无待办
+
 login:
   pureUsername: 账号
   purePassword: 密码
@@ -145,69 +122,120 @@ login:
   pureUsernameReg: 请输入账号
   purePassWordReg: 请输入密码
   purePassWordRuleReg: 密码格式应为8-18位数字、字母、符号的任意两种组合
-agent:
-  tableTitle: 智能体管理   
-  llm: 大模型
-  llmPlaceholder: 请选择大模型
+
+messages:
+  deleteConfirm: 确认删除「{name}」吗？
+  batchDeleteConfirm: 确认批量删除 {count} 条记录吗？
+
+  addSuccess: 创建成功
+  editSuccess: 编辑成功
+  deleteSuccess: 删除成功
+  toggleSuccess: 状态切换成功
+
+  saveSuccess: 保存成功
+  saveFailed: 保存失败，请重试
+
+  warning: 警告
+  loadingError: 数据加载失败，请检查网络或联系管理员
+  jsonFormatError: JSON 格式有误  
+  initError: 页面初始化失败
+
+  activeSuccess: 激活成功
+
+labels:
+  operation: 操作
   user: 用户
-  userPlaceholder: 请选择用户
-  boundUsers: 绑定用户
-  boundUsersSuccess: 绑定用户更新成功
-  boundSkills: 绑定技能
-  boundSkillsSuccess: 绑定技能更新成功
-  boundLLM: 绑定大模型
-  boundLLMSuccess: 绑定大模型更新成功
-  llmSelectionRequired: 请至少选择一个大模型
-  name: 智能体名称
-  namePlaceholder: 请输入智能体名称
-  nameRequired: 请填写智能体名称
-  nameMaxLength: 名称最多100个字符
-  description: 描述
-  descriptionPlaceholder: 请输入描述（可选）
-  systemPrompt: 系统提示词
-  systemPromptPlaceholder: 请输入系统提示词
-  systemPromptRequired: 请填写系统提示词
+  status: 状态
+  version: 版本号
+  isActive: 是否启用
+
+  activated: 已启用
+  deactivated: 已禁用
+
+  yes: 是
+  no: 否  
+
+search:
+  pureTotal: 共
+  pureHistory: 搜索历史
+  pureCollect: 收藏
+  pureDragSort: （可拖拽排序）
+  pureEmpty: 暂无搜索结果
+  purePlaceholder: 搜索菜单（支持拼音搜索）
+
+  status:
+    placeholder: 全部状态
+    selectPlaceholder: 请选择状态
+  user: 
+    selectPlaceholder: 请选择用户
+  name:
+    placeholder: 搜索名称
+  type:
+    placeholder: 全部类型
+
+form:
+  status: 状态
+  createdAt: 创建时间
+  updatedAt: 更新时间
+
+  name:
+    label: 名称
+    placeholder: 请输入名称
+  description:
+    lable: 描述
+    placeholder: 请输入描述
+  llm:
+    label: 大模型
+    selectPlaceholder: 请选择大模型
+  type:
+    label: 类型
+    selectPlaceholder: 请选择类型
+
+validation:
+  required: 此字段为必填/必选项
+  maxLength: 最多 {count} 个字符
+  class:
+    required: 请输入完整的类路径  
+
+agent:
+  tableTitle: 智能体管理
+  systemPrompt:
+    label: 系统提示词
+    placeholder: 请输入系统提示词
+  
+  bound:
+    users: 绑定用户
+    usersSuccess: 绑定用户成功
+    skills: 绑定技能
+    skillsSuccess: 绑定技能成功
+    llm: 绑定大模型
+    llmSuccess: LLM绑定成功
+
 tool:
   tableTitle: 技能管理  
-  status: 状态
-  statusPlaceholder: 全部状态
+  
   new: 新增技能
   edit: 编辑技能
-  name: 名称
-  nameSearchPlaceholder: 搜索名称或描述
-  namePlaceholder: 字母、数字和下划线，字母开头
-  nameRequired: 请填写技能名称
-  nameMaxLength: 名称最多100个字符
-  namePattern: 字母开头，仅允许字母、数字和下划线
-  toolType: 类型
-  toolTypeSearchPlaceholder: 全部类型
-  toolTypePlaceholder: 请选择类型
-  toolTypeRequired: 请选择技能类型
-  description: 描述
-  descriptionPlaceholder: 描述该技能的用途
-  toolSchema: 技能Schema
-  toolSchemaPlaceholder: 请提供技能的输入输出格式、参数说明
-  toolSchemaRequired: Schema 不能为空
-  config: 配置
-  configPlaceholder: JSON格式，提供技能配置项的说明
-  mcpCompatible: MCP兼容
+  name:
+    placeholder: 字母、数字和下划线，字母开头
+    pattern: 字母开头，仅允许字母、数字和下划线
+  toolSchema: 
+    label: 技能Schema
+    placeholder: 请提供技能的输入输出格式、参数说明
+  config: 
+    label: 配置
+    placeholder: JSON格式，提供技能配置项的说明
+
 domain:
-  title: 领域管理
-  name: 领域名称
-  namePlaceholder: 请输入领域名称
-  type: 领域类型
-  typePlaceholder: 请选择领域类型
   processorClass: 处理器类
   pluginClass: 插件类
-  description: 描述
   metadataSchema: 元数据 Schema
   tableTitle: 领域列表
   new: 新增领域
   edit: 编辑领域
-  nameRequired: 请输入领域名称
+
   nameNoSpace: 领域名称不能包含空格
-  typeRequired: 请选择领域类型
-  classRequired: 请输入完整的类路径
+
 routerConfig:
   # 页面标题 & 面包屑
   title: 路由策略配置
@@ -235,9 +263,8 @@ routerConfig:
 
   # 提示 & 校验
   maxKbCountMin: 最大 KB 数不能小于 1
-  required: 此字段为必填项
+
 strategyConfig:
-  title: 策略配置管理
   tableTitle: 策略配置列表
   new: 新建策略配置
   edit: 编辑策略配置
@@ -248,18 +275,10 @@ strategyConfig:
     title: 基础设置
     configId: 配置ID
     kbId: 知识库ID
-    kbName: 知识库名称
-    kbNamePlaceholder: 请选择知识库   
-    version: 版本号
-    isActive: 当前激活
+    kbName: 知识库名称    
+    
     promptLanguage: 提示词语言
-    configIdRequired: Config ID 是必填项
     configIdMax: 长度应小于100
-    kbIdRequired: Knowledge Base ID 是必填项
-    versionRequired: Version 是必填项
-
-  # 提示
-  activeSuccess: 激活成功
   
   # 功能开关
   switches:
@@ -299,3 +318,60 @@ strategyConfig:
   extra:
     title: 其他设置
     placeholder: 请输入标准的JSON格式配置
+
+knowledgeBase:
+  title: 知识库管理
+
+  # ── 表格列 ──────────────────────────────────────────────────
+  columns:
+    domain: 所属域
+    collectionName: 向量集合名
+    documentCount: 文档数
+    chunkCount: 分块数
+
+  # ── 搜索栏 ──────────────────────────────────────────────────
+  search:
+    namePlaceholder: 搜索知识库名称
+    domainPlaceholder: 选择域
+    statusPlaceholder: 选择状态
+
+  # ── 对话框 ──────────────────────────────────────────────────
+  dialog:
+    createTitle: 新增知识库
+    editTitle: 编辑知识库
+    statsTitle: 知识库统计
+
+  # ── 表单字段 ─────────────────────────────────────────────────
+  form:
+    basicInfo: 基本信息
+    vectorConfig: 向量配置
+    chunkConfig: 分块配置
+
+    domain: 所属域
+    domainPlaceholder: 请选择所属域
+    collectionName: 向量集合名
+    collectionNamePlaceholder: 请输入向量集合名（VectorDB collection）
+
+    keywords: 关键词
+    keywordsPlaceholder: 输入关键词后按 Enter 确认
+    embeddingId: Embedding 配置
+    embeddingIdPlaceholder: 请选择 Embedding 配置（可选）
+    llmId: LLM 配置
+    llmIdPlaceholder: 请选择 LLM 配置（可选）
+    chunkSize: 分块大小
+    chunkSizePlaceholder: 字符数，默认 400
+    chunkOverlap: 分块重叠
+    chunkOverlapPlaceholder: 字符数，默认 80
+    parentSize: 父块大小
+    parentSizePlaceholder: 字符数，默认 1800
+    parentOverlap: 父块重叠
+    parentOverlapPlaceholder: 字符数，默认 200
+
+  # ── 统计面板 ─────────────────────────────────────────────────
+  stats:
+    documentCount: 文档数量
+    chunkCount: 分块数量
+
+  # ── 提示 ────────────────────────────────────────────────────
+  tips:
+    noData: 暂无知识库，点击「新增知识库」开始创建

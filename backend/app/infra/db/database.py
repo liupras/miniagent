@@ -578,8 +578,7 @@ class Tool(Base):
     description = Column(Text, comment="tool description")
     tool_type = Column(String(50), nullable=False,default="function", comment="Tool type: function | api | smart_router | sql_agent")
 
-    tool_schema = Column(JSON, nullable=False, comment="Tool definition(JSON Schema format)")
-    mcp_compatible = Column(Boolean, nullable=False,default=False, comment="Is it compatible with MCP?")
+    tool_schema = Column(JSON, nullable=False, comment="Tool definition(JSON Schema format)")    
     config = Column(JSON, comment="Tool configuration, JSON format string")
 
     created_at = Column(DateTime, nullable=False,default=lambda: datetime.now())

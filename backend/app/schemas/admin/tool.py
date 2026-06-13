@@ -23,7 +23,6 @@ class ToolBase(BaseModel):
     description: str | None = Field(None, description="Tool description")
     tool_type: ToolType = Field("function", description="Tool type")
     tool_schema: dict[str, Any] = Field(..., description="JSON Schema definition")
-    mcp_compatible: bool = Field(False, description="MCP compatible?")
     config: dict[str, Any] | None = Field(None, description="Extra config (JSON)")
     is_active: bool = Field(True, description="Active?")
 
@@ -49,7 +48,6 @@ class ToolUpdate(BaseModel):
     description: str | None = None
     tool_type: ToolType | None = None
     tool_schema: dict[str, Any] | None = None
-    mcp_compatible: bool | None = None
     config: dict[str, Any] | None = None
     is_active: bool | None = None
 

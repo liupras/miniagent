@@ -6,20 +6,20 @@
       :model="searchForm"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
-      <el-form-item :label="t('domain.name')" prop="keyword">
+      <el-form-item :label="t('form.name.label')" prop="keyword">
         <el-input
           v-model="searchForm.keyword"
-          :placeholder="t('domain.namePlaceholder')"
+          :placeholder="t('form.name.placeholder')"
           clearable
           class="w-45!"
           @keyup.enter="onSearch"
         />
       </el-form-item>
 
-      <el-form-item :label="t('domain.type')" prop="type">
+      <el-form-item :label="t('form.type.label')" prop="type">
         <el-select
           v-model="searchForm.type"
-          :placeholder="t('domain.typePlaceholder')"
+          :placeholder="t('form.type.selectPlaceholder')"
           clearable
           class="w-45!"
         >
@@ -89,7 +89,7 @@
               {{ t("buttons.edit") }}
             </el-button>
             <el-popconfirm
-              :title="t('common.deleteConfirm', { name: row.name })"
+              :title="t('messages.deleteConfirm', { name: row.name })"
               @confirm="onDelete(row)"
             >
               <template #reference>
@@ -121,14 +121,14 @@
         :rules="dialogRules"
         label-width="140px"
       >
-        <el-form-item :label="t('domain.name')" prop="name">
+        <el-form-item :label="t('form.name.label')" prop="name">
           <el-input
             v-model="dialogForm.name"
             :disabled="dialogType === 'edit'"
           />
         </el-form-item>
 
-        <el-form-item :label="t('domain.type')" prop="type">
+        <el-form-item :label="t('form.type.label')" prop="type">
           <el-input v-model="dialogForm.type" />
         </el-form-item>
 
@@ -143,7 +143,7 @@
           <el-input v-model="dialogForm.plugin_class" />
         </el-form-item>
 
-        <el-form-item :label="t('domain.description')" prop="description">
+        <el-form-item :label="t('form.description')" prop="description">
           <el-input
             v-model="dialogForm.description"
             type="textarea"
@@ -241,32 +241,36 @@ const validateJsonField = (field: "metadata_schema") => {
     jsonError[field] = "";
     return true;
   } catch {
-    jsonError[field] = t("common.jsonFormatError");
+    jsonError[field] = t("messages.jsonFormatError");
     return false;
   }
 };
 
 const dialogRules: FormRules = {
   name: [
-    { required: true, message: t("domain.nameRequired"), trigger: "blur" },
-    { pattern: /^[^\s]+$/, message: t("domain.nameNoSpace"), trigger: "blur" }
+    { required: true, message: t("validation.required"), trigger: "blur" },
+    {
+      pattern: /^[^\s]+$/,
+      message: t("domain.nameNoSpace"),
+      trigger: "blur"
+    }
   ],
   type: [
-    { required: true, message: t("domain.typeRequired"), trigger: "blur" }
+    { required: true, message: t("validation.required"), trigger: "blur" }
   ],
   processor_class: [
-    { required: true, message: t("domain.classRequired"), trigger: "blur" }
+    { required: true, message: t("validation.class.required"), trigger: "blur" }
   ],
   plugin_class: [
-    { required: true, message: t("domain.classRequired"), trigger: "blur" }
+    { required: true, message: t("validation.class.required"), trigger: "blur" }
   ]
 };
 
 // ── Table Columns ──
 const columns: TableColumnList = [
   { label: "ID", prop: "id", width: 70 },
-  { label: t("domain.name"), prop: "name", minWidth: 120 },
-  { label: t("domain.type"), prop: "type", width: 100 },
+  { label: t("form.name.label"), prop: "name", minWidth: 120 },
+  { label: t("form.type.label"), prop: "type", width: 100 },
   {
     label: t("domain.processorClass"),
     prop: "processor_class",
@@ -280,7 +284,7 @@ const columns: TableColumnList = [
     showOverflowTooltip: true
   },
   {
-    label: t("common.updatedAt"),
+    label: t("form.updatedAt"),
     prop: "updated_at",
     width: 170,
     formatter: ({ updated_at }) =>
@@ -296,7 +300,7 @@ const columns: TableColumnList = [
         : "—"
   },
   {
-    label: t("common.operation"),
+    label: t("labels.operation"),
     prop: "operation",
     width: 150,
     fixed: "right",
@@ -357,7 +361,7 @@ async function onSubmit() {
   dialogLoading.value = true;
   if (dialogType.value === "add") await createDomain(payload);
   else await updateDomain(dialogForm.id!, payload);
-  ElMessage.success(t("common.addSuccess"));
+  ElMessage.success(t("messages.addSuccess"));
   dialogVisible.value = false;
   fetchData();
   dialogLoading.value = false;
@@ -365,7 +369,7 @@ async function onSubmit() {
 
 async function onDelete(row: any) {
   await deleteDomain(row.id);
-  ElMessage.success(t("common.deleteSuccess"));
+  ElMessage.success(t("messages.deleteSuccess"));
   fetchData();
 }
 

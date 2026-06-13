@@ -1,27 +1,3 @@
-common:
-  operation: Operation
-  activated: Activated
-  deactivated: Deactivated
-  deleteConfirm: Delete \"{name}\"?
-  batchDeleteConfirm: Delete {count} selected records?
-  status: Status
-  statusPlaceholder: All statuses
-  createdAt: Created at
-  addSuccess: Added successfully
-  editSuccess: Editing successful
-  deleteSuccess: Deletion successful
-  warning: warning
-  loadingError: Data loading failed. Please check your network or contact your administrator.
-  jsonFormatError: JSON format error
-  updatedAt: Updated at
-  initError: Page initialization failed
-  yes: Yes
-  no: No
-  actions: Actions
-  saveSuccess: Saved successfully
-  saveFailed: Save failed, please try again
-  actionSuccess: Operation successful
-  createdBy: Created by
 buttons:
   pureLoginOut: LoginOut
   pureLogin: Login
@@ -60,13 +36,9 @@ buttons:
   inactive: Inactive  
   batchDelete: Batch delete
   asign: Asign
-search:
-  pureTotal: Total
-  pureHistory: History
-  pureCollect: Collect
-  pureDragSort: （Drag Sort）
-  pureEmpty: Empty
-  purePlaceholder: Search Menu
+  toggle: Toggle Status
+  stats: Stats
+
 panel:
   pureSystemSet: System Configs
   pureCloseSystemSet: Close System Configs
@@ -102,6 +74,7 @@ panel:
   pureHiddenTags: Hidden Tags
   pureHiddenFooter: Hidden Footer
   pureMultiTagsCache: MultiTags Cache
+
 menus:
   pureHome: Home
   pureLogin: Login
@@ -128,6 +101,7 @@ menus:
   system:
     default: System Management
     cache: Cache Management
+
 status:
   pureLoad: Loading...
   pureMessage: Message
@@ -136,6 +110,7 @@ status:
   pureNoMessage: No Message
   pureNoNotify: No Notify
   pureNoTodo: No Todo
+
 login:
   pureUsername: Username
   purePassword: Password
@@ -145,69 +120,120 @@ login:
   pureUsernameReg: Please enter username
   purePassWordReg: Please enter password
   purePassWordRuleReg: The password format should be any combination of 8-18 digits
-agent:
-  tableTitle: Agent Management  
-  llm: LLM
-  llmPlaceholder: Please select LLM
+
+messages:
+  deleteConfirm: Delete \"{name}\"?
+  batchDeleteConfirm: Delete {count} selected records?
+
+  addSuccess: Added successfully
+  editSuccess: Editing successful
+  deleteSuccess: Deletion successful
+  toggleSuccess: Status updated successfully
+
+  saveSuccess: Saved successfully
+  saveFailed: Save failed, please try again
+
+  warning: warning
+  loadingError: Data loading failed. Please check your network or contact your administrator.
+  jsonFormatError: JSON format error  
+  initError: Page initialization failed
+
+  activeSuccess: Activation successful
+
+labels:
+  operation: Operation
   user: User
-  userPlaceholder: Please select user
-  boundUsers: Bound Users 
-  boundUsersSuccess: Agent users updated successfully
-  boundSkills: Bound Skills
-  boundSkillsSuccess: Agent skills updated successfully
-  boundLLM: Bound LLM
-  boundLLMSuccess: Agent LLM updated successfully
-  llmSelectionRequired: Please select at least one LLM
-  name: Name
-  namePlaceholder: Please enter agent name
-  nameRequired: Agent name is required
-  nameMaxLength: Name must be 100 characters or fewer
-  description: Description
-  descriptionPlaceholder: Please enter description (optional)
-  systemPrompt: System Prompt
-  systemPromptPlaceholder: Please enter system prompt
-  systemPromptRequired: System prompt is required
+  status: Status
+  version: Version
+  isActive: Is Active
+
+  activated: Activated
+  deactivated: Deactivated
+
+  yes: Yes
+  no: No
+
+search:
+  pureTotal: Total
+  pureHistory: History
+  pureCollect: Collect
+  pureDragSort: （Drag Sort）
+  pureEmpty: Empty
+  purePlaceholder: Search Menu
+
+  status:
+    placeholder: All Statuses
+    selectPlaceholder: Select status
+  user: 
+    selectPlaceholder: Please select user
+  name:
+    placeholder: Search name
+  type:
+    placeholder: All types
+
+form:
+  status: Status
+  createdAt: Created at
+  updatedAt: Updated at
+  name:
+    label: Name
+    placeholder: Please enter a name
+  description:
+    lable: Description
+    placeholder: Please enter a description
+  llm:
+    label: LLM
+    selectPlaceholder: Please select LLM
+  type:
+    label: All Types
+    selectPlaceholder: Please select type
+  
+validation:
+  required: This field is required
+  maxLength: Maximum {count} characters
+  class:
+    required: Class path is required
+
+agent:
+  tableTitle: Agent Management 
+  systemPrompt:
+    label: System Prompt
+    placeholder: Please enter system prompt
+
+  bound:
+    users: Bound Users
+    usersSuccess: User binding successful
+    skills: Bound Skills
+    skillsSuccess: Skill binding successful
+    llm: Bound LLM
+    llmSuccess: LLM binding successful
+
 tool:
   tableTitle: Skill Management
-  status: Status
-  statusPlaceholder: All Statuses
+  
   new: New Skill
   edit: Edit Skill
-  name: Name
-  nameSearchPlaceholder: Search name or description
-  namePlaceholder: Letters, numbers, and underscores, starting with a letter
-  nameRequired: Please enter skill name
-  nameMaxLength: Name must be 100 characters or fewer
-  namePattern: Must start with a letter, and can only contain letters, numbers, and underscores
-  toolType: Type
-  toolTypeSearchPlaceholder: All Types
-  toolTypePlaceholder: Please select type
-  toolTypeRequired: Please select skill type
-  description: Description
-  descriptionPlaceholder: Describe the purpose of this skill
-  toolSchema: Skill Schema
-  toolSchemaPlaceholder: Please provide the input and output format, parameter description
-  toolSchemaRequired: Schema cannot be empty
-  config: Config
-  configPlaceholder: Json format, provide description of skill configuration items
-  mcpCompatible: MCP Compatible
+  name:
+    placeholder: Letters, numbers, and underscores, starting with a letter
+    pattern: Must start with a letter, and can only contain letters, numbers, and underscores
+  toolSchema: 
+    label: Schema
+    placeholder: Please provide the input/output format and parameter descriptions for the skill.
+  config: 
+    label: Config
+    placeholder: Json format, provide description of skill configuration items
+
 domain:
-  title: Domain Management
-  name: Name
-  namePlaceholder: Please enter name
-  type: Type
-  typePlaceholder: Please select type
   processorClass: Processor Class
   pluginClass: Plugin Class
-  description: Description
+
   metadataSchema: Metadata Schema
   tableTitle: Domain List
   new: New Domain
   edit: Edit Domain
-  nameRequired: Name is required
+
   nameNoSpace: Name cannot contain spaces
-  typeRequired: Type is required
-  classRequired: Class path is required
+
 routerConfig:
   # Page title & breadcrumb
   title: Router Policy Config
@@ -236,9 +262,8 @@ routerConfig:
 
   # Messages & validation
   maxKbCountMin: Max KB count must be at least 1
-  required: This field is required
+
 strategyConfig:
-  title: Strategy Config Management
   tableTitle: Strategy Config List
   new: New Strategy Config
   edit: Edit Strategy Config
@@ -249,19 +274,11 @@ strategyConfig:
     title: Basic Settings
     configId: Config ID
     kbId: KB ID
-    kbName: KB Name
-    kbNamePlaceholder: Please select a knowledge base
-    version: Version
-    isActive: Is Active
+    kbName: KB Name    
+    
     promptLanguage: Prompt Language
-    configIdRequired: Config ID is required
     configIdMax: Length should be less than 100
-    kbIdRequired: Knowledge Base ID is required
-    versionRequired: Version is required
 
-  # Prompt
-  activeSuccess: Activation successful
-  
   # Component Switches
   switches:
     title: Function Switches
@@ -300,3 +317,58 @@ strategyConfig:
   extra:
    title: Additional configuration
    placeholder: Please enter the standard JSON format configuration.
+knowledgeBase:
+  title: Knowledge Base Management
+  subtitle: Manage knowledge base settings, chunking parameters, and vector store configurations
+
+  # ── Table columns ────────────────────────────────────────────
+  columns:
+    domain: Domain
+    collectionName: Collection Name
+    documentCount: Documents
+    chunkCount: Chunks
+
+  # ── Search bar ───────────────────────────────────────────────
+  search:
+    namePlaceholder: Search by name
+    domainPlaceholder: Select domain    
+
+  # ── Dialogs ──────────────────────────────────────────────────
+  dialog:
+    createTitle: Add Knowledge Base
+    editTitle: Edit Knowledge Base
+    statsTitle: Knowledge Base Statistics
+
+  # ── Form fields ──────────────────────────────────────────────
+  form:
+    basicInfo: Basic Info
+    vectorConfig: Vector Config
+    chunkConfig: Chunking Config
+    domain: Domain
+    domainPlaceholder: Select a domain
+    collectionName: Collection Name
+    collectionNamePlaceholder: VectorDB collection name
+
+    keywords: Keywords
+    keywordsPlaceholder: Type keyword and press Enter
+    embeddingId: Embedding Config
+    embeddingIdPlaceholder: Select embedding config (optional)
+    llmId: LLM Config
+    llmIdPlaceholder: Select LLM config (optional)
+    chunkSize: Chunk Size
+    chunkSizePlaceholder: Characters, default 400
+    chunkOverlap: Chunk Overlap
+    chunkOverlapPlaceholder: Characters, default 80
+    parentSize: Parent Size
+    parentSizePlaceholder: Characters, default 1800
+    parentOverlap: Parent Overlap
+    parentOverlapPlaceholder: Characters, default 200
+
+  # ── Stats panel ──────────────────────────────────────────────
+  stats:
+    documentCount: Documents
+    chunkCount: Chunks
+
+  # ── Messages ─────────────────────────────────────────────────
+  tips:
+    noData: No knowledge bases yet. Click "Add Knowledge Base" to get started.

@@ -7,20 +7,20 @@
       :model="searchForm"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
-      <el-form-item :label="t('agent.name')" prop="name">
+      <el-form-item :label="t('form.name.label')" prop="name">
         <el-input
           v-model="searchForm.name"
-          :placeholder="t('agent.namePlaceholder')"
+          :placeholder="t('form.name.placeholder')"
           clearable
           class="w-45!"
           @keyup.enter="onSearch"
         />
       </el-form-item>
 
-      <el-form-item :label="t('agent.llm')" prop="llm_id">
+      <el-form-item :label="t('form.llm.label')" prop="llm_id">
         <el-select
           v-model="searchForm.llm_id"
-          :placeholder="t('agent.llmPlaceholder')"
+          :placeholder="t('form.llm.selectPlaceholder')"
           clearable
           class="w-40!"
         >
@@ -33,10 +33,10 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item :label="t('agent.user')" prop="user_id">
+      <el-form-item :label="t('labels.user')" prop="user_id">
         <el-select
           v-model="searchForm.user_id"
-          :placeholder="t('agent.userPlaceholder')"
+          :placeholder="t('search.user.selectPlaceholder')"
           clearable
           filterable
           class="w-40!"
@@ -50,10 +50,10 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item :label="t('common.status')" prop="is_active">
+      <el-form-item :label="t('form.status')" prop="is_active">
         <el-select
           v-model="searchForm.is_active"
-          :placeholder="t('common.statusPlaceholder')"
+          :placeholder="t('search.status.placeholder')"
           clearable
           class="w-32.5!"
         >
@@ -190,7 +190,7 @@
               {{ t("buttons.edit") }}
             </el-button>
             <el-popconfirm
-              :title="t('common.deleteConfirm', { name: row.name })"
+              :title="t('messages.deleteConfirm', { name: row.name })"
               @confirm="onDelete(row)"
             >
               <template #reference>
@@ -213,7 +213,7 @@
               :icon="Link"
               @click="openUserDialog(row)"
             >
-              {{ t("agent.boundUsers") }}
+              {{ t("agent.bound.users") }}
             </el-button>
             <el-button
               v-auth="'agent:edit'"
@@ -223,7 +223,7 @@
               :icon="Link"
               @click="openToolDialog(row)"
             >
-              {{ t("agent.boundSkills") }}
+              {{ t("agent.bound.skills") }}
             </el-button>
             <el-button
               v-auth="'agent:edit'"
@@ -233,7 +233,7 @@
               :icon="Link"
               @click="openLLMDialog(row)"
             >
-              {{ t("agent.boundLLM") }}
+              {{ t("agent.bound.llm") }}
             </el-button>
           </template>
         </pure-table>
@@ -253,36 +253,39 @@
         :rules="dialogRules"
         label-width="110px"
       >
-        <el-form-item :label="t('agent.name')" prop="name">
+        <el-form-item :label="t('form.name.label')" prop="name">
           <el-input
             v-model="dialogForm.name"
-            :placeholder="t('agent.namePlaceholder')"
+            :placeholder="t('form.name.placeholder')"
           />
         </el-form-item>
 
-        <el-form-item :label="t('agent.description')" prop="description">
+        <el-form-item :label="t('form.description')" prop="description">
           <el-input
             v-model="dialogForm.description"
             type="textarea"
             :rows="2"
-            :placeholder="t('agent.descriptionPlaceholder')"
+            :placeholder="t('form.description.placeholder')"
           />
         </el-form-item>
 
-        <el-form-item :label="t('agent.systemPrompt')" prop="system_prompt">
+        <el-form-item
+          :label="t('agent.systemPrompt.label')"
+          prop="system_prompt"
+        >
           <el-input
             v-model="dialogForm.system_prompt"
             type="textarea"
             :rows="5"
-            :placeholder="t('agent.systemPromptPlaceholder')"
+            :placeholder="t('agent.systemPrompt.placeholder')"
           />
         </el-form-item>
 
-        <el-form-item :label="t('agent.llm')" prop="llm_id">
+        <el-form-item :label="t('form.llm.label')" prop="llm_id">
           <el-select
             v-model="dialogForm.llm_id"
             clearable
-            :placeholder="t('agent.llmPlaceholder')"
+            :placeholder="t('form.llm.selectPlaceholder')"
             class="w-full"
           >
             <el-option
@@ -294,7 +297,7 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item :label="t('common.status')" prop="is_active">
+        <el-form-item :label="t('form.status')" prop="is_active">
           <el-switch
             v-model="dialogForm.is_active"
             :active-text="t('buttons.active')"
@@ -314,7 +317,7 @@
     </el-dialog>
     <el-dialog
       v-model="userDialogVisible"
-      :title="t('agent.boundUsers')"
+      :title="t('agent.bound.users')"
       width="500px"
     >
       <el-select
@@ -346,7 +349,7 @@
     </el-dialog>
     <el-dialog
       v-model="toolDialogVisible"
-      :title="t('agent.boundSkills')"
+      :title="t('agent.bound.skills')"
       width="560px"
     >
       <el-select
@@ -392,7 +395,7 @@
     </el-dialog>
     <el-dialog
       v-model="llmDialogVisible"
-      :title="t('agent.boundLLM')"
+      :title="t('agent.bound.llm')"
       width="400px"
     >
       <el-select
@@ -400,7 +403,7 @@
         clearable
         filterable
         class="w-full"
-        :placeholder="t('agent.llmPlaceholder')"
+        :placeholder="t('form.llm.selectPlaceholder')"
       >
         <el-option
           v-for="llm in llmOptions"
@@ -530,19 +533,19 @@ const dialogRules: FormRules = {
   name: [
     {
       required: true,
-      message: () => t("agent.nameRequired"),
+      message: () => t("validation.required"),
       trigger: "blur"
     },
     {
       max: 100,
-      message: () => t("agent.nameMaxLength"),
+      message: () => t("validation.maxLength", { count: 100 }),
       trigger: "blur"
     }
   ],
   system_prompt: [
     {
       required: true,
-      message: () => t("agent.systemPromptRequired"),
+      message: () => t("validation.required"),
       trigger: "blur"
     }
   ]
@@ -552,40 +555,40 @@ const dialogRules: FormRules = {
 const columns: TableColumnList = [
   { type: "selection", width: 55, fixed: "left", reserveSelection: true },
   { label: "ID", prop: "id", width: 70 },
-  { label: t("agent.name"), prop: "name", minWidth: 140 },
+  { label: t("form.name.label"), prop: "name", minWidth: 140 },
   {
-    label: t("agent.description"),
+    label: t("form.description"),
     prop: "description",
     minWidth: 160,
     showOverflowTooltip: true
   },
   {
-    label: t("agent.systemPrompt"),
+    label: t("agent.systemPrompt.label"),
     prop: "system_prompt",
     minWidth: 200,
     slot: "system_prompt"
   },
   {
-    label: t("agent.llm"),
+    label: t("form.llm.label"),
     prop: "llm",
     width: 140,
     slot: "llm"
   },
   {
-    label: t("agent.user"),
+    label: t("labels.user"),
     prop: "users",
     minWidth: 160,
     slot: "users"
   },
   {
-    label: t("common.status"),
+    label: t("form.status"),
     prop: "is_active",
     width: 140,
     slot: "is_active",
     hide: !hasAuth("agent:edit")
   },
   {
-    label: t("common.createdAt"),
+    label: t("form.createdAt"),
     prop: "created_at",
     width: 170,
     formatter: ({ created_at }) =>
@@ -601,7 +604,7 @@ const columns: TableColumnList = [
         : "—"
   },
   {
-    label: t("common.operation"),
+    label: t("labels.operation"),
     prop: "operation",
     width: 220,
     fixed: "right",
@@ -697,10 +700,10 @@ async function onSubmit() {
 
     if (dialogType.value === "add") {
       await createAgent(payload);
-      ElMessage.success(t("common.addSuccess"));
+      ElMessage.success(t("messages.addSuccess"));
     } else {
       await updateAgent(dialogForm.id!, payload);
-      ElMessage.success(t("common.editSuccess"));
+      ElMessage.success(t("messages.editSuccess"));
     }
 
     dialogVisible.value = false;
@@ -712,18 +715,18 @@ async function onSubmit() {
 
 async function onDelete(row: any) {
   await deleteAgent(row.id);
-  ElMessage.success(t("common.deleteSuccess"));
+  ElMessage.success(t("messages.deleteSuccess"));
   fetchData();
 }
 
 async function onBatchDelete() {
   await ElMessageBox.confirm(
-    t("common.batchDeleteConfirm", { count: selectedIds.value.length }),
-    t("common.warning"),
+    t("messages.batchDeleteConfirm", { count: selectedIds.value.length }),
+    t("messages.warning"),
     { type: "warning" }
   );
   await batchDeleteAgents(selectedIds.value);
-  ElMessage.success(t("common.deleteSuccess"));
+  ElMessage.success(t("messages.deleteSuccess"));
 
   fetchData();
 }
@@ -733,7 +736,7 @@ async function onToggleActive(row: any) {
   try {
     await toggleAgentActive(row.id);
     ElMessage.success(
-      row.is_active ? t("common.activated") : t("common.deactivated")
+      row.is_active ? t("labels.activated") : t("labels.deactivated")
     );
   } catch {
     row.is_active = !row.is_active; // revert on error
@@ -750,7 +753,7 @@ async function openUserDialog(row: any) {
 
 async function saveAgentUsers() {
   await updateAgentUsers(currentAgentId.value!, selectedUserIds.value);
-  ElMessage.success(t("agent.boundUsersSuccess"));
+  ElMessage.success(t("agent.bound.usersSuccess"));
   userDialogVisible.value = false;
 
   fetchData();
@@ -767,7 +770,7 @@ async function saveAgentTools() {
   toolDialogLoading.value = true;
   try {
     await updateAgentTools(currentAgentId.value!, selectedToolIds.value);
-    ElMessage.success(t("agent.boundSkillsSuccess"));
+    ElMessage.success(t("agent.bound.skillsSuccess"));
     toolDialogVisible.value = false;
   } finally {
     toolDialogLoading.value = false;
@@ -787,13 +790,13 @@ async function openLLMDialog(row: any) {
 
 async function saveAgentLLM() {
   if (!currentAgentId.value || selectedLlmId.value === undefined) {
-    ElMessage.warning(t("agent.llmSelectionRequired"));
+    ElMessage.warning(t("validation.required"));
     return;
   }
   llmDialogLoading.value = true;
   try {
     await updateAgentLLM(currentAgentId.value, selectedLlmId.value);
-    ElMessage.success(t("agent.boundLLMSuccess"));
+    ElMessage.success(t("agent.bound.llmSuccess"));
     llmDialogVisible.value = false;
     fetchData();
   } finally {
@@ -814,8 +817,8 @@ onMounted(async () => {
     userOptions.value = userRes;
     toolOptions.value = toolRes;
   } catch (error) {
-    console.error("t('common.initError')", error);
-    ElMessage.error(t("common.loadingError"));
+    console.error("t('messages.initError')", error);
+    ElMessage.error(t("messages.loadingError"));
   }
 });
 </script>

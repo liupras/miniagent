@@ -227,7 +227,7 @@ const columns: TableColumnList = [
         { type: row.fallback_to_all ? "success" : "info", size: "small" },
         {
           default: () =>
-            row.fallback_to_all ? t("common.yes") : t("common.no")
+            row.fallback_to_all ? t("labels.yes") : t("labels.no")
         }
       )
   },
@@ -238,7 +238,7 @@ const columns: TableColumnList = [
     align: "center"
   },
   {
-    label: t("common.createdAt"),
+    label: t("form.createdAt"),
     prop: "created_at",
     minWidth: 180,
     formatter: ({ created_at }) =>
@@ -254,7 +254,7 @@ const columns: TableColumnList = [
         : "-"
   },
   {
-    label: t("common.actions"),
+    label: t("labels.operation"),
     fixed: "right",
     width: 90,
     slot: "operation",
@@ -311,10 +311,10 @@ function validateExtraConfig(str: string): boolean {
 
 const formRules = computed<FormRules>(() => ({
   selection_strategy: [
-    { required: true, message: t("routerConfig.required"), trigger: "change" }
+    { required: true, message: t("validation.required"), trigger: "change" }
   ],
   max_kb_count: [
-    { required: true, message: t("routerConfig.required"), trigger: "blur" },
+    { required: true, message: t("validation.required"), trigger: "blur" },
     {
       type: "number",
       min: 1,
@@ -374,11 +374,11 @@ async function handleSave() {
     saveLoading.value = true;
     try {
       await updateRouterConfig(editingId.value, payload);
-      ElMessage.success(t("common.saveSuccess"));
+      ElMessage.success(t("messages.saveSuccess"));
       dialogVisible.value = false;
       await fetchList();
     } catch {
-      ElMessage.error(t("common.saveFailed"));
+      ElMessage.error(t("messages.saveFailed"));
     } finally {
       saveLoading.value = false;
     }

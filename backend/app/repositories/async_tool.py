@@ -77,12 +77,6 @@ class AsyncToolDatabase(AsyncBaseDatabase):
                 )
             ).scalar_one()
 
-            mcp = (
-                await session.execute(
-                    select(func.count()).select_from(Tool).where(Tool.mcp_compatible == True)  # noqa: E712
-                )
-            ).scalar_one()
-
             type_rows = (
                 await session.execute(
                     select(Tool.tool_type, func.count().label("cnt")).group_by(Tool.tool_type)
@@ -92,7 +86,6 @@ class AsyncToolDatabase(AsyncBaseDatabase):
             return {
                 "total": total,
                 "active": active,
-                "mcp_compatible": mcp,
                 "by_type": {row.tool_type: row.cnt for row in type_rows},
             }
 
