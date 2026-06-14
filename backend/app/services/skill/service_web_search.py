@@ -166,8 +166,8 @@ class WebSearchService:
         cfg = tool.config or {}
         resolved_lang = cfg.get("prompt_language")
         if not resolved_lang:
-            resolved_lang = await get_system_language(setting_db=self._container.setting_db, fallback="zh")
-        prompt_loader = await PromptLoader.create(lang=resolved_lang, i18n_db=self._container.i18n_db)
+            resolved_lang = await get_system_language(setting_db=self._container.setting_db, fallback="zh_CN")
+        prompt_loader = await PromptLoader.create(lang=resolved_lang, db=self._container.prompt_db)
         logger.info(
             f"[Pipeline] lang='{resolved_lang}'  "
             f"prompt_loader loaded {len(prompt_loader._templates)} DB template(s)"

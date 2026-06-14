@@ -18,7 +18,3 @@
 - 向量数据库: ChromaDB
 - 结构化数据: SQLite、DuckDB
 - LLM适配: 自研轻量级适配层（预留MCP兼容）
-
-## 许可证
-
-MIT License

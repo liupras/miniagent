@@ -10,7 +10,7 @@ from .async_parent_chunk import AsyncParentChunkDatabase
 from .async_chunk import AsyncChunkDatabase
 from .async_embedding import AsyncEmbeddingDatabase
 from .async_system_setting import AsyncSystemSettingDatabase
-from .async_i18n import AsyncI18nDatabase
+from .async_prompt import AsyncPromptDatabase
 from .async_domain import AsyncDomainDatabase
 from .async_router_config import AsyncRouterConfigDatabase
 from .async_agent import AsyncAgentDatabase
@@ -30,7 +30,7 @@ __all__ = [
     "AsyncChunkDatabase",
     "AsyncEmbeddingDatabase",
     "AsyncSystemSettingDatabase",
-    "AsyncI18nDatabase",
+    "AsyncPromptDatabase",
     "AsyncDomainDatabase",
     "AsyncRouterConfigDatabase",
     "AsyncAgentDatabase",

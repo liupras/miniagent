@@ -11,7 +11,7 @@
 #  On first call for a given llm_provider_id the service:
 #    1. resolves the LLM row via the LLM table (llm_provider_id)
 #    2. builds an AgentLLM from the resolved config
-#    3. loads system_prompt_template + tool_schema via PromptLoader (i18n)
+#    3. loads system_prompt_template + tool_schema via PromptLoader
 #    4. constructs SQLAgent(llm, tools, schema_name, system_prompt_template, tool_schema)
 #    5. stores it in _agent_cache
 #  Subsequent calls with the same llm_provider_id + schema_name hit the cache.
@@ -62,7 +62,7 @@ class SQLAgentService:
     def __init__(self, container: "ServiceContainer") -> None:
         self._container  = container
         self._llm_db     = container.llm_db
-        self._i18n_db    = container.i18n_db
+        self._prompt_db    = container.prompt_db
         self._setting_db = container.setting_db
         self._tool_db    = container.tool_db
         # duckdb is a global singleton injected by ServiceContainer
@@ -223,7 +223,7 @@ class SQLAgentService:
     async def _build_agent(
         self, llm_provider_id: int, schema_name: str, tool_name: str
     ) -> SQLAgent:
-        """Load LLM config + i18n prompts from DB and construct a SQLAgent."""
+        """Load LLM config + prompts from DB and construct a SQLAgent."""
 
         # ── 1. Resolve LLM config ────────────────────────────────────────
         llm_config = await self._llm_db.get(llm_id=llm_provider_id)
@@ -255,17 +255,17 @@ class SQLAgentService:
             if not tool.is_active:
                 raise ValueError(f"Tool {tool_name!r} is inactive.")
             
-        # ── 5. Load i18n prompts via PromptLoader ────────────────────────
+        # ── 5. Load prompts via PromptLoader ────────────────────────
         resolved_lang: Optional[str] = None
         if tool:
             cfg = tool.config or {}
             resolved_lang = cfg.get("prompt_language")
         if not resolved_lang:
             resolved_lang = await get_system_language(
-                setting_db=self._container.setting_db, fallback="zh"
+                setting_db=self._container.setting_db, fallback="zh_CN"
             )
         prompt_loader = await PromptLoader.create(
-            lang=resolved_lang, i18n_db=self._container.i18n_db
+            lang=resolved_lang, db=self._container.prompt_db
         )
         logger.info(
             f"[SQLAgentService] lang='{resolved_lang}'  "

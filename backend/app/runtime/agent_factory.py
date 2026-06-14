@@ -67,7 +67,7 @@ class AgentFactory:
         self._tool_db = container.tool_db
         self._relation_db = container.agent_tool_relation_db
         self._chat_db = container.chat_db
-        self._i18n_db = container.i18n_db
+        self._prompt_db = container.prompt_db
         self._seeting_db = container.setting_db
 
     # ──────────────────────────────────────────────────────────────────────
@@ -167,8 +167,8 @@ class AgentFactory:
             )
 
         # ── 5. PromptLoader ────────────────────────────────────────────────
-        lang = await get_system_language(setting_db=self._seeting_db, fallback="zh")
-        prompt_loader = await PromptLoader.create(lang=lang,i18n_db=self._i18n_db)
+        lang = await get_system_language(setting_db=self._seeting_db, fallback="zh_CN")
+        prompt_loader = await PromptLoader.create(lang=lang,db=self._prompt_db)
 
         # ── 6. Compile and return ──────────────────────────────────────────
         runner = await build_agent_runner(

@@ -897,14 +897,6 @@ class ConfidenceStage(BaseStage):
         high_score_threshold      ← confidence_high_score_threshold  (default 0.7)
         low_score_threshold       ← confidence_low_score_threshold   (default 0.5)
         min_high_conf_count       ← confidence_min_high_conf_count   (default 1)
-
-    Warning text resolution (via PromptLoader):
-        1. I18n table row  group="prompt", key="confidence_warning", lang=resolved_lang
-        2. PromptLoader.BUILTIN_FALLBACKS[resolved_lang]["confidence_warning"]
-        3. English built-in last resort
-
-    There is no per-config override field for the warning text.
-    To customise it, update the I18n row via the admin UI.
     """
 
     def __init__(
@@ -1064,25 +1056,6 @@ class PipelineConfig:
 class RetrievalPipeline:
     """
     Assembles and executes a retrieval pipeline from a PipelineConfig.
-
-    Topology
-    --------
-    VectorStage --+
-                  +--> FusionStage? --> SmallToBigStage? --> RerankStage --> [:final_top_k]
-    BM25Stage   --+
-
-    - Source stages run in parallel (asyncio.gather).
-    - FusionStage is skipped when only one source is active.
-    - RerankStage is always instantiated; KBRankingMode controls its cost:
-        HYBRID = cheap sort  |  VECTOR/BM25 = re-sort  |  RERANK/LLM = external call
-    - The topology is fixed at construction time, no branching at query time.
-
-    i18n
-    ----
-    A PromptLoader is built once during from_config() using the active language
-    from PipelineConfig.prompt_language.  The loader is passed into every Stage
-    that calls an LLM, so all prompt strings are language-aware with no further
-    configuration required at inference time.
     """
 
     def __init__(
@@ -1113,19 +1086,6 @@ class RetrievalPipeline:
     ) -> RetrievalPipeline:
         """
         Build a fully-configured RetrievalPipeline from a StrategyConfig row.
-
-        i18n Note
-        ---------
-        Language is resolved inside PipelineConfig.from_orm():
-          1. StrategyConfig.prompt_language  (non-NULL KB-level override)
-          2. AsyncSystemSettingDatabase.get_language()  (global default)
-          3. Hard-coded fallback "zh"
-
-        PromptLoader then loads all prompt templates for the resolved language
-        from I18nDatabase in a single query.  Both DB classes manage their own
-        connections via BaseDatabase, so no session needs to be passed in.
-        Switching the system language at runtime only requires updating
-        SystemSettings["system_language"] — no restart needed.
         """
 
         from app.core.service_container import ServiceContainer
@@ -1139,15 +1099,12 @@ class RetrievalPipeline:
         kb_id = cfg.kb_id
         stages: List[BaseStage] = []
 
-        # ── PromptLoader ────────────────────────────────────────────────
-        # Constructed once; all LLM stages receive a reference to it.
-        # I18nDatabase manages its own DB connection internally.
         kb_lang = getattr(config, "prompt_language", None)
         if kb_lang and kb_lang.strip():
             resolved_lang = kb_lang.strip().lower()
         else:
-            resolved_lang = await get_system_language(setting_db=container.setting_db, fallback="zh") 
-        prompt_loader = await PromptLoader.create(lang=resolved_lang, i18n_db=container.i18n_db)
+            resolved_lang = await get_system_language(setting_db=container.setting_db, fallback="zh_CN") 
+        prompt_loader = await PromptLoader.create(lang=resolved_lang, db=container.prompt_db)
         logger.info(
             f"[Pipeline] kb={kb_id}  lang='{resolved_lang}'  "
             f"prompt_loader loaded {len(prompt_loader._templates)} DB template(s)"
@@ -1294,10 +1251,6 @@ class RetrievalPipeline:
                 merger=plugin.citation_merger or CitationMerger()))
 
         # Confidence stage
-        # Warning text is resolved entirely through PromptLoader:
-        #   I18n(group="prompt", key="confidence_warning", lang=resolved_lang)
-        #   → built-in fallback for resolved_lang
-        #   → English built-in last resort
         confidence_stage = ConfidenceStage(
             high_score_threshold = cfg.confidence_high_score_threshold,
             low_score_threshold  = cfg.confidence_low_score_threshold,

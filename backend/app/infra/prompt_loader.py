@@ -2,26 +2,17 @@
 # -*- coding:utf-8 -*-
 # @author  : Liu Lijun
 # @date    : 2026-03-15
-# @description: i18n-aware prompt resolution
+# @description: Prompt-aware prompt resolution
 
 from typing import Dict
 
 from loguru import logger
 
-from app.repositories import AsyncSystemSettingDatabase,AsyncI18nDatabase
+from app.repositories import AsyncSystemSettingDatabase,AsyncPromptDatabase
 
-async def get_system_language(setting_db:AsyncSystemSettingDatabase,fallback: str = "zh") -> str:
+async def get_system_language(setting_db:AsyncSystemSettingDatabase,fallback: str = "zh_CN") -> str:
     """
     Read the global system language from SystemSettings via AsyncSystemSettingDatabase.
-
-    Opens its own DB session internally (same pattern as all BaseDatabase
-    subclasses), so no session argument is needed.
-
-    Args:
-        fallback    Returned when the DB row is missing.
-
-    Returns:
-        Lower-cased language tag, e.g. "zh" or "en".
     """
     try:
         return await setting_db.get_language(fallback=fallback)
@@ -33,55 +24,36 @@ async def get_system_language(setting_db:AsyncSystemSettingDatabase,fallback: st
     return fallback
 
 # ═══════════════════════════════════════════════════════════════════════════
-# PromptLoader  —  i18n-aware prompt resolution
+# PromptLoader  —  Prompt-aware prompt resolution
 # ═══════════════════════════════════════════════════════════════════════════
 class PromptLoader:
-    """
-    Resolve pipeline prompt templates from the I18n table (group="prompt"),
-    with compile-time built-in fallbacks for safety.
 
-    Lifecycle
-    ---------
-    One PromptLoader instance is created per pipeline build (from_config).
-    It calls AsyncI18nDatabase.as_dict_for_group_lang("prompt", lang) to load all
-    prompt templates for the active language in a single query, then serves
-    .get() calls from an in-memory dict — zero extra DB round-trips during
-    inference.
-
-    Built-in fallbacks are intentionally minimal; the canonical source of
-    truth is the I18n table seeded by db_manager via seeds/i18n.json.
-    """
-
-    def __init__(self, lang: str,i18n_db:AsyncI18nDatabase):
+    def __init__(self, lang: str,db:AsyncPromptDatabase):
         
         self._lang = lang.lower().strip()
-        self._i18n_db = i18n_db
+        self._db = db
         self._templates: Dict[str, str] = {}
 
     @classmethod
-    async def create(cls, lang: str, i18n_db:AsyncI18nDatabase):
-        instance = cls(lang,i18n_db)
+    async def create(cls, lang: str, db:AsyncPromptDatabase):
+        instance = cls(lang,db)
         await instance._load_from_db()
         return instance
 
     async def _load_from_db(self) -> None:
         """
-        Bulk-load all prompt templates for self.lang from the I18n table.
-
-        Calls AsyncI18nDatabase.as_dict_for_group_lang("prompt", lang), which
-        runs a single  SELECT … WHERE group='prompt' AND lang=?  and returns
-        {key: value}.  AsyncI18nDatabase manages its own connection internally.
+        Bulk-load all prompt templates for self.lang from the Prompt table.
         """
         try:
-            self._templates = await self._i18n_db.as_dict_for_group_lang("prompt", self._lang)
+            self._templates = await self._db.as_dict_for_group_lang("prompt", self._lang)
             logger.debug(
                 f"[PromptLoader] Loaded {len(self._templates)} prompt(s) "
-                f"for lang='{self._lang}' from I18n table."
+                f"for lang='{self._lang}' from Prompt table."
             )
         except Exception as exc:
             # Non-fatal: fall through to built-in fallbacks.
             logger.warning(
-                f"[PromptLoader] Failed to load prompts from I18n table "
+                f"[PromptLoader] Failed to load prompts from Prompt table "
                 f"(lang='{self._lang}'): {exc}  — using built-in fallbacks."
             )
 

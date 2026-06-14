@@ -24,7 +24,7 @@ from app.repositories import (
     AsyncAgentDatabase,
     AsyncAgentToolRelationDatabase,
     AsyncToolDatabase,
-    AsyncI18nDatabase,
+    AsyncPromptDatabase,
     AsyncSystemSettingDatabase,
     AsyncLLMDatabase,
     AsyncMenuDatabase,
@@ -110,7 +110,7 @@ class ServiceContainer:
         self.agent_db = AsyncAgentDatabase(self.engine, self.session_factory)
         self.tool_db = AsyncToolDatabase(self.engine, self.session_factory)
         self.agent_tool_relation_db = AsyncAgentToolRelationDatabase(self.engine, self.session_factory)
-        self.i18n_db = AsyncI18nDatabase(self.engine, self.session_factory)
+        self.prompt_db = AsyncPromptDatabase(self.engine, self.session_factory)
         self.setting_db = AsyncSystemSettingDatabase(self.engine, self.session_factory)
         self.llm_db = AsyncLLMDatabase(self.engine, self.session_factory)
         self.menu_db = AsyncMenuDatabase(self.engine, self.session_factory)                

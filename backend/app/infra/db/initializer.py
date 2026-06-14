@@ -15,7 +15,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from app.core.config import settings
 from app.infra.db.database import (
     Base, Menu, Role, RoleMenuRelation, User, LLM, Embedding, Agent, KnowledgeBase, Tool,Domain,
-    UserAgentRelation, AgentToolRelation, StrategyConfig, I18n, SystemSetting,
+    UserAgentRelation, AgentToolRelation, StrategyConfig, Prompt, SystemSetting,
     RouterConfig, UserRoleRelation
 )
 from app.core.security import bcrypt_hash
@@ -178,7 +178,7 @@ class DatabaseManager:
                 (self._seed_domains,          "Domain"),
                 (self._seed_knowledge_base,  "KnowledgeBase"),
                 (self._seed_system_setting,  "SystemSetting"),
-                (self._seed_i18n,             "I18n"),
+                (self._seed_prompt,             "Prompt"),
                 (self._seed_strategy_config, "StrategyConfig"),
                 (self._seed_agent,           "Agent"),
                 (self._seed_role,              "Role"),
@@ -412,14 +412,13 @@ class DatabaseManager:
                 db.add(SystemSetting(**row))
                 logger.info(f"   + Create SystemSetting: {row['key']} = {row['value']}")
 
-    def _seed_i18n(self, db: Session, force: bool):
-        """Seed I18n rows (LLM prompts + all UI text groups)."""
-        logger.info("📝 Seeding I18n table...")
-        files = ["i18n.json","i18n_prompt.json"]
+    def _seed_prompt(self, db: Session, force: bool):
+        """Seed Prompt rows."""
+        logger.info("📝 Seeding Prompt table...")
+        files = ["prompt.json"]
         for f in files:
             for row in _load(f):
-                existing = db.query(I18n).filter_by(
-                    group=row["group"],
+                existing = db.query(Prompt).filter_by(                   
                     key=row["key"],
                     lang=row["lang"],
                 ).first()
@@ -428,22 +427,21 @@ class DatabaseManager:
                         existing.value       = row["value"]
                         existing.description = row.get("description")
                         logger.info(
-                            f"   ✓ Update I18n: [{row['lang']}] {row['group']}/{row['key']}"
+                            f"   ✓ Update Prompt: [{row['lang']}] /{row['key']}"
                         )
                     else:
                         logger.info(
-                            f"   - Skip I18n: [{row['lang']}] {row['group']}/{row['key']}"
+                            f"   - Skip Prompt: [{row['lang']}] /{row['key']}"
                         )
                 else:
-                    db.add(I18n(
-                        group       = row["group"],
+                    db.add(Prompt(    
                         key         = row["key"],
                         lang        = row["lang"],
                         value       = row["value"],
                         description = row.get("description"),
                     ))
                     logger.info(
-                        f"   + Create I18n: [{row['lang']}] {row['group']}/{row['key']}"
+                        f"   + Create Prompt: [{row['lang']}] /{row['key']}"
                     )
 
     def _seed_strategy_config(self, db: Session, force: bool):

@@ -1,10 +1,10 @@
 [
   {
     "key": "system_language",
-    "value": "zh",
+    "value": "zh_CN",
     "value_type": "string",
     "group": "general",
-    "description": "Global default language for the UI and pipeline prompts. Supported values must match I18n rows with group='prompt'. e.g. zh / en. Individual KBs can override via StrategyConfig.prompt_language.",
+    "description": "Global default language for the UI and pipeline prompts. e.g. zh_CN / en_US. Individual KBs can override via StrategyConfig.prompt_language.",
     "is_readonly": false
   },
   {

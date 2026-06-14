@@ -341,7 +341,7 @@ class SystemSetting(Base):
                          comment="Hint for UI rendering / type coercion: string | int | float | bool | json")
     group       = Column(String(50),  nullable=False, default="general",
                          comment="UI section grouping, e.g. general / retrieval / appearance")
-    description = Column(Text,        nullable=True,  comment="Developer-facing description; display labels live in I18n")
+    description = Column(Text,        nullable=True,  comment="Developer-facing description")
     is_readonly = Column(Boolean,     default=False,  comment="True → shown in UI but not editable by admins")
 
     updated_at  = Column(DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now())
@@ -353,16 +353,12 @@ class SystemSetting(Base):
     def __repr__(self):
         return f"<SystemSetting(key='{self.key}', value='{self.value}')>"
 
-class I18n(Base):
-    """
-    Universal multilingual key-value store.
-    """
-    __tablename__ = "i18ns"
+class Prompt(Base):
+    __tablename__ = "prompts"
 
-    id          = Column(Integer,     primary_key=True, autoincrement=True)
-    group       = Column(String(50),  nullable=False, comment="Category namespace: prompt / ui.setting / ui.nav / ui.message / …")
-    key         = Column(String(200), nullable=False, comment="Identifier within the group, e.g. 'query_rewrite' or 'system_language.label'")
-    lang        = Column(String(10),  nullable=False, comment="BCP-47 language tag, lower-cased, e.g. zh / en")
+    id          = Column(Integer,     primary_key=True, autoincrement=True)    
+    key         = Column(String(200), nullable=False, comment="Identifier within the group, e.g. 'query_rewrite'.")
+    lang        = Column(String(10),  nullable=False, comment="language tag, lower-cased, e.g. zh_CN / en_US")
     value       = Column(Text,        nullable=False, comment="Translated string; prompt group supports {placeholder} variables")
     description = Column(String(255), nullable=True,  comment="Developer / admin note, not shown to end users")
 
@@ -370,14 +366,12 @@ class I18n(Base):
     updated_at  = Column(DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now())
 
     __table_args__ = (
-        UniqueConstraint("group", "key", "lang", name="uq_i18n_group_key_lang"),
-        Index("idx_i18n_group_lang", "group", "lang"),
-        Index("idx_i18n_group_key",  "group", "key"),
-        Index("idx_i18n_lang",       "lang"),
+        UniqueConstraint("key", "lang", name="uq_prompt_group_key_lang"),
+        Index("idx_prompt_lang",       "lang"),
     )
 
     def __repr__(self):
-        return f"<I18n(group='{self.group}', key='{self.key}', lang='{self.lang}')>"
+        return f"<prompt(group='{self.group}', key='{self.key}', lang='{self.lang}')>"
 
 
 class StrategyConfig(Base):
