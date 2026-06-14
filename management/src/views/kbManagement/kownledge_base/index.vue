@@ -7,7 +7,7 @@
       :model="searchForm"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
-      <el-form-item :label="t('form.name')" prop="name">
+      <el-form-item :label="t('form.name.label')" prop="name">
         <el-input
           v-model="searchForm.name"
           :placeholder="t('knowledgeBase.search.namePlaceholder')"
@@ -457,7 +457,7 @@ const { t } = useI18n();
 const columns: TableColumnList = [
   { type: "index", width: 60, fixed: "left" },
   {
-    label: t("form.name"),
+    label: t("form.name.label"),
     prop: "name",
     minWidth: 160,
     showOverflowTooltip: true

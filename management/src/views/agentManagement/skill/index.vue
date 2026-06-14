@@ -209,7 +209,7 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item :label="t('form.description')" prop="description">
+        <el-form-item :label="t('form.description.label')" prop="description">
           <el-input
             v-model="dialogForm.description"
             type="textarea"
@@ -218,7 +218,7 @@
           />
         </el-form-item>
 
-        <el-form-item :label="t('tool.toolSchema')" prop="tool_schema">
+        <el-form-item :label="t('tool.toolSchema.label')" prop="tool_schema">
           <div class="w-full">
             <el-input
               v-model="dialogForm.tool_schema"
@@ -428,7 +428,7 @@ const columns: TableColumnList = [
     slot: "tool_type"
   },
   {
-    label: t("form.description"),
+    label: t("form.description.label"),
     prop: "description",
     minWidth: 200,
     slot: "description"

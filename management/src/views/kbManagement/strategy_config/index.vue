@@ -6,7 +6,10 @@
       :model="searchForm"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
-      <el-form-item :label="t('strategyConfig.basic.kbName')" prop="kb_id">
+      <el-form-item
+        :label="t('strategyConfig.basic.kbName.label')"
+        prop="kb_id"
+      >
         <el-select
           v-model="searchForm.kb_id"
           clearable
@@ -23,7 +26,7 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item>
+      <!--<el-form-item>
         <el-button
           v-auth="'strategy_config:list'"
           type="primary"
@@ -39,7 +42,7 @@
         >
           {{ t("buttons.reset") }}
         </el-button>
-      </el-form-item>
+      </el-form-item>-->
     </el-form>
 
     <PureTableBar
@@ -152,13 +155,13 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item
-                  :label="t('strategyConfig.basic.kbName')"
+                  :label="t('strategyConfig.basic.kbName.label')"
                   prop="kb_id"
                 >
                   <el-select
                     v-model="dialogForm.kb_id"
                     :disabled="dialogType === 'edit'"
-                    placeholder="t('strategyConfig.kbNamePlaceholder')"
+                    :placeholder="t('strategyConfig.basic.kbName.placeholder')"
                     class="w-full"
                   >
                     <el-option
@@ -564,7 +567,7 @@ const columns: TableColumnList = [
     align: "left"
   },
   {
-    label: t("strategyConfig.basic.kbName"),
+    label: t("strategyConfig.basic.kbId"),
     prop: "kb_id",
     width: 150,
     formatter: ({ kb_id }) => {
@@ -633,7 +636,7 @@ async function fetchData() {
       page: pagination.currentPage,
       page_size: pagination.pageSize
     });
-    console.log(res.items);
+    //console.log(res.items);
 
     if (res) {
       tableData.value = res.items || [];

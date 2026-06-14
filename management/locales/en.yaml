@@ -179,7 +179,7 @@ form:
     label: Name
     placeholder: Please enter a name
   description:
-    lable: Description
+    label: Description
     placeholder: Please enter a description
   llm:
     label: LLM
@@ -241,8 +241,8 @@ routerConfig:
 
   # Table columns
   configId: Config ID
-  selectionStrategy: Selection Strategy
-  fallbackToAll: Fallback to All KBs
+  selectionStrategy: Strategy
+  fallbackToAll: Fallback to All
   maxKbCount: Max KB Count
   extraConfig: Extra Config
 
@@ -274,7 +274,9 @@ strategyConfig:
     title: Basic Settings
     configId: Config ID
     kbId: KB ID
-    kbName: KB Name    
+    kbName:  
+      label: KB Name
+      placeholder: Please select a kB   
     
     promptLanguage: Prompt Language
     configIdMax: Length should be less than 100

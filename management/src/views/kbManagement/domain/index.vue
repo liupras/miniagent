@@ -143,7 +143,7 @@
           <el-input v-model="dialogForm.plugin_class" />
         </el-form-item>
 
-        <el-form-item :label="t('form.description')" prop="description">
+        <el-form-item :label="t('form.description.label')" prop="description">
           <el-input
             v-model="dialogForm.description"
             type="textarea"

@@ -260,7 +260,7 @@
           />
         </el-form-item>
 
-        <el-form-item :label="t('form.description')" prop="description">
+        <el-form-item :label="t('form.description.label')" prop="description">
           <el-input
             v-model="dialogForm.description"
             type="textarea"
@@ -557,7 +557,7 @@ const columns: TableColumnList = [
   { label: "ID", prop: "id", width: 70 },
   { label: t("form.name.label"), prop: "name", minWidth: 140 },
   {
-    label: t("form.description"),
+    label: t("form.description.label"),
     prop: "description",
     minWidth: 160,
     showOverflowTooltip: true

@@ -99,7 +99,7 @@ menus:
     domain: 领域
     routerConfig: 路由策略
     strategyConfig: 检索策略
-    kownledgeBase: 知识库基本信息
+    kownledgeBase: 基本信息
   system:
     default: 系统管理
     cache: 缓存
@@ -182,7 +182,7 @@ form:
     label: 名称
     placeholder: 请输入名称
   description:
-    lable: 描述
+    label: 描述
     placeholder: 请输入描述
   llm:
     label: 大模型
@@ -275,7 +275,9 @@ strategyConfig:
     title: 基础设置
     configId: 配置ID
     kbId: 知识库ID
-    kbName: 知识库名称    
+    kbName: 
+      label: 知识库名称
+      placeholder: 请选择知识库
     
     promptLanguage: 提示词语言
     configIdMax: 长度应小于100
