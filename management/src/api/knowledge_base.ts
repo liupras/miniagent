@@ -74,31 +74,37 @@ export type KbUpdatePayload = Partial<KbCreatePayload>;
 
 /** GET /knowledge_bases  — paginated list */
 export const getKnowledgeBaseList = (params: KbListQuery) =>
-  http.request<KnowledgeBaseListResult>("get", baseUrlApi("knowledge_bases"), {
-    params
+  http.request<KnowledgeBaseListResult>(
+    "get",
+    baseUrlApi("admin/knowledge-bases"),
+    {
+      params
   });
 
 /** GET /knowledge_bases/options */
 export const getKnowledgeBaseOptions = () =>
   http.request<{ data: KnowledgeBaseOption[] }>(
     "get",
-    baseUrlApi("knowledge_bases/options")
+    baseUrlApi("admin/knowledge-bases/options")
   );
 
 /** GET /knowledge_bases/:id */
 export const getKnowledgeBase = (id: number) =>
-  http.request<KnowledgeBaseItem>("get", baseUrlApi(`knowledge_bases/${id}`));
+  http.request<KnowledgeBaseItem>(
+    "get",
+    baseUrlApi(`admin/knowledge-bases/${id}`)
+  );
 
 /** GET /knowledge_bases/:id/stats */
 export const getKnowledgeBaseStats = (id: number) =>
   http.request<KnowledgeBaseStats>(
     "get",
-    baseUrlApi(`knowledge_bases/${id}/stats`)
+    baseUrlApi(`admin/knowledge-bases/${id}/stats`)
   );
 
 /** POST /knowledge_bases */
 export const createKnowledgeBase = (data: KbCreatePayload) =>
-  http.request<KnowledgeBaseItem>("post", baseUrlApi("knowledge_bases"), {
+  http.request<KnowledgeBaseItem>("post", baseUrlApi("admin/knowledge-bases"), {
     data
   });
 
@@ -106,14 +112,35 @@ export const createKnowledgeBase = (data: KbCreatePayload) =>
 export const updateKnowledgeBase = (id: number, data: KbUpdatePayload) =>
   http.request<KnowledgeBaseItem>(
     "patch",
-    baseUrlApi(`knowledge_bases/${id}`),
+    baseUrlApi(`admin/knowledge-bases/${id}`),
     { data }
   );
 
 /** DELETE /knowledge_bases/:id */
 export const deleteKnowledgeBase = (id: number) =>
-  http.request("delete", baseUrlApi(`knowledge_bases/${id}`));
+  http.request("delete", baseUrlApi(`admin/knowledge-bases/${id}`));
 
 /** PATCH /knowledge_bases/:id/toggle */
 export const toggleKnowledgeBase = (id: number) =>
-  http.request("patch", baseUrlApi(`knowledge_bases/${id}/toggle`));
+  http.request("patch", baseUrlApi(`admin/knowledge-bases/${id}/toggle`));
+
+export const getDomainOptions = () => {
+  return http.request<{ id: number; name: string }[]>(
+    "get",
+    baseUrlApi("admin/domains/options")
+  );
+};
+
+export const getEmbeddingOptions = () => {
+  return http.request<{ id: number; name: string }[]>(
+    "get",
+    baseUrlApi("admin/embeddings/options")
+  );
+};
+
+export const getLlmOptions = () => {
+  return http.request<{ id: number; name: string }[]>(
+    "get",
+    baseUrlApi("admin/llms/options")
+  );
+};

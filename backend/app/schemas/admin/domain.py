@@ -126,3 +126,11 @@ class DomainListResponse(BaseModel):
     page: int
     page_size: int
     items: list[DomainRead]
+
+class DomainOption(BaseModel):
+    """Domain option for dropdown selection."""
+
+    id: int
+    name: str
+
+    model_config = {"from_attributes": True}

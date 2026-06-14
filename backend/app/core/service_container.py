@@ -54,6 +54,7 @@ from app.services.admin.domain import DomainService
 from app.services.admin.router_config import RouterConfigService
 from app.services.admin.strategy_config import StrategyConfigService
 from app.services.admin.knowledge_base import KnowledgeBaseService
+from app.services.admin.embedding import EmbeddingService
 
 import importlib
 
@@ -161,6 +162,7 @@ class ServiceContainer:
         self.router_config_service = RouterConfigService(self)
         self.strategy_config_service = StrategyConfigService(self)
         self.kb_service = KnowledgeBaseService(self)
+        self.embedding_service = EmbeddingService(db=self.embed_db)
 
     async def start(self):
         await self.init_plugins()

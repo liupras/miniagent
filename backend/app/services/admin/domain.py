@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from loguru import logger
-from typing import  Optional
+from typing import  List, Optional
 
 from app.repositories.async_domain import AsyncDomainDatabase
 from app.schemas.admin.domain import (
@@ -15,6 +15,7 @@ from app.schemas.admin.domain import (
     DomainListResponse,
     DomainRead,
     DomainUpdate,
+    DomainOption
 )
 
 class DomainService:
@@ -25,6 +26,11 @@ class DomainService:
     # ------------------------------------------------------------------
     # Read
     # ------------------------------------------------------------------
+
+    async def get_domain_options(self) -> List[DomainOption]:
+        """Get domain options for dropdown selection."""
+        domains = await self._repo.get_all_domains()
+        return [DomainOption.model_validate(domain) for domain in domains]
 
     async def get_domain(self, domain_id: int) -> DomainRead:
         domain = await self._repo.get_by_id(domain_id)

@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, Query, Request, status
 from app.core.security.auth_permission import AuthPermission
 from app.schemas.admin.domain import (
     DomainCreate,
+    DomainOption,
     DomainUpdate
 )
 from app.services.admin.domain import DomainService
@@ -30,6 +31,20 @@ def get_service(request: Request) -> DomainService:
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
+
+@router.get(
+    "/options",
+    response_model=ApiResponse,
+    summary="Get domain options for dropdown selection",
+    description="Return a list of domains for dropdown selection.",
+)
+async def get_domain_options(
+    svc:       DomainService   = Depends(get_service),
+    caller_id: int            = Depends(_list),
+) -> list[DomainOption]:
+    data = await svc.get_domain_options()
+    return ApiResponse(data=data)
 
 @router.get(
     "",

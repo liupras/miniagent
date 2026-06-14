@@ -46,15 +46,10 @@
       </el-form-item>
 
       <el-form-item>
-        <el-button
-          v-auth="'tool:list'"
-          type="primary"
-          :icon="Search"
-          @click="onSearch"
-        >
+        <el-button type="primary" :icon="Search" @click="onSearch">
           {{ t("buttons.search") }}
         </el-button>
-        <el-button v-auth="'tool:list'" :icon="Refresh" @click="onReset">
+        <el-button :icon="Refresh" @click="onReset">
           {{ t("buttons.reset") }}
         </el-button>
       </el-form-item>

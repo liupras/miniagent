@@ -28,7 +28,6 @@
 
       <!--<el-form-item>
         <el-button
-          v-auth="'strategy_config:list'"
           type="primary"
           :icon="Search"
           @click="onSearch"
@@ -36,7 +35,6 @@
           {{ t("buttons.search") }}
         </el-button>
         <el-button
-          v-auth="'strategy_config:list'"
           :icon="Refresh"
           @click="onReset"
         >

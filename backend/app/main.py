@@ -127,6 +127,9 @@ async def global_exception_handler(request: Request, exc: Exception):
 from app.api.admin.llm import router as admin_llm_router
 app.include_router(admin_llm_router,prefix="/api/v1/admin/llms", tags=["Admin - LLM"])
 
+from app.api.admin.embedding import router as admin_embdding_router
+app.include_router(admin_embdding_router,prefix="/api/v1/admin/embeddings", tags=["Admin - Embedding"])
+
 from app.api.admin.user import router as admin_user_router
 app.include_router(admin_user_router,prefix="/api/v1/admin/users", tags=["Admin - User"])
 

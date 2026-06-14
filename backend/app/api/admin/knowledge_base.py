@@ -37,7 +37,7 @@ def get_service(request: Request) -> KnowledgeBaseService:
 
 @router.get(
     "",
-    response_model=KnowledgeBaseListOut,
+    response_model=ApiResponse,
     summary="List knowledge bases",
     description="Return a paginated list of all knowledge bases, optionally filtered.",
 )
@@ -49,7 +49,7 @@ async def list_kbs(
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     svc:       KnowledgeBaseService   = Depends(get_service),
     caller_id: int            = Depends(_list),
-) -> KnowledgeBaseListOut:
+) -> ApiResponse:
     total, items = await svc.list_kbs(
         name_filter=name,
         domain_id=domain_id,
@@ -57,7 +57,8 @@ async def list_kbs(
         page=page,
         page_size=page_size
     )
-    return KnowledgeBaseListOut(total=total, page=page, page_size=page_size, items=items)
+    data = KnowledgeBaseListOut(total=total, page=page, page_size=page_size, items=items)
+    return ApiResponse(data=data)
 
 
 @router.get(
@@ -76,37 +77,37 @@ async def get_kb_options(
 
 @router.get(
     "/{kb_id}",
-    response_model=KnowledgeBaseRead,
+    response_model=ApiResponse,
     summary="Get a knowledge base by ID",
 )
 async def get_kb(
     kb_id: int,
     svc:       KnowledgeBaseService   = Depends(get_service),
     caller_id: int            = Depends(_list),
-) -> KnowledgeBaseRead:
+) -> ApiResponse:
     kb = await svc.get_kb(kb_id)
     if not kb:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
-    return kb
+    return ApiResponse(data=kb)
 
 
 @router.post(
     "",
-    response_model=KnowledgeBaseRead,
-    status_code=status.HTTP_201_CREATED,
+    response_model=ApiResponse,
     summary="Create a new knowledge base",
 )
 async def create_kb(
     payload: KnowledgeBaseCreate,
     svc:       KnowledgeBaseService   = Depends(get_service),
     caller_id: int            = Depends(_add),
-) -> KnowledgeBaseRead:
-    return await svc.create_kb(payload)
+) -> ApiResponse:
+    data = await svc.create_kb(payload)
+    return ApiResponse(data=data)
 
 
 @router.patch(
     "/{kb_id}",
-    response_model=KnowledgeBaseRead,
+    response_model=ApiResponse,
     summary="Partially update a knowledge base",
 )
 async def update_kb(
@@ -114,54 +115,55 @@ async def update_kb(
     payload: KnowledgeBaseUpdate,
     svc:       KnowledgeBaseService   = Depends(get_service),
     caller_id: int            = Depends(_edit),
-) -> KnowledgeBaseRead:
+) -> ApiResponse:
     kb = await svc.update_kb(kb_id, payload)
     if not kb:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
-    return kb
+    return ApiResponse(data= kb)
 
 
 @router.delete(
     "/{kb_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=ApiResponse,
     summary="Delete a knowledge base",
 )
 async def delete_kb(
     kb_id: int,
     svc:       KnowledgeBaseService   = Depends(get_service),
     caller_id: int            = Depends(_delete),
-) -> None:
+) -> ApiResponse:
     success = await svc.delete_kb(kb_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
-
+    return ApiResponse(data=success)
 
 @router.patch(
     "/{kb_id}/toggle",
+    response_model=ApiResponse,
     summary="Toggle knowledge base active status",
 )
 async def toggle_kb_active(
     kb_id: int,
     svc:       KnowledgeBaseService   = Depends(get_service),
     caller_id: int            = Depends(_edit),
-) -> dict:
+) -> ApiResponse:
     success = await svc.toggle_kb_active(kb_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
-    return {"message": "Knowledge base active status updated successfully"}
+    return ApiResponse(message= "Knowledge base active status updated successfully")
 
 
 @router.get(
     "/{kb_id}/stats",
-    response_model=KnowledgeBaseStats,
+    response_model=ApiResponse,
     summary="Get knowledge base statistics",
 )
 async def get_kb_stats(
     kb_id: int,
     svc:       KnowledgeBaseService   = Depends(get_service),
     caller_id: int            = Depends(_list),
-) -> KnowledgeBaseStats:
+) -> ApiResponse:
     stats = await svc.get_kb_stats(kb_id)
     if not stats:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
-    return stats
+    return ApiResponse(data=stats)

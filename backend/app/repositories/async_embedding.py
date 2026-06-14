@@ -4,8 +4,8 @@
 # @date    : 2026-04-15
 # @description: EmbeddingDatabase — ORM access layer for the Embedding table.
 
-from typing import Optional, Sequence
-from sqlalchemy import select, delete, distinct
+from typing import List, Optional, Sequence
+from sqlalchemy import func, select, delete, distinct
 from ..infra.db.database import Embedding
 from ..infra.db.async_base import AsyncBaseDatabase
 
@@ -42,9 +42,31 @@ class AsyncEmbeddingDatabase(AsyncBaseDatabase):
     # Read
     # =========================================================================
 
+    async def get_by_id(self, embedding_id: int) -> Optional[Embedding]:
+        """Return the Embedding row for *embedding_id*, or None if not found."""
+        async with self.get_session() as session:
+            embedding = await session.get(Embedding, embedding_id)
+            return embedding
+
     async def get_by_name(self, name: str) -> Optional[Embedding]:
         async with self.get_session() as s:
             return await s.get(Embedding, name)
+        
+    async def get_all_embeddings(self) -> List[Embedding]:
+        """
+        Return all Embedding rows ordered by name.
+        """
+        async with self.get_session() as session:
+            result = await session.execute(
+                select(Embedding).order_by(Embedding.name)
+            )
+            embeddings = result.scalars().all()         
+            return list(embeddings)
+
+    async def embedding_exists(self, name: str) -> bool:
+        """Return True when an Embedding row with *name* exists."""
+        embedding = await self.get_by_name(name)
+        return embedding is not None
 
     async def get_by_provider_and_model(
         self, provider_name: str, model_name: str
@@ -69,11 +91,37 @@ class AsyncEmbeddingDatabase(AsyncBaseDatabase):
             result = await s.execute(stmt)
             return [r for r in result.scalars()]
 
-    async def exists(self, name: str) -> bool:
-        async with self.get_session() as s:
-            stmt = select(Embedding).where(Embedding.name == name)
-            result = await s.execute(stmt)
-            return result.scalars().first() is not None
+    async def list_embeddings(
+        self,
+        *,
+        name: Optional[str] = None,
+        provider_name: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> tuple[List[Embedding], int]:
+        """
+        Return (items, total) with optional filters and pagination.
+        """
+        async with self.get_session() as session:
+            query = select(Embedding)
+            if name:
+                query = query.where(Embedding.name == name)
+            if provider_name:
+                query = query.where(Embedding.provider_name == provider_name)
+
+            # Total count (re-use same filter)
+            count_query = select(func.count()).select_from(query.subquery())
+            total: int = (await session.execute(count_query)).scalar_one()
+
+            # Paginated results — deterministic ordering by PK
+            offset = (page - 1) * page_size
+            rows = (
+                await session.execute(
+                    query.order_by(Embedding.id).offset(offset).limit(page_size)
+                )
+            ).scalars().all()
+
+            return list(rows), total
 
     # =========================================================================
     # Update

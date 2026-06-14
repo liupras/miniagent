@@ -356,8 +356,8 @@ knowledgeBase:
 
     keywords: 关键词
     keywordsPlaceholder: 输入关键词后按 Enter 确认
-    embeddingId: Embedding 配置
-    embeddingIdPlaceholder: 请选择 Embedding 配置（可选）
+    embeddingId: 嵌入配置
+    embeddingIdPlaceholder: 请选择嵌入配置（可选）
     llmId: LLM 配置
     llmIdPlaceholder: 请选择 LLM 配置（可选）
     chunkSize: 分块大小

@@ -63,7 +63,7 @@
     >
       <template #buttons>
         <el-button
-          v-auth="'knowledge_base:add'"
+          :v-auth="'knowledge_base:add'"
           type="primary"
           :icon="Plus"
           @click="openCreate"
@@ -116,7 +116,7 @@
           <!-- 操作列 -->
           <template #operation="{ row }">
             <el-button
-              v-auth="'knowledge_base:list'"
+              :v-auth="'knowledge_base:list'"
               link
               type="primary"
               size="small"
@@ -127,7 +127,7 @@
             </el-button>
 
             <el-button
-              v-auth="'knowledge_base:edit'"
+              :v-auth="'knowledge_base:edit'"
               link
               type="primary"
               size="small"
@@ -138,7 +138,7 @@
             </el-button>
 
             <el-button
-              v-auth="'knowledge_base:edit'"
+              :v-auth="'knowledge_base:edit'"
               link
               :type="row.is_active ? 'warning' : 'success'"
               size="small"
@@ -154,7 +154,7 @@
             >
               <template #reference>
                 <el-button
-                  v-auth="'knowledge_base:delete'"
+                  :v-auth="'knowledge_base:delete'"
                   link
                   type="danger"
                   size="small"
@@ -236,7 +236,7 @@
           />
         </el-form-item>
 
-        <el-form-item :label="t('form.description')">
+        <el-form-item :label="t('form.description.label')">
           <el-input
             v-model="kbForm.description"
             type="textarea"
@@ -267,24 +267,36 @@
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item :label="t('knowledgeBase.form.embeddingId')">
-              <el-input-number
+              <el-select
                 v-model="kbForm.embedding_id"
                 :placeholder="t('knowledgeBase.form.embeddingIdPlaceholder')"
-                :min="1"
-                controls-position="right"
+                clearable
                 class="w-full"
-              />
+              >
+                <el-option
+                  v-for="opt in embeddingOptions"
+                  :key="opt.id"
+                  :label="opt.name"
+                  :value="opt.id"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item :label="t('knowledgeBase.form.llmId')">
-              <el-input-number
+              <el-select
                 v-model="kbForm.llm_id"
                 :placeholder="t('knowledgeBase.form.llmIdPlaceholder')"
-                :min="1"
-                controls-position="right"
+                clearable
                 class="w-full"
-              />
+              >
+                <el-option
+                  v-for="opt in llmOptions"
+                  :key="opt.id"
+                  :label="opt.name"
+                  :value="opt.id"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -430,9 +442,9 @@ import Refresh from "~icons/ep/refresh";
 import Plus from "~icons/ep/plus";
 import Delete from "~icons/ep/delete";
 import EditPen from "~icons/ep/edit-pen";
-import DataAnalysis from "~icons/ep/data-analysis"
-import VideoPause from "~icons/ep/video-pause"
-import VideoPlay from "~icons/ep/video-play"
+import DataAnalysis from "~icons/ep/data-analysis";
+import VideoPause from "~icons/ep/video-pause";
+import VideoPlay from "~icons/ep/video-play";
 import type { FormInstance, FormRules } from "element-plus";
 import type { PaginationProps } from "@pureadmin/table";
 
@@ -445,7 +457,10 @@ import {
   toggleKnowledgeBase,
   type KnowledgeBaseItem,
   type KbCreatePayload,
-  type KnowledgeBaseStats
+  type KnowledgeBaseStats,
+  getDomainOptions,
+  getEmbeddingOptions,
+  getLlmOptions
 } from "@/api/knowledge_base";
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
@@ -465,7 +480,11 @@ const columns: TableColumnList = [
   {
     label: t("knowledgeBase.columns.domain"),
     prop: "domain_id",
-    width: 100
+    width: 100,
+    formatter: ({ domain_id }) => {
+      const domain = domainOptions.value.find(d => d.id === domain_id);
+      return domain ? domain.name : `ID: ${domain_id}`;
+    }
   },
   {
     label: t("knowledgeBase.columns.collectionName"),
@@ -494,8 +513,18 @@ const columns: TableColumnList = [
   {
     label: t("form.updatedAt"),
     prop: "updated_at",
-    formatter: ({ updated_at }) => formatDate(updated_at),
-    width: 160
+    width: 160,
+    formatter: ({ updated_at }) =>
+      updated_at
+        ? new Date(updated_at).toLocaleString("zh-CN", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+          })
+        : "—"
   },
   {
     label: t("labels.operation"),
@@ -536,6 +565,7 @@ async function fetchList() {
       page: pagination.currentPage,
       page_size: pagination.pageSize
     });
+    //console.log(res);
     tableData.value = res.items;
     pagination.total = res.total;
   } finally {
@@ -567,14 +597,43 @@ function onPageSizeChange(size: number) {
   fetchList();
 }
 
-// ─── Domain 选项（实际项目替换为真实 API） ────────────────────────────────────
-
 const domainOptions = ref<{ id: number; name: string }[]>([]);
 
 async function fetchDomainOptions() {
-  // TODO: replace with actual domain options API
-  // const res = await getDomainOptions();
-  // domainOptions.value = res.data.data;
+  try {
+    const res = await getDomainOptions();
+    if (res) {
+      domainOptions.value = res;
+    }
+  } catch (error) {
+    console.error("获取域名选项失败:", error);
+  }
+}
+
+const embeddingOptions = ref<{ id: number; name: string }[]>([]);
+
+async function fetchEmbeddingOptions() {
+  try {
+    const res = await getEmbeddingOptions();
+    if (res) {
+      embeddingOptions.value = res;
+    }
+  } catch (error) {
+    console.error("获取嵌入选项失败:", error);
+  }
+}
+
+const llmOptions = ref<{ id: number; name: string }[]>([]);
+
+async function fetchLlmOptions() {
+  try {
+    const res = await getLlmOptions();
+    if (res) {
+      llmOptions.value = res;
+    }
+  } catch (error) {
+    console.error("获取LLM选项失败:", error);
+  }
 }
 
 // ─── 新增 / 编辑 ─────────────────────────────────────────────────────────────
@@ -709,6 +768,8 @@ function formatDate(dateStr: string) {
 
 onMounted(() => {
   fetchDomainOptions();
+  fetchEmbeddingOptions();
+  fetchLlmOptions();
   fetchList();
 });
 </script>

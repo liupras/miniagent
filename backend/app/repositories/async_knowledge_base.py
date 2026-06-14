@@ -10,7 +10,7 @@ from loguru import logger
 from sqlalchemy import delete, func, select, update
 
 from ..infra.db.async_base import AsyncBaseDatabase
-from ..infra.db.database import KnowledgeBase, StrategyConfig, Embedding, LLM
+from ..infra.db.database import KnowledgeBase, StrategyConfig, Embedding, LLM,Document
 
 
 class AsyncKnowledgeBaseDatabase(AsyncBaseDatabase):
@@ -228,14 +228,11 @@ class AsyncKnowledgeBaseDatabase(AsyncBaseDatabase):
                 return {}
             
             doc_result = await session.execute(
-                select(func.count()).select_from(kb.documents)
+                select(func.count()).where(Document.kb_id == kb_id)
             )
             doc_count = doc_result.scalar_one()
             
-            chunk_result = await session.execute(
-                select(func.sum(KnowledgeBase.chunk_count)).where(KnowledgeBase.id == kb_id)
-            )
-            chunk_count = chunk_result.scalar_one() or 0
+            chunk_count = kb.chunk_count or 0
             
             return {
                 "id": kb.id,
