@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     duck_db_path:str = Field(default="./data/db/duckdb.db", description="DuckDB database path")
     vector_db_path: str = Field(default="./data/vector", description="VectorDB data path")
 
+    storage_dir: str = Field(default="./data/storage", description="Storage file dir")
+
     # ==================== BM25 configuration ====================
     bm25_index_path: str = Field(default="./data/bm25_index", description="BM25 index storage path")
     bm25_max_cache_size: int = Field(default=1000, description="Maximum cache size (number of items)")
@@ -96,7 +98,7 @@ class Settings(BaseSettings):
         log_dir.mkdir(parents=True, exist_ok=True)
         return log_dir
 
-# Create a global configuration instance
+# Global instance
 settings = Settings()
 
 def get_settings() -> Settings:

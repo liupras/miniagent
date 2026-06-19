@@ -6,7 +6,7 @@
 
 from app.services.sql_agent.tool import SQLTools
 from app.services.sql_agent.agent import SQLAgent
-from app.services.sql_agent.duckdb_manager import DuckDBManager
+from app.infra.db.duckdb_manager import DuckDBManager
 from app.services.sql_agent.manager import DBManager
 from app.infra.llm.client import LLMClient
 from app.infra.llm.agent_client import AgentLLM

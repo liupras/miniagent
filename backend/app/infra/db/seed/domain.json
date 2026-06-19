@@ -3,8 +3,8 @@
     "_comment": "General-purpose domain. No extra document metadata required.",
     "name": "general",
     "type": "general",
-    "processor_class":"app.services.kb.SmallToBigProcessor",
-    "plugin_class":"app.services.kb.GeneralDomainPlugin",
+    "processor_class":"app.services.kb.small_to_big_base.SmallToBigProcessor",
+    "plugin_class":"app.services.kb.domain_plugin_general.GeneralDomainPlugin",
     "description": "通用知识库，适用于无特定领域要求的文档。使用标准递归字符分块策略。",
     "metadata_schema": null
   },
@@ -12,8 +12,8 @@
     "_comment": "Legal / regulatory domain. Documents are structured by articles (第X条).",
     "name": "law_cn",  
     "type": "law",  
-    "processor_class":"app.services.kb.law.LawSmallToBigProcessor",
-    "plugin_class":"app.services.kb.law.LawDomainPlugin",
+    "processor_class":"app.services.kb.law.small_to_big.LawSmallToBigProcessor",
+    "plugin_class":"app.services.kb.law.domain_plugin.LawDomainPlugin",
     "description": "中华人民共和国的法律法规。",
     "metadata_schema": {
       "type": "object",

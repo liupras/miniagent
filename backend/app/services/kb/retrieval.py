@@ -22,8 +22,8 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from loguru import logger
 from pydantic import ConfigDict, Field
 
-from .vector_store import VectorStoreManager
-from .bm25_manager import BM25Manager
+from ...infra.retrieval.vector_store import VectorStoreManager
+from ...infra.search.bm25_manager import BM25Manager
 from .retrieval_model import RetrievedChunk
 from .citation_merger import CitationMerger
 
@@ -1166,8 +1166,9 @@ class RetrievalPipeline:
                 score_threshold = cfg.vector_score_threshold,                
             )
         if cfg.enable_bm25:
+            from app.infra.search.bm25_manager import bm25_manager
             BM25_stage = BM25Stage(
-                bm25_manager    = container.bm25,
+                bm25_manager    = bm25_manager,
                 kb_id           = kb_id,
                 default_top_k           = cfg.bm25_top_k,
                 score_threshold = cfg.bm25_score_threshold,

@@ -185,21 +185,16 @@ class JWTAuth:
             return {"error": str(e), "valid": False}
 
 
-# Global instance (using settings in the configuration)
-_jwt_auth_instance = None
-
-def get_jwt_auth() -> JWTAuth:
-    """Obtain a JWT authentication instance (singleton mode)"""
-    global _jwt_auth_instance
-    if _jwt_auth_instance is None:
-        _jwt_auth_instance = JWTAuth()
-    return _jwt_auth_instance
-
+# Global instance
+from app.core.config import settings
+jwt_auth = JWTAuth(
+    secret_key  = settings.jwt_secret_key,
+    algorithm   = settings.jwt_algorithm,
+    expire_days = settings.jwt_access_token_expire_days,
+)
 # example
 if __name__ == "__main__":
-
-    jwt_auth = get_jwt_auth()
-    
+   
     # Create token
     username = "user"
     token = jwt_auth.create_token(username)

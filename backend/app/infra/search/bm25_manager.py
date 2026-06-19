@@ -21,6 +21,7 @@ from loguru import logger
 from rank_bm25 import BM25Okapi
 from langchain_core.stores import BaseStore
 from app.infra.cache_backend import create_cache_backend
+from app.core.config import settings
 
 class BM25Manager:
 
@@ -290,6 +291,12 @@ class BM25Manager:
             top_k        = top_k,
             score_threshold = score_threshold
         )
+    
+# Global instance
+bm25_manager = BM25Manager(
+    storage_dir   = settings.bm25_index_path,
+    max_cache_size = settings.bm25_max_cache_size,
+)
     
 # ==========================================================
 # LangChain Retriever Adapter

@@ -44,7 +44,8 @@ class AuthPermission:
         if not isinstance(container, ServiceContainer):
             raise TypeError(f"Expected ServiceContainer, got {type(container)}")
         
-        self._jwt_auth  = container.jwt_auth
+        from .jwt_auth import jwt_auth
+        self._jwt_auth  = jwt_auth
         self._user_db   = container.user_db
         self._menu_db   = container.menu_db
         self._cache     = create_cache_backend(max_size=cache_max_size)

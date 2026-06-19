@@ -8,7 +8,7 @@ import pandas as pd
 from loguru import logger
 import os
 
-from .duckdb_manager import DuckDBManager
+from ...infra.db.duckdb_manager import DuckDBManager
 
 class DBManager:
 

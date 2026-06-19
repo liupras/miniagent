@@ -9,7 +9,7 @@ import re
 from loguru import logger
 from .sandbox import run_python_sandbox
 
-from .duckdb_manager import DuckDBManager
+from ...infra.db.duckdb_manager import DuckDBManager
 
 class SQLTools:
     def __init__(self, duckdb_manager: DuckDBManager, schema_name: str = "main"):

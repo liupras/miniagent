@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.infra.db.async_base import AsyncBaseDatabase
 from app.infra.db.database import User
-from app.core.security import bcrypt_hash, verify_bcrypt
+from app.core.security.hash import bcrypt_hash, verify_bcrypt
 from app.schemas.admin.user import UserListParams
 
 class AsyncUserDatabase(AsyncBaseDatabase):

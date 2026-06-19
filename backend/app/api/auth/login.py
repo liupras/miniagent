@@ -7,7 +7,7 @@
 from fastapi import Request,Depends,APIRouter,Body
 from datetime import datetime, timedelta
 
-from app.core.security.jwt_auth import JWTAuth
+from app.core.security.jwt_auth import jwt_auth
 from app.schemas.auth.login import LoginRequest, LoginResponse,RefreshTokenRequest
 from app.core.config import settings
 from app.services.admin.user import UserService
@@ -17,17 +17,13 @@ REFRESH_TOKEN_EXPIRE_DAYS = settings.refresh_token_expire_days
 
 router = APIRouter()
 
-def get_jwt_auth(request: Request) -> JWTAuth:
-    return request.app.state.container.jwt_auth
-
 def get_user_service(request: Request) -> UserService:
     return request.app.state.container.user_service
 
 @router.post("/login", response_model=LoginResponse)
 async def login(
     request: LoginRequest = Body(...),
-    user_service: UserService = Depends(get_user_service),
-    jwt_auth: JWTAuth = Depends(get_jwt_auth)
+    user_service: UserService = Depends(get_user_service)
 ):
 
     if not await user_service.verify_user(request.username, request.password):
@@ -72,8 +68,7 @@ async def login(
 
 @router.post("/refresh-token", response_model=LoginResponse)
 async def refresh_token(
-    request: RefreshTokenRequest = Body(...),
-    jwt_auth: JWTAuth = Depends(get_jwt_auth)
+    request: RefreshTokenRequest = Body(...)
 ):
 
     if not request.refreshToken:

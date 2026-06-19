@@ -18,7 +18,7 @@ from app.infra.db.database import (
     UserAgentRelation, AgentToolRelation, StrategyConfig, Prompt, SystemSetting,
     RouterConfig, UserRoleRelation
 )
-from app.core.security import bcrypt_hash
+from app.core.security.hash import bcrypt_hash
 
 # Directory that contains all seed JSON files.
 SEED_DIR = Path(__file__).parent / "seed"

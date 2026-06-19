@@ -4,11 +4,10 @@
 # @date    : 2026-03-01
 # @description: Application-level service container, Implement Dependency Injection.
 
-from typing import Dict
 from loguru import logger
 from app.core.config import settings
-from app.core.security import JWTAuth
-from app.services.kb import BM25Manager, VectorStoreManager
+from app.runtime.smart_router_factory import SmartRouterFactory
+from app.runtime.vector_registry import VectorStoreRegistry
 from app.services.kb.service_document import KBDocumentService
 from app.services.kb.service_retrieval import KBRetrievalService
 from app.repositories import (
@@ -33,18 +32,14 @@ from app.repositories import (
     AsyncStrategyConfigDatabase,
 )
 
-from app.services.sql_agent import DuckDBManager
-
 from app.core.security.auth_permission import AuthPermission
 
 from app.services.kb.domain_registry import DomainRegistry
-from app.services.kb.smart_router import SmartRouter,RouterConfig
 from app.services.kb.service_smart_router import KBSmartRouterService
 from app.services.auth.route_service import RouteService
 from app.runtime.agent_factory import AgentFactory
 from app.services.skill.service_web_search import WebSearchService
-from app.services.sql_agent import SQLAgentService
-from app.storage.local import LocalStorageBackend
+from app.services.sql_agent.service_sql_agent import SQLAgentService
 
 from app.services.admin.agent import AgentService
 from app.services.admin.llm import LLMService
@@ -84,8 +79,6 @@ class ServiceContainer:
             database_url,
             echo=False,
             future=True,
-            # For SQLite, it's generally recommended to set pool_size=1 or use a single connection to avoid concurrency lock issues.
-            # However, aiosqlite handles this better, and the default configuration is usually usable.
         )
         self.session_factory = async_sessionmaker(
             bind=self.engine,
@@ -96,8 +89,6 @@ class ServiceContainer:
         )
 
         # ── Databases ──────────────────────────────────────────────────────
-        self.duckdb = DuckDBManager(settings.get_duck_db_path())
-
         self.user_db  = AsyncUserDatabase(self.engine, self.session_factory)
         self.chat_db  = AsyncChatDatabase(self.engine, self.session_factory)
         self.kb_db    = AsyncKnowledgeBaseDatabase(self.engine, self.session_factory)
@@ -118,22 +109,6 @@ class ServiceContainer:
         self.user_agent_relation_db = AsyncAgentUserRelationDatabase(self.engine, self.session_factory)
         self.strategy_config_db = AsyncStrategyConfigDatabase(self.engine, self.session_factory)
 
-        # ── Auth ───────────────────────────────────────────────────────────
-        self.jwt_auth = JWTAuth(
-            secret_key  = settings.jwt_secret_key,
-            algorithm   = settings.jwt_algorithm,
-            expire_days = settings.jwt_access_token_expire_days,
-        )
-
-        # ── Retrieval infrastructure ───────────────────────────────────────
-        self.bm25 = BM25Manager(
-            storage_dir   = settings.bm25_index_path,
-            max_cache_size = settings.bm25_max_cache_size,
-        )
-        self.vector_registry = VectorStoreRegistry(self)  
-        self.domain_registry = DomainRegistry()
-        self.storage = LocalStorageBackend(root_dir="./data/storage")
-
         self.auth: AuthPermission = AuthPermission(
             self,
             # Optionally override defaults:
@@ -141,15 +116,16 @@ class ServiceContainer:
             # cache_ttl_seconds=600.0,
         )
 
-        # ── KB service singletons ──────────────────────────────────────────
-        # Both services receive the full VectorStoreRegistry so they can
-        # resolve the correct VectorStoreManager per kb_id at call time.
-        self.document_service = KBDocumentService(self)
-        self.retrieval_service = KBRetrievalService(self)   
+        self.vector_registry = VectorStoreRegistry(self)
+        self.router_factory = SmartRouterFactory(self)
+        self.domain_registry = DomainRegistry()
+        self.agent_factory = AgentFactory(self)      
 
-        self.router_factory = SmartRouterFactory(self)     
-        self.smart_router_service = KBSmartRouterService(self)
-        self.agent_factory = AgentFactory(self)
+        # ── Service singletons ──────────────────────────────────────────
+        self.document_service = KBDocumentService(self)
+        self.retrieval_service = KBRetrievalService(self)
+             
+        self.smart_router_service = KBSmartRouterService(self)        
         self.web_search_service = WebSearchService(self)
         self.sql_agent_service=SQLAgentService(self)
         self.route_service = RouteService(self)
@@ -164,7 +140,8 @@ class ServiceContainer:
         self.kb_service = KnowledgeBaseService(self)
         self.embedding_service = EmbeddingService(db=self.embed_db)
 
-    async def start(self):
+    async def start(self):       
+
         await self.init_plugins()
         logger.info("ServiceContainer started and plugins loaded.")
 
@@ -193,100 +170,3 @@ class ServiceContainer:
     def shutdown(self):
         """Optional: clean up resources if needed."""
         pass
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# VectorStoreRegistry
-# ─────────────────────────────────────────────────────────────────────────────
-
-class VectorStoreRegistry:
-    """
-    Lazy cache of per-KB VectorStoreManager instances.
-
-    Each KB has its own embedding model configuration, so a separate
-    VectorStoreManager is needed per KB.  This registry creates them on first
-    access and caches them for reuse.
-
-    Usage by services
-    ─────────────────
-    Services call registry.get(kb_id) to resolve the VectorStoreManager for
-    a specific KB.  They hold a reference to the registry (not to individual
-    managers) so they can serve all KBs without being re-instantiated.
-    """
-
-    def __init__(self, container:ServiceContainer):
-        self._stores: Dict[int, VectorStoreManager] = {}
-        self.kb_db   = container.kb_db
-        self.embed_db = container.embed_db
-
-    async def get(self, kb_id: int) -> VectorStoreManager:
-        """
-        Return the VectorStoreManager for *kb_id*, creating it if necessary.
-
-        Raises ValueError if the KB does not exist.
-        """
-        if kb_id in self._stores:
-            return self._stores[kb_id]
-
-        kb = await self.kb_db.get_kb(kb_id)
-        if not kb:
-            raise ValueError(f"KB {kb_id} not found")
-
-        store = await self._create_store_from_kb(kb)
-        self._stores[kb_id] = store
-        return store
-
-    async def _create_store_from_kb(self, kb) -> VectorStoreManager:
-        embed_data = await self.embed_db.get_by_name(kb.embedding_provider)
-        return VectorStoreManager(
-            db_path        = settings.vector_db_path,
-            ollama_base_url = embed_data.base_url,
-            embed_model    = embed_data.model_name,
-        )
-
-    def remove(self, kb_id: int) -> None:
-        """Evict the cached VectorStoreManager for *kb_id*."""
-        if kb_id in self._stores:
-            del self._stores[kb_id]
-
-class SmartRouterFactory:
-    """
-    Manage SmartRouter instances (one per router_config_id).
-    """
-
-    def __init__(self, container: ServiceContainer):
-        self.container = container
-        self._cache: Dict[str, SmartRouter] = {}
-
-    async def get_router(self, router_config_id: str) -> SmartRouter:
-        # Cache hit
-        if router_config_id in self._cache:
-            return self._cache[router_config_id]
-
-        # 1. Load RouterConfig from DB
-        router_config_orm = await self.container.router_config_db.get_by_id(router_config_id)
-        if not router_config_orm:
-            raise ValueError(f"RouterConfig {router_config_id} not found")
-
-        # 2. Convert to dataclass
-        router_config = RouterConfig(
-            selection_strategy = router_config_orm.selection_strategy,
-            fallback_to_all    = router_config_orm.fallback_to_all,
-            max_kb_count       = router_config_orm.max_kb_count,
-            extra_config       = router_config_orm.extra_config,
-        )
-
-        # 3. Building SmartRouter
-        router = SmartRouter(
-            kb_services  = self.container.retrieval_service,
-            router_config= router_config,
-            embedding_db = self.container.embed_db,
-        )
-
-        # 4. caching
-        self._cache[router_config_id] = router
-
-        return router
-    
-    def invalidate(self, router_config_id: str):
-        self._cache.pop(router_config_id, None)

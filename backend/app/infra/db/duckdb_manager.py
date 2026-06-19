@@ -6,7 +6,7 @@
 
 import duckdb
 
-import duckdb
+from app.core.config import settings
 
 class DuckDBManager:
     def __init__(self, db_path: str):
@@ -17,3 +17,6 @@ class DuckDBManager:
 
     def close(self):
         self.conn.close()
+
+# Global instance
+duckdb_manager = DuckDBManager(settings.get_duck_db_path())

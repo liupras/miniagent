@@ -50,8 +50,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     logger.success("✅ Application startup complete")
     logger.info("=" * 60)
 
-    app.state.container = ServiceContainer()
-    await app.state.container.start()
+    container = ServiceContainer()
+    await container.start()
+    app.state.container = container
     
     yield
     

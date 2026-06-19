@@ -8,18 +8,14 @@ from fastapi import Request,HTTPException,Depends
 import re
 
 from app.repositories import AsyncUserDatabase
-from app.core.security.jwt_auth import JWTAuth
-
-def get_jwt_auth(request: Request) -> JWTAuth:
-    return request.app.state.container.jwt_auth
+from app.core.security.jwt_auth import jwt_auth
 
 def get_user_db(request: Request) -> AsyncUserDatabase:
     return request.app.state.container.user_db
 
 async def get_current_user(
     request: Request,
-    user_db: AsyncUserDatabase = Depends(get_user_db),
-    jwt_auth: JWTAuth = Depends(get_jwt_auth),
+    user_db: AsyncUserDatabase = Depends(get_user_db)
 ) -> str:
 
     auth_header = request.headers.get("Authorization")

@@ -65,8 +65,9 @@ class SQLAgentService:
         self._prompt_db    = container.prompt_db
         self._setting_db = container.setting_db
         self._tool_db    = container.tool_db
-        # duckdb is a global singleton injected by ServiceContainer
-        self._duckdb_manager = container.duckdb
+        
+        from app.infra.db.duckdb_manager import duckdb_manager
+        self._duckdb_manager = duckdb_manager
         # DBManager wraps the same DuckDB connection for CSV import operations
         self._db_manager = DBManager(duckdb_manager=self._duckdb_manager)
 

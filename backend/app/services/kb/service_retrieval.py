@@ -80,13 +80,14 @@ class KBRetrievalService:
         if not isinstance(container, ServiceContainer):
             raise TypeError(f"Expected ServiceContainer, got {type(container)}")
         
+        from app.infra.search.bm25_manager import bm25_manager
         self._container      = container
         self.kb_db           = container.kb_db
         self.doc_db          = container.doc_db
         self.pc_db           = container.pc_db
         self.chunk_db        = container.chunk_db
         self.vector_registry = container.vector_registry  # registry, not a single-KB instance
-        self.bm25            = container.bm25
+        self.bm25            = bm25_manager
         self.domain_registry = container.domain_registry
         self.domain_db = container.domain_db
 
