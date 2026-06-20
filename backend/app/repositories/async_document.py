@@ -4,17 +4,13 @@
 # @date    : 2026-04-15
 # @description: Asynchronous Document Database Management
 
-import hashlib
-import os
 from datetime import datetime
 from typing import List, Optional, Dict
 
-from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import Tuple, delete, func, select, update
 
 from app.infra.db.async_base import AsyncBaseDatabase
 from app.infra.db.database import Document
-
 
 class AsyncDocumentDatabase(AsyncBaseDatabase):
     """Asynchronous Document Table Operation Class"""
@@ -49,116 +45,143 @@ class AsyncDocumentDatabase(AsyncBaseDatabase):
         self,
         kb_id: int,
         status_filter: Optional[str] = None,
-    ) -> List[Document]:
+        page: int = 1,
+        page_size: int = 20,
+    ) -> Tuple[List[Document], int]:
+        """List documents for a knowledge base with optional status filter."""
         async with self.get_session() as session:
-            q = select(Document).where(Document.kb_id == kb_id)
+            query = select(Document).where(Document.kb_id == kb_id)
+            
             if status_filter:
-                q = q.where(Document.status == status_filter)
-            result = await session.execute(q)
-            return list(result.scalars().all())
+                query = query.where(Document.status == status_filter)
+
+            # Total count
+            count_query = select(func.count()).select_from(query.subquery())
+            total: int = (await session.execute(count_query)).scalar_one()
+
+            # Paginated results
+            offset = (page - 1) * page_size
+            rows = (
+                await session.execute(
+                    query.order_by(Document.created_at.desc())
+                    .offset(offset)
+                    .limit(page_size)
+                )
+            ).scalars().all()
+
+            return list(rows), 
+
+    async def get_chunk_ids_by_doc(self, doc_id: int) -> List[int]:
+        """Get all chunk IDs associated with a document."""
+        async with self.get_session() as session:
+            result = await session.execute(
+                select("chunk.id").select_from(Document.__table__.join("chunk"))
+                .where(Document.id == doc_id)
+            )
+            return [row[0] for row in result.fetchall()]
 
     # =========================================================================
     # Writes (Asynchronous)
     # =========================================================================
 
-    async def create_doc(
-        self,
-        kb_id: int,
-        hash_value: str,
-        filename: str,
-        mime_type: str,
-        file_uri: str,
-        file_size: int = 0,
-        storage_type: str = "local",
-        metadata: Optional[dict] = None,
-    ) -> Document:
-        """
-        Insert a new document record with the status 'processing'.
-        """
+    async def create_doc(self, **kwargs) -> Document:
+        """Create a new document."""
         async with self.get_session() as session:
-            doc = Document(
-                kb_id=kb_id,
-                hash_value=hash_value,
-                filename=filename,
-                mime_type=mime_type,
-                file_size=file_size,
-                file_uri=file_uri,
-                storage_type=storage_type,
-                meta_data_json=metadata or {},
-                status="processing",
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
-            )
+            doc = Document(**kwargs)
             session.add(doc)
-            # In an asynchronous environment, await and flush must be used.
-            await session.flush()
-            # A refresh is required to retrieve the auto-incrementing ID before the session is closed.
-            await session.refresh(doc)
-            logger.debug(f"[DB] Created Document id={doc.id} filename={filename}")
+            await session.flush()  # Get the ID before commit
             return doc
 
-    async def mark_status(
-        self,
-        doc_id: int,
-        status: str,
-        error_message: Optional[str] = None,        
-    ) -> None:
+    async def mark_status(self, doc_id: int, status: str, error_message: Optional[str] = None) -> int:
+        """Mark document status."""
         async with self.get_session() as session:
-            doc = await session.get(Document, doc_id)
-            if not doc:
-                return
-            doc.status     = status
-            doc.updated_at = datetime.now()
+            values = {
+                "status": status,
+                "updated_at": datetime.now()
+            }
             if error_message is not None:
-                doc.error_message = error_message[:1000]            
-        logger.debug(f"[DB] Document id={doc_id} → status={status}")
+                values["error_message"] = error_message
+            
+            result = await session.execute(
+                update(Document)
+                .where(Document.id == doc_id)
+                .values(**values)
+            )
+            return result.rowcount
 
-    async def update_hash(self, doc_id: int, hash_value: str, file_uri: str) -> None:
+    async def update_hash(self, doc_id: int, hash_value: str, file_uri: str) -> int:
+        """Update document hash and file URI."""
         async with self.get_session() as session:
-            doc = await session.get(Document, doc_id)
-            if doc:
-                doc.hash_value = hash_value
-                doc.file_uri   = file_uri
-                doc.updated_at = datetime.now()
+            result = await session.execute(
+                update(Document)
+                .where(Document.id == doc_id)
+                .values(
+                    hash_value=hash_value,
+                    file_uri=file_uri,
+                    updated_at=datetime.now()
+                )
+            )
+            return result.rowcount
 
-    async def update_metadata(self, doc_id: int, metadata: dict) -> None:
+    async def update_metadata(self, doc_id: int, metadata: dict) -> int:
+        """Update document metadata."""
         async with self.get_session() as session:
-            doc = await session.get(Document, doc_id)
-            if doc:
-                doc.meta_data_json = metadata
-                doc.updated_at     = datetime.now()
+            result = await session.execute(
+                update(Document)
+                .where(Document.id == doc_id)
+                .values(
+                    meta_data_json=metadata,
+                    updated_at=datetime.now()
+                )
+            )
+            return result.rowcount
 
-    async def update_page_count(self, doc_id: int, page_count: int) -> None:
+    async def update_page_count(self, doc_id: int, page_count: int) -> int:
+        """Update document page count."""
         async with self.get_session() as session:
-            doc = await session.get(Document, doc_id)
-            if doc:
-                doc.page_count = page_count
-                doc.updated_at = datetime.now()
+            result = await session.execute(
+                update(Document)
+                .where(Document.id == doc_id)
+                .values(
+                    page_count=page_count,
+                    updated_at=datetime.now()
+                )
+            )
+            return result.rowcount
 
-    async def update_chunk_count(self, doc_id: int, chunk_count: int) -> None:
+    async def update_chunk_count(self, doc_id: int, chunk_count: int) -> int:
+        """Update document chunk count."""
         async with self.get_session() as session:
-            doc = await session.get(Document, doc_id)
-            if doc:
-                doc.chunk_count = chunk_count
-                doc.updated_at  = datetime.now()
+            result = await session.execute(
+                update(Document)
+                .where(Document.id == doc_id)
+                .values(
+                    chunk_count=chunk_count,
+                    updated_at=datetime.now()
+                )
+            )
+            return result.rowcount
 
-    async def delete_doc(self, doc_id: int) -> bool:
+    async def delete_doc(self, doc_id: int) -> int:
+        """Delete a document."""
         async with self.get_session() as session:
-            doc = await session.get(Document, doc_id)
-            if not doc:
-                return False
-            await session.delete(doc)
-        logger.debug(f"[DB] Deleted Document id={doc_id}")
-        return True
+            result = await session.execute(
+                delete(Document).where(Document.id == doc_id)
+            )
+            return result.rowcount
     
-    async def clear_error_message(self, doc_id: int) -> None:
-        """Clear error_message for the specified document."""
+    async def clear_error_message(self, doc_id: int) -> int:
+        """Clear document error message."""
         async with self.get_session() as session:
-            doc = await session.get(Document, doc_id)
-            if doc:
-                doc.error_message = None
-                doc.updated_at = datetime.now()
-        logger.debug(f"[DB] Cleared error_message for Document id={doc_id}")
+            result = await session.execute(
+                update(Document)
+                .where(Document.id == doc_id)
+                .values(
+                    error_message=None,
+                    updated_at=datetime.now()
+                )
+            )
+            return result.rowcount
 
     async def get_citation_info_by_ids(self, doc_ids: List[int]) -> Dict[int, dict]:
         async with self.get_session() as session:
@@ -174,21 +197,3 @@ class AsyncDocumentDatabase(AsyncBaseDatabase):
             }
             for row in rows
         }
-
-    # =========================================================================
-    # Static helper (Maintain synchronization because it does not involve DB I/O.)
-    # =========================================================================
-
-    @staticmethod
-    def hash_source(source: str) -> str:
-        """
-        Calculate the hash. Note: If the file is very large, reading the file will still be blocking I/O.
-        For extremely high performance requirements, aiofiles can be used, but usually, keeping it synchronous is sufficient here.
-        """
-        if os.path.exists(source):
-            h = hashlib.sha256()
-            with open(source, "rb") as f:
-                for block in iter(lambda: f.read(65536), b""):
-                    h.update(block)
-            return h.hexdigest()
-        return hashlib.sha256(source.encode()).hexdigest()

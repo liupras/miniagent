@@ -152,8 +152,11 @@ app.include_router(admin_strategy_config,prefix="/api/v1/admin/strategy-configs"
 from app.api.admin.knowledge_base import router as admin_kownledge_base
 app.include_router(admin_kownledge_base,prefix="/api/v1/admin/knowledge-bases", tags=["Admin - Knowledge Base"])
 
-from app.api.admin.kb import router as admin_kb_router
-app.include_router(admin_kb_router,prefix="/api/v1/admin/kb", tags=["Admin - Knowledge Base"])
+from app.api.admin.document import router as admin_document_router
+app.include_router(admin_document_router,prefix="/api/v1/admin/kb", tags=["Admin - Document"])
+
+from app.api.admin.task import router as admin_task_router
+app.include_router(admin_task_router,prefix="/api/v1/admin/tasks", tags=["Admin - Task"])
 
 from app.api.admin.sql_agent import router as admin_sql_agent_router
 app.include_router(admin_sql_agent_router,prefix="/api/v1/admin/sql-agent", tags=["Admin - SQL Agent"])

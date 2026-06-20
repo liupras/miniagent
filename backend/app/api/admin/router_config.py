@@ -10,6 +10,7 @@ from app.core.security.auth_permission import AuthPermission
 from app.schemas.admin.router_config import RouterConfigUpdate
 from app.services.admin.router_config import RouterConfigService
 from app.schemas.common import ApiResponse
+from app.services.kb.service_smart_router import KBSmartRouterService
 
 router = APIRouter()
 
@@ -19,6 +20,20 @@ router = APIRouter()
 
 def get_service(request: Request) -> RouterConfigService:
     return request.app.state.container.router_config_service
+
+def get_service_smart_router(
+    request: Request
+) -> KBSmartRouterService:
+    """
+    Return the long-lived KBSmartRouterService singleton from ServiceContainer.
+
+    The service delegates to SmartRouterFactory, which caches one SmartRouter
+    per router_config_id.  Must be a singleton — never recreate per request.
+
+    Call container.smart_router_service.invalidate(router_config_id) after
+    updating a RouterConfig in the DB.
+    """
+    return request.app.state.container.smart_router_service
 
 _list   = AuthPermission.Permission("router_config:list")
 _edit   = AuthPermission.Permission("router_config:edit")
@@ -56,12 +71,14 @@ async def get_router_config(
     summary="Edit routing policy configuration (partial update)",
 )
 async def update_router_config(
-    config_id: str, 
-    payload: RouterConfigUpdate,
-    _svc:       RouterConfigService   = Depends(get_service),
-    caller_id: int            = Depends(_edit)
+    config_id:          str, 
+    payload:            RouterConfigUpdate,
+    _svc:               RouterConfigService     = Depends(get_service),
+    _svc_smart_router:  KBSmartRouterService    = Depends(get_service_smart_router),
+    caller_id:          int                     = Depends(_edit)
 ):
   
     await _svc.update(config_id, payload)
+    _svc_smart_router.invalidate(config_id)
     return ApiResponse()
    

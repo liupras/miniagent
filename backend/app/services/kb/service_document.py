@@ -5,33 +5,19 @@
 # @description: Knowledge-base document service — pure orchestration.
 
 import asyncio
-from typing import Optional
-from enum import Enum
-from langchain_core.documents import Document
+from typing import List, Optional
+from langchain_core.documents import Document as LC_Document
 
 from loguru import logger
+from sqlalchemy import Tuple
+
+from app.utils.hash import sha256_hash
 
 from .smart_document_loader import SmartDocumentLoader
 from .small_to_big_base import ChunkConfig
-from ...infra.retrieval.vector_store import VectorStoreManager
-from app.repositories import AsyncDocumentDatabase
-from .progress_tracker import ProgressTracker
-
-class DocumentStatus(Enum):
-    """Document processing status enumeration"""
-    PROCESSING = "processing"
-    COMPLETED  = "completed"
-    FAILED     = "failed"
-
-def _emitter(task_id: str):
-    """Return an async callable bound to a specific task_id."""
-    async def _emit(stage, message, progress=0.0, done=False, error=False):
-        await ProgressTracker.emit(task_id, stage, message, progress, done, error)
-    return _emit
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Service
-# ─────────────────────────────────────────────────────────────────────────────
+from app.infra.retrieval.vector_store import VectorStoreManager
+from app.runtime.task.progress_tracker import DocumentStatus,emitter
+from app.infra.db.database import Document
 
 class KBDocumentService:
     """
@@ -72,6 +58,32 @@ class KBDocumentService:
     # Public API
     # =========================================================================
 
+    async def kb_exists(self,kb_id:int)->bool:
+        return self.kb_db.kb_exists(kb_id=kb_id)
+
+    async def list_docs(
+        self,
+        kb_id: int,
+        status_filter: Optional[str] = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> Tuple[int, List[Document]]:
+        """List documents for a knowledge base."""
+        items, total = await self.doc_db.list_docs(
+            kb_id=kb_id,
+            status_filter=status_filter,
+            page=page,
+            page_size=page_size
+        )
+        return total, items
+    
+    async def get_doc(self, doc_id: int) -> Optional[Document]:
+        """Get a single document by ID."""
+        doc = await self.doc_db.get_doc(doc_id)
+        if doc is None:
+            return None
+        return doc
+    
     async def add_document(
         self,
         kb_id:        int,
@@ -89,10 +101,10 @@ class KBDocumentService:
         • Same hash + processing/failed → clean up partial data, then retry.
         Since the document and chunk sizes will not be very large, hash collisions will not be considered.
         """
-        E = _emitter(task_id)
+        E = emitter(task_id)
         await E("init", "🔍 Checking by hash …", 0)
         
-        doc_hash = AsyncDocumentDatabase.hash_source(source)
+        doc_hash = sha256_hash(source)
         existing = await self.doc_db.find_by_hash(kb_id, doc_hash)
 
         # ── Dedup ─────────────────────────────────────────────────────────
@@ -111,16 +123,18 @@ class KBDocumentService:
                 await asyncio.to_thread(self._add_storage_file, source, target_file_uri)
                 await E("init", "document is saved.", 5)
         else:
-            doc = await self.doc_db.create_doc(
-                kb_id        = kb_id,
-                hash_value   = doc_hash,
-                filename     = filename,
-                mime_type    = mime_type,
-                file_uri     = source,
-                file_size    = file_size,
-                storage_type = storage_type,
-                metadata     = metadata,
+            new_doc = Document(
+                kb_id=kb_id,
+                hash_value=doc_hash,
+                filename=filename,
+                mime_type=mime_type,
+                file_uri=source,
+                file_size=file_size,
+                storage_type=storage_type,
+                meta_data_json=metadata
             )
+            data = new_doc.model_dump()
+            doc = await self.doc_db.create_doc(**data)
 
         try:
             await self._process_document(doc.id, doc.kb_id, source, task_id)
@@ -146,7 +160,7 @@ class KBDocumentService:
         • Same hash + completed → only update metadata (no re-embedding).
         • Different hash → full cleanup + re-index.
         """
-        E = _emitter(task_id)
+        E = emitter(task_id)
         await E("init", "🔍 Loading document record …", 0)
 
         doc = await self.doc_db.get_doc(doc_id)
@@ -154,7 +168,7 @@ class KBDocumentService:
             await E("error", f"Document {doc_id} not found.", 0, done=True, error=True)
             raise ValueError(f"Document {doc_id} not found")
 
-        new_hash = AsyncDocumentDatabase.hash_source(source)
+        new_hash = sha256_hash(source)
 
         # ── Content unchanged ─────────────────────────────────────────────
         if new_hash == doc.hash_value and doc.status == DocumentStatus.COMPLETED.value:
@@ -192,7 +206,7 @@ class KBDocumentService:
 
     async def delete_document(self, doc_id: int, task_id: str) -> bool:
         """Delete document row plus all vectors and BM25 entries."""
-        E = _emitter(task_id)
+        E = emitter(task_id)
         await E("init", "🔍 Loading document record …", 0)
 
         doc = await self.doc_db.get_doc(doc_id)
@@ -235,7 +249,7 @@ class KBDocumentService:
                 loop,
             )
 
-        E  = _emitter(task_id)
+        E  = emitter(task_id)
         vs = await self._get_vs(kb_id)
 
         # 1. Load ─────────────────────────────────────────────────────────
@@ -358,7 +372,7 @@ class KBDocumentService:
             logger.error(f"[Storage] Failed to add file {source_path}: {exc}")
             raise
 
-    def _clean_meta(self,documents:list[Document]):
+    def _clean_meta(self,documents:list[LC_Document]):
         for doc in documents:
             if doc.metadata:
                 doc.metadata.pop("source",None)
@@ -371,7 +385,7 @@ class KBDocumentService:
         Remove all derived data (ChromaDB vectors, BM25 entries, SQLite chunks).
         Does NOT delete the Document row itself — caller decides.
         """
-        E  = _emitter(task_id)
+        E  = emitter(task_id)
         vs = await self._get_vs(kb_id)
 
         chunk_ids = await self.chunk_db.get_chunk_ids_by_doc(doc_id)
