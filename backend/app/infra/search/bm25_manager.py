@@ -294,7 +294,7 @@ class BM25Manager:
     
 # Global instance
 bm25_manager = BM25Manager(
-    storage_dir   = settings.bm25_index_path,
+    storage_dir   = settings.get_bm25_db_path(),
     max_cache_size = settings.bm25_max_cache_size,
 )
     
@@ -512,7 +512,7 @@ if __name__ == "__main__":
         max_size=settings.bm25_max_cache_size
     )
     manager = BM25Manager(    
-        storage_dir=settings.bm25_index_path,    
+        storage_dir=settings.get_bm25_db_path(),    
         cache_backend=cache
     )
     

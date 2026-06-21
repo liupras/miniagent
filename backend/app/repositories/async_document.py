@@ -87,12 +87,14 @@ class AsyncDocumentDatabase(AsyncBaseDatabase):
     # Writes (Asynchronous)
     # =========================================================================
 
-    async def create_doc(self, **kwargs) -> Document:
-        """Create a new document."""
+    async def create_doc(self, *args, **kwargs) -> Document:
+        """Create a new document. Supports both Document object and kwargs."""
         async with self.get_session() as session:
-            doc = Document(**kwargs)
+            if args and isinstance(args[0], Document):
+                doc = args[0]
+            else:
+                doc = Document(**kwargs)
             session.add(doc)
-            await session.flush()  # Get the ID before commit
             return doc
 
     async def mark_status(self, doc_id: int, status: str, error_message: Optional[str] = None) -> int:

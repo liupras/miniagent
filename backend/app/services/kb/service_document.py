@@ -5,13 +5,12 @@
 # @description: Knowledge-base document service — pure orchestration.
 
 import asyncio
-from typing import List, Optional
+from typing import  Optional
 from langchain_core.documents import Document as LC_Document
 
 from loguru import logger
-from sqlalchemy import Tuple
 
-from app.utils.hash import sha256_hash
+from app.utils.hash import calculate_file_sha256
 
 from .smart_document_loader import SmartDocumentLoader
 from .small_to_big_base import ChunkConfig
@@ -97,17 +96,14 @@ class KBDocumentService:
     ):
         """
         Add a new document.
-        • Same hash + completed  → skip (document-level dedup).
-        • Same hash + processing/failed → clean up partial data, then retry.
-        Since the document and chunk sizes will not be very large, hash collisions will not be considered.
         """
         E = emitter(task_id)
         await E("init", "🔍 Checking by hash …", 0)
         
-        doc_hash = sha256_hash(source)
+        doc_hash = calculate_file_sha256(source)
         existing = await self.doc_db.find_by_hash(kb_id, doc_hash)
 
-        # ── Dedup ─────────────────────────────────────────────────────────
+        # Dedup
         if existing:
             if existing.status == DocumentStatus.COMPLETED.value:
                 await E("done", f"⏭️  Duplicate — already indexed (id={existing.id}).", 100, done=True)
@@ -118,27 +114,29 @@ class KBDocumentService:
                 await self._cleanup_doc_data(existing.id, existing.kb_id, task_id)
                 # ── Reset Document row ────────────────────────────────────
                 await self.doc_db.mark_status(existing.id, DocumentStatus.PROCESSING.value, error_message="")
-                doc = await self.doc_db.get_doc(existing.id)
-                target_file_uri = f"kb_{kb_id}/{filename}"
-                await asyncio.to_thread(self._add_storage_file, source, target_file_uri)
-                await E("init", "document is saved.", 5)
-        else:
-            new_doc = Document(
-                kb_id=kb_id,
-                hash_value=doc_hash,
-                filename=filename,
-                mime_type=mime_type,
-                file_uri=source,
-                file_size=file_size,
-                storage_type=storage_type,
-                meta_data_json=metadata
-            )
-            data = new_doc.model_dump()
-            doc = await self.doc_db.create_doc(**data)
+                if existing.file_uri:
+                    await asyncio.to_thread(self._delete_storage_file, existing.file_uri)                
+                await E("init", "document is cleaned.", 5)
+        # New
+        target_file_uri = self.get_storage_uri(kb_id,filename)
+        await asyncio.to_thread(self._add_storage_file, source, target_file_uri)
+        await E("init", "document is saved.", 6)
+        
+        new_doc = Document(
+            kb_id=kb_id,
+            hash_value=doc_hash,
+            filename=filename,
+            mime_type=mime_type,
+            file_uri=target_file_uri,
+            file_size=file_size,
+            storage_type=storage_type,
+            meta_data_json=metadata
+        )
+        doc = await self.doc_db.create_doc(new_doc)
 
         try:
             await self._process_document(doc.id, doc.kb_id, source, task_id)
-            await self.doc_db.mark_status(doc.id, DocumentStatus.COMPLETED.value)
+            await self.doc_db.mark_status(doc.id, DocumentStatus.COMPLETED.value,error_message="")
             await E("done", f"✅ Document (id={doc.id}) indexed successfully.", 100, done=True)
         except Exception as exc:
             logger.exception(f"[KB] add_document failed doc_id={doc.id}: {exc}")
@@ -150,8 +148,10 @@ class KBDocumentService:
 
     async def update_document(
         self,
+        kb_id:    int,
         doc_id:   int,
         source:   str,
+        filename:     str,
         task_id:  str,
         metadata: Optional[dict] = None,
     ):
@@ -168,7 +168,7 @@ class KBDocumentService:
             await E("error", f"Document {doc_id} not found.", 0, done=True, error=True)
             raise ValueError(f"Document {doc_id} not found")
 
-        new_hash = sha256_hash(source)
+        new_hash = calculate_file_sha256(source)
 
         # ── Content unchanged ─────────────────────────────────────────────
         if new_hash == doc.hash_value and doc.status == DocumentStatus.COMPLETED.value:
@@ -182,19 +182,19 @@ class KBDocumentService:
         await self._cleanup_doc_data(doc_id, doc.kb_id, task_id)
 
         # ── Delete old file from storage if URI has changed ───────────────
-        if doc.file_uri and doc.file_uri != source:
+        if doc.file_uri:
             await E("init", "🗑️  Removing old file from storage …", 8)
             await asyncio.to_thread(self._delete_storage_file, doc.file_uri)
 
-        await self.doc_db.update_hash(doc_id, new_hash, source)
+        target_file_uri = self.get_storage_uri(kb_id,filename)
+        await self.doc_db.update_hash(doc_id, new_hash, target_file_uri)
         if metadata:
             await self.doc_db.update_metadata(doc_id, metadata)
         await self.doc_db.mark_status(doc_id, DocumentStatus.PROCESSING.value)
 
         try:
             await self._process_document(doc_id, doc.kb_id, source, task_id)
-            await self.doc_db.mark_status(doc_id, DocumentStatus.COMPLETED.value)
-            await self.doc_db.clear_error_message(doc_id)
+            await self.doc_db.mark_status(doc_id, DocumentStatus.COMPLETED.value,error_message="")
             await E("done", f"✅ Document (id={doc_id}) updated.", 100, done=True)
         except Exception as exc:
             logger.exception(f"[KB] update_document failed doc_id={doc_id}: {exc}")
@@ -401,3 +401,7 @@ class KBDocumentService:
         await E("cleanup", "🗑️  Removing SQLite chunk records …", 7)
         await self.chunk_db.delete_chunks_by_doc(doc_id=doc_id)
         await self.pc_db.delete_by_doc(doc_id)
+
+    @staticmethod
+    def get_storage_uri(kb_id:int,filename:str):
+        return f"kb_{kb_id}/{filename}"

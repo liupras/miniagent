@@ -23,14 +23,14 @@ class Settings(BaseSettings):
     api_port: int = Field(default=8088, description="API port")
     
     # ==================== Database configuration ====================
-    sqlite_db_path: str = Field(default="./data/db/miniagent.db", description="SQLite database path")
-    duck_db_path:str = Field(default="./data/db/duckdb.db", description="DuckDB database path")
-    vector_db_path: str = Field(default="./data/vector", description="VectorDB data path")
+    sqlite_db_path: str = Field(default="db/miniagent.db", description="SQLite database path")
+    duck_db_path:str = Field(default="db/duckdb.db", description="DuckDB database path")
+    vector_db_path: str = Field(default="db/vector", description="VectorDB data path")
 
-    storage_dir: str = Field(default="./data/storage", description="Storage file dir")
+    storage_dir: str = Field(default="files", description="Storage file dir")
 
     # ==================== BM25 configuration ====================
-    bm25_index_path: str = Field(default="./data/bm25_index", description="BM25 index storage path")
+    bm25_index_path: str = Field(default="db/bm25_index", description="BM25 index storage path")
     bm25_max_cache_size: int = Field(default=1000, description="Maximum cache size (number of items)")
         
     # ==================== Security Configuration ====================
@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     
     # ==================== Log configuration ====================
     log_level: str = Field(default="DEBUG", description="Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL")
-    log_dir: str = Field(default="../data/logs", description="Log directory")    
+    log_dir: str = Field(default="logs", description="Log directory")    
     
     # ==================== Performance Configuration ====================
     max_concurrent_requests: int = Field(default=10, description="Maximum concurrency")
@@ -66,37 +66,36 @@ class Settings(BaseSettings):
         """Convert CORS source string to list"""
         return [origin.strip() for origin in self.cors_origins.split(",")]
     
+    def _get_safe_path(self,config_path)->Path:
+        base_dir = Path(__file__).parent.parent.parent
+        safe_path = config_path.lstrip('/')
+        new_path = base_dir / safe_path
+
+        # Ensure the directory exists
+        new_path.parent.mkdir(parents=True, exist_ok=True)
+        return new_path
+    
     def get_sqlite_path(self) -> Path:
         """Get the absolute path of the SQLite database"""
-        base_dir = Path(__file__).parent.parent
-        db_path = base_dir / self.sqlite_db_path
-        # Ensure the directory exists
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        return db_path
+        return self._get_safe_path(self.sqlite_db_path)
     
     def get_duck_db_path(self) -> Path:
         """Get the absolute path of the duck database"""
-        base_dir = Path(__file__).parent.parent
-        db_path = base_dir / self.duck_db_path
-        # Ensure the directory exists
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        return db_path
+        return self._get_safe_path(self.duck_db_path)
     
-    def get_chroma_path(self) -> Path:
+    def get_vector_db_path(self) -> Path:
         """Get the absolute path of ChromaDB"""
-        base_dir = Path(__file__).parent.parent
-        chroma_path = base_dir / self.vector_db_path
-        # Ensure the directory exists
-        chroma_path.mkdir(parents=True, exist_ok=True)
-        return chroma_path
+        return self._get_safe_path(self.vector_db_path)
+    
+    def get_bm25_db_path(self)->Path:
+        return self._get_safe_path(self.bm25_index_path)
+    
+    def get_storage_dir(self)->Path:
+        return self._get_safe_path(self.storage_dir)
     
     def get_log_dir(self) -> Path:
         """Get the absolute path of the log file"""
-        base_dir = Path(__file__).parent.parent
-        log_dir = base_dir / self.log_dir
-        # Ensure the directory exists
-        log_dir.mkdir(parents=True, exist_ok=True)
-        return log_dir
+        return self._get_safe_path(self.log_dir)
 
 # Global instance
 settings = Settings()
@@ -113,6 +112,6 @@ if __name__ == "__main__":
     print(f"Version: {settings.app_version}")
     print(f"Environment: {settings.environment}")
     print(f"SQLite path: {settings.get_sqlite_path()}")
-    print(f"ChromaDB Path: {settings.get_chroma_path()}")
+    print(f"ChromaDB Path: {settings.get_vector_db_path()}")
     print(f"CORS origin: {settings.cors_origins_list}")
     print("=" * 50)

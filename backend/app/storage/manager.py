@@ -7,4 +7,4 @@
 from app.core.config import settings
 from app.storage.local import LocalStorageBackend
 
-storage = LocalStorageBackend(root_dir=settings.storage_dir)
+storage = LocalStorageBackend(root_dir=settings.get_storage_dir())

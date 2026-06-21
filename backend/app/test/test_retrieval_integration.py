@@ -463,9 +463,9 @@ async def main():
     print("=" * 65)
 
     from app.core.config import settings
-    sqlite_path = "."+ settings.sqlite_db_path
-    vector_path = "."+ settings.vector_db_path
-    bm25_path = "."+ settings.bm25_index_path
+    sqlite_path = "."+ settings.get_sqlite_path()
+    vector_path = "."+ settings.get_vector_db_path()
+    bm25_path = "."+ settings.get_bm25_db_path()
     kb_id = 1
 
     # ── 从数据库读取配置 ──────────────────────────────────────────────────

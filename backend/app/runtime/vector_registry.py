@@ -52,9 +52,9 @@ class VectorStoreRegistry:
         return store
 
     async def _create_store_from_kb(self, kb) -> VectorStoreManager:
-        embed_data = await self.embed_db.get_by_name(kb.embedding_provider)
+        embed_data = await self.embed_db.get_by_id(kb.embedding_id)
         return VectorStoreManager(
-            db_path        = settings.vector_db_path,
+            db_path        = settings.get_vector_db_path(),
             ollama_base_url = embed_data.base_url,
             embed_model    = embed_data.model_name,
         )

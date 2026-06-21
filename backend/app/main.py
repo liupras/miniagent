@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     logger.info("=" * 60)
     logger.info(f"📊 environment: {settings.environment}")
     logger.info(f"💾 SQLite: {settings.get_sqlite_path()}")
-    logger.info(f"🔍 ChromaDB: {settings.get_chroma_path()}")
+    logger.info(f"🔍 ChromaDB: {settings.get_vector_db_path()}")
     logger.info("=" * 60)
     
     # 🔥 Automatic database initialization
@@ -229,7 +229,7 @@ async def get_config():
         "version": settings.app_version,
         "environment": settings.environment,
         "sqlite_path": str(settings.get_sqlite_path()),
-        "chroma_path": str(settings.get_chroma_path()),
+        "chroma_path": str(settings.get_vector_db_path()),
         "log_level": settings.log_level
     }
 

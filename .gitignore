@@ -144,3 +144,6 @@ cython_debug/
 /backend/data/bge-reranking
 /doc
 /backend/data
+/backend/db
+/backend/files
+/backend/logs

@@ -56,6 +56,7 @@ def get_service(request: Request) -> KBDocumentService:
 # ─────────────────────────────────────────────────────────────────────────────
 @router.get(
     "",
+    response_model=ApiResponse, 
     summary="List all documents in a knowledge base"
 )
 async def list_documents(
@@ -86,6 +87,7 @@ async def list_documents(
 
 @router.get(
     "/{kb_id}/{doc_id}",
+    response_model=ApiResponse, 
     summary="Get document detail"
 )
 async def get_document(
@@ -105,7 +107,7 @@ async def get_document(
 # ─────────────────────────────────────────────────────────────────────────────
 @router.post(
     "/{kb_id}",
-    response_model=TaskCreatedResponse,    
+    response_model=ApiResponse,    
     summary="Upload a file document to a knowledge base"
 )
 async def add_document(
@@ -163,7 +165,7 @@ async def add_document(
 # ─────────────────────────────────────────────────────────────────────────────
 @router.put(
     "/{kb_id}/{doc_id}",
-    response_model=TaskCreatedResponse,
+    response_model=ApiResponse, 
     summary="Replace document content (file upload)"
 )
 async def update_document(
@@ -198,8 +200,10 @@ async def update_document(
     async def run():
         try:
             await service.update_document(
+                kb_id   = kb_id,
                 doc_id  = doc_id,
                 source  = tmp_path,
+                filename= file.filename,
                 task_id = task_id,
                 metadata = meta,
             )
@@ -222,7 +226,7 @@ async def update_document(
 # ─────────────────────────────────────────────────────────────────────────────
 @router.delete(
     "/{kb_id}/{doc_id}",
-    response_model=TaskCreatedResponse,
+    response_model=ApiResponse, 
     summary="Delete a document from knowledge base"
 )
 async def delete_document(
