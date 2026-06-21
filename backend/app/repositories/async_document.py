@@ -43,15 +43,18 @@ class AsyncDocumentDatabase(AsyncBaseDatabase):
 
     async def list_docs(
         self,
-        kb_id: int,
+        kb_id: Optional[int] = None,
         status_filter: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[Document], int]:
+    ):
         """List documents for a knowledge base with optional status filter."""
         async with self.get_session() as session:
-            query = select(Document).where(Document.kb_id == kb_id)
-            
+            if kb_id is not None:
+                query = select(Document).where(Document.kb_id == kb_id)
+            else:
+                query = select(Document)
+             
             if status_filter:
                 query = query.where(Document.status == status_filter)
 
@@ -69,7 +72,7 @@ class AsyncDocumentDatabase(AsyncBaseDatabase):
                 )
             ).scalars().all()
 
-            return list(rows), 
+            return list(rows), total
 
     async def get_chunk_ids_by_doc(self, doc_id: int) -> List[int]:
         """Get all chunk IDs associated with a document."""

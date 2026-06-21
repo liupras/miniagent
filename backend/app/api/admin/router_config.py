@@ -6,11 +6,11 @@
 
 from fastapi import APIRouter, Depends, Request
 
-from app.core.security.auth_permission import AuthPermission
 from app.schemas.admin.router_config import RouterConfigUpdate
 from app.services.admin.router_config import RouterConfigService
 from app.schemas.common import ApiResponse
 from app.services.kb.service_smart_router import KBSmartRouterService
+from app.core.security.auth_permission import AuthPermission
 
 router = APIRouter()
 
@@ -20,6 +20,7 @@ router = APIRouter()
 
 def get_service(request: Request) -> RouterConfigService:
     return request.app.state.container.router_config_service
+
 
 def get_service_smart_router(
     request: Request
@@ -35,17 +36,18 @@ def get_service_smart_router(
     """
     return request.app.state.container.smart_router_service
 
-_list   = AuthPermission.Permission("router_config:list")
-_edit   = AuthPermission.Permission("router_config:edit")
+
+_list_router_config   = AuthPermission.Permission("router_config:list")
+_edit_router_config   = AuthPermission.Permission("router_config:edit")
 
 @router.get(
-    "/",
+    "",
     response_model=ApiResponse,
     summary="Get all routing policy configurations",
 )
 async def list_router_configs(
     _svc:       RouterConfigService   = Depends(get_service),
-    caller_id: int            = Depends(_list),
+    caller_id: int            = Depends(_list_router_config),
 ):
     list = await _svc.list_all()
     result = ApiResponse(data=list)
@@ -59,7 +61,7 @@ async def list_router_configs(
 async def get_router_config(
     config_id: str,
     _svc:       RouterConfigService   = Depends(get_service),
-    caller_id: int            = Depends(_list)
+    caller_id: int            = Depends(_list_router_config)
 ):
     config = await _svc.get(config_id)
     result = ApiResponse(data=config)
@@ -75,10 +77,11 @@ async def update_router_config(
     payload:            RouterConfigUpdate,
     _svc:               RouterConfigService     = Depends(get_service),
     _svc_smart_router:  KBSmartRouterService    = Depends(get_service_smart_router),
-    caller_id:          int                     = Depends(_edit)
+    caller_id:          int                     = Depends(_edit_router_config)
 ):
   
     await _svc.update(config_id, payload)
-    _svc_smart_router.invalidate(config_id)
+    if _svc_smart_router:
+        _svc_smart_router.invalidate(config_id)
     return ApiResponse()
    

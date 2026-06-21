@@ -41,7 +41,6 @@ def get_service(request: Request) -> DomainService:
 )
 async def get_domain_options(
     svc:       DomainService   = Depends(get_service),
-    caller_id: int            = Depends(_list),
 ) -> list[DomainOption]:
     data = await svc.get_domain_options()
     return ApiResponse(data=data)

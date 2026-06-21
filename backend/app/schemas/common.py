@@ -24,12 +24,6 @@ class PageResult(BaseModel, Generic[T]):
 class ApiResponse(BaseModel, Generic[T]):
     """
     Generic top-level API response envelope.
-
-    Usage
-    -----
-    ApiResponse[PageResult[LLMOut]](data=page_result)
-    ApiResponse[AgentOut](data=agent_out)
-    ApiResponse[None](message="Deleted successfully")   # no data
     """
     code: int = Field(200, description="Business status code, 200 = success")
     message: str = Field("success", description="Human-readable status message")

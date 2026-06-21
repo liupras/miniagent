@@ -153,7 +153,7 @@ from app.api.admin.knowledge_base import router as admin_kownledge_base
 app.include_router(admin_kownledge_base,prefix="/api/v1/admin/knowledge-bases", tags=["Admin - Knowledge Base"])
 
 from app.api.admin.document import router as admin_document_router
-app.include_router(admin_document_router,prefix="/api/v1/admin/kb", tags=["Admin - Document"])
+app.include_router(admin_document_router,prefix="/api/v1/admin/documents", tags=["Admin - Document"])
 
 from app.api.admin.task import router as admin_task_router
 app.include_router(admin_task_router,prefix="/api/v1/admin/tasks", tags=["Admin - Task"])

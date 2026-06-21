@@ -69,7 +69,6 @@ async def list_kbs(
 )
 async def get_kb_options(
     svc:       KnowledgeBaseService   = Depends(get_service),
-    caller_id: int            = Depends(_list),
 ) -> ApiResponse:
     data = await svc.get_kb_options()
     return ApiResponse(data=data)

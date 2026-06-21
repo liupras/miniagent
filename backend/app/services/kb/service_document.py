@@ -63,11 +63,11 @@ class KBDocumentService:
 
     async def list_docs(
         self,
-        kb_id: int,
+        kb_id: Optional[int] = None,
         status_filter: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[int, List[Document]]:
+    ):
         """List documents for a knowledge base."""
         items, total = await self.doc_db.list_docs(
             kb_id=kb_id,

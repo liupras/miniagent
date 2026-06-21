@@ -44,25 +44,12 @@ export interface StrategyConfig {
   created_by?: string;
 }
 
-export interface KnowledgeBaseOption {
-  id: number;
-  name: string;
-}
-
 export type StrategyConfigCreate = StrategyConfig;
 export type StrategyConfigUpdate = Partial<StrategyConfig>;
 
 // ──────────────────────────────────────────────
 // 2. API 接口定义
 // ──────────────────────────────────────────────
-
-/** 获取所有知识库选项 */
-export const getKnowledgeBaseOptions = () => {
-  return http.request<KnowledgeBaseOption[]>(
-    "get",
-    baseUrlApi("admin/knowledge-bases/options")
-  );
-};
 
 /** 获取知识库下的策略列表 (带分页) */
 export const getStrategyList = (

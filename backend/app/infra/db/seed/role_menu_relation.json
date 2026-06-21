@@ -30,5 +30,9 @@
     {
         "_role_code": "common",
         "menu_id": 8
+    },
+    {
+        "_role_code": "common",
+        "menu_id": 9
     }
 ]

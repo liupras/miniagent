@@ -64,7 +64,6 @@ async def list_embeddings(
 )
 async def get_embedding_options(
     svc:       EmbeddingService   = Depends(get_service),
-    caller_id: int            = Depends(_list),
 ) -> ApiResponse:
     data = await svc.get_embedding_options()
     return ApiResponse(data=data)

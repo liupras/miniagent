@@ -100,6 +100,7 @@ menus:
     routerConfig: 路由策略
     strategyConfig: 检索策略
     kownledgeBase: 基本信息
+    document: 文档库
   system:
     default: 系统管理
     cache: 缓存
@@ -377,3 +378,61 @@ knowledgeBase:
   # ── 提示 ────────────────────────────────────────────────────
   tips:
     noData: 暂无知识库，点击「新增知识库」开始创建
+
+document:
+  title: 文档管理
+  field:
+    id: ID
+    kbId: 知识库ID
+    filename: 文件名
+    mimeType: 文件类型
+    fileSize: 文件大小
+    fileUri: 存储路径
+    storageType: 存储类型
+    pageCount: 页数
+    chunkCount: 分块数
+    hashValue: 哈希值
+    status: 状态
+    errorMessage: 错误信息
+    metadata: 元数据
+    file: 文件
+    operation: 操作
+  status:
+    pending: 待处理
+    processing: 处理中
+    completed: 已完成
+    failed: 失败
+  search:
+    kbLabel: 知识库
+    kbPlaceholder: 请选择知识库
+    statusPlaceholder: 请选择状态
+    search: 搜索
+    reset: 重置
+  action:
+    add: 新增文档
+    view: 查看
+    reupload: 重新上传
+    delete: 删除
+    deleteConfirm: 确认删除该文档吗？
+  dialog:
+    addTitle: 上传文档
+    updateTitle: 重新上传文档
+    detailTitle: 文档详情
+    dragHint: 将文件拖到此处，或点击上传
+    metadataPlaceholder: 可选，JSON 格式的元数据
+    cancel: 取消
+    submit: 提交
+  progress:
+    title:
+      upload: 文档上传进度
+      update: 文档更新进度
+      delete: 文档删除进度
+    stage: 阶段
+    close: 关闭
+  message:
+    fileRequired: 请先选择文件
+    kbRequired: 请先选择知识库
+    metadataInvalid: 元数据格式不是有效的 JSON
+    taskStarted: 任务已创建，正在处理…
+    connectionLost: 与服务器的连接已断开
+

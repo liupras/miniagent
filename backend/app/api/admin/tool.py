@@ -6,8 +6,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.core.security.auth_permission import AuthPermission

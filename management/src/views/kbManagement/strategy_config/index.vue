@@ -451,14 +451,17 @@ import {
   createStrategy,
   updateStrategy,
   activateStrategy,
-  deleteStrategy,
-  getKnowledgeBaseOptions,
-  type KnowledgeBaseOption
+  deleteStrategy
 } from "@/api/strategy_config";
 
+import {
+  getKnowledgeBaseOptions,
+  KnowledgeBaseOption
+} from "@/api/knowledge_base";
+
 // Icons
-import Search from "~icons/ep/search";
-import Refresh from "~icons/ep/refresh";
+//import Search from "~icons/ep/search";
+//import Refresh from "~icons/ep/refresh";
 import Plus from "~icons/ep/plus";
 import Delete from "~icons/ep/delete";
 import EditPen from "~icons/ep/edit-pen";

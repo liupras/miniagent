@@ -52,10 +52,59 @@ def get_service(request: Request) -> KBDocumentService:
     return request.app.state.container.document_service
 
 # ─────────────────────────────────────────────────────────────────────────────
+# List documents
+# ─────────────────────────────────────────────────────────────────────────────
+@router.get(
+    "",
+    summary="List all documents in a knowledge base"
+)
+async def list_documents(
+    kb_id:         Optional[int]   = None,
+    status_filter: Optional[str]   = None,
+    page: int = 1,
+    page_size: int = 20,
+    service:   KBDocumentService = Depends(get_service),
+    caller_id:        int        = Depends(_list),
+):
+    if kb_id is not None:
+        if not await service.kb_exists(kb_id):
+            raise HTTPException(404, f"KnowledgeBase {kb_id} not found.")
+    total, items = await service.list_docs(
+        kb_id=kb_id,
+        status_filter=status_filter,
+        page=page,
+        page_size=page_size
+    )
+    data = DocumentListOut(
+        total=total, 
+        page=page, 
+        page_size=page_size, 
+        items=[DocumentRead.model_validate(item) for item in items]
+    )
+    
+    return ApiResponse(data=data)
+
+@router.get(
+    "/{kb_id}/{doc_id}",
+    summary="Get document detail"
+)
+async def get_document(
+    kb_id:     int,
+    doc_id:    int,
+    service:   KBDocumentService = Depends(get_service),
+    caller_id:        int                   = Depends(_list),
+):
+    doc = await service.get_doc(doc_id)
+    if not doc or doc.kb_id != kb_id:
+        raise HTTPException(404, f"Document {doc_id} not found in KB {kb_id}.")
+    data = DocumentRead.model_validate(doc)
+    return ApiResponse(data=data)
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Add document — file upload
 # ─────────────────────────────────────────────────────────────────────────────
 @router.post(
-    "/{kb_id}/documents",
+    "/{kb_id}",
     response_model=TaskCreatedResponse,    
     summary="Upload a file document to a knowledge base"
 )
@@ -113,7 +162,7 @@ async def add_document(
 # Update document — re-upload file
 # ─────────────────────────────────────────────────────────────────────────────
 @router.put(
-    "/{kb_id}/documents/{doc_id}",
+    "/{kb_id}/{doc_id}",
     response_model=TaskCreatedResponse,
     summary="Replace document content (file upload)"
 )
@@ -172,7 +221,7 @@ async def update_document(
 # Delete document
 # ─────────────────────────────────────────────────────────────────────────────
 @router.delete(
-    "/{kb_id}/documents/{doc_id}",
+    "/{kb_id}/{doc_id}",
     response_model=TaskCreatedResponse,
     summary="Delete a document from knowledge base"
 )
@@ -194,55 +243,4 @@ async def delete_document(
         task_id = task_id,
         message = "Document deletion started. Stream progress via SSE.",
     )
-    return ApiResponse(data=data)
-
-# ─────────────────────────────────────────────────────────────────────────────
-# List documents
-# ─────────────────────────────────────────────────────────────────────────────
-@router.get(
-    "/{kb_id}/documents",
-    summary="List all documents in a knowledge base"
-)
-async def list_documents(
-    kb_id:         int,
-    status_filter: Optional[str]   = None,
-    page: int = 1,
-    page_size: int = 20,
-    service:   KBDocumentService = Depends(get_service),
-    caller_id:        int        = Depends(_list),
-):
-    if not await service.kb_exists(kb_id):
-        raise HTTPException(404, f"KnowledgeBase {kb_id} not found.")
-    total, items = await service.list_docs(
-        kb_id=kb_id,
-        status_filter=status_filter,
-        page=page,
-        page_size=page_size
-    )
-    data = DocumentListOut(
-        total=total, 
-        page=page, 
-        page_size=page_size, 
-        items=[DocumentRead.model_validate(item) for item in items]
-    )
-    
-    return ApiResponse(data=data)
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Get document detail
-# ─────────────────────────────────────────────────────────────────────────────
-@router.get(
-    "/{kb_id}/documents/{doc_id}",
-    summary="Get document detail"
-)
-async def get_document(
-    kb_id:     int,
-    doc_id:    int,
-    service:   KBDocumentService = Depends(get_service),
-    caller_id:        int                   = Depends(_list),
-):
-    doc = await service.get_doc(doc_id)
-    if not doc or doc.kb_id != kb_id:
-        raise HTTPException(404, f"Document {doc_id} not found in KB {kb_id}.")
-    data = DocumentRead.model_validate(doc)
     return ApiResponse(data=data)

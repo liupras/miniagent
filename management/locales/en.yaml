@@ -98,6 +98,7 @@ menus:
     routerConfig: Router Config
     strategyConfig: Strategy Config
     kownledgeBase: knowledge Base
+    document: Document
   system:
     default: System Management
     cache: Cache Management
@@ -374,3 +375,60 @@ knowledgeBase:
   # ── Messages ─────────────────────────────────────────────────
   tips:
     noData: No knowledge bases yet. Click "Add Knowledge Base" to get started.
+
+document:
+  title: Document Management
+  field:
+    id: ID
+    kbId: KB ID
+    filename: Filename
+    mimeType: Type
+    fileSize: Size
+    fileUri: File URI
+    storageType: Storage Type
+    pageCount: Pages
+    chunkCount: Chunks
+    hashValue: Hash
+    status: Status
+    errorMessage: Error Message
+    metadata: Metadata
+    file: File
+    operation: Operation
+  status:
+    pending: Pending
+    processing: Processing
+    completed: Completed
+    failed: Failed
+  search:
+    kbLabel: Knowledge Base
+    kbPlaceholder: Select knowledge base
+    statusPlaceholder: Select status
+    search: Search
+    reset: Reset
+  action:
+    add: Add Document
+    view: View
+    reupload: Re-upload
+    delete: Delete
+    deleteConfirm: Delete this document?
+  dialog:
+    addTitle: Upload Document
+    updateTitle: Re-upload Document
+    detailTitle: Document Detail
+    dragHint: Drop file here, or click to upload
+    metadataPlaceholder: Optional JSON metadata
+    cancel: Cancel
+    submit: Submit
+  progress:
+    title:
+      upload: Upload Progress
+      update: Update Progress
+      delete: Delete Progress
+    stage: Stage
+    close: Close
+  message:
+    fileRequired: Please select a file first
+    kbRequired: Please select a knowledge base first
+    metadataInvalid: Metadata must be valid JSON
+    taskStarted: Task created, processing…
+    connectionLost: Connection to the server was lost

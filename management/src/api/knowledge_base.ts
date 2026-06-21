@@ -79,11 +79,12 @@ export const getKnowledgeBaseList = (params: KbListQuery) =>
     baseUrlApi("admin/knowledge-bases"),
     {
       params
-  });
+    }
+  );
 
 /** GET /knowledge_bases/options */
 export const getKnowledgeBaseOptions = () =>
-  http.request<{ data: KnowledgeBaseOption[] }>(
+  http.request<KnowledgeBaseOption[]>(
     "get",
     baseUrlApi("admin/knowledge-bases/options")
   );

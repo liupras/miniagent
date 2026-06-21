@@ -72,6 +72,15 @@
         "sort_order": 8
     },
     {
+        "id": 9,
+        "parent_id": 4,
+        "name": "document:list", 
+        "title_key": "menus.kb.document",
+        "path": "/kbManagement/document",        
+        "component": "kbManagement/document/index",  
+        "sort_order": 9
+    },
+    {
         "id":1000,
         "parent_id": 2,
         "name": "agent:add",
@@ -205,14 +214,32 @@
         "icon": "ep:edit",        
         "menu_type": "button",
         "description": "知识库-编辑"
-    },
+    },   
     {
         "id":1015,
-        "parent_id": 8,
-        "name": "kownledge_base:delete",
+        "parent_id": 9,
+        "name": "document:add",
+        "title_key": "buttons:add",
+        "icon": "ep:plus",       
+        "menu_type": "button",
+        "description": "文档库-添加"
+    },
+    {
+        "id":1016,
+        "parent_id": 9,
+        "name": "document:edit",
+        "title_key": "buttons.edit",
+        "icon": "ep:edit",        
+        "menu_type": "button",
+        "description": "文档库-编辑"
+    },
+    {
+        "id":1017,
+        "parent_id": 9,
+        "name": "document:delete",
         "title_key": "buttons.delete",
         "icon": "ep:delete",        
         "menu_type": "button",
-        "description": "知识库-删除"
+        "description": "文档库-删除"
     }
 ]
