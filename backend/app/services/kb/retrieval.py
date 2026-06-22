@@ -22,7 +22,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from loguru import logger
 from pydantic import ConfigDict, Field
 
-from ...infra.retrieval.vector_store import VectorStoreManager
+from ...retrieval.vector_store import VectorStoreManager
 from ...infra.search.bm25_manager import BM25Manager
 from .retrieval_model import RetrievedChunk
 from .citation_merger import CitationMerger

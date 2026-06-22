@@ -119,13 +119,13 @@ class AsyncKnowledgeBaseDatabase(AsyncBaseDatabase):
                 )
                 return None
 
-            if kb.llm_provider is None:
+            if kb.llm_id is None:
                 logger.warning(
-                    f"[DB] get_llm_by_kb_id: no llm_provider set for kb_id={kb_id}"
+                    f"[DB] get_llm_by_kb_id: no llm_id set for kb_id={kb_id}"
                 )
                 return None
 
-            llm = await session.get(LLM, kb.llm_provider)
+            llm = await session.get(LLM, kb.llm_id)
 
         if llm is None:
             logger.warning(

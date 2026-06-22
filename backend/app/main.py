@@ -279,7 +279,7 @@ if __name__ == "__main__":
     import uvicorn
     
     logger.info("=" * 60)
-    logger.info(f"🚀 Start the development server...")
+    logger.info(f"🚀 Start the  {settings.app_name} server...")
     logger.info(f"📍 Visit http://{settings.api_host}:{settings.api_port}")
     logger.info(f"📚 API document: http://{settings.api_host}:{settings.api_port}/docs")
     logger.info(f"💾 Databse: {settings.get_sqlite_path()}")

@@ -23,9 +23,11 @@ class Settings(BaseSettings):
     api_port: int = Field(default=8088, description="API port")
     
     # ==================== Database configuration ====================
-    sqlite_db_path: str = Field(default="db/miniagent.db", description="SQLite database path")
-    duck_db_path:str = Field(default="db/duckdb.db", description="DuckDB database path")
+    sqlite_db_path: str = Field(default="db", description="SQLite database path")
+    duck_db_path:str = Field(default="db", description="DuckDB database path")
     vector_db_path: str = Field(default="db/vector", description="VectorDB data path")
+
+    model_path: str = Field(default="models", description="Local model path")
 
     storage_dir: str = Field(default="files", description="Storage file dir")
 
@@ -72,7 +74,7 @@ class Settings(BaseSettings):
         new_path = base_dir / safe_path
 
         # Ensure the directory exists
-        new_path.parent.mkdir(parents=True, exist_ok=True)
+        new_path.mkdir(parents=True, exist_ok=True)
         return new_path
     
     def get_sqlite_path(self) -> Path:
@@ -89,6 +91,9 @@ class Settings(BaseSettings):
     
     def get_bm25_db_path(self)->Path:
         return self._get_safe_path(self.bm25_index_path)
+    
+    def get_model_path(self)->Path:
+        return self._get_safe_path(self.model_path)
     
     def get_storage_dir(self)->Path:
         return self._get_safe_path(self.storage_dir)

@@ -64,8 +64,7 @@
         "backend": "local",
         "model_name": "bge-reranker-base",
         "max_length": 512,
-        "batch_size": 64,
-        "cache_dir": "./data/bge-reranking"
+        "batch_size": 64
       }
     },
     "tool_schema": {

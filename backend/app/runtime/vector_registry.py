@@ -6,7 +6,7 @@
 
 from typing import Dict
 
-from app.infra.retrieval.vector_store import VectorStoreManager
+from app.retrieval.vector_store import VectorStoreManager
 from app.core.config import settings
 
 

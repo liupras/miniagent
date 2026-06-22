@@ -14,7 +14,7 @@ from app.utils.hash import calculate_file_sha256
 
 from .smart_document_loader import SmartDocumentLoader
 from .small_to_big_base import ChunkConfig
-from app.infra.retrieval.vector_store import VectorStoreManager
+from app.retrieval.vector_store import VectorStoreManager
 from app.runtime.task.progress_tracker import DocumentStatus,emitter
 from app.infra.db.database import Document
 

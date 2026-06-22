@@ -59,7 +59,7 @@ if _here not in sys.path:
 
 from loguru import logger
 
-from ..infra.retrieval.vector_store import VectorStoreManager
+from ..retrieval.vector_store import VectorStoreManager
 from ..infra.search.bm25_manager import BM25Manager
 from ..services.kb.retrieval    import RetrievalPipeline
 from app.infra.db  import AsyncParentChunkDatabase, AsyncKnowledgeBaseDatabase,AsyncChunkDatabase,AsyncDocumentDatabase

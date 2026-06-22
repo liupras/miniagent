@@ -32,7 +32,7 @@
 #
 # BGEReranker backends (configured via WebSearchConfig.reranker_config)
 # ──────────────────────────────────────────────────────────────────────
-#   {"backend": "local",  "model_name": "BAAI/bge-reranker-base", "cache_dir": "./models"}
+#   {"backend": "local",  "model_name": "BAAI/bge-reranker-base"}
 #   {"backend": "remote", "base_url": "http://localhost:9997/v1",   "model": "bge-reranker-v2-m3"}
 #   {"backend": "ollama", "base_url": "http://localhost:11434/v1",  "model": "bge-large-zh"}
 #
@@ -755,7 +755,7 @@ class WebSearchConfig:
     # Rerank
     # reranker_config drives BGEReranker.from_config(); ignored when rerank_mode=score/llm.
     # Examples:
-    #   {"backend": "local",  "model_name": "BAAI/bge-reranker-v2-m3", "cache_dir": "./models"}
+    #   {"backend": "local",  "model_name": "BAAI/bge-reranker-v2-m3"}
     #   {"backend": "remote", "base_url": "http://localhost:9997/v1", "model": "bge-reranker-v2-m3"}
     #   {"backend": "ollama", "base_url": "http://localhost:11434/v1", "model": "bge-large-zh"}
     rerank_mode:           RerankMode = RerankMode.SCORE
@@ -1110,7 +1110,7 @@ async def _demo():
         llm_api_key          = "ollama",
         llm_model            = "qwen3:4b",
         rerank_mode          = RerankMode.BGE,
-        reranker_config={"backend": "local", "model_name": "bge-reranker-base", "max_length": 512, "batch_size": 64, "cache_dir": "./data/bge-reranking"},
+        reranker_config={"backend": "local", "model_name": "bge-reranker-base", "max_length": 512, "batch_size": 64},
         ddg_max_results      = 6,
         fetch_top_k          = 4,
         rerank_top_k         = 4,

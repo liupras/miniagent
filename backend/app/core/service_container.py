@@ -72,7 +72,7 @@ class ServiceContainer:
         # Create globally unique Engine and SessionFactory.
         from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-        db_path = settings.get_sqlite_path()
+        db_path = settings.get_sqlite_path() / "miniagent.db"
         database_url = f"sqlite+aiosqlite:///{db_path}"
         
         self.engine = create_async_engine(

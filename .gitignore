@@ -147,3 +147,4 @@ cython_debug/
 /backend/db
 /backend/files
 /backend/logs
+/backend/models

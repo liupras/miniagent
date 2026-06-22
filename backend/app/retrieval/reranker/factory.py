@@ -42,12 +42,13 @@ class RerankerFactory:
                 backend = reranker_config.get("backend", "local")
 
                 if backend == "local":
+                    from app.core.config import settings
                     reranker = BGEReranker.local(
                         model_name = reranker_config.get("model_name", "BAAI/bge-reranker-base"),
                         device     = reranker_config.get("device"),
                         max_length = reranker_config.get("max_length", 512),
                         batch_size = reranker_config.get("batch_size", 64),
-                        cache_dir  = reranker_config.get("cache_dir"),
+                        cache_dir  = settings.get_model_path(),
                     )
 
                 elif backend == "remote":

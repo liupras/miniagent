@@ -23,10 +23,9 @@
     "extra_config": {
       "reranker": {
         "backend": "local",
-        "model_name": "bge-reranker-base",
+        "model_name": "BAAI/bge-reranker-base",
         "max_length": 512,
-        "batch_size": 64,
-        "cache_dir": "./data/bge-reranking"
+        "batch_size": 64
       }
     },
     "created_by": "system"
@@ -55,10 +54,9 @@
     "extra_config": {
       "reranker": {
         "backend": "local",
-        "model_name": "bge-reranker-base",
+        "model_name": "BAAI/bge-reranker-base",
         "max_length": 512,
-        "batch_size": 64,
-        "cache_dir": "./data/bge-reranking"
+        "batch_size": 64
       }
     },
     "created_by": "system"

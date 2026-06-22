@@ -19,4 +19,4 @@ class DuckDBManager:
         self.conn.close()
 
 # Global instance
-duckdb_manager = DuckDBManager(settings.get_duck_db_path())
+duckdb_manager = DuckDBManager(settings.get_duck_db_path() / "duckdb.db")

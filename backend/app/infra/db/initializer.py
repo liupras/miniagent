@@ -66,7 +66,7 @@ class DatabaseManager:
     def __init__(self, database_url: Optional[str] = None):
         if database_url is None:
             db_path = settings.get_sqlite_path()
-            database_url = f"sqlite:///{db_path}"
+            database_url = f"sqlite:///{db_path}/miniagent.db"
 
         self.database_url = database_url
         self.engine = create_engine(

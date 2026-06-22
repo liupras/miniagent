@@ -146,16 +146,13 @@ class LocalScoringBackend(ScoringBackend):
 
         logger.info(f"[LocalScoringBackend] Loading {model_name} on {device} …")
 
-        # load model from local
-        model_path = os.path.join(cache_dir,model_name)
-        model_path = os.path.abspath(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(
-            model_path,
-            local_files_only=True
+            model_name,
+            cache_dir=cache_dir,
         )
         self.model = AutoModelForSequenceClassification.from_pretrained(
-            model_path,
-            local_files_only=True
+            model_name,
+            cache_dir=cache_dir,
         )
         self.model.eval()
         self.model.to(self.device)
