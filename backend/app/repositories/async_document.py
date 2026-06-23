@@ -141,19 +141,6 @@ class AsyncDocumentDatabase(AsyncBaseDatabase):
             )
             return result.rowcount
 
-    async def update_page_count(self, doc_id: int, page_count: int) -> int:
-        """Update document page count."""
-        async with self.get_session() as session:
-            result = await session.execute(
-                update(Document)
-                .where(Document.id == doc_id)
-                .values(
-                    page_count=page_count,
-                    updated_at=datetime.now()
-                )
-            )
-            return result.rowcount
-
     async def update_chunk_count(self, doc_id: int, chunk_count: int) -> int:
         """Update document chunk count."""
         async with self.get_session() as session:

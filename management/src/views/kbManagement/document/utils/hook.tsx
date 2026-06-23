@@ -95,7 +95,6 @@ export function useDocument(initialKbId?: number | null) {
       width: 110,
       formatter: (row: DocumentRead) => formatFileSize(row.file_size)
     },
-    { label: t("document.field.pageCount"), prop: "page_count", width: 90 },
     { label: t("document.field.chunkCount"), prop: "chunk_count", width: 90 },
     {
       label: t("document.field.status"),

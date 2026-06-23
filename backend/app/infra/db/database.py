@@ -452,7 +452,6 @@ class Document(Base):
     file_size = Column(Integer, comment="File size (bytes)")
     file_uri  = Column(String(1024), nullable=True, comment="File storage URI (local path or cloud URL)")
     storage_type = Column(String(20), default="local", comment="Storage type: local or cloud") 
-    page_count = Column(Integer, default=0, comment="Number of pages (for PDF, Word, etc.)")
 
     chunk_count = Column(Integer, default=0, comment="Number of blocks")
     meta_data_json = Column(JSON, nullable=True, comment="metadata information,JSON format string")

@@ -13,7 +13,6 @@ export interface DocumentRead {
   file_size?: number | null;
   file_uri?: string | null;
   storage_type: string;
-  page_count: number;
   chunk_count: number;
   meta_data_json?: Record<string, any> | null;
   status: DocumentStatus;

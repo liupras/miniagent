@@ -223,9 +223,6 @@ function onFileChange(uploadFile: UploadFile) {
         <el-descriptions-item :label="t('document.field.storageType')">{{
           detailRow.storage_type
         }}</el-descriptions-item>
-        <el-descriptions-item :label="t('document.field.pageCount')">{{
-          detailRow.page_count
-        }}</el-descriptions-item>
         <el-descriptions-item :label="t('document.field.chunkCount')">{{
           detailRow.chunk_count
         }}</el-descriptions-item>

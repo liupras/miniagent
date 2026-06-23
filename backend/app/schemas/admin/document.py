@@ -23,7 +23,6 @@ class _DocumentBase(BaseModel):
     file_size: Optional[int] = Field(None, description="File size (bytes)")
     file_uri: Optional[str] = Field(None, max_length=1024, description="File storage URI (local path or cloud URL)")
     storage_type: str = Field(default="local", max_length=20, description="Storage type: local or cloud")
-    page_count: int = Field(default=0, description="Number of pages (for PDF, Word, etc.)")
     chunk_count: int = Field(default=0, description="Number of blocks")
     meta_data_json: Optional[Dict[str, Any]] = Field(None, description="Metadata information, JSON format string")
     status: str = Field(default="pending", max_length=20, description="Processing status: pending, processing, completed, failed")

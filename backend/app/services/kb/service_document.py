@@ -257,7 +257,6 @@ class KBDocumentService:
         loader   = SmartDocumentLoader(source)
         raw_docs = await asyncio.to_thread(loader.load)
         self._clean_meta(raw_docs)
-        await self.doc_db.update_page_count(doc_id, len(raw_docs))
         await E("load", f"📄 Loaded {len(raw_docs)} page(s).", 20)
 
         # 2. Split ────────────────────────────────────────────────────────
