@@ -135,3 +135,48 @@ export const subscribeTaskProgress = (
   };
   return es;
 };
+
+export interface ChunkRead {
+  id: number;
+  parent_id: number;
+  chunk_index: number;
+  text: string;
+  char_count: number;
+  token_count: number;
+  hash_value: string;
+  created_at: string;
+}
+
+export interface ParentChunkRead {
+  id: number;
+  doc_id: number;
+  chunk_index: number;
+  text: string;
+  char_count: number;
+  token_count: number;
+  hash_value: string;
+  created_at: string;
+  chunks: ChunkRead[];
+}
+
+export interface DocumentChunksOut {
+  doc_id: number;
+  total_parent_chunks: number;
+  total_chunks: number;
+  page: number;
+  page_size: number;
+  parent_chunks: ParentChunkRead[];
+}
+
+/** GET /{kb_id}/documents/{doc_id}/chunks */
+export const getDocumentChunks = (
+  kbId: number,
+  docId: number,
+  page = 1,
+  pageSize = 20
+) =>
+  http.request<DocumentChunksOut>(
+    "get",
+    baseUrlApi(`admin/documents/${kbId}/${docId}/chunks`),
+    { params: { page, page_size: pageSize } }
+  );

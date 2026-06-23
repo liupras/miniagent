@@ -54,7 +54,7 @@ function handleClose() {
 
     <template #footer>
       <el-button :disabled="!canClose" type="primary" @click="handleClose">
-        {{ t("document.progress.close") }}
+        {{ t("buttons.close") }}
       </el-button>
     </template>
   </el-dialog>

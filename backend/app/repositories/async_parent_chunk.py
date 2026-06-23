@@ -7,11 +7,11 @@
 from typing import Dict, List, Tuple
 
 from loguru import logger
-from sqlalchemy import select, delete
+from sqlalchemy import func, select, delete
+from sqlalchemy.orm import selectinload
 
 from ..infra.db.async_base import AsyncBaseDatabase
 from ..infra.db.database import ParentChunk
-
 
 class AsyncParentChunkDatabase(AsyncBaseDatabase):
     """ParentChunk table operations - Asynchronous Version"""
@@ -119,3 +119,31 @@ class AsyncParentChunkDatabase(AsyncBaseDatabase):
             # you may need to decide whether to load the delete or execute the SQL directly based on the specific business logic.
             
         logger.debug(f"[DB] Deleted parent chunks for doc id={doc_id}")
+
+
+    async def get_parent_chunks_by_doc(
+        self, doc_id: int, page: int, page_size: int
+    ) -> tuple[list[ParentChunk], int]:
+        async with self.get_session() as session:
+            total = await session.scalar(
+                select(func.count())
+                .select_from(ParentChunk)
+                .where(ParentChunk.doc_id == doc_id)
+            )
+
+            stmt = (
+                select(ParentChunk)
+                .where(ParentChunk.doc_id == doc_id)
+                .options(selectinload(ParentChunk.chunks))
+                .order_by(ParentChunk.chunk_index)
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+            )
+            result = await session.execute(stmt)
+            parents = list(result.scalars().all())
+
+            # `selectinload` does not guarantee the order of sub-blocks; here, they are explicitly sorted by `chunk_index`.
+            for p in parents:
+                p.chunks.sort(key=lambda c: c.chunk_index)
+
+            return parents, total or 0

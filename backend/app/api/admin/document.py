@@ -21,6 +21,7 @@ from fastapi import (
     UploadFile,
 )
 
+from app.schemas.admin.chunk import DocumentChunksOut
 from app.schemas.common import ApiResponse
 from app.core.security.auth_permission import AuthPermission
 from app.runtime.task.progress_tracker import ProgressTracker
@@ -248,3 +249,20 @@ async def delete_document(
         message = "Document deletion started. Stream progress via SSE.",
     )
     return ApiResponse(data=data)
+
+@router.get(
+    "/{kb_id}/{doc_id}/chunks",
+    response_model=ApiResponse,
+)
+async def get_document_chunks(
+    kb_id: int, 
+    doc_id: int,
+    page: int = 1,
+    page_size: int = 20,
+    service:   KBDocumentService        = Depends(get_service),
+    caller_id:        int               = Depends(_list),
+):
+    result = await service.get_document_chunks(
+        doc_id, page, page_size
+    )
+    return ApiResponse(data=result)

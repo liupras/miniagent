@@ -40,6 +40,7 @@ buttons:
   asign: Asign
   toggle: Toggle Status
   stats: Stats
+  close: Close
 
 panel:
   pureSystemSet: System Configs
@@ -419,10 +420,22 @@ document:
       update: Update Progress
       delete: Delete Progress
     stage: Stage
-    close: Close
   message:
     fileRequired: Please select a file first
     kbRequired: Please select a knowledge base first
     metadataInvalid: Metadata must be valid JSON
     taskStarted: Task created, processing…
     connectionLost: Connection to the server was lost
+  chunk:
+    viewButton: View Chunks
+    dialogTitle: Chunks · {name}
+    parentCount: "{count} parent chunks"
+    chunkCount: "{count} chunks"
+    parentLabel: Parent #{index}
+    indexLabel: "#"
+    charCount: Chars
+    tokenCount: Tokens
+    childCount: "{count} sub-chunks"
+    textLabel: Text
+    empty: No chunks found for this document
+    loadError: Failed to load chunks

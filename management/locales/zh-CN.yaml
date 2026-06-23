@@ -40,6 +40,7 @@ buttons:
   asign: 指派   
   toggle: 切换状态
   stats: 统计
+  close: 关闭
 
 panel:
   pureSystemSet: 系统配置
@@ -421,11 +422,24 @@ document:
       update: 文档更新进度
       delete: 文档删除进度
     stage: 阶段
-    close: 关闭
   message:
     fileRequired: 请先选择文件
     kbRequired: 请先选择知识库
     metadataInvalid: 元数据格式不是有效的 JSON
     taskStarted: 任务已创建，正在处理…
     connectionLost: 与服务器的连接已断开
+  chunk:
+    viewButton: 查看分块
+    dialogTitle: 分块详情 · {name}
+    parentCount: "{count} 个父块"
+    chunkCount: "{count} 个子块"
+    parentLabel: 父块 #{index}
+    indexLabel: 序号
+    charCount: 字符数
+    tokenCount: Token 数
+    childCount: "{count} 个子块"
+    textLabel: 内容
+    empty: 该文档暂无分块数据
+    loadError: 分块加载失败
+
 

@@ -14,7 +14,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from ..infra.db.async_base import AsyncBaseDatabase
 from ..infra.db.database import Chunk, Document
 
-
 class AsyncChunkDatabase(AsyncBaseDatabase):
 
     # =========================================================================

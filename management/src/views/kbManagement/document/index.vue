@@ -5,6 +5,7 @@ import type { UploadFile } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import ProgressDialog from "./utils/ProgressDialog.vue";
 import { useDocument } from "./utils/hook";
+import ChunkViewDialog from "./utils/ChunkViewDialog.vue";
 
 defineOptions({ name: "KbDocument" });
 
@@ -39,7 +40,10 @@ const {
   submitUpload,
   handleDelete,
   progress,
-  closeProgressDialog
+  closeProgressDialog,
+  chunkVisible,
+  chunkDoc,
+  openChunkView
 } = useDocument(initialKbId);
 
 fetchKbOptions();
@@ -134,6 +138,15 @@ function onFileChange(uploadFile: UploadFile) {
               @click="openDetail(row)"
             >
               {{ t("buttons.view") }}
+            </el-button>
+            <el-button
+              v-auth="'document:list'"
+              link
+              type="primary"
+              :disabled="!row.chunk_count"
+              @click="openChunkView(row)"
+            >
+              {{ t("document.chunk.viewButton") }}
             </el-button>
             <el-button
               v-auth="'document:edit'"
@@ -246,6 +259,7 @@ function onFileChange(uploadFile: UploadFile) {
     </el-dialog>
 
     <ProgressDialog :model-value="progress" @close="closeProgressDialog" />
+    <ChunkViewDialog v-model="chunkVisible" :doc="chunkDoc" />
   </div>
 </template>
 

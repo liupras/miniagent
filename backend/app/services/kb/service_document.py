@@ -6,10 +6,12 @@
 
 import asyncio
 from typing import  Optional
+from fastapi import HTTPException
 from langchain_core.documents import Document as LC_Document
 
 from loguru import logger
 
+from app.schemas.admin.chunk import DocumentChunksOut, ParentChunkRead
 from app.utils.hash import calculate_file_sha256
 
 from .smart_document_loader import SmartDocumentLoader
@@ -35,6 +37,7 @@ class KBDocumentService:
         self.kb_db           = container.kb_db
         self.doc_db          = container.doc_db
         self.pc_db           = container.pc_db
+        self.pc_db = container.pc_db
         self.chunk_db        = container.chunk_db
         self.vector_registry = container.vector_registry
         self.bm25            = bm25_manager
@@ -404,3 +407,26 @@ class KBDocumentService:
     @staticmethod
     def get_storage_uri(kb_id:int,filename:str):
         return f"kb_{kb_id}/{filename}"
+    
+    async def get_document_chunks(
+        self,
+        doc_id: int, 
+        page: int = 1, 
+        page_size: int = 20
+    ) -> DocumentChunksOut:
+        doc = await self.doc_db.get_doc(doc_id)
+        if not doc:
+            raise HTTPException(status_code=404, detail="Document not found")
+
+        parents, total_parents = await self.pc_db.get_parent_chunks_by_doc(
+            doc_id, page, page_size
+        )
+
+        return DocumentChunksOut(
+            doc_id=doc_id,
+            total_parent_chunks=total_parents,
+            total_chunks=doc.chunk_count,
+            page=page,
+            page_size=page_size,
+            parent_chunks=[ParentChunkRead.model_validate(p) for p in parents],
+        )

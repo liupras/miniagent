@@ -301,6 +301,14 @@ export function useDocument(initialKbId?: number | null) {
 
   onBeforeUnmount(() => closeProgressSource());
 
+  const chunkVisible = ref(false);
+  const chunkDoc = ref<DocumentRead | null>(null);
+
+  function openChunkView(row: DocumentRead) {
+    chunkDoc.value = row;
+    chunkVisible.value = true;
+  }
+
   return {
     t,
     form,
@@ -326,6 +334,9 @@ export function useDocument(initialKbId?: number | null) {
     submitUpload,
     handleDelete,
     progress,
-    closeProgressDialog
+    closeProgressDialog,
+    chunkVisible,
+    chunkDoc,
+    openChunkView
   };
 }
