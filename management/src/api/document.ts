@@ -35,7 +35,7 @@ export interface TaskCreatedResponse {
 }
 
 export interface DocumentListParams {
-  kbId?: number;
+  kb_id?: number;
   status_filter?: DocumentStatus | "";
   page?: number;
   page_size?: number;

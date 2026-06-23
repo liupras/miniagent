@@ -63,7 +63,7 @@
     >
       <template #buttons>
         <el-button
-          :v-auth="'knowledge_base:add'"
+          v-auth="'knowledge_base:add'"
           type="primary"
           :icon="Plus"
           @click="openCreate"
@@ -116,7 +116,7 @@
           <!-- 操作列 -->
           <template #operation="{ row }">
             <el-button
-              :v-auth="'knowledge_base:list'"
+              v-auth="'knowledge_base:list'"
               link
               type="primary"
               size="small"
@@ -127,7 +127,7 @@
             </el-button>
 
             <el-button
-              :v-auth="'knowledge_base:edit'"
+              v-auth="'knowledge_base:edit'"
               link
               type="primary"
               size="small"
@@ -138,7 +138,7 @@
             </el-button>
 
             <el-button
-              :v-auth="'knowledge_base:edit'"
+              v-auth="'knowledge_base:edit'"
               link
               :type="row.is_active ? 'warning' : 'success'"
               size="small"
@@ -154,7 +154,7 @@
             >
               <template #reference>
                 <el-button
-                  :v-auth="'knowledge_base:delete'"
+                  v-auth="'knowledge_base:delete'"
                   link
                   type="danger"
                   size="small"

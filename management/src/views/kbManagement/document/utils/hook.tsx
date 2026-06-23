@@ -120,7 +120,7 @@ export function useDocument(initialKbId?: number | null) {
     loading.value = true;
     try {
       const data = await getDocumentList({
-        kbId: form.kb_id ?? undefined,
+        kb_id: form.kb_id ?? undefined,
         status_filter: form.status_filter || undefined,
         page: pagination.currentPage,
         page_size: pagination.pageSize
