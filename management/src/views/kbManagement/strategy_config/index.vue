@@ -6,10 +6,7 @@
       :model="searchForm"
       class="search-form bg-bg_color w-[99/100] pl-8 pt-3 overflow-auto"
     >
-      <el-form-item
-        :label="t('strategyConfig.basic.kbName.label')"
-        prop="kb_id"
-      >
+      <el-form-item :label="t('form.kbName.label')" prop="kb_id">
         <el-select
           v-model="searchForm.kb_id"
           clearable
@@ -152,10 +149,7 @@
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item
-                  :label="t('strategyConfig.basic.kbName.label')"
-                  prop="kb_id"
-                >
+                <el-form-item :label="t('form.kbName.label')" prop="kb_id">
                   <el-select
                     v-model="dialogForm.kb_id"
                     :disabled="dialogType === 'edit'"
@@ -568,7 +562,7 @@ const columns: TableColumnList = [
     align: "left"
   },
   {
-    label: t("strategyConfig.basic.kbId"),
+    label: t("form.kbId"),
     prop: "kb_id",
     width: 150,
     formatter: ({ kb_id }) => {

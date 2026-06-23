@@ -48,7 +48,7 @@ async def list_kbs(
     page: int = Query(1, ge=1, description="1-based page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     svc:       KnowledgeBaseService   = Depends(get_service),
-    #caller_id: int            = Depends(_list),
+    caller_id: int            = Depends(_list),
 ) -> ApiResponse:
     total, items = await svc.list_kbs(
         name_filter=name,

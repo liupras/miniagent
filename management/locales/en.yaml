@@ -18,7 +18,9 @@ buttons:
   pureBackTop: BackTop
   pureOpenText: Open
   pureCloseText: Close
+
   add: Add
+  view: View
   edit: Edit
   delete: Delete
   save: Save
@@ -188,6 +190,11 @@ form:
   type:
     label: All Types
     selectPlaceholder: Please select type
+
+  kbId: KB ID
+  kbName:  
+      label: KB Name
+      placeholder: Please select a kB
   
 validation:
   required: This field is required
@@ -273,12 +280,7 @@ strategyConfig:
   
   basic:
     title: Basic Settings
-    configId: Config ID
-    kbId: KB ID
-    kbName:  
-      label: KB Name
-      placeholder: Please select a kB   
-    
+    configId: Config ID 
     promptLanguage: Prompt Language
     configIdMax: Length should be less than 100
 
@@ -380,7 +382,6 @@ document:
   title: Document Management
   field:
     id: ID
-    kbId: KB ID
     filename: Filename
     mimeType: Type
     fileSize: Size
@@ -393,7 +394,6 @@ document:
     errorMessage: Error Message
     metadata: Metadata
     file: File
-    operation: Operation
   status:
     pending: Pending
     processing: Processing
@@ -403,13 +403,9 @@ document:
     kbLabel: Knowledge Base
     kbPlaceholder: Select knowledge base
     statusPlaceholder: Select status
-    search: Search
-    reset: Reset
   action:
-    add: Add Document
-    view: View
+    add: Add Document    
     reupload: Re-upload
-    delete: Delete
     deleteConfirm: Delete this document?
   dialog:
     addTitle: Upload Document
@@ -417,8 +413,6 @@ document:
     detailTitle: Document Detail
     dragHint: Drop file here, or click to upload
     metadataPlaceholder: Optional JSON metadata
-    cancel: Cancel
-    submit: Submit
   progress:
     title:
       upload: Upload Progress

@@ -93,11 +93,9 @@ function onFileChange(uploadFile: UploadFile) {
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="onSearch">{{
-          t("document.search.search")
+          t("buttons.search")
         }}</el-button>
-        <el-button @click="resetForm">{{
-          t("document.search.reset")
-        }}</el-button>
+        <el-button @click="resetForm">{{ t("buttons.reset") }}</el-button>
       </el-form-item>
     </el-form>
 
@@ -135,7 +133,7 @@ function onFileChange(uploadFile: UploadFile) {
               type="primary"
               @click="openDetail(row)"
             >
-              {{ t("document.action.view") }}
+              {{ t("buttons.view") }}
             </el-button>
             <el-button
               v-auth="'document:edit'"
@@ -151,7 +149,7 @@ function onFileChange(uploadFile: UploadFile) {
             >
               <template #reference>
                 <el-button v-auth="'document:delete'" link type="danger">
-                  {{ t("document.action.delete") }}
+                  {{ t("buttons.delete") }}
                 </el-button>
               </template>
             </el-popconfirm>
@@ -195,10 +193,10 @@ function onFileChange(uploadFile: UploadFile) {
       </el-form>
       <template #footer>
         <el-button @click="uploadVisible = false">{{
-          t("document.dialog.cancel")
+          t("buttons.cancel")
         }}</el-button>
         <el-button type="primary" @click="submitUpload">{{
-          t("document.dialog.submit")
+          t("buttons.submit")
         }}</el-button>
       </template>
     </el-dialog>
@@ -213,7 +211,7 @@ function onFileChange(uploadFile: UploadFile) {
         <el-descriptions-item :label="t('document.field.id')">{{
           detailRow.id
         }}</el-descriptions-item>
-        <el-descriptions-item :label="t('document.field.kbId')">{{
+        <el-descriptions-item :label="t('form.kbName.label')">{{
           detailRow.kb_id
         }}</el-descriptions-item>
         <el-descriptions-item :label="t('document.field.filename')" :span="2">

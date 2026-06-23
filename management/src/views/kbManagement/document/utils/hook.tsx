@@ -82,7 +82,7 @@ export function useDocument(initialKbId?: number | null) {
       showOverflowTooltip: true
     },
     {
-      label: t("document.field.kbId"),
+      label: t("form.kbName.label"),
       prop: "kb_id",
       width: 160,
       formatter: (row: DocumentRead) =>
@@ -109,7 +109,7 @@ export function useDocument(initialKbId?: number | null) {
         )
     },
     {
-      label: t("document.field.operation"),
+      label: t("labels.operation"),
       fixed: "right",
       width: 220,
       slot: "operation"

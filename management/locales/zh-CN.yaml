@@ -20,6 +20,7 @@ buttons:
   pureCloseText: 关
 
   add: 添加
+  view: 查看
   edit: 编辑
   delete: 删除
   save: 保存
@@ -192,6 +193,11 @@ form:
     label: 类型
     selectPlaceholder: 请选择类型
 
+  kbId: 知识库ID
+  kbName: 
+      label: 知识库名称
+      placeholder: 请选择知识库
+
 validation:
   required: 此字段为必填/必选项
   maxLength: 最多 {count} 个字符
@@ -274,12 +280,7 @@ strategyConfig:
   
   basic:
     title: 基础设置
-    configId: 配置ID
-    kbId: 知识库ID
-    kbName: 
-      label: 知识库名称
-      placeholder: 请选择知识库
-    
+    configId: 配置ID   
     promptLanguage: 提示词语言
     configIdMax: 长度应小于100
   
@@ -383,7 +384,6 @@ document:
   title: 文档管理
   field:
     id: ID
-    kbId: 知识库ID
     filename: 文件名
     mimeType: 文件类型
     fileSize: 文件大小
@@ -396,7 +396,6 @@ document:
     errorMessage: 错误信息
     metadata: 元数据
     file: 文件
-    operation: 操作
   status:
     pending: 待处理
     processing: 处理中
@@ -406,13 +405,9 @@ document:
     kbLabel: 知识库
     kbPlaceholder: 请选择知识库
     statusPlaceholder: 请选择状态
-    search: 搜索
-    reset: 重置
   action:
     add: 新增文档
-    view: 查看
     reupload: 重新上传
-    delete: 删除
     deleteConfirm: 确认删除该文档吗？
   dialog:
     addTitle: 上传文档
@@ -420,8 +415,6 @@ document:
     detailTitle: 文档详情
     dragHint: 将文件拖到此处，或点击上传
     metadataPlaceholder: 可选，JSON 格式的元数据
-    cancel: 取消
-    submit: 提交
   progress:
     title:
       upload: 文档上传进度

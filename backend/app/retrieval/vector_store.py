@@ -30,6 +30,7 @@ import chromadb
 from chromadb.config import Settings
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from tqdm import tqdm
 
 # ==========================================================
 # CONSTANTS
@@ -252,6 +253,8 @@ class VectorStoreManager:
         total = len(new_chunks)
         logger.info(f"[Chroma] KB {kb_id} is preparing to embed {len(new_chunks)} new blocks.")
 
+        pbar = tqdm(total=total, desc=f"KB {kb_id} Embedding", unit="chunk")
+
         # Execute Embedding (CPU-intensive operation) in batches
         for start in range(0, total, embed_batch_size):
             batch = new_chunks[start: start + embed_batch_size]
@@ -292,8 +295,12 @@ class VectorStoreManager:
             done = min(start + embed_batch_size, total)
             logger.debug(f"[Chroma] kb={kb_id} Embedding progress: {done}/{total}")
 
+            pbar.update(len(batch))
+
             if on_batch:
-                on_batch(done, total)       
+                on_batch(done, total) 
+
+        pbar.close()      
 
     # ==========================================================
     # Delete
