@@ -176,21 +176,6 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
-                <el-form-item
-                  :label="t('strategyConfig.basic.promptLanguage')"
-                  prop="prompt_language"
-                >
-                  <el-select
-                    v-model="dialogForm.prompt_language"
-                    clearable
-                    class="w-full"
-                  >
-                    <el-option label="中文 (zh)" value="zh" />
-                    <el-option label="English (en)" value="en" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
             </el-row>
 
             <el-divider content-position="left">{{
@@ -493,7 +478,6 @@ const defaultFormData = {
   config_id: "",
   kb_id: null as number, // 初始化为 null 提示用户必须通过下拉框选择
   version: 1,
-  prompt_language: "zh",
   enable_query_rewrite: true,
   enable_query_expansion: false,
   enable_query_hyde: false,
@@ -571,11 +555,6 @@ const columns: TableColumnList = [
     }
   },
   { label: t("labels.version"), prop: "version", width: 90 },
-  {
-    label: t("strategyConfig.basic.promptLanguage"),
-    prop: "prompt_language",
-    width: 130
-  },
   {
     label: t("labels.isActive"),
     prop: "is_active",

@@ -45,10 +45,6 @@ class KBRetrievalService:
 
     Pipeline caching
     ────────────────
-    Building a RetrievalPipeline is expensive: it loads PromptLoader templates
-    from the DB and — when enable_reranker=True — loads BGE model weights into
-    memory.  Rebuilding on every request would waste hundreds of milliseconds.
-
     This service therefore maintains an in-memory pipeline cache keyed by
     (kb_id, config_id).  A pipeline is built once on first use and reused for
     all subsequent requests to the same KB with the same active StrategyConfig.

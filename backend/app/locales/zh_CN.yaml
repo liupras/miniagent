@@ -1,0 +1,10 @@
+common:
+  success: 操作成功
+  failed: 操作失败
+
+auth:
+  login_failed: 用户名或密码错误
+  unauthorized: 未登录
+
+tool:
+  not_found: 工具不存在

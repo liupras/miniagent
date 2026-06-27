@@ -116,6 +116,10 @@ Domains are configured in seed data and registered at startup:
 3. app/infra/db/database.py — schema
 4. app/schemas/common.py — API response shape
 
+## Singleton
+
+- app.core.PromptLoader, prompt_loader
+
 ## Caching rules (easy to break)
 Several layers cache compiled objects in-process:
 

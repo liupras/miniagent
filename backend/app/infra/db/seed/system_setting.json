@@ -4,7 +4,7 @@
     "value": "zh_CN",
     "value_type": "string",
     "group": "general",
-    "description": "Global default language for the UI and pipeline prompts. e.g. zh_CN / en_US. Individual KBs can override via StrategyConfig.prompt_language.",
+    "description": "Global default language for the UI and pipeline prompts. e.g. zh_CN / en_US.",
     "is_readonly": false
   },
   {

@@ -10,7 +10,7 @@ export interface StrategyConfig {
   kb_id: number;
   version: number;
   is_active?: boolean;
-  prompt_language?: string;
+
   // 组件开关
   enable_query_rewrite: boolean;
   enable_query_expansion: boolean;

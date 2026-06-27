@@ -35,8 +35,6 @@ from .web_search import WebSearchPipeline, WebSearchState
 if TYPE_CHECKING:
     from app.core.service_container import ServiceContainer
     
-from app.infra.prompt_loader import PromptLoader,get_system_language
-
 # ═══════════════════════════════════════════════════════════════════════════
 # WebSearchService
 # ═══════════════════════════════════════════════════════════════════════════
@@ -163,15 +161,7 @@ class WebSearchService:
 
         llm_config = await self._llm_db.get(llm_id=llm_provider_id)
 
-        cfg = tool.config or {}
-        resolved_lang = cfg.get("prompt_language")
-        if not resolved_lang:
-            resolved_lang = await get_system_language(setting_db=self._container.setting_db, fallback="zh_CN")
-        prompt_loader = await PromptLoader.create(lang=resolved_lang, db=self._container.prompt_db)
-        logger.info(
-            f"[Pipeline] lang='{resolved_lang}'  "
-            f"prompt_loader loaded {len(prompt_loader._templates)} DB template(s)"
-        )
+        from app.core.prompt_loader import prompt_loader
         query_rewrite_web_search_prompt_template = prompt_loader.get("web_search.query_rewrite")
 
         # ── 3. Build pipeline ────────────────────────────────────────────

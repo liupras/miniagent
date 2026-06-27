@@ -59,7 +59,6 @@
       "final_top_k": 2,
       "max_chars_per_result": 3000,
       "max_total_chars": 9000,
-      "prompt_language": "zh_CN",
       "reranker": {
         "backend": "local",
         "model_name": "bge-reranker-base",
@@ -93,8 +92,7 @@
     "config": {
       "callable_path": "sql_agent.sql_agent_tool:run",
       "is_async": true,
-      "schema_name": "main",
-      "prompt_language": "zh_CN"
+      "schema_name": "main"
     },
     "tool_schema": {
       "type": "function",

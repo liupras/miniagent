@@ -31,7 +31,6 @@ from app.infra.db.database import StrategyConfig,LLM
 from app.repositories import AsyncParentChunkDatabase, AsyncChunkDatabase, AsyncDocumentDatabase
 from app.infra.llm import LLMClient
 from app.infra.cache_backend import create_cache_backend
-from app.infra.prompt_loader import PromptLoader,get_system_language
 from app.retrieval.reranker.base import RerankMode
 from app.retrieval.reranker.factory import RerankerFactory
 from app.retrieval.adaptive_threshold import AdaptiveThresholdMixin
@@ -121,9 +120,6 @@ class BaseQueryStage(ABC):
 class QueryRewriteStage(BaseQueryStage):
     """
     Rewrite the user query to improve retrieval quality.
-
-    The prompt template is resolved from PromptLoader with key "query_rewrite".
-    Supported placeholder:  {query}
     """
 
     def __init__(self, llm_client: LLMClient, model: str, prompt_template: str):
@@ -153,9 +149,6 @@ class QueryRewriteStage(BaseQueryStage):
 class QueryExpansionStage(BaseQueryStage):
     """
     Generate multiple retrieval queries.
-
-    The prompt template is resolved from PromptLoader with key "query_expansion".
-    Supported placeholders:  {query}  {expansion_num}
     """
 
     def __init__(
@@ -196,9 +189,6 @@ class QueryExpansionStage(BaseQueryStage):
 class HyDEStage(BaseQueryStage):
     """
     Hypothetical Document Embedding (HyDE).
-
-    The prompt template is resolved from PromptLoader with key "hyde".
-    Supported placeholder:  {query}
     """
 
     def __init__(self, llm: LLMClient, model: str, prompt_template: str):
@@ -904,12 +894,12 @@ class ConfidenceStage(BaseStage):
         high_score_threshold: float,
         low_score_threshold:  float,
         min_high_conf_count:  int,
-        prompt_loader:        PromptLoader,
-    ):
+      ):
         self.high_score_threshold = high_score_threshold
         self.low_score_threshold  = low_score_threshold
         self.min_high_conf_count  = min_high_conf_count
-        # All warning text flows through PromptLoader — single source of truth.
+
+        from app.core.prompt_loader import prompt_loader
         self.warning = prompt_loader.get("kb.confidence_warning")
 
     async def run(self, state: PipelineState) -> PipelineState:
@@ -1099,16 +1089,7 @@ class RetrievalPipeline:
         kb_id = cfg.kb_id
         stages: List[BaseStage] = []
 
-        kb_lang = getattr(config, "prompt_language", None)
-        if kb_lang and kb_lang.strip():
-            resolved_lang = kb_lang.strip().lower()
-        else:
-            resolved_lang = await get_system_language(setting_db=container.setting_db, fallback="zh_CN") 
-        prompt_loader = await PromptLoader.create(lang=resolved_lang, db=container.prompt_db)
-        logger.info(
-            f"[Pipeline] kb={kb_id}  lang='{resolved_lang}'  "
-            f"prompt_loader loaded {len(prompt_loader._templates)} DB template(s)"
-        )
+        from app.core.prompt_loader import prompt_loader
 
         llm_client = LLMClient(
             base_url=llm_config.base_url,
@@ -1255,8 +1236,7 @@ class RetrievalPipeline:
         confidence_stage = ConfidenceStage(
             high_score_threshold = cfg.confidence_high_score_threshold,
             low_score_threshold  = cfg.confidence_low_score_threshold,
-            min_high_conf_count  = cfg.confidence_min_high_conf_count,
-            prompt_loader        = prompt_loader,
+            min_high_conf_count  = cfg.confidence_min_high_conf_count
         )
         stages.append(confidence_stage)
 

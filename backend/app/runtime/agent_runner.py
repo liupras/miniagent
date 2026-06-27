@@ -309,8 +309,7 @@ class AgentRunner:
 
 async def build_agent_runner(
     agent_orm,              # Agent ORM row (with .llm eagerly loaded)
-    tools: List[Any],       # List[BaseTool] from tool_builder
-    prompt_loader,          # PromptLoader instance
+    tools: List[Any],       # List[BaseTool] from tool_builder   
     chat_db: AsyncChatDatabase,
 ) -> AgentRunner:
     """
@@ -326,7 +325,6 @@ async def build_agent_runner(
     Args:
         agent_orm       Agent ORM row; must have ``.llm`` pre-loaded.
         tools           Already-built LangChain tools list.
-        prompt_loader   PromptLoader for the active system language.
 
     Returns:
         Ready-to-use AgentRunner.
@@ -334,6 +332,7 @@ async def build_agent_runner(
     # ── 1. System prompt ───────────────────────────────────────────────────
     base_prompt: str = agent_orm.system_prompt or ""
     # Optionally append an i18n-sourced suffix (key: "agent_system_suffix").
+    from app.core.prompt_loader import prompt_loader
     suffix: str = prompt_loader.get("agent_system_suffix")
     system_prompt = (base_prompt + "\n\n" + suffix).strip() if suffix else base_prompt
 

@@ -71,7 +71,7 @@
   },
   {
     
-    "key": "kb.onfidence_warning",
+    "key": "kb.confidence_warning",
     "lang": "zh_CN",
     "description": "低置信度警告文本（中文）",
     "value": "当前检索结果的相关度较低，以下内容仅供参考，建议结合其他资料进一步确认。"

@@ -50,6 +50,8 @@ from app.services.admin.router_config import RouterConfigService
 from app.services.admin.strategy_config import StrategyConfigService
 from app.services.admin.knowledge_base import KnowledgeBaseService
 from app.services.admin.embedding import EmbeddingService
+from app.services.admin.system_setting import SystemSettingService
+from app.services.admin.prompt import PromptService
 
 import importlib
 
@@ -139,12 +141,22 @@ class ServiceContainer:
         self.strategy_config_service = StrategyConfigService(self)
         self.kb_service = KnowledgeBaseService(self)
         self.embedding_service = EmbeddingService(db=self.embed_db)
+        self.setting_service = SystemSettingService(db=self.setting_db)
+        self.prompt_service = PromptService(db=self.prompt_db)
 
     async def start(self):       
 
         await self.init_plugins()
         logger.info("ServiceContainer started and plugins loaded.")
 
+        from app.core.prompt_loader import PromptLoader
+        import app.core.prompt_loader as loader
+        loader.prompt_loader = await PromptLoader.create(
+            setting_service=self.setting_service,
+            prompt_service=self.prompt_service
+        )        
+        logger.info("prompt_loader initialized.")
+        
     async def init_plugins(self):
         """
         Load Domain configuration from database and dynamically register plugins.

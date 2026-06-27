@@ -39,7 +39,6 @@ from loguru import logger
 
 from app.runtime.tool_builder import build_tools_for_agent
 from app.runtime.agent_runner import AgentRunner, build_agent_runner
-from app.infra.prompt_loader import PromptLoader, get_system_language
 
 
 class AgentFactory:
@@ -67,8 +66,6 @@ class AgentFactory:
         self._tool_db = container.tool_db
         self._relation_db = container.agent_tool_relation_db
         self._chat_db = container.chat_db
-        self._prompt_db = container.prompt_db
-        self._seeting_db = container.setting_db
 
     # ──────────────────────────────────────────────────────────────────────
     # Public API
@@ -136,8 +133,7 @@ class AgentFactory:
         2. Load AgentToolRelation rows (priority-ordered).
         3. Bulk-fetch Tool ORM records.
         4. Build LangChain tools (tool_builder handles type dispatch).
-        5. Resolve system language → create PromptLoader.
-        6. Compile LangGraph graph and wrap in AgentRunner.
+        5. Compile LangGraph graph and wrap in AgentRunner.
         """
         # ── 1. Agent record ────────────────────────────────────────────────
         agent_orm = await self._agent_db.get_agent(agent_id)
@@ -166,15 +162,10 @@ class AgentFactory:
                 router_factory = self._container.router_factory,
             )
 
-        # ── 5. PromptLoader ────────────────────────────────────────────────
-        lang = await get_system_language(setting_db=self._seeting_db, fallback="zh_CN")
-        prompt_loader = await PromptLoader.create(lang=lang,db=self._prompt_db)
-
-        # ── 6. Compile and return ──────────────────────────────────────────
+        # ── 5. Compile and return ──────────────────────────────────────────
         runner = await build_agent_runner(
             agent_orm=agent_orm,
-            tools=lc_tools,
-            prompt_loader=prompt_loader,
+            tools=lc_tools,            
             chat_db=self._chat_db
         )
 

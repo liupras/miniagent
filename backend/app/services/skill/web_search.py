@@ -766,8 +766,6 @@ class WebSearchConfig:
     max_chars_per_result:  int   = 2000
     max_total_chars:       int   = 8000
 
-    prompt_language:       str  = "zh_CN"
-
     @classmethod
     def create(cls,             
         config              : dict = {},   
@@ -809,9 +807,7 @@ class WebSearchConfig:
 
             final_top_k = config.get( "final_top_k", 2),
             max_chars_per_result = config.get( "max_chars_per_result", 2000),
-            max_total_chars = config.get( "max_total_chars", 8000),
-
-            prompt_language = config.get( "prompt_language", "zh_CN"),
+            max_total_chars = config.get( "max_total_chars", 8000)
         )
 
 class WebSearchPipeline:

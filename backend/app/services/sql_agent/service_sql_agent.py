@@ -11,9 +11,8 @@
 #  On first call for a given llm_provider_id the service:
 #    1. resolves the LLM row via the LLM table (llm_provider_id)
 #    2. builds an AgentLLM from the resolved config
-#    3. loads system_prompt_template + tool_schema via PromptLoader
-#    4. constructs SQLAgent(llm, tools, schema_name, system_prompt_template, tool_schema)
-#    5. stores it in _agent_cache
+#    3. constructs SQLAgent(llm, tools, schema_name, system_prompt_template, tool_schema)
+#    4. stores it in _agent_cache
 #  Subsequent calls with the same llm_provider_id + schema_name hit the cache.
 #
 #  Cache invalidation
@@ -33,7 +32,6 @@ from .tool import SQLTools
 from .manager import DBManager
 
 from app.infra.db.database import Tool
-from app.infra.prompt_loader import PromptLoader, get_system_language
 
 if TYPE_CHECKING:
     from app.core.service_container import ServiceContainer
@@ -257,22 +255,7 @@ class SQLAgentService:
                 raise ValueError(f"Tool {tool_name!r} is inactive.")
             
         # ── 5. Load prompts via PromptLoader ────────────────────────
-        resolved_lang: Optional[str] = None
-        if tool:
-            cfg = tool.config or {}
-            resolved_lang = cfg.get("prompt_language")
-        if not resolved_lang:
-            resolved_lang = await get_system_language(
-                setting_db=self._container.setting_db, fallback="zh_CN"
-            )
-        prompt_loader = await PromptLoader.create(
-            lang=resolved_lang, db=self._container.prompt_db
-        )
-        logger.info(
-            f"[SQLAgentService] lang='{resolved_lang}'  "
-            f"prompt_loader loaded {len(prompt_loader._templates)} DB template(s)"
-        )
-
+        from app.core.prompt_loader import prompt_loader
         system_prompt_template = prompt_loader.get("sql_agent.system_prompt_template") or None
         agent_llm_tool_schema_template = prompt_loader.get("agent_llm.tool_schema") or None
 

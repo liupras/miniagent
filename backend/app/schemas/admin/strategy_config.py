@@ -17,7 +17,6 @@ from pydantic import BaseModel, Field
 
 class StrategyConfigBase(BaseModel):
     """Shared readable fields."""
-    prompt_language: Optional[str] = None
 
     # Component switches
     enable_query_rewrite: bool = True
@@ -65,7 +64,7 @@ class StrategyConfigCreate(StrategyConfigBase):
 
 class StrategyConfigUpdate(StrategyConfigBase):
     """All fields optional for partial update."""
-    prompt_language: Optional[str] = None
+    
     enable_query_rewrite: Optional[bool] = None
     enable_query_expansion: Optional[bool] = None
     enable_query_hyde: Optional[bool] = None

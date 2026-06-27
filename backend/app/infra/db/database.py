@@ -383,13 +383,6 @@ class StrategyConfig(Base):
     version = Column(Integer, nullable=False)
     is_active = Column(Boolean, default=False)
 
-    prompt_language = Column(
-        String(10),
-        nullable=True,
-        default=None,
-        comment="KB-level language override. NULL = inherit SystemSetting['system_language']. e.g. zh / en",
-    )
-
     # Component switches
     enable_query_rewrite = Column(Boolean, default=True)
     enable_query_expansion = Column(Boolean, default=False)
@@ -433,7 +426,6 @@ class StrategyConfig(Base):
     __table_args__ = (
         UniqueConstraint("kb_id", "version", name="uq_kb_version"),
         Index("idx_strategy_kb_active", "kb_id", "is_active"),
-        Index("idx_strategy_lang", "prompt_language"),
         CheckConstraint("vector_score_threshold >= 0 AND vector_score_threshold <= 1", name="ck_vector_score_threshold_range"),
         CheckConstraint("vector_top_k > 0", name="ck_vector_top_k_positive"),
         CheckConstraint("bm25_top_k > 0", name="ck_bm25_top_k_positive"),

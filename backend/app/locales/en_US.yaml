@@ -1,0 +1,10 @@
+common:
+  success: Success
+  failed: Failed
+
+auth:
+  login_failed: Invalid username or password
+  unauthorized: Unauthorized
+
+tool:
+  not_found: Tool not found
