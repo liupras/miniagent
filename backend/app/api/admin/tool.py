@@ -6,12 +6,12 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.core.security.auth_permission import AuthPermission
 from app.schemas.common import ApiResponse, PageResult
 from app.schemas.admin.tool import ToolCreate, ToolRead, ToolUpdate
-from app.services.admin.tool import ToolNotFoundError, ToolService
+from app.services.admin.tool import ToolService
 
 router = APIRouter()
 
@@ -68,8 +68,6 @@ async def get_tool(
     caller_id: int            = Depends(_list),
 ):
     tool = await svc.get(tool_id)
-    if not tool:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tool not found")
     return ApiResponse(data=tool)
 
 
@@ -79,11 +77,10 @@ async def create_tool(
     svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_add),
 ):
-    try:
-        tool= await svc.create(payload)
-        return ApiResponse(data=tool)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+
+    tool= await svc.create(payload)
+    return ApiResponse(data=tool)
+
 
 @router.patch("/{tool_id}", response_model=ApiResponse, summary="Partially update tool")
 async def update_tool(
@@ -92,12 +89,8 @@ async def update_tool(
     svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_edit),
 ):
-    try:
-        tool = await svc.update(tool_id, payload)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
-    if not tool:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tool not found")
+
+    tool = await svc.update(tool_id, payload)    
     return ApiResponse(data=tool)
 
 
@@ -117,11 +110,10 @@ async def delete_tool(
     svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_delete),
 ):
-    try:
-        deleted = await svc.delete(tool_id)
-        return ApiResponse(data={"deleted": deleted})
-    except ToolNotFoundError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tool not found")
+
+    deleted = await svc.delete(tool_id)
+    return ApiResponse(data={"deleted": deleted})
+
 
 
 @router.post("/bulk-delete", response_model=ApiResponse, summary="Bulk delete tools")

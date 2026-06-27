@@ -6,6 +6,7 @@
 
 from typing import Any, Generic, List, Optional, TypeVar
 from pydantic import BaseModel, Field
+from app.core.i18n.i18n import t
 
 # T can be any Pydantic output model (LLMOut, AgentOut, etc.).
 T = TypeVar("T")
@@ -28,34 +29,35 @@ class ApiResponse(BaseModel, Generic[T]):
     code: int = Field(200, description="Business status code, 200 = success")
     message: str = Field("success", description="Human-readable status message")
     data: Optional[T] = Field(None, description="Response payload")
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.message == "success":
+            object.__setattr__(self, "message", t("common.success"))
     
 
 class BaseDomainError(Exception):
     """Business Logic Exception Base Class"""
+    error_key = "base_error"
+
     def __init__(self, entity_name: str, entity_id: Any, message: str):
         self.entity_name = entity_name
         self.entity_id = entity_id
         super().__init__(f"{entity_name} '{entity_id}' {message}")
 
+    def i18n_key(self, kind: str) -> str:
+        """kind: 'not_found' | 'already_exists'"""
+        prefix = self.entity_name.lower()
+        return f"{prefix}.{kind}"
+    
+    def to_detail(self) -> str:
+        return t(self.i18n_key(self.error_key), id=self.entity_id, entity=self.entity_name)
+
 class NotFoundError(BaseDomainError):
+    error_key = "not_found"
     def __init__(self, entity_name: str, entity_id: Any):
-        super().__init__(entity_name, entity_id, "not found")
+        super().__init__(entity_name, entity_id, self.error_key)
 
 class AlreadyExistsError(BaseDomainError):
+    error_key = "already_exists"
     def __init__(self, entity_name: str, entity_id: Any):
-        super().__init__(entity_name, entity_id, "already exists")
-
-def create_exception_pair(entity_name: str):    
-    class NotFound(NotFoundError):
-        def __init__(self, entity_id: Any):
-            super().__init__(entity_name, entity_id)
-            
-    class AlreadyExists(AlreadyExistsError):
-        def __init__(self, entity_id: Any):
-            super().__init__(entity_name, entity_id)            
-
-    NotFound.__name__ = f"{entity_name}NotFoundError"
-    AlreadyExists.__name__ = f"{entity_name}AlreadyExistsError"
-    
-    return NotFound, AlreadyExists
-
+        super().__init__(entity_name, entity_id, self.error_key)

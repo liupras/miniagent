@@ -119,6 +119,7 @@ Domains are configured in seed data and registered at startup:
 ## Singleton
 
 - app.core.PromptLoader, prompt_loader
+- app.core.I18n, t
 
 ## Caching rules (easy to break)
 Several layers cache compiled objects in-process:

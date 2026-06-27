@@ -4,10 +4,19 @@
 # @date    : 2026-06-08
 # @description: Router Config Service
 
-from app.schemas.common import create_exception_pair
+from typing import Any
+
+from app.schemas.common import NotFoundError,AlreadyExists
 from app.schemas.admin.router_config import RouterConfigResponse, RouterConfigUpdate
 
-RouterConfigNotFoundError, RouterConfigAlreadyExistsError = create_exception_pair("RouterConfig")
+class RouterConfigNotFoundError(NotFoundError):
+    def __init__(self, entity_id: Any):
+        super().__init__("RouterConfig", entity_id)
+
+class RouterConfigAlreadyExistsError(AlreadyExists):
+    def __init__(self, entity_id: Any):
+        super().__init__("RouterConfig", entity_id)
+
 
 class RouterConfigService:
 

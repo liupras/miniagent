@@ -4,10 +4,12 @@
 # @date    : 2026-05-30
 # @description: LLM Service – business logic layer
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
+
+from loguru import logger
 
 from app.infra.db.database import LLM
 from app.repositories.async_llm import AsyncLLMDatabase
@@ -19,23 +21,15 @@ from app.schemas.admin.llm import (
     LLMOptionItem,
     LLMListParams,
 )
-from app.schemas.common import PageResult
+from app.schemas.common import NotFoundError, AlreadyExists,PageResult
 
+class LLMNotFoundError(NotFoundError):
+    def __init__(self, entity_id: Any):
+        super().__init__("LLM", entity_id)
 
-# ──────────────────────────────────────────────
-# Domain exceptions
-# ──────────────────────────────────────────────
-
-class LLMNotFoundError(Exception):
-    def __init__(self, llm_id: int):
-        self.llm_id = llm_id
-        super().__init__(f"LLM {llm_id} not found")
-
-
-class LLMConflictError(Exception):
-    """Raised when a unique constraint would be violated."""
-    def __init__(self, detail: str):
-        super().__init__(detail)
+class LLMAlreadyExistsError(AlreadyExists):
+    def __init__(self, entity_id: Any):
+        super().__init__("LLM", entity_id)
 
 
 # ──────────────────────────────────────────────
@@ -131,9 +125,9 @@ class LLMService:
                 capabilities=payload.capabilities,
             )
         except IntegrityError as exc:
-            raise LLMConflictError(
-                f"LLM '{payload.provider_name}/{payload.model_name}' already exists"
-            ) from exc
+            logger.error(exec)
+            raise LLMAlreadyExistsError(f"LLM '{payload.provider_name}/{payload.model_name}'")
+  
 
         # patch the name field (not handled by AsyncLLMDatabase.create)
         updated = await self._db.update(row.id, name=payload.name)
@@ -167,9 +161,8 @@ class LLMService:
         try:
             row = await self._db.update(llm_id, **fields)
         except IntegrityError as exc:
-            raise LLMConflictError(
-                "provider_name + model_name combination already taken"
-            ) from exc
+            logger.error(exec)
+            raise LLMAlreadyExistsError(f"LLM '{payload.provider_name}/{payload.model_name}'")
 
         if row is None:
             raise LLMNotFoundError(llm_id)

@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
 router = APIRouter()
@@ -18,18 +18,8 @@ router = APIRouter()
 def _get_web_search_service(request: Request):
     """
     Resolve WebSearchService from app.state.container.
-
-    ServiceContainer must expose  ``web_search_service`` attribute, e.g.:
-        self.web_search_service = WebSearchService(self)
     """
-    container = request.app.state.container
-    service = getattr(container, "web_search_service", None)
-    if service is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="WebSearchService is not registered in ServiceContainer.",
-        )
-    return service
+    return request.app.state.container.web_search_service
 
 
 # ═══════════════════════════════════════════════════════════════════════════

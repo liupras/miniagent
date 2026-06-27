@@ -7,17 +7,14 @@
 from __future__ import annotations
 
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.core.security.auth_permission import AuthPermission
 from app.schemas.common import ApiResponse
 from app.schemas.admin.knowledge_base import (
     KnowledgeBaseCreate,
     KnowledgeBaseListOut,
-    KnowledgeBaseRead,
-    KnowledgeBaseUpdate,
-    KnowledgeBaseOption,
-    KnowledgeBaseStats
+    KnowledgeBaseUpdate
 )
 from app.services.admin.knowledge_base import KnowledgeBaseService
 
@@ -85,8 +82,6 @@ async def get_kb(
     caller_id: int            = Depends(_list),
 ) -> ApiResponse:
     kb = await svc.get_kb(kb_id)
-    if not kb:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
     return ApiResponse(data=kb)
 
 
@@ -116,8 +111,6 @@ async def update_kb(
     caller_id: int            = Depends(_edit),
 ) -> ApiResponse:
     kb = await svc.update_kb(kb_id, payload)
-    if not kb:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
     return ApiResponse(data= kb)
 
 
@@ -131,9 +124,7 @@ async def delete_kb(
     svc:       KnowledgeBaseService   = Depends(get_service),
     caller_id: int            = Depends(_delete),
 ) -> ApiResponse:
-    success = await svc.delete_kb(kb_id)
-    if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
+    success = await svc.delete_kb(kb_id)   
     return ApiResponse(data=success)
 
 @router.patch(
@@ -146,11 +137,8 @@ async def toggle_kb_active(
     svc:       KnowledgeBaseService   = Depends(get_service),
     caller_id: int            = Depends(_edit),
 ) -> ApiResponse:
-    success = await svc.toggle_kb_active(kb_id)
-    if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
+    await svc.toggle_kb_active(kb_id)
     return ApiResponse(message= "Knowledge base active status updated successfully")
-
 
 @router.get(
     "/{kb_id}/stats",
@@ -163,6 +151,4 @@ async def get_kb_stats(
     caller_id: int            = Depends(_list),
 ) -> ApiResponse:
     stats = await svc.get_kb_stats(kb_id)
-    if not stats:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Knowledge base not found")
     return ApiResponse(data=stats)

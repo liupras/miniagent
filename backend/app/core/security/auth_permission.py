@@ -14,6 +14,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from loguru import logger
 
+from app.core.i18n.i18n_http import raise_forbidden
 from app.infra.cache_backend import create_cache_backend
 
 # ── Module-level constants ─────────────────────────────────────────────────────
@@ -149,10 +150,7 @@ class AuthPermission:
         if SUPER_PERMISSION in perms or required in perms:
             return
         logger.warning("Access denied — user_id=%s lacks '%s'", user_id, required)
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Permission denied: '{required}' is required.",
-        )
+        raise_forbidden("auth.permission_denied", required=required)
 
     # ── FastAPI dependency factories ───────────────────────────────────────
 

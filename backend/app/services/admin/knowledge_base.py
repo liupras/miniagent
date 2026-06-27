@@ -4,7 +4,7 @@
 # @date    : 2026-06-13
 # @description: KnowledgeBase Service Layer – Business logic
 
-from typing import List, Tuple, Optional
+from typing import Any, List, Tuple, Optional
 
 from app.schemas.admin.knowledge_base import (
     KnowledgeBaseCreate,
@@ -13,6 +13,15 @@ from app.schemas.admin.knowledge_base import (
     KnowledgeBaseOption,
     KnowledgeBaseStats
 )
+from app.schemas.common import NotFoundError,AlreadyExists
+
+class KBNotFoundError(NotFoundError):
+    def __init__(self, entity_id: Any):
+        super().__init__("KB", entity_id)
+
+class KBAlreadyExistsError(AlreadyExists):
+    def __init__(self, entity_id: Any):
+        super().__init__("KB", entity_id)
 
 class KnowledgeBaseService:
     def __init__(self, container):
@@ -45,7 +54,7 @@ class KnowledgeBaseService:
         """Get a single knowledge base by ID."""
         kb = await self.db.get_kb(kb_id)
         if kb is None:
-            return None
+            raise KBNotFoundError(kb_id)
         return KnowledgeBaseRead.model_validate(kb)
 
     async def create_kb(self, payload: KnowledgeBaseCreate) -> KnowledgeBaseRead:
@@ -59,7 +68,7 @@ class KnowledgeBaseService:
         data = payload.model_dump(exclude_unset=True)
         kb = await self.db.update_kb(kb_id, data)
         if kb is None:
-            return None
+            raise KBNotFoundError(kb_id)
         if not self._retrieval_service:
             self._retrieval_service.invalidate(kb_id=kb_id)
         return KnowledgeBaseRead.model_validate(kb)
@@ -67,6 +76,8 @@ class KnowledgeBaseService:
     async def delete_kb(self, kb_id: int) -> bool:
         """Delete a knowledge base."""
         res = await self.db.delete_kb(kb_id)
+        if not res:
+            raise KBNotFoundError(kb_id)
         if not self._retrieval_service:
             self._retrieval_service.invalidate(kb_id=kb_id)
         return res
@@ -79,6 +90,8 @@ class KnowledgeBaseService:
     async def toggle_kb_active(self, kb_id: int) -> bool:
         """Toggle the active status of a knowledge base."""
         res =  await self.db.toggle_kb_active(kb_id)
+        if not res:
+            raise KBNotFoundError(kb_id)
         if not self._retrieval_service:
             self._retrieval_service.invalidate(kb_id=kb_id)
         return res
@@ -86,4 +99,6 @@ class KnowledgeBaseService:
     async def get_kb_stats(self, kb_id: int) -> KnowledgeBaseStats:
         """Get statistics for a knowledge base."""
         stats = await self.db.get_kb_stats(kb_id)
+        if not stats:
+            raise KBNotFoundError(kb_id)
         return KnowledgeBaseStats.model_validate(stats)

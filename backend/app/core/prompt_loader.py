@@ -32,7 +32,7 @@ class PromptLoader:
         """
         try:
             self._language = await self._setting_service.get_system_language()
-            logger.debug(f"system language is {self._language}.")
+            logger.debug(f"prompt loader's language is {self._language}.")
 
             self._templates = await self._prompt_service.get_all_as_dict()            
             logger.debug(

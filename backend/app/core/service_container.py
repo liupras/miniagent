@@ -150,12 +150,16 @@ class ServiceContainer:
         logger.info("ServiceContainer started and plugins loaded.")
 
         from app.core.prompt_loader import PromptLoader
-        import app.core.prompt_loader as loader
-        loader.prompt_loader = await PromptLoader.create(
+        import app.core.prompt_loader as LoaderModel
+        LoaderModel.prompt_loader = await PromptLoader.create(
             setting_service=self.setting_service,
             prompt_service=self.prompt_service
         )        
         logger.info("prompt_loader initialized.")
+
+        from app.core.i18n.i18n import I18n
+        await I18n.create(setting_service=self.setting_service)
+        logger.info("I18n initialized.")
         
     async def init_plugins(self):
         """

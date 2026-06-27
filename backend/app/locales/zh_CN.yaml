@@ -1,10 +1,72 @@
 common:
-  success: 操作成功
-  failed: 操作失败
+  success: 操作成功          # en: Success
+  failed: 操作失败           # en: Failed
 
 auth:
   login_failed: 用户名或密码错误
-  unauthorized: 未登录
+  unauthorized: 未授权，请先登录
+
+  missing_auth_header: 缺少 Authorization 请求头
+  invalid_token_format: Token 格式无效，应为 Bearer <token>
+  token_invalid: Token 无效或已过期
+  user_not_found: 用户账号不存在
+  user_disabled: 用户账号已禁用
+  user_inactive: 用户不存在或已被禁用
+  missing_bearer: 缺少 Bearer Token
+  permission_denied: 权限不足，需要 '{required}' 权限
+  auth_required: 需要认证（Request 不在作用域内）
+
+# ── 通用 fallback ──
+entity:
+  not_found: "{entity} '{id}' 不存在"
+  already_exists: "{entity} '{id}' 已存在"
+
+# ── 404：按实体 ──
+kb:
+  not_found: 知识库不存在
+  not_found_with_id: "知识库 {kb_id} 不存在"
+
+document:
+  not_found: 文档不存在
+  not_found_in_kb: "知识库 {kb_id} 中不存在文档 {doc_id}"
+
+embedding:
+  not_found: Embedding 配置不存在
+
+agent:
+  not_found: Agent 不存在
+  not_found_with_id: "Agent {id} 不存在"
+  not_found_with_name: "Agent '{name}' 不存在"
+  inactive: "Agent '{name}' (id={id}) 已停用"
+  already_exists_with_name: "工具 '{name}' 已存在"
 
 tool:
   not_found: 工具不存在
+  not_found_with_name: "工具 '{name}' 不存在"
+  inactive: "工具 '{name}' 未启用或不存在"
+
+llm:
+  not_found_with_id: "LLM {id} 不存在"
+  already_exists: "LLM '{provider}/{model}' 已存在"
+  model_combo_taken: provider_name 与 model_name 组合已被占用
+
+user:
+  not_found_with_name: "用户 '{username}' 不存在"
+
+domain:
+  not_found_with_id: "Domain {id} 不存在"
+  already_exists: "Domain '{name}' 已存在 (id={id})"
+  name_taken: "Domain 名称 '{name}' 已被 id={id} 使用"
+
+task:
+  not_found_or_finished: 任务不存在或已结束
+
+strategy_config:
+  not_found: 策略配置不存在
+  not_found_with_id: "StrategyConfig {id} 不存在"
+  no_active_for_kb: "知识库 {kb_id} 没有启用的 StrategyConfig"
+  no_fields_to_update: 未提供任何可更新字段
+  activation_failed: 策略激活失败
+
+router_config:
+  not_found: 路由配置不存在

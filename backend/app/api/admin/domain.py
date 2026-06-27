@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from typing import Optional
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.core.security.auth_permission import AuthPermission
 from app.schemas.admin.domain import (

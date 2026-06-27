@@ -24,18 +24,8 @@ router = APIRouter()
 def _get_service(request: Request):
     """
     Pull SQLAgentService from the application state.
-
-    Assumes the service was registered at startup:
-        app.state.container = container          # ServiceContainer instance
     """
-    container = request.app.state.container
-    service = getattr(container, "sql_agent_service", None)
-    if service is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="SQLAgentService is not registered in ServiceContainer.",
-        )
-    return service
+    return request.app.state.container.sql_agent_service
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -10,9 +10,15 @@ from typing import Any
 
 from app.infra.db.database import Tool
 from app.schemas.admin.tool import ToolCreate, ToolRead, ToolUpdate
-from app.schemas.common import create_exception_pair
+from app.schemas.common import NotFoundError,AlreadyExists
 
-ToolNotFoundError, ToolAlreadyExistsError = create_exception_pair("Tool")
+class ToolNotFoundError(NotFoundError):
+    def __init__(self, entity_id: Any):
+        super().__init__("Tool", entity_id)
+
+class ToolAlreadyExistsError(AlreadyExists):
+    def __init__(self, entity_id: Any):
+        super().__init__("Tool", entity_id)
 
 class ToolService:
 
@@ -26,6 +32,8 @@ class ToolService:
 
     async def get(self, tool_id: int) -> Tool | None:
         tool = await self._db.get_by_id(tool_id)
+        if not tool:
+            raise ToolNotFoundError(tool_id)
         return tool
 
     async def get_by_name(self, name: str) -> Tool | None:
@@ -80,6 +88,8 @@ class ToolService:
 
     async def delete(self, tool_id: int) -> int:
         deleted = await self._db.delete_tool(tool_id)
+        if not deleted:
+            raise ToolNotFoundError(tool_id)
         if self._agent_factory:
             self._agent_factory.invalidate()
         return deleted

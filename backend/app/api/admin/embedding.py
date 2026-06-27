@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.core.security.auth_permission import AuthPermission
 from app.schemas.admin.embedding import (
@@ -78,9 +78,7 @@ async def get_embedding(
     svc:       EmbeddingService   = Depends(get_service),
     caller_id: int            = Depends(_list),
 ) -> ApiResponse:
-    embedding = await svc.get_by_id(embedding_id)
-    if not embedding:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Embedding not found")
+    embedding = await svc.get_by_id(embedding_id)    
     return ApiResponse(data= embedding)
 
 
@@ -110,8 +108,6 @@ async def update_embedding(
     caller_id: int            = Depends(_edit),
 ) -> ApiResponse:
     embedding = await svc.update(embedding_id, payload)
-    if not embedding:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Embedding not found")
     return ApiResponse(data= embedding)
 
 @router.delete(

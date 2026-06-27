@@ -5,13 +5,14 @@
 # @description: Knowledge-base document service — pure orchestration.
 
 import asyncio
-from typing import  Optional
+from typing import  Any, Optional
 from fastapi import HTTPException
 from langchain_core.documents import Document as LC_Document
 
 from loguru import logger
 
 from app.schemas.admin.chunk import DocumentChunksOut, ParentChunkRead
+from app.schemas.common import NotFoundError,AlreadyExists
 from app.utils.hash import calculate_file_sha256
 
 from .smart_document_loader import SmartDocumentLoader
@@ -19,6 +20,21 @@ from .small_to_big_base import ChunkConfig
 from app.retrieval.vector_store import VectorStoreManager
 from app.runtime.task.progress_tracker import DocumentStatus,emitter
 from app.infra.db.database import Document
+
+class KBNotFoundError(NotFoundError):
+    def __init__(self, entity_id: Any):
+        super().__init__("KB", entity_id)
+
+class KBAlreadyExistsError(AlreadyExists):
+    def __init__(self, entity_id: Any):
+        super().__init__("KB", entity_id)
+class DocumentNotFoundError(NotFoundError):
+    def __init__(self, entity_id: Any):
+        super().__init__("Document", entity_id)
+
+class DocumentAlreadyExistsError(AlreadyExists):
+    def __init__(self, entity_id: Any):
+        super().__init__("Document", entity_id)
 
 class KBDocumentService:
     """
@@ -60,8 +76,10 @@ class KBDocumentService:
     # Public API
     # =========================================================================
 
-    async def kb_exists(self,kb_id:int)->bool:
-        return self.kb_db.kb_exists(kb_id=kb_id)
+    async def check_exists(self,kb_id:int)->bool:
+        result = await self.kb_db.kb_exists(kb_id=kb_id)
+        if not result:
+            raise KBNotFoundError(kb_id)
 
     async def list_docs(
         self,
@@ -71,6 +89,9 @@ class KBDocumentService:
         page_size: int = 20,
     ):
         """List documents for a knowledge base."""
+        if kb_id is not None:
+            if not await self.kb_db.kb_exists(kb_id):
+                raise KBNotFoundError(kb_id)
         items, total = await self.doc_db.list_docs(
             kb_id=kb_id,
             status_filter=status_filter,
@@ -83,7 +104,7 @@ class KBDocumentService:
         """Get a single document by ID."""
         doc = await self.doc_db.get_doc(doc_id)
         if doc is None:
-            return None
+            raise DocumentNotFoundError(doc_id)
         return doc
     
     async def add_document(

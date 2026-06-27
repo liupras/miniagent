@@ -6,7 +6,7 @@
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.schemas.admin.llm import (
     LLMCreate,
@@ -17,7 +17,7 @@ from app.schemas.admin.llm import (
     LLMListParams,
 )
 from app.schemas.common import PageResult, ApiResponse
-from app.services.admin.llm import LLMService, LLMNotFoundError, LLMConflictError
+from app.services.admin.llm import LLMService
 from app.core.service_container import ServiceContainer
 
 router = APIRouter()
@@ -33,18 +33,6 @@ def get_llm_service(
     container: ServiceContainer = Depends(get_container),
 ) -> LLMService:
     return container.llm_service
-
-# ──────────────────────────────────────────────
-# Exception → HTTP helpers
-# ──────────────────────────────────────────────
-
-def _raise_not_found(exc: LLMNotFoundError) -> None:
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
-
-
-def _raise_conflict(exc: LLMConflictError) -> None:
-    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
-
 
 # ──────────────────────────────────────────────
 # Routes
@@ -110,10 +98,7 @@ async def get_llm(
     llm_id: int,
     svc: LLMService = Depends(get_llm_service),
 ):
-    try:
-        row = await svc.get_llm(llm_id)
-    except LLMNotFoundError as exc:
-        _raise_not_found(exc)
+    row = await svc.get_llm(llm_id)
     return ApiResponse(data=LLMOut.model_validate(row))
 
 
@@ -127,10 +112,7 @@ async def create_llm(
     payload: LLMCreate,
     svc: LLMService = Depends(get_llm_service),
 ):
-    try:
-        llm_out = await svc.create_llm(payload)
-    except LLMConflictError as exc:
-        _raise_conflict(exc)
+    llm_out = await svc.create_llm(payload)
     return ApiResponse(data=llm_out)
 
 
@@ -153,12 +135,7 @@ async def update_llm(
     payload: LLMUpdate,
     svc: LLMService = Depends(get_llm_service),
 ):
-    try:
-        llm_out = await svc.update_llm(llm_id, payload)
-    except LLMNotFoundError as exc:
-        _raise_not_found(exc)
-    except LLMConflictError as exc:
-        _raise_conflict(exc)
+    llm_out = await svc.update_llm(llm_id, payload)
     return ApiResponse(data=llm_out)
 
 
@@ -167,8 +144,6 @@ async def delete_llm(
     llm_id: int,
     svc: LLMService = Depends(get_llm_service),
 ):
-    try:
-        await svc.delete_llm(llm_id)
-    except LLMNotFoundError as exc:
-        _raise_not_found(exc)
+
+    await svc.delete_llm(llm_id)
     return ApiResponse(message="LLM deleted successfully")

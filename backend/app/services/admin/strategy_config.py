@@ -5,6 +5,7 @@
 # @description: Strategy Config Service
 
 from __future__ import annotations
+from typing import Any
 
 from fastapi import HTTPException, status
 
@@ -14,10 +15,16 @@ from app.schemas.admin.strategy_config import (
     StrategyConfigOut,
     StrategyConfigUpdate,
 )
-from app.schemas.common import create_exception_pair
+from app.schemas.common import NotFoundError,AlreadyExists
 
-StrategyConfigNotFoundError, StrategyConfigAlreadyExistsError = create_exception_pair("StrategyConfig")
+class StrategyConfigNotFoundError(NotFoundError):
+    def __init__(self, entity_id: Any):
+        super().__init__("StrategyConfig", entity_id)
 
+class StrategyConfigAlreadyExistsError(AlreadyExists):
+    def __init__(self, entity_id: Any):
+        super().__init__("StrategyConfig", entity_id)
+        
 class StrategyConfigService:
     """Business logic for StrategyConfig."""
 

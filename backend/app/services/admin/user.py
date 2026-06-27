@@ -4,26 +4,22 @@
 # @date    : 2026-05-30
 # @description: User Service – business logic layer
 
-from typing import List, Optional
-
-from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
+from typing import Any, List, Optional
 
 from app.infra.db.database import User
 from app.repositories.async_user import AsyncUserDatabase
 from app.repositories.async_menu import AsyncMenuDatabase
-from app.schemas.common import PageResult
+from app.schemas.common import NotFoundError, PageResult,AlreadyExists
 from app.schemas.admin.user import UserListParams, UserOptionItem, UserOut
 
 
-# ──────────────────────────────────────────────
-# Domain exceptions
-# ──────────────────────────────────────────────
+class UserNotFoundError(NotFoundError):
+    def __init__(self, entity_id: Any):
+        super().__init__("User", entity_id)
 
-class UserNotFoundError(Exception):
-    def __init__(self, username: str):
-        self.username = username
-        super().__init__(f"User '{username}' not found")
+class UserAlreadyExistsError(AlreadyExists):
+    def __init__(self, entity_id: Any):
+        super().__init__("User", entity_id)
 
 
 def _to_user_out(user: User) -> UserOut:

@@ -7,6 +7,7 @@
 from fastapi import Request,HTTPException,Depends
 import re
 
+from app.core.i18n.i18n_http import raise_forbidden, raise_unauthorized
 from app.repositories import AsyncUserDatabase
 from app.core.security.jwt_auth import jwt_auth
 
@@ -20,20 +21,20 @@ async def get_current_user(
 
     auth_header = request.headers.get("Authorization")
     if not auth_header:
-        raise HTTPException(status_code=401, detail="Missing Authorization header")
+        raise_unauthorized("auth.missing_auth_header")
 
     match = re.match(r"^Bearer\s+(.+)$", auth_header.strip())
     if not match:
-        raise HTTPException(status_code=401, detail="Invalid token format")
+        raise_unauthorized("auth.invalid_token_format")
 
     token = match.group(1)
 
     username = jwt_auth.verify_token(token)
     if not username:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise_unauthorized("auth.token_invalid")
   
     user_info = await user_db.get_user_info(username)
     if not user_info or not user_info.get("is_active"):
-        raise HTTPException(status_code=403, detail="User not found or inactive")
+        raise_forbidden("auth.user_inactive")
 
     return username

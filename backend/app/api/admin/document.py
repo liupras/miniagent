@@ -17,11 +17,9 @@ from fastapi import (
     Depends,
     File,
     Form,
-    HTTPException,
     UploadFile,
 )
 
-from app.schemas.admin.chunk import DocumentChunksOut
 from app.schemas.common import ApiResponse
 from app.core.security.auth_permission import AuthPermission
 from app.runtime.task.progress_tracker import ProgressTracker
@@ -67,10 +65,7 @@ async def list_documents(
     page_size: int = 20,
     service:   KBDocumentService = Depends(get_service),
     caller_id:        int        = Depends(_list),
-):
-    if kb_id is not None:
-        if not await service.kb_exists(kb_id):
-            raise HTTPException(404, f"KnowledgeBase {kb_id} not found.")
+):    
     total, items = await service.list_docs(
         kb_id=kb_id,
         status_filter=status_filter,
@@ -97,9 +92,7 @@ async def get_document(
     service:   KBDocumentService = Depends(get_service),
     caller_id:        int                   = Depends(_list),
 ):
-    doc = await service.get_doc(doc_id)
-    if not doc or doc.kb_id != kb_id:
-        raise HTTPException(404, f"Document {doc_id} not found in KB {kb_id}.")
+    doc = await service.get_doc(doc_id)    
     data = DocumentRead.model_validate(doc)
     return ApiResponse(data=data)
 
@@ -119,9 +112,8 @@ async def add_document(
     service:          KBDocumentService     = Depends(get_service),
     caller_id:        int                   = Depends(_add),
 ):
-    if not await service.kb_exists(kb_id):
-        raise HTTPException(404, f"KnowledgeBase {kb_id} not found.")
-
+    await service.check_exists(kb_id)
+    
     suffix  = os.path.splitext(file.filename)[1]
     content = await file.read()
 
@@ -179,9 +171,7 @@ async def update_document(
     caller_id:        int                   = Depends(_edit),
 ):
     """If file hash is unchanged only metadata is updated (no re-embedding)."""
-    doc = await service.get_doc(doc_id)
-    if not doc or doc.kb_id != kb_id:
-        raise HTTPException(404, f"Document {doc_id} not found in KB {kb_id}.")
+    await service.get_doc(doc_id)
 
     suffix  = os.path.splitext(file.filename)[1]
     content = await file.read()
@@ -237,9 +227,7 @@ async def delete_document(
     service:   KBDocumentService        = Depends(get_service),
     caller_id:        int               = Depends(_delete),
 ):
-    doc = await service.get_doc(doc_id)
-    if not doc or doc.kb_id != kb_id:
-        raise HTTPException(404, f"Document {doc_id} not found in KB {kb_id}.")
+    await service.get_doc(doc_id)
 
     task_id = str(uuid.uuid4())
     ProgressTracker.create(task_id)

@@ -6,11 +6,11 @@
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.schemas.common import PageResult, ApiResponse
 from app.schemas.admin.user import UserListParams, UserOptionItem, UserOut
-from app.services.admin.user import UserService, UserNotFoundError
+from app.services.admin.user import UserService
 from app.core.service_container import ServiceContainer
 
 router = APIRouter()
@@ -27,17 +27,6 @@ def get_user_service(
 ) -> UserService:
     return container.user_service
 
-# ──────────────────────────────────────────────
-# Exception → HTTP helper
-# ──────────────────────────────────────────────
-
-def _raise_not_found(exc: UserNotFoundError) -> None:
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
-
-
-# ──────────────────────────────────────────────
-# Routes
-# ──────────────────────────────────────────────
 
 @router.get(
     "/options",
@@ -95,8 +84,6 @@ async def get_user(
     username: str,
     svc: UserService = Depends(get_user_service),
 ):
-    try:
-        user_out = await svc.get_user(username)
-    except UserNotFoundError as exc:
-        _raise_not_found(exc)
+
+    user_out = await svc.get_user(username)
     return ApiResponse(data=user_out)
