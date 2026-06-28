@@ -8,11 +8,12 @@
 import asyncio
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from app.runtime.task.progress_tracker import ProgressTracker
-
+from app.schemas.common import ApiResponse
+from app.core.i18n.i18n import t
 
 router = APIRouter()
 
@@ -41,7 +42,7 @@ async def task_progress(
     """
     queue = ProgressTracker.get(task_id)
     if queue is None:
-        raise HTTPException(404, "Task not found or already finished.")
+        return ApiResponse(code=404,message=t("task.not_found_or_finished"))
 
     async def event_generator():
         try:

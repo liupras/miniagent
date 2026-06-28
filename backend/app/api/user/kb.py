@@ -4,19 +4,21 @@
 # @date    : 2026-02-27
 # @description: FastAPI router — knowledge-base document CRUD with SSE progress.
 
-from typing import Any, Dict, List, Optional
-
 from fastapi import (
     Request,
     APIRouter,
     Depends,
-    HTTPException,
 )
-from pydantic import BaseModel, Field
+
+from loguru import logger
 
 from app.services.kb.service_retrieval import QueryResult, KBRetrievalService
 from app.services.kb.service_smart_router import KBSmartRouterService, SmartRouterQueryResult
 from app.services.kb.retrieval_model import QueryRequest
+
+from app.schemas.common import ApiResponse
+from app.core.i18n.i18n import t
+from app.schemas.user.kb import ChunkResultSchema,QueryResponse,SmartRouterQueryRequest,SmartRouterQueryResponse
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Router
@@ -65,31 +67,9 @@ def get_service_smart_router(
 # Query knowledge base — retrieval pipeline
 # ─────────────────────────────────────────────────────────────────────────────
 
-class ChunkResultSchema(BaseModel):
-    chunk_id:       Any
-    doc_id:         int
-    kb_id:          int
-    text:           str
-    final_score:    float
-    vector_score:   Optional[float] = None
-    bm25_score:     Optional[float] = None
-    rrf_score:      Optional[float] = None
-    rerank_score:   Optional[float] = None
-    retrieval_path: List[str]       = []
-    metadata:       Dict[str, Any]  = {}
-
-
-class QueryResponse(BaseModel):
-    kb_id:      int
-    query:      str
-    confidence: str   = Field(..., description="Confidence level: 'high' | 'low' | 'empty'.")
-    warning:    Optional[str] = Field(None, description="Low-confidence warning message.")
-    chunks:     List[ChunkResultSchema]
-
-
 @router.post(
     "/{kb_id}/query",
-    response_model=QueryResponse,
+    response_model=ApiResponse,
     summary="Query a knowledge base using the retrieval pipeline"
 )
 async def query_knowledge_base(
@@ -109,7 +89,7 @@ async def query_knowledge_base(
     active StrategyConfig reuse the cached pipeline with no rebuilding cost.
     """
     if not container.kb_db.kb_exists(kb_id):
-        raise HTTPException(status_code=404, detail=f"KnowledgeBase {kb_id} not found.")
+        return ApiResponse(code=404,message=t("kb.not_found_with_id",kb_id=kb_id))
 
     try:
         result: QueryResult = await service.query(
@@ -117,47 +97,26 @@ async def query_knowledge_base(
             query           = body.query,
             metadata_filter = body.metadata_filter,
         )
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
-    except RuntimeError as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+    except Exception as exc:
+        logger.error(f"[query_knowledge_base]->{exc}")
+        return ApiResponse(code=500,message=t("common.error_500"))
 
-    return QueryResponse(
+    data = QueryResponse(
         kb_id      = result.kb_id,
         query      = result.query,
         confidence = result.confidence,
         warning    = result.warning,
         chunks     = [ChunkResultSchema(**vars(c)) for c in result.chunks],
     )
+    return ApiResponse(data=data)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Smart-router query — route across multiple knowledge bases
 # ─────────────────────────────────────────────────────────────────────────────
 
-class SmartRouterQueryRequest(BaseModel):
-    """Request body for POST /smart-router/{router_config_id}/query."""
-
-    query:           str            = Field(..., min_length=1, description="Natural-language query.")
-    kb_ids:          List[int]      = Field(..., min_items=1,  description="Candidate KB ids.")
-    metadata_filter: Optional[Dict[str, Any]] = Field(
-        None, description="Optional metadata filter forwarded to every KB pipeline."
-    )
-
-
-class SmartRouterQueryResponse(BaseModel):
-    """Response body for POST /smart-router/{router_config_id}/query."""
-
-    router_config_id: str
-    query:            str
-    confidence:       str  = Field(..., description="Aggregated confidence: 'high' | 'low' | 'empty'.")
-    warning:          Optional[str] = Field(None, description="Aggregated warning (None when high-confidence).")
-    selected_kb_ids:  List[int]     = Field(..., description="KB ids that actually contributed chunks.")
-    chunks:           List[ChunkResultSchema]
-
-
 @router.post(
     "/smart-router/{router_config_id}/query",
-    response_model=SmartRouterQueryResponse,
+    response_model=ApiResponse,
     summary="Query multiple knowledge bases via smart router"
 )
 async def query_smart_router(
@@ -189,12 +148,11 @@ async def query_smart_router(
             kb_ids           = body.kb_ids,
             metadata_filter  = body.metadata_filter,
         )
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
-    except RuntimeError as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+    except Exception as exc:
+        logger.error(f"[query_smart_router]->{exc}")
+        return ApiResponse(code=500,message=t("common.error_500"))
 
-    return SmartRouterQueryResponse(
+    data = SmartRouterQueryResponse(
         router_config_id = result.router_config_id,
         query            = result.query,
         confidence       = result.confidence,
@@ -202,3 +160,4 @@ async def query_smart_router(
         selected_kb_ids  = result.selected_kb_ids,
         chunks           = [ChunkResultSchema(**vars(c)) for c in result.chunks],
     )
+    return ApiResponse(data=data)

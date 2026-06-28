@@ -1,6 +1,8 @@
 common:
-  success: Operation successful # en: Success
-  failed: Operation failed # en: Failed
+  success: Operation successful
+  failed: Operation failed
+  error_415: "Unsupported content type '{content_type}'"
+  Error 500: Internal service error, please contact the administrator
 
 auth:
   login_failed: Incorrect username or password
@@ -59,7 +61,7 @@ domain:
   name_taken: "Domain name '{name}' has been used by id={id}"
 
 task:
-  not_found_or_finished: The task does not exist or has ended.
+  not_found_or_finished: Task not found or already finished
 
 strategy_config:
   not_found: The strategy configuration does not exist.

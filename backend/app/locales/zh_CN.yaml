@@ -1,6 +1,8 @@
 common:
-  success: 操作成功          # en: Success
-  failed: 操作失败           # en: Failed
+  success: 操作成功
+  failed: 操作失败
+  error_415: "不支持的内容类型'{content_type}'"
+  error_500: 内部服务错误，请联系管理员
 
 auth:
   login_failed: 用户名或密码错误

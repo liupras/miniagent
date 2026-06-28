@@ -11,8 +11,13 @@ import shutil
 import tempfile
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status
 from pydantic import BaseModel, Field
+
+from loguru import logger
+
+from app.schemas.common import ApiResponse
+from app.core.i18n.i18n import t
 
 router = APIRouter()
 
@@ -69,7 +74,7 @@ class InvalidateCacheRequest(BaseModel):
 
 @router.post(
     "/import-csv",
-    response_model=ImportCsvResponse,
+    response_model=ApiResponse,
     summary="Import a CSV file into DuckDB",
     description=(
         "Upload a CSV file and import it into the specified DuckDB schema/table. "
@@ -108,7 +113,7 @@ async def import_csv(
         description="When True, add CSV columns absent from the existing table.",
     ),
     service=Depends(_get_service),
-) -> ImportCsvResponse:
+) -> ApiResponse:
     """
     Accept a multipart CSV upload and import it into DuckDB.
 
@@ -126,10 +131,7 @@ async def import_csv(
         "application/csv",
         "application/octet-stream",
     ):
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail=f"Unsupported content type '{file.content_type}'. Expected a CSV file.",
-        )
+        return ApiResponse(code=415,message=t("common.error_415",content_type=file.content_type))
 
     # Write upload to a temp file so DBManager (pandas) can read it from disk
     suffix = os.path.splitext(file.filename or "upload")[1] or ".csv"
@@ -150,37 +152,32 @@ async def import_csv(
             force_cast=force_cast,
             allow_new_columns=allow_new_columns,
         )
-    except (ValueError, TypeError) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(exc),
-        )
     except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"CSV import failed: {exc}",
-        )
+        logger.error(f"CSV import failed: {exc}")
+        return ApiResponse(code=500,message=t("common.error_500"))
     finally:
         # Always clean up the temporary file
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
         await file.close()
 
-    return ImportCsvResponse(
+    data = ImportCsvResponse(
         table_path=table_path,
         schema_name=schema_name,
         table_name=table_name,
     )
+    return ApiResponse(data=data)
 
 
 @router.get(
     "/cache",
-    response_model=CacheInfoResponse,
+    response_model=ApiResponse,
     summary="Inspect the agent cache",
     description="Returns the set of (llm_provider_id, schema_name) pairs currently cached.",
 )
-async def cache_info(service=Depends(_get_service)) -> CacheInfoResponse:
-    return CacheInfoResponse(cache=service.cache_info())
+async def cache_info(service=Depends(_get_service)) -> ApiResponse:
+    data= CacheInfoResponse(cache=service.cache_info())
+    return ApiResponse(data=data)
 
 
 @router.post(

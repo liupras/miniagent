@@ -6,8 +6,13 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, Request
+
+from loguru import logger
+
+from app.schemas.user.sql_agent import QueryRequest,QueryResponse
+from app.schemas.common import ApiResponse
+from app.core.i18n.i18n import t
 
 router = APIRouter()
 
@@ -19,54 +24,9 @@ router = APIRouter()
 def _get_service(request: Request):
     """
     Pull SQLAgentService from the application state.
-
-    Assumes the service was registered at startup:
-        app.state.container = container          # ServiceContainer instance
     """
-    container = request.app.state.container
-    service = getattr(container, "sql_agent_service", None)
-    if service is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="SQLAgentService is not registered in ServiceContainer.",
-        )
-    return service
+    return request.app.state.container.sql_agent_service
 
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Request / Response schemas
-# ═══════════════════════════════════════════════════════════════════════════
-
-class QueryRequest(BaseModel):
-    """Payload for a natural-language data query."""
-
-    query: str = Field(
-        ...,
-        min_length=1,
-        max_length=4096,
-        description="Natural-language question to answer against the database.",
-        examples=["What are the sales figures for each country?"],
-    )
-    llm_provider_id: int = Field(
-        default=1,
-        ge=1,
-        description="ID of the LLM provider row to use for this request.",
-    )
-    schema_name: str = Field(
-        default="main",
-        min_length=1,
-        max_length=64,
-        pattern=r"^[a-zA-Z_][a-zA-Z0-9_]*$",
-        description="DuckDB schema the agent should query (default: 'main').",
-    )
-
-
-class QueryResponse(BaseModel):
-    """Successful query response."""
-
-    answer: str = Field(..., description="Natural-language answer from the agent.")
-    llm_provider_id: int
-    schema_name: str
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Endpoints
@@ -74,7 +34,7 @@ class QueryResponse(BaseModel):
 
 @router.post(
     "/query",
-    response_model=QueryResponse,
+    response_model=ApiResponse,
     summary="Run a natural-language data query",
     description=(
         "Submit a natural-language question. The SQL Agent will autonomously "
@@ -85,7 +45,7 @@ class QueryResponse(BaseModel):
 async def query(
     body: QueryRequest,
     service=Depends(_get_service),
-) -> QueryResponse:
+) -> ApiResponse:
     """
     Execute a natural-language query via SQLAgentService.
 
@@ -98,19 +58,13 @@ async def query(
             llm_provider_id=body.llm_provider_id,
             schema_name=body.schema_name,
         )
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(exc),
-        )
     except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Agent execution failed: {exc}",
-        )
+        logger.error(f"[query]->{exc}")
+        return ApiResponse(code=500,message=t("common.error_500"))
 
-    return QueryResponse(
+    data = QueryResponse(
         answer=answer,
         llm_provider_id=body.llm_provider_id,
         schema_name=body.schema_name,
     )
+    return ApiResponse(data=data)
