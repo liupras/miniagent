@@ -20,6 +20,7 @@ from app.core.config import settings
 from app.infra.db.initializer import db_manager, init_database_on_startup
 
 from app.core.service_container import ServiceContainer
+from app.schemas.common import ApiResponse, BaseDomainError, NotFoundError, AlreadyExistsError
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
@@ -90,40 +91,70 @@ app.add_middleware(
 async def log_requests(request: Request, call_next):
     """Record all HTTP requests"""
     start_time = time.time()
-    
-    # Log request
     logger.info(f"📥 {request.method} {request.url.path}")
     
-    # Processing requests
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        logger.info(f"📤 {request.method} {request.url.path} - {response.status_code}")
+        response.headers["X-Process-Time"] = str(process_time)
+        return response
+    except Exception as exc:
+        # Re-eject after logging
+        process_time = time.time() - start_time
+        logger.error(f"📤 {request.method} {request.url.path} - ERROR ({process_time:.3f}s)")
+        return handle_exception(exc)
     
-    # Calculation time
-    process_time = time.time() - start_time
-    logger.info(f"📤 {request.method} {request.url.path} - {response.status_code} ({process_time:.3f}s)")
-    
-    # Add processing time to response header
-    response.headers["X-Process-Time"] = str(process_time)
-    
-    return response
-
 # ==================== Exception handling ====================
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """Global exception handling"""
-    logger.error(f"❌ Unhandled exceptions: {exc}")
-    logger.exception(exc)
+def create_api_response(
+    code: int = 200,
+    message: str = "success",
+    data: any = None,
+    status_code: int = 200
+) -> JSONResponse:
+    """Create JSON response from ApiResponse Pydantic model
     
+    Convert the ApiResponse Pydantic model to JSONResponse, 
+    retaining all Pydantic functionality (validation, serialization, ORM integration, etc.), 
+    while also supporting direct return of exception handlers.
+    
+    Args:
+        code: Business status code (200 = success)
+        message: Human-readable message
+        data: Response payload
+        status_code: HTTP status code (always 200 for API responses)
+    
+    Returns:
+        JSONResponse that can be returned from exception handlers
+    """
+    api_resp = ApiResponse(code=code, message=message, data=data)
     return JSONResponse(
-        status_code=500,
-        content={
-            "success": False,
-            "error": "Internal Server Error",
-            "message": str(exc) if settings.debug else "An error occurred",
-            "path": str(request.url.path)
-        }
+        status_code=status_code,
+        content=api_resp.model_dump(exclude_none=True)
     )
 
+def handle_exception(exc: Exception) -> JSONResponse:
+    """Global exception handling"""
+
+    if isinstance(exc, NotFoundError):
+        logger.warning(f"⚠️  NotFoundError: {exc}")
+        return create_api_response(status_code=404,code=404, message=exc.to_detail())
+    
+    elif isinstance(exc, AlreadyExistsError):
+        logger.warning(f"⚠️  AlreadyExistsError: {exc}")
+        return create_api_response(status_code=409,code=409, message=exc.to_detail())
+    
+    elif isinstance(exc, BaseDomainError):
+        logger.warning(f"⚠️  BaseDomainError: {exc}")
+        return create_api_response(status_code=400,code=400, message=exc.to_detail())
+    
+    # Handle other exceptions
+    logger.error(f"❌ Unhandled exception: {exc}")
+    
+    error_data = {"error": str(exc) if settings.debug else "An error occurred"}
+    return create_api_response(status_code=500,code=500, message="Internal Server Error", data=error_data)
+    
 # ==================== API router====================
 from app.api.admin.llm import router as admin_llm_router
 app.include_router(admin_llm_router,prefix="/api/v1/admin/llms", tags=["Admin - LLM"])

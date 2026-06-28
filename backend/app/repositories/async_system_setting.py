@@ -51,7 +51,7 @@ class AsyncSystemSettingDatabase(AsyncBaseDatabase):
         Return the current system language tag (lower-cased).
         """
         value = await self.get_value("system_language", fallback)
-        return (value or fallback).strip().lower()
+        return (value or fallback).strip()
 
     async def get_all(self) -> List[SystemSetting]:
         """

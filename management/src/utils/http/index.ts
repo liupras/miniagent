@@ -12,6 +12,13 @@ import type {
 import { stringify } from "qs";
 import { getToken, formatToken } from "@/utils/auth";
 import { useUserStoreHook } from "@/store/modules/user";
+import { ElMessage } from "element-plus";
+
+import { i18n } from "@/plugins/i18n";
+
+const t = (key: string) => {
+  return (i18n.global as any).t(key);
+};
 
 // 相关配置请参考：www.axios-js.com/zh-cn/docs/#axios-request-config-1
 const defaultConfig: AxiosRequestConfig = {
@@ -131,16 +138,18 @@ class PureHttp {
         if (!isSkip) {
           const res = response.data; // 原始响应体 { code, message, data }
 
-          // 1. 统一校验：如果后端业务逻辑报错 (code != 200)
+          // 1. 如果响应体中的 code != 200，也说明有业务错误
           if (res && res.code !== 200) {
-            // 这里可以进行全局错误提示
-            console.error("业务错误:", res.message);
+            ElMessage.error({
+              message: res.message || t("messages.operationFailed"),
+              duration: 5000
+            });
             return Promise.reject(res);
           }
 
           // 2. 提取数据：将 res.data 赋值回 response.data
           // 这样后续的任何 callback 拿到的 response.data 已经是“干净”的数据了
-          response.data = res.data;
+          response.data = res.data ?? null;
         }
 
         // 优先判断post/get等方法是否传入回调，否则执行初始化设置等回调
@@ -157,6 +166,30 @@ class PureHttp {
       (error: PureHttpError) => {
         const $error = error;
         $error.isCancelRequest = Axios.isCancel($error);
+
+        if ($error.response) {
+          // 服务器返回了错误响应
+          const errorMessage =
+            $error.response.data?.message ||
+            `${t('messages.requestFailed')} (${$error.response.status})`;
+          ElMessage.error({
+            message: errorMessage,
+            duration: 5000
+          });
+        } else if ($error.request) {
+          // 请求已发送，但没有收到响应
+          ElMessage.error({
+            message: t("messages.netError"),
+            duration: 5000
+          });
+        } else {
+          // 其他错误
+          ElMessage.error({
+            message: $error.message || t("messages.requestError"),
+            duration: 5000
+          });
+        }
+
         // 所有的响应异常 区分来源为取消请求/非取消请求
         return Promise.reject($error);
       }

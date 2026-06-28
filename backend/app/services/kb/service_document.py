@@ -12,7 +12,7 @@ from langchain_core.documents import Document as LC_Document
 from loguru import logger
 
 from app.schemas.admin.chunk import DocumentChunksOut, ParentChunkRead
-from app.schemas.common import NotFoundError,AlreadyExists
+from app.schemas.common import NotFoundError,AlreadyExistsError
 from app.utils.hash import calculate_file_sha256
 
 from .smart_document_loader import SmartDocumentLoader
@@ -25,14 +25,14 @@ class KBNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("KB", entity_id)
 
-class KBAlreadyExistsError(AlreadyExists):
+class KBAlreadyExistsError(AlreadyExistsError):
     def __init__(self, entity_id: Any):
         super().__init__("KB", entity_id)
 class DocumentNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("Document", entity_id)
 
-class DocumentAlreadyExistsError(AlreadyExists):
+class DocumentAlreadyExistsError(AlreadyExistsError):
     def __init__(self, entity_id: Any):
         super().__init__("Document", entity_id)
 

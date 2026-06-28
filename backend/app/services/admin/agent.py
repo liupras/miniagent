@@ -9,32 +9,16 @@ from typing import Any, List, Optional
 from app.infra.db.database import Agent
 from app.schemas.admin.agent import AgentCreate, AgentUpdate, AgentListParams, AgentOut, ToolBrief
 from app.schemas.admin.llm import LLMOptionItem
-from app.schemas.common import PageResult, NotFoundError,AlreadyExists
+from app.schemas.common import PageResult, NotFoundError
 from app.schemas.admin.user import UserOptionItem
 
 class AgentNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("Agent", entity_id)
 
-class AgentAlreadyExistsError(AlreadyExists):
-    def __init__(self, entity_id: Any):
-        super().__init__("Agent", entity_id)
-
 class ToolNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("Tool", entity_id)
-
-class ToolAlreadyExistsError(AlreadyExists):
-    def __init__(self, entity_id: Any):
-        super().__init__("Tool", entity_id)
-
-class LLMNotFoundError(NotFoundError):
-    def __init__(self, entity_id: Any):
-        super().__init__("LLM", entity_id)
-
-class LLMAlreadyExistsError(AlreadyExists):
-    def __init__(self, entity_id: Any):
-        super().__init__("LLM", entity_id)
 
 class AgentService:
     """

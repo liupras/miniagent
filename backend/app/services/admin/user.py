@@ -9,18 +9,13 @@ from typing import Any, List, Optional
 from app.infra.db.database import User
 from app.repositories.async_user import AsyncUserDatabase
 from app.repositories.async_menu import AsyncMenuDatabase
-from app.schemas.common import NotFoundError, PageResult,AlreadyExists
+from app.schemas.common import NotFoundError, PageResult,AlreadyExistsError
 from app.schemas.admin.user import UserListParams, UserOptionItem, UserOut
 
 
 class UserNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("User", entity_id)
-
-class UserAlreadyExistsError(AlreadyExists):
-    def __init__(self, entity_id: Any):
-        super().__init__("User", entity_id)
-
 
 def _to_user_out(user: User) -> UserOut:
     return UserOut(

@@ -13,16 +13,12 @@ from app.schemas.admin.knowledge_base import (
     KnowledgeBaseOption,
     KnowledgeBaseStats
 )
-from app.schemas.common import NotFoundError,AlreadyExists
+from app.schemas.common import NotFoundError
 
 class KBNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("KB", entity_id)
-
-class KBAlreadyExistsError(AlreadyExists):
-    def __init__(self, entity_id: Any):
-        super().__init__("KB", entity_id)
-
+        
 class KnowledgeBaseService:
     def __init__(self, container):
         from app.core.service_container import ServiceContainer

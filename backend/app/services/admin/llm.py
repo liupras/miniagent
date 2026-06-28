@@ -21,13 +21,13 @@ from app.schemas.admin.llm import (
     LLMOptionItem,
     LLMListParams,
 )
-from app.schemas.common import NotFoundError, AlreadyExists,PageResult
+from app.schemas.common import NotFoundError, AlreadyExistsError,PageResult
 
 class LLMNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("LLM", entity_id)
 
-class LLMAlreadyExistsError(AlreadyExists):
+class LLMAlreadyExistsError(AlreadyExistsError):
     def __init__(self, entity_id: Any):
         super().__init__("LLM", entity_id)
 
@@ -161,7 +161,7 @@ class LLMService:
         try:
             row = await self._db.update(llm_id, **fields)
         except IntegrityError as exc:
-            logger.error(exec)
+            logger.error(exc)
             raise LLMAlreadyExistsError(f"LLM '{payload.provider_name}/{payload.model_name}'")
 
         if row is None:

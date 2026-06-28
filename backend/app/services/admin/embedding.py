@@ -13,16 +13,11 @@ from app.schemas.admin.embedding import (
     EmbeddingOption
 )
 from app.repositories.async_embedding import AsyncEmbeddingDatabase
-from app.schemas.common import NotFoundError,AlreadyExists
+from app.schemas.common import NotFoundError
 
 class EmbeddingNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("Embedding", entity_id)
-
-class EmbeddingAlreadyExistsError(AlreadyExists):
-    def __init__(self, entity_id: Any):
-        super().__init__("Embedding", entity_id)
-
 class EmbeddingService:
     def __init__(self, db:AsyncEmbeddingDatabase):
         self._db = db

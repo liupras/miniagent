@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from loguru import logger
-from typing import  List, Optional
+from typing import  Any, List, Optional
 
 from app.repositories.async_domain import AsyncDomainDatabase
 from app.schemas.admin.domain import (
@@ -17,6 +17,16 @@ from app.schemas.admin.domain import (
     DomainUpdate,
     DomainOption
 )
+
+from app.schemas.common import AlreadyExistsError, NotFoundError
+
+class DomainNotFoundError(NotFoundError):
+    def __init__(self, entity_id: Any):
+        super().__init__("Domain", entity_id)
+
+class DomainAlreadyExistsError(AlreadyExistsError):
+    def __init__(self, entity_id: Any):
+        super().__init__("Domain", entity_id)
 
 class DomainService:
 
@@ -35,11 +45,7 @@ class DomainService:
     async def get_domain(self, domain_id: int) -> DomainRead:
         domain = await self._repo.get_by_id(domain_id)
         if domain is None:
-            from fastapi import HTTPException, status
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Domain {domain_id} not found.",
-            )
+            raise DomainAlreadyExistsError(domain_id)
         return DomainRead.model_validate(domain)
 
     async def list_domains(
@@ -74,11 +80,7 @@ class DomainService:
         # Duplicate-name check with a meaningful error message
         existing = await self._repo.get_by_name(payload.name)
         if existing:
-            from fastapi import HTTPException, status
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Domain '{payload.name}' already exists (id={existing.id}).",
-            )
+            raise DomainAlreadyExistsError(existing.id)
         domain = await self._repo.create(payload.model_dump(exclude_unset=True))
         logger.info("Created domain '%s' (id=%s)", domain.name, domain.id)
         return DomainRead.model_validate(domain)
@@ -88,30 +90,18 @@ class DomainService:
         if payload.name:
             conflict = await self._repo.get_by_name(payload.name)
             if conflict and conflict.id != domain_id:
-                from fastapi import HTTPException, status
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Domain name '{payload.name}' is already used by id={conflict.id}.",
-                )
+                raise DomainAlreadyExistsError(conflict.id)
 
         domain = await self._repo.update(domain_id, payload.model_dump(exclude_unset=True))
         if domain is None:
-            from fastapi import HTTPException, status
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Domain {domain_id} not found.",
-            )
+            raise DomainNotFoundError(domain_id)
         logger.info("Updated domain id=%s", domain_id)
         return DomainRead.model_validate(domain)
 
     async def delete_domain(self, domain_id: int) -> None:
         deleted = await self._repo.delete(domain_id)
         if not deleted:
-            from fastapi import HTTPException, status
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Domain {domain_id} not found.",
-            )
+            raise DomainNotFoundError(domain_id)
         logger.info("Deleted domain id=%s", domain_id)
 
     async def bulk_delete(self, ids: list[int]) -> int:

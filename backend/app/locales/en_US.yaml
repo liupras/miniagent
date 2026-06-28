@@ -2,7 +2,7 @@ common:
   success: Operation successful
   failed: Operation failed
   error_415: "Unsupported content type '{content_type}'"
-  Error 500: Internal service error, please contact the administrator
+  error_500: Internal service error, please contact the administrator
 
 auth:
   login_failed: Incorrect username or password
@@ -39,36 +39,42 @@ agent:
   not_found: Agent does not exist
   not_found_with_id: "Agent {id} does not exist"
   not_found_with_name: "Agent '{name}' does not exist"
-  inactive: "Agent '{name}' (id={id}) is disabled"
-  already_exists_with_name: "Tool '{name}' already exists"
+  inactive: "Agent '{name}' (id={id}) is disabled"  
 
 tool:
-  not_found: Tool does not exist
-  not_found_with_name: "Tool '{name}' does not exist"
-  inactive: "Tool '{name}' is not enabled or does not exist"
+  not_found: Skill does not exist
+  not_found_with_name: "Skill '{name}' does not exist"
+  inactive: "Skill '{name}' is not enabled or does not exist"
+  already_exists: Skill already exists
+  already_exists_with_name: "Skill '{name}' already exists"
 
 llm:
+  not_found: LLM does not exist
   not_found_with_id: "LLM {id} does not exist"
-  already_exists: "LLM '{provider}/{model}' already exists"
+  already_exists: LLM already exists
+  already_exists_with_model: "LLM '{provider}/{model}' already exists"
   model_combo_taken: The combination of provider_name and model_name is already taken
 
 user:
+  not_found: "User '{id}' does not exist"
   not_found_with_name: "User '{username}' does not exist"
 
 domain:
+  not_found: Domain does not exist
   not_found_with_id: "Domain {id} does not exist"
-  already_exists: "Domain '{name}' already exists (id={id})"
+  already_exists: Domain already exists
+  already_exists_with_name: "Domain '{name}' already exists (id={id})"
   name_taken: "Domain name '{name}' has been used by id={id}"
 
 task:
   not_found_or_finished: Task not found or already finished
 
 strategy_config:
-  not_found: The strategy configuration does not exist.
-  not_found_with_id: "StrategyConfig {id} does not exist."
-  no_active_for_kb: "No StrategyConfig is enabled for knowledge base {kb_id}."
-  no_fields_to_update: No updatable fields were provided.
-  activation_failed: Strategy activation failed.
+  not_found: The strategy configuration does not exist
+  not_found_with_id: "StrategyConfig {id} does not exist"
+  no_active_for_kb: "No StrategyConfig is enabled for knowledge base {kb_id}"
+  no_fields_to_update: No updatable fields were provided
+  activation_failed: Strategy activation failed
 
 router_config:
-  not_found: The route configuration does not exist.
+  not_found: The route configuration does not exist

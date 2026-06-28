@@ -5,7 +5,7 @@
 # @description: I18n http
 
 from fastapi import HTTPException, status
-from app.core.i18n import t
+from .i18n import t
 
 _BEARER_HEADERS = {"WWW-Authenticate": "Bearer"}
 

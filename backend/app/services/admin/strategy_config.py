@@ -15,16 +15,12 @@ from app.schemas.admin.strategy_config import (
     StrategyConfigOut,
     StrategyConfigUpdate,
 )
-from app.schemas.common import NotFoundError,AlreadyExists
+from app.schemas.common import NotFoundError,AlreadyExistsError
 
 class StrategyConfigNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("StrategyConfig", entity_id)
-
-class StrategyConfigAlreadyExistsError(AlreadyExists):
-    def __init__(self, entity_id: Any):
-        super().__init__("StrategyConfig", entity_id)
-        
+       
 class StrategyConfigService:
     """Business logic for StrategyConfig."""
 

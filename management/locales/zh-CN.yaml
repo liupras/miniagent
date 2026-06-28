@@ -145,6 +145,11 @@ messages:
 
   activeSuccess: 激活成功
 
+  operationFailed: 操作失败
+  requestFailed: 请求失败
+  netError: 网络连接失败，请检查网络
+  requestError: 请求异常
+
 labels:
   operation: 操作
   user: 用户

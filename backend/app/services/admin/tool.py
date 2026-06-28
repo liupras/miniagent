@@ -10,13 +10,13 @@ from typing import Any
 
 from app.infra.db.database import Tool
 from app.schemas.admin.tool import ToolCreate, ToolRead, ToolUpdate
-from app.schemas.common import NotFoundError,AlreadyExists
+from app.schemas.common import NotFoundError,AlreadyExistsError
 
 class ToolNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("Tool", entity_id)
 
-class ToolAlreadyExistsError(AlreadyExists):
+class ToolAlreadyExistsError(AlreadyExistsError):
     def __init__(self, entity_id: Any):
         super().__init__("Tool", entity_id)
 

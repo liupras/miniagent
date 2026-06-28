@@ -39,25 +39,31 @@ agent:
   not_found: Agent 不存在
   not_found_with_id: "Agent {id} 不存在"
   not_found_with_name: "Agent '{name}' 不存在"
-  inactive: "Agent '{name}' (id={id}) 已停用"
-  already_exists_with_name: "工具 '{name}' 已存在"
+  inactive: "Agent '{name}' (id={id}) 已停用"  
 
 tool:
-  not_found: 工具不存在
-  not_found_with_name: "工具 '{name}' 不存在"
-  inactive: "工具 '{name}' 未启用或不存在"
+  not_found: 技能不存在
+  not_found_with_name: "技能 '{name}' 不存在"
+  inactive: "技能 '{name}' 未启用或不存在"
+  already_exists: 技能已存在
+  already_exists_with_name: "技能 '{name}' 已存在"
 
 llm:
+  not_found: LLM不存在
   not_found_with_id: "LLM {id} 不存在"
-  already_exists: "LLM '{provider}/{model}' 已存在"
+  already_exists: LLM已存在
+  already_exists_with_model: "LLM '{provider}/{model}' 已存在"
   model_combo_taken: provider_name 与 model_name 组合已被占用
 
 user:
+  not_found: "用户 '{id}' 不存在"
   not_found_with_name: "用户 '{username}' 不存在"
 
 domain:
+  not_found: Domain不存在
   not_found_with_id: "Domain {id} 不存在"
-  already_exists: "Domain '{name}' 已存在 (id={id})"
+  already_exists: Domain已存在
+  already_exists_with_name: "Domain '{name}' 已存在 (id={id})"
   name_taken: "Domain 名称 '{name}' 已被 id={id} 使用"
 
 task:

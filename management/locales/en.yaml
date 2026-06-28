@@ -144,6 +144,11 @@ messages:
 
   activeSuccess: Activation successful
 
+  operationFailed: Operation failed
+  requestFailed: Request failed
+  netError: Network connection failed, please check your network
+  requestError: Request error
+
 labels:
   operation: Operation
   user: User

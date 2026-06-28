@@ -6,17 +6,12 @@
 
 from typing import Any
 
-from app.schemas.common import NotFoundError,AlreadyExists
+from app.schemas.common import NotFoundError,AlreadyExistsError
 from app.schemas.admin.router_config import RouterConfigResponse, RouterConfigUpdate
 
 class RouterConfigNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("RouterConfig", entity_id)
-
-class RouterConfigAlreadyExistsError(AlreadyExists):
-    def __init__(self, entity_id: Any):
-        super().__init__("RouterConfig", entity_id)
-
 
 class RouterConfigService:
 

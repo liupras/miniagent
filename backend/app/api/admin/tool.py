@@ -77,7 +77,6 @@ async def create_tool(
     svc:       ToolService   = Depends(get_service),
     caller_id: int            = Depends(_add),
 ):
-
     tool= await svc.create(payload)
     return ApiResponse(data=tool)
 
