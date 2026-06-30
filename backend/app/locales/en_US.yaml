@@ -31,6 +31,7 @@ kb:
 document:
   not_found: Document does not exist
   not_found_in_kb: "Document {doc_id} does not exist in knowledge base {kb_id}"
+  empty_data: No small chunks
 
 embedding:
   not_found: Embedding configuration does not exist
@@ -78,3 +79,48 @@ strategy_config:
 
 router_config:
   not_found: The route configuration does not exist
+
+progress:
+  stage:
+    init: init
+    done: done
+    error: error
+    embed: embed
+    load: load
+    split: split
+    dedup: dedup
+    db: db
+    bm25: bm25
+    cleanup: cleanup
+  message:
+    check_dup: 🔍 Check for duplicates
+    duplicate: "⏭️  Duplicate — already indexed (id={id})"
+    cleaning: ♻️  Cleaning up previous incomplete attempt …
+    cleaned: document is cleaned    
+    saved: The document has been saved
+    success: "✅ Document (id={id}) indexed successfully"
+    loading: 🔍 Loading document record …   
+    not_found: "Document {id} not found." 
+    unchanged: ⏭️  Content unchanged — only metadata updated
+    removing: ♻️  Removing old vectors and index entries …
+    removing_file: 🗑️  Removing old file from storage …
+    updated: "✅ Document (id={id}) updated"
+    deleted: "✅ Document (id={id}) deleted"
+    embed_progress: "🔢 Embedded {done}/{total} chunks …"
+    splitting: ✂️  Splitting into chunks …
+    split_progress: "🔢 {parent_chunks} parent / {small_chunks} child chunks"
+    deduplicating: 🔎 Deduplicating child chunks …
+    deduplicated: "✅ {small_chunks} unique child chunks remain"
+    after_pruning: "✅ {parent_chunks} parent chunks after orphan pruning"
+    deduplicating_parent: 🔎 Deduplicating parent chunks …
+    deduplicat_parent: "✅ {new_parents} new / {existing_index_to_id} already-stored parents"
+    saving: 💾 Saving new parent chunks …
+    saving_child: 💾 Saving child chunks …
+    embedding_saving: 🧠 Embedding and storing vectors …
+    embedding_saved: "✅ {small_chunks} vectors stored in Vector DB"
+    embedding_saved_sql: "💾 {small_chunks} chunks committed to SQL DB"
+    updating_bm25: 📊 Updating BM25 index …
+    updated_bm25: ✅ BM25 index update
+    removing_vectors: 🗑️  Removing vectors …
+    removing_bm25: 🗑️  Removing BM25 entries …
+    removing_chunks: 🗑️  Removing SQLite chunk records …

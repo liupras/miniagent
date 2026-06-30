@@ -45,7 +45,7 @@ class BaseDomainError(Exception):
         super().__init__(f"{entity_name} '{entity_id}' {message}")
 
     def i18n_key(self, kind: str) -> str:
-        """kind: 'not_found' | 'already_exists'"""
+        """kind: 'not_found' | 'already_exists' | 'empty_data'"""
         prefix = self.entity_name.lower()
         return f"{prefix}.{kind}"
     
@@ -61,3 +61,9 @@ class AlreadyExistsError(BaseDomainError):
     error_key = "already_exists"
     def __init__(self, entity_name: str, entity_id: Any):
         super().__init__(entity_name, entity_id, self.error_key)
+
+class EmptyDataError(BaseDomainError):
+    error_key = "empty_data"
+    
+    def __init__(self, entity_name: str, entity_id: Any):
+        super().__init__(entity_name, entity_id, "has no valid data or chunks left")

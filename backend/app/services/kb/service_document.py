@@ -12,7 +12,7 @@ from langchain_core.documents import Document as LC_Document
 from loguru import logger
 
 from app.schemas.admin.chunk import DocumentChunksOut, ParentChunkRead
-from app.schemas.common import NotFoundError,AlreadyExistsError
+from app.schemas.common import EmptyDataError, NotFoundError
 from app.utils.hash import calculate_file_sha256
 
 from .smart_document_loader import SmartDocumentLoader
@@ -20,19 +20,17 @@ from .small_to_big_base import ChunkConfig
 from app.retrieval.vector_store import VectorStoreManager
 from app.runtime.task.progress_tracker import DocumentStatus,emitter
 from app.infra.db.database import Document
+from app.core.i18n.i18n import t
 
 class KBNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("KB", entity_id)
 
-class KBAlreadyExistsError(AlreadyExistsError):
-    def __init__(self, entity_id: Any):
-        super().__init__("KB", entity_id)
 class DocumentNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("Document", entity_id)
 
-class DocumentAlreadyExistsError(AlreadyExistsError):
+class DocumentEmptyDataError(EmptyDataError):
     def __init__(self, entity_id: Any):
         super().__init__("Document", entity_id)
 
@@ -66,9 +64,6 @@ class KBDocumentService:
     async def _get_vs(self, kb_id: int) -> VectorStoreManager:
         """
         Resolve the VectorStoreManager for *kb_id* from the registry.
-
-        The registry caches managers after first creation, so this is cheap
-        on all subsequent calls for the same KB.
         """
         return await self.vector_registry.get(kb_id)
 
@@ -122,7 +117,7 @@ class KBDocumentService:
         Add a new document.
         """
         E = emitter(task_id)
-        await E("init", "🔍 Checking by hash …", 0)
+        await E(t("progress.stage.init"), t("progress.message.check_dup"), 0)
         
         doc_hash = calculate_file_sha256(source)
         existing = await self.doc_db.find_by_hash(kb_id, doc_hash)
@@ -130,21 +125,21 @@ class KBDocumentService:
         # Dedup
         if existing:
             if existing.status == DocumentStatus.COMPLETED.value:
-                await E("done", f"⏭️  Duplicate — already indexed (id={existing.id}).", 100, done=True)
+                await E(t("progress.stage.done"), t("progress.message.duplicate",id=existing.id), 100, done=True)
                 return existing
             else:
                 # ── Clean up stale interrupted record ────────────────────
-                await E("init", "♻️  Cleaning up previous incomplete attempt …", 2)
+                await E(t("progress.stage.init"), t("progress.message.cleaning"), 2)
                 await self._cleanup_doc_data(existing.id, existing.kb_id, task_id)
                 # ── Reset Document row ────────────────────────────────────
                 await self.doc_db.mark_status(existing.id, DocumentStatus.PROCESSING.value, error_message="")
                 if existing.file_uri:
                     await asyncio.to_thread(self._delete_storage_file, existing.file_uri)                
-                await E("init", "document is cleaned.", 5)
+                await E(t("progress.stage.init"), t("progress.message.cleaned"), 5)
         # New
         target_file_uri = self.get_storage_uri(kb_id,filename)
         await asyncio.to_thread(self._add_storage_file, source, target_file_uri)
-        await E("init", "document is saved.", 6)
+        await E(t("progress.stage.init"), t("progress.message.saved"), 6)
         
         new_doc = Document(
             kb_id=kb_id,
@@ -161,11 +156,11 @@ class KBDocumentService:
         try:
             await self._process_document(doc.id, doc.kb_id, source, task_id)
             await self.doc_db.mark_status(doc.id, DocumentStatus.COMPLETED.value,error_message="")
-            await E("done", f"✅ Document (id={doc.id}) indexed successfully.", 100, done=True)
+            await E(t("progress.stage.done"), t("progress.message.success",id=doc.id), 100, done=True)
         except Exception as exc:
             logger.exception(f"[KB] add_document failed doc_id={doc.id}: {exc}")
             await self.doc_db.mark_status(doc.id, DocumentStatus.FAILED.value, error_message=str(exc))
-            await E("error", f"❌ {exc}", 0, done=True, error=True)
+            await E(t("progress.stage.error"), f"❌ {exc}", 0, done=True, error=True)
             raise
 
         return await self.doc_db.get_doc(doc.id)
@@ -185,12 +180,12 @@ class KBDocumentService:
         • Different hash → full cleanup + re-index.
         """
         E = emitter(task_id)
-        await E("init", "🔍 Loading document record …", 0)
+        await E(t("progress.stage.init"), t("progress.message.loading"), 0)
 
         doc = await self.doc_db.get_doc(doc_id)
         if not doc:
-            await E("error", f"Document {doc_id} not found.", 0, done=True, error=True)
-            raise ValueError(f"Document {doc_id} not found")
+            await E(t("progress.stage.error"), t("progress.message.not_found",id=doc_id), 0, done=True, error=True)
+            raise DocumentNotFoundError(doc_id)
 
         new_hash = calculate_file_sha256(source)
 
@@ -198,16 +193,16 @@ class KBDocumentService:
         if new_hash == doc.hash_value and doc.status == DocumentStatus.COMPLETED.value:
             if metadata:
                 await self.doc_db.update_metadata(doc_id, metadata)
-            await E("done", "⏭️  Content unchanged — only metadata updated.", 100, done=True)
+            await E(t("progress.stage.done"), t("progress.message.unchanged"), 100, done=True)
             return await self.doc_db.get_doc(doc_id)
 
         # ── Full re-index ─────────────────────────────────────────────────
-        await E("init", "♻️  Removing old vectors and index entries …", 5)
+        await E(t("progress.stage.init"), t("progress.message.removing"), 5)
         await self._cleanup_doc_data(doc_id, doc.kb_id, task_id)
 
         # ── Delete old file from storage if URI has changed ───────────────
         if doc.file_uri:
-            await E("init", "🗑️  Removing old file from storage …", 8)
+            await E(t("progress.stage.init"), t("progress.message.removing_file"), 8)
             await asyncio.to_thread(self._delete_storage_file, doc.file_uri)
 
         target_file_uri = self.get_storage_uri(kb_id,filename)
@@ -219,11 +214,11 @@ class KBDocumentService:
         try:
             await self._process_document(doc_id, doc.kb_id, source, task_id)
             await self.doc_db.mark_status(doc_id, DocumentStatus.COMPLETED.value,error_message="")
-            await E("done", f"✅ Document (id={doc_id}) updated.", 100, done=True)
+            await E(t("progress.stage.done"), t("progress.message.updated",id=doc_id), 100, done=True)
         except Exception as exc:
             logger.exception(f"[KB] update_document failed doc_id={doc_id}: {exc}")
             await self.doc_db.mark_status(doc_id, DocumentStatus.FAILED.value, error_message=str(exc))
-            await E("error", f"❌ {exc}", 0, done=True, error=True)
+            await E(t("progress.stage.error"), f"❌ {exc}", 0, done=True, error=True)
             raise
 
         return await self.doc_db.get_doc(doc_id)
@@ -231,25 +226,25 @@ class KBDocumentService:
     async def delete_document(self, doc_id: int, task_id: str) -> bool:
         """Delete document row plus all vectors and BM25 entries."""
         E = emitter(task_id)
-        await E("init", "🔍 Loading document record …", 0)
+        await E(t("progress.stage.init"), t("progress.message.loading"), 0)
 
         doc = await self.doc_db.get_doc(doc_id)
         if not doc:
-            await E("error", f"Document {doc_id} not found.", 0, done=True, error=True)
-            raise ValueError(f"Document {doc_id} not found")
+            await E(t("progress.stage.error"), t("progress.message.not_found",id=doc_id), 0, done=True, error=True)
+            raise KBNotFoundError(doc_id)
 
         try:
             await self._cleanup_doc_data(doc_id, doc.kb_id, task_id)
             # ── Delete physical file from storage ─────────────────────────
             if doc.file_uri:
-                await E("cleanup", "🗑️  Removing file from storage …", 8)
+                await E(t("progress.stage.init"), t("progress.message.removing_file"), 8)
                 await asyncio.to_thread(self._delete_storage_file, doc.file_uri)
             await self.doc_db.delete_doc(doc_id)
-            await E("done", f"✅ Document (id={doc_id}) deleted.", 100, done=True)
+            await E(t("progress.stage.done"), t("progress.message.deleted",id=doc_id), 100, done=True)
             return True
         except Exception as exc:
             logger.exception(f"[KB] delete_document failed doc_id={doc_id}: {exc}")
-            await E("error", f"❌ {exc}", 0, done=True, error=True)
+            await E(t("progress.stage.error"), f"❌ {exc}", 0, done=True, error=True)
             raise
 
     # =========================================================================
@@ -269,7 +264,7 @@ class KBDocumentService:
         def on_batch(done: int, total: int) -> None:
             pct = 55 + 32 * done / total
             asyncio.run_coroutine_threadsafe(
-                E("embed", f"🔢 Embedded {done}/{total} chunks …", pct),
+                E(t("progress.stage.embed"), t("progress.message.embed_progress",done=done,total=total), pct),
                 loop,
             )
 
@@ -277,14 +272,13 @@ class KBDocumentService:
         vs = await self._get_vs(kb_id)
 
         # 1. Load ─────────────────────────────────────────────────────────
-        await E("load", "📂 Loading document …", 10)
+        await E(t("progress.stage.load"), t("progress.message.loading"), 10)
         loader   = SmartDocumentLoader(source)
         raw_docs = await asyncio.to_thread(loader.load)
-        self._clean_meta(raw_docs)
-        await E("load", f"📄 Loaded {len(raw_docs)} page(s).", 20)
+        self._clean_meta(raw_docs)        
 
         # 2. Split ────────────────────────────────────────────────────────
-        await E("split", "✂️  Splitting into chunks …", 25)
+        await E(t("progress.stage.split"), t("progress.message.splitting"), 25)
         kb = await self.kb_db.get_kb(kb_id) 
         domain = await self.domain_db.get_domain_by_kb_id(kb_id)       
         plugin    = self.domain_registry.get(domain.name)
@@ -293,14 +287,15 @@ class KBDocumentService:
                                    child_chunk_size=kb.chunk_size,
                                    child_overlap=kb.chunk_overlap)
         parent_chunks, small_chunks = await asyncio.to_thread(plugin.processor.process,raw_docs,kb_id,doc_id, chunk_config)
-        await E("split", f"🔢 {len(parent_chunks)} parent / {len(small_chunks)} child chunks.", 35)
+        await E(t("progress.stage.split"), 
+            t("progress.message.split_progress",parent_chunks=len(parent_chunks),small_chunks=len(small_chunks)), 35)
 
         # 3. Child-chunk dedup ────────────────────────────────────────────
-        await E("dedup", "🔎 Deduplicating child chunks …", 37)
+        await E(t("progress.stage.dedup"), t("progress.message.deduplicating"), 37)
         small_chunks = await self.chunk_db.filter_new_chunks(kb_id, small_chunks)
-        await E("dedup", f"✅ {len(small_chunks)} unique child chunks remain.", 40)
+        await E(t("progress.stage.dedup"), t("progress.message.deduplicated",small_chunks=len(small_chunks)) , 40)
         if not small_chunks:
-            raise ValueError(f"No small chunks...")
+            raise DocumentEmptyDataError(doc_id)
 
         # 4. Orphan-parent pruning ────────────────────────────────────────
         #    Drop parents whose every child was deduped away.
@@ -308,21 +303,21 @@ class KBDocumentService:
             sc._extra_metadata.get("parent_index", 0) for sc in small_chunks
         }
         parent_chunks = [pc for pc in parent_chunks if pc.chunk_index in surviving_indexes]
-        await E("dedup", f"✅ {len(parent_chunks)} parent chunks after orphan pruning.", 42)
+        await E(t("progress.stage.dedup"), t("progress.message.deduplicated",parent_chunks=len(parent_chunks)), 42)
 
         # 5. Parent-chunk dedup ───────────────────────────────────────────
-        await E("dedup", "🔎 Deduplicating parent chunks …", 44)
+        await E(t("progress.stage.dedup"), t("progress.message.deduplicating_parent"), 44)
         new_parents, existing_index_to_id = await self.pc_db.filter_new_parent_chunks(
             kb_id, parent_chunks
         )
         await E(
-            "dedup",
-            f"✅ {len(new_parents)} new / {len(existing_index_to_id)} already-stored parents.",
+            t("progress.stage.dedup"),
+            t("progress.message.deduplicat_parent",new_parents=len(new_parents),existing_index_to_id=len(existing_index_to_id)),
             46,
         )
 
         # 6. Save parent chunks (flush, no commit) ────────────────────────
-        await E("db", "💾 Saving new parent chunks …", 48)
+        await E(t("progress.stage.db"), t("progress.message.saving"), 48)
         await self.pc_db.save_parent_chunks(new_parents)
 
         # Build complete parent_index → db_id map
@@ -332,11 +327,11 @@ class KBDocumentService:
         }
 
         # 7. Save child chunks (flush, no commit) ─────────────────────────
-        await E("db", "💾 Saving child chunks …", 51)
+        await E(t("progress.stage.db"), t("progress.message.saving_child"), 51)
         await self.chunk_db.save_chunks(small_chunks, parent_index_to_id)
 
         # 8. ChromaDB vectors ─────────────────────────────────────────────
-        await E("embed", "🧠 Embedding and storing vectors …", 55)      
+        await E(t("progress.stage.embed"), t("progress.message.embedding_saving"), 55)      
 
         for sc in small_chunks:
             if "parent_index" in sc._extra_metadata:
@@ -345,14 +340,14 @@ class KBDocumentService:
                 sc._extra_metadata.pop("parent_index", None)
 
         await asyncio.to_thread(vs.add_chunks, kb_id, small_chunks, 32, on_batch)
-        await E("embed", f"✅ {len(small_chunks)} vectors stored in ChromaDB.", 87)
+        await E(t("progress.stage.embed"), t("progress.message.embedding_saved",small_chunks=len(small_chunks)), 87)
 
         # 9. Final commit (chunks now durably in SQLite) ───────────────────
         await self.doc_db.update_chunk_count(doc_id, len(small_chunks))
-        await E("db", f"💾 {len(small_chunks)} chunks committed to SQLite.", 88)
+        await E(t("progress.stage.db"), t("progress.message.embedding_saved_sql",small_chunks=len(small_chunks)), 88)
 
         # 10. BM25 index ──────────────────────────────────────────────────
-        await E("bm25", "📊 Updating BM25 index …", 89)
+        await E(t("progress.stage.bm25"),  t("progress.message.updating_bm25"), 89)
         bm25_docs = [
             {
                 "chunk_id": str(sc.id),
@@ -365,7 +360,7 @@ class KBDocumentService:
             for sc in small_chunks
         ]
         await asyncio.to_thread(self.bm25.add_documents, str(kb_id), bm25_docs)
-        await E("bm25", "✅ BM25 index updated.", 92)
+        await E(t("progress.stage.bm25"), t("progress.message.updated_bm25"), 92)
 
     def _delete_storage_file(self, file_uri: str) -> None:
         """
@@ -413,15 +408,15 @@ class KBDocumentService:
 
         chunk_ids = await self.chunk_db.get_chunk_ids_by_doc(doc_id)
 
-        await E("cleanup", "🗑️  Removing ChromaDB vectors …", 3)
+        await E(t("progress.stage.cleanup"), t("progress.message.removing_vectors"), 3)
         await asyncio.to_thread(vs.delete_by_doc_id, kb_id, doc_id)
 
-        await E("cleanup", "🗑️  Removing BM25 entries …", 5)
+        await E(t("progress.stage.cleanup"), t("progress.message.removing_bm25"), 5)
         await asyncio.to_thread(
             self.bm25.delete_documents, str(kb_id), [str(i) for i in chunk_ids]
         )
 
-        await E("cleanup", "🗑️  Removing SQLite chunk records …", 7)
+        await E(t("progress.stage.cleanup"), t("progress.message.removing_chunks"), 7)
         await self.chunk_db.delete_chunks_by_doc(doc_id=doc_id)
         await self.pc_db.delete_by_doc(doc_id)
 

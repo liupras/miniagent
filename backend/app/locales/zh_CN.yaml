@@ -31,6 +31,7 @@ kb:
 document:
   not_found: 文档不存在
   not_found_in_kb: "知识库 {kb_id} 中不存在文档 {doc_id}"
+  empty_data: 没有子数据块
 
 embedding:
   not_found: Embedding 配置不存在
@@ -78,3 +79,48 @@ strategy_config:
 
 router_config:
   not_found: 路由配置不存在
+
+progress:
+  stage:
+    init: 初始化
+    done: 已完成
+    error: 错误
+    embed: 嵌入
+    load: 加载
+    split: 分块
+    dedup: 去重
+    db: 数据库
+    bm25: bm25
+    cleanup: 清理
+  message:
+    check_dup: 🔍 检查是否重复
+    duplicate: "⏭️ 重复 — 已建立索引 (id={id})"
+    cleaning: ♻️ 清理之前未完成的尝试……
+    cleaned: 文件已清理
+    saved: 文档已保存
+    success: "✅ 文档（id={id}）已成功索引"
+    loading: 🔍 正在加载文档记录…
+    not_found: "未找到文档 {id}"
+    unchanged: ⏭️ 内容不变——仅元数据更新
+    removing: ♻️  移除旧的向量和索引条目……
+    removing_file: 🗑️  从存储设备中删除旧文件……
+    updated: "✅ 文档（id={id}）已更新"
+    deleted: "✅ 文档（id={id}）已删除"
+    embed_progress: "🔢 嵌入中， {done}/{total} 个数据块…"
+    splitting: ✂️  分块中 …
+    split_progress: "🔢 {parent_chunks} 父级块 / {small_chunks} 子级块"
+    deduplicating: 🔎 去除重复的子数据块 …
+    deduplicated: "✅ {small_chunks} 个独特的子块仍然保留"
+    after_pruning: "✅ 孤儿代码块修剪后，还有 {parent_chunks} 父代码块"
+    deduplicating_parent: 🔎 去除重复的父数据块 …
+    deduplicat_parent: "✅ {new_parents} 个新父数据块 / {existing_index_to_id} 个已有的的父级数据块"
+    saving: 💾 保存新的父数据块 …
+    saving_child: 💾 保存新的子数据块 …
+    embedding_saving: 🧠 嵌入和存储向量 …
+    embedding_saved: "✅ {small_chunks} 个分块的向量已经存储到向量数据库"
+    embedding_saved_sql: "💾 {small_chunks} 个分块的向量已经存储到SQL数据库"
+    updating_bm25: 📊 更新BM25索引 …
+    updated_bm25: ✅ BM25 索引更新完毕
+    removing_vectors: 🗑️  删除向量 …
+    removing_bm25: 🗑️  删除 BM25 索引 …
+    removing_chunks: 🗑️  删除 关系数据库的分块记录 …
