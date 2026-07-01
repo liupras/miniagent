@@ -15,21 +15,17 @@
 #    4. builds WebSearchPipeline.from_config(cfg)
 #    5. stores it in _pipeline_cache
 #  Subsequent calls hit the in-memory cache directly.
-#
-#  Cache invalidation
-#  ──────────────────
-#  Call invalidate(tool_name) to evict a single pipeline (e.g. after an admin
-#  updates the Tool row).  Call invalidate_all() to clear everything.
+
 
 from __future__ import annotations
 
-import asyncio
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 from loguru import logger
 from sqlalchemy import select
 
 from app.infra.db.database import LLM, Tool
+from app.runtime.cache.lazy_cache import AsyncLazyCache
 from .web_search import WebSearchPipeline, WebSearchState
 
 if TYPE_CHECKING:
@@ -43,12 +39,6 @@ class WebSearchService:
     """
     Application-level service that manages WebSearchPipeline instances.
 
-    Lifecycle
-    ─────────
-    The service is instantiated once in ServiceContainer and held at
-    ``container.web_search_service``.  Each pipeline is lazily built on the
-    first search call for a given tool_name and then cached for reuse.
-
     Thread / concurrency safety
     ───────────────────────────
     A per-tool asyncio.Lock prevents the "thundering herd" problem: if two
@@ -60,13 +50,14 @@ class WebSearchService:
         self._container = container
         self._tool_db   = container.tool_db
         self._llm_db = container.llm_db
-        # pipeline cache: tool_name → WebSearchPipeline
-        self._pipeline_cache: Dict[str, WebSearchPipeline] = {}
-        # per-tool build locks (prevent duplicate construction under concurrency)
-        self._build_locks: Dict[str, asyncio.Lock] = {}
 
-    # ── Public API ────────────────────────────────────────────────────────
-
+        self._pipeline_cache = AsyncLazyCache[str, WebSearchPipeline](
+            builder=self._build_pipeline,
+            name="web_search_pipeline",
+            description="tool_name → WebSearchPipeline",
+        )
+        container.cache_registry.register(self._pipeline_cache.name, self._pipeline_cache) 
+        
     async def search(
         self,        
         query: str,
@@ -75,26 +66,8 @@ class WebSearchService:
     ) -> WebSearchState:
         """
         Execute a web search using the pipeline configured for *tool_name*.
-
-        Parameters
-        ──────────
-        tool_name : str
-            Primary key of the Tool row whose ``config`` JSON drives the pipeline.
-        query : str
-            Raw user query (will be rewritten by the pipeline if enabled).
-
-        Returns
-        ───────
-        WebSearchState
-            Final pipeline state.  Callers typically use ``state.results`` or
-            ``WebSearchPipeline.format_for_llm(state)`` for LLM injection.
-
-        Raises
-        ──────
-        ValueError
-            If the tool does not exist, is inactive, or has an invalid config.
         """
-        pipeline = await self._get_or_build(tool_name,llm_provider_id)
+        pipeline = await self._pipeline_cache.get_or_build(tool_name,llm_provider_id)
         return await pipeline.run(query)
 
     async def format_for_llm(
@@ -106,49 +79,6 @@ class WebSearchService:
         """Convenience wrapper: run search and return an LLM-ready context block."""
         state = await self.search(tool_name=tool_name, query=query,llm_provider_id=llm_provider_id)
         return WebSearchPipeline.format_for_llm(state)
-
-    def invalidate(self, tool_name: str) -> None:
-        """Evict the cached pipeline for *tool_name* (e.g. after a config update)."""
-        removed = self._pipeline_cache.pop(tool_name, None)
-        if removed:
-            logger.info(f"[WebSearchService] pipeline evicted  tool={tool_name!r}")
-
-    def invalidate_all(self) -> None:
-        """Evict all cached pipelines."""
-        count = len(self._pipeline_cache)
-        self._pipeline_cache.clear()
-        logger.info(f"[WebSearchService] all pipelines evicted  count={count}")
-
-    def cache_info(self) -> Dict[str, Optional[dict]]:
-        """
-        Return cache statistics for every cached pipeline.
-        Useful for health/monitoring endpoints.
-        """
-        return {
-            name: pipeline.get_cache_stats()
-            for name, pipeline in self._pipeline_cache.items()
-        }
-
-    # ── Internal helpers ──────────────────────────────────────────────────
-
-    async def _get_or_build(self, tool_name: str,llm_provider_id:int) -> WebSearchPipeline:
-        """Return cached pipeline or build (and cache) a new one."""
-        if tool_name in self._pipeline_cache:
-            return self._pipeline_cache[tool_name]
-
-        # Ensure only one coroutine builds for this tool at a time
-        if tool_name not in self._build_locks:
-            self._build_locks[tool_name] = asyncio.Lock()
-
-        async with self._build_locks[tool_name]:
-            # Double-check after acquiring lock (another coroutine may have built it)
-            if tool_name in self._pipeline_cache:
-                return self._pipeline_cache[tool_name]
-
-            pipeline = await self._build_pipeline(tool_name,llm_provider_id)
-            self._pipeline_cache[tool_name] = pipeline
-            logger.info(f"[WebSearchService] pipeline built and cached  tool={tool_name!r}")
-            return pipeline
 
     async def _build_pipeline(self, tool_name: str,llm_provider_id:int) -> WebSearchPipeline:
         """Load Tool + LLM rows from DB and construct a WebSearchPipeline."""

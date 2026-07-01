@@ -134,3 +134,8 @@ sql_agent:
   name_not_allowed: "不允许使用 '{name}'"
   subscript_calls_not_allowed: "不允许使用下标调用"
   syntax_error: "语法错误: {error}"
+
+cache:
+  not_found: "未注册的缓存名称: {name}，可用: {count} 个缓存"
+  already_exists: "缓存 '{name}' 已存在"
+  key_decode_error: "缓存 {name} 的 key 格式非法: {raw_key} ({e})"

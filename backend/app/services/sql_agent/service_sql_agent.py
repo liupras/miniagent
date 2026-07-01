@@ -27,6 +27,8 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 from loguru import logger
 
+from app.runtime.cache.lazy_cache import AsyncLazyCache
+
 from .agent import SQLAgent,SQLAgentConfig
 from .tool import SQLTools
 from .manager import DBManager
@@ -38,7 +40,6 @@ if TYPE_CHECKING:
 
 # Cache key: (llm_provider_id, schema_name)
 _CacheKey = Tuple[int, str]
-
 
 class SQLAgentService:
     """
@@ -69,8 +70,17 @@ class SQLAgentService:
         # DBManager wraps the same DuckDB connection for CSV import operations
         self._db_manager = DBManager(duckdb_manager=self._duckdb_manager)
 
-        # agent cache: (llm_provider_id, schema_name) → SQLAgent
-        self._agent_cache: Dict[_CacheKey, SQLAgent] = {}
+        self._agent_cache = AsyncLazyCache[_CacheKey, SQLAgent](
+            builder=self._build_agent,
+            name="sql_agent",
+            description="(llm_provider_id, schema_name) → SQLAgent",
+        )
+        container.cache_registry.register(
+            self._agent_cache.name,
+            self._agent_cache,
+            key_codec=lambda raw: (raw[0], raw[1]) if isinstance(raw, (list, tuple)) else raw,
+        )
+        
         # per-key build locks
         self._build_locks: Dict[_CacheKey, asyncio.Lock] = {}
 
@@ -105,7 +115,9 @@ class SQLAgentService:
         ValueError
             If the LLM row does not exist or is inactive.
         """
-        agent = await self._get_or_build(llm_provider_id, schema_name, tool_name)
+        agent = await self._agent_cache.get_or_build(
+            (llm_provider_id, schema_name), llm_provider_id, schema_name, tool_name
+        )
         # run() is synchronous in the original SQLAgent implementation;
         # wrap it in asyncio.to_thread so we don't block the event loop.
         return await asyncio.to_thread(agent.run, user_query)
@@ -169,58 +181,8 @@ class SQLAgentService:
             allow_new_columns,
         )
 
-    def invalidate(self, llm_provider_id: int, schema_name: str = "main") -> None:
-        """Evict the cached agent for (llm_provider_id, schema_name)."""
-        key: _CacheKey = (llm_provider_id, schema_name)
-        removed = self._agent_cache.pop(key, None)
-        if removed:
-            logger.info(
-                f"[SQLAgentService] agent evicted  "
-                f"llm_provider_id={llm_provider_id}  schema={schema_name!r}"
-            )
-
-    def invalidate_all(self) -> None:
-        """Evict all cached agents."""
-        count = len(self._agent_cache)
-        self._agent_cache.clear()
-        logger.info(f"[SQLAgentService] all agents evicted  count={count}")
-
-    def cache_info(self) -> Dict[str, Any]:
-        """Return cache statistics. Useful for health/monitoring endpoints."""
-        return {
-            f"llm={k[0]},schema={k[1]}": "cached"
-            for k in self._agent_cache
-        }
-
-    # ── Internal helpers ──────────────────────────────────────────────────
-
-    async def _get_or_build(
-        self, llm_provider_id: int, schema_name: str, tool_name: str
-    ) -> SQLAgent:
-        """Return cached agent or build (and cache) a new one."""
-        key: _CacheKey = (llm_provider_id, schema_name)
-
-        if key in self._agent_cache:
-            return self._agent_cache[key]
-
-        if key not in self._build_locks:
-            self._build_locks[key] = asyncio.Lock()
-
-        async with self._build_locks[key]:
-            # Double-check after lock acquisition
-            if key in self._agent_cache:
-                return self._agent_cache[key]
-
-            agent = await self._build_agent(llm_provider_id, schema_name, tool_name)
-            self._agent_cache[key] = agent
-            logger.info(
-                f"[SQLAgentService] agent built and cached  "
-                f"llm_provider_id={llm_provider_id}  schema={schema_name!r}"
-            )
-            return agent
-
     async def _build_agent(
-        self, llm_provider_id: int, schema_name: str, tool_name: str
+        self, key: _CacheKey, llm_provider_id: int, schema_name: str, tool_name: str
     ) -> SQLAgent:
         """Load LLM config + prompts from DB and construct a SQLAgent."""
 

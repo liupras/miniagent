@@ -34,6 +34,8 @@ from app.repositories import (
 
 from app.core.security.auth_permission import AuthPermission
 
+from app.runtime.cache.registry import CacheRegistry
+
 from app.services.kb.domain_registry import DomainRegistry
 from app.services.kb.service_smart_router import KBSmartRouterService
 from app.services.auth.route_service import RouteService
@@ -117,6 +119,8 @@ class ServiceContainer:
             # cache_max_size=5000,
             # cache_ttl_seconds=600.0,
         )
+
+        self.cache_registry = CacheRegistry()
 
         self.vector_registry = VectorStoreRegistry(self)
         self.router_factory = SmartRouterFactory(self)

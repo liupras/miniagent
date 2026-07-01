@@ -124,6 +124,15 @@ Domains are configured in seed data and registered at startup:
 ## Caching rules (easy to break)
 Several layers cache compiled objects in-process:
 
+### AsyncLazyCache
+
+- WebSearchService,web_search_pipeline — tool_name → WebSearchPipeline 
+- SQLAgentService,sql_agent — (llm_provider_id, schema_name) → SQLAgent
+- AgentFactory,agent_runner — agent_id → AgentRunner
+
+### MemoryCacheStore
+- WebSearchPipeline
+
 - AgentFactory — per agent_id
 - VectorStoreRegistry — per kb_id
 - SmartRouterFactory — per router_config_id

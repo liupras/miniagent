@@ -181,9 +181,7 @@ def create_cache_backend(backend_type: str = "memory", **kwargs) -> BaseStore:
     if backend_type == "memory":
         return MemoryCacheStore(**kwargs)
     elif backend_type == "redis":
-        # During future migrations, you can directly import LangChain's RedisStore here.
-        # from langchain_community.storage import RedisStore
-        # return RedisStore(redis_url=kwargs.get("url"))
+        # It needs to be changed to asynchronous:AsyncBaseStore.
         raise NotImplementedError("Redis backend will be supported soon.")
     else:
         raise ValueError(f"Unknown backend type: {backend_type}")

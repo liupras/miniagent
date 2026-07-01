@@ -47,12 +47,11 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import json
 import re
 import time
 import urllib.parse
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import List, Optional
 from urllib.parse import urlparse
 
@@ -61,119 +60,16 @@ from bs4 import BeautifulSoup
 from loguru import logger
 
 from app.retrieval.reranker.factory import RerankerFactory
-from app.retrieval.reranker.base import Scorable,RerankMode
+from app.retrieval.reranker.base import RerankMode
 from app.infra.llm import LLMClient
-from app.infra.cache_backend import create_cache_backend
 from app.retrieval.adaptive_threshold import AdaptiveThresholdMixin
 from app.infra.db.database import LLM,Tool
 
 default_rewrite_prompt_template = "Please rewrite the following query into a concise, search-engine-optimised "
 "keyword string (no explanation, output the query only):\n{query}"
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Data models
-# ═══════════════════════════════════════════════════════════════════════════
-
-@dataclass
-class WebSearchResult(Scorable):
-    """
-    A single search result flowing through the pipeline.
-
-    Scorable protocol compatibility
-    ────────────────────────────────
-    This dataclass satisfies the Scorable structural protocol defined in
-    reranker_base.py, so BGEReranker and LLMReranker / LLMBatchReranker can
-    operate on WebSearchResult objects directly without any wrapper.
-
-    Mapping:
-      Scorable.text           ← effective_text()  (property)
-      Scorable.final_score    ← final_score        (dataclass field)
-      Scorable.rerank_score   ← rerank_score       (dataclass field)
-      Scorable.retrieval_path ← pipeline_path      (same list, aliased by property)
-    """
-    title:        str
-    url:          str
-    snippet:      str              # DDG abstract (always present)
-    content:      str   = ""       # full page text (filled by FetchStage)
-    position:     int   = 0        # original DDG rank (1-based)
-    final_score:  float = 0.0      # written by RerankStage
-    rerank_score: float = 0.0      # raw model output (set by reranker)
-    pipeline_path: List[str] = field(default_factory=list)
-
-    # ── Scorable protocol ─────────────────────────────────────────────────
-
-    @property
-    def text(self) -> str:
-        """Scorable.text — returns effective page content for scoring."""
-        return self.effective_text()
-
-    @property
-    def retrieval_path(self) -> List[str]:
-        """Scorable.retrieval_path — aliased to pipeline_path."""
-        return self.pipeline_path
-
-    @retrieval_path.setter
-    def retrieval_path(self, value: List[str]) -> None:
-        self.pipeline_path = value
-
-    # ── helpers ───────────────────────────────────────────────────────────
-
-    def effective_text(self) -> str:
-        """Return full content if available, else snippet."""
-        return self.content if self.content else self.snippet
-
-    def to_dict(self) -> dict:
-        return {
-            "title":        self.title,
-            "url":          self.url,
-            "snippet":      self.snippet,
-            "content":      self.content,
-            "position":     self.position,
-            "final_score":  self.final_score,
-            "rerank_score": self.rerank_score,
-            "pipeline_path": self.pipeline_path,
-        }
-
-    @classmethod
-    def from_dict(cls, d: dict) -> "WebSearchResult":
-        return cls(
-            title         = d["title"],
-            url           = d["url"],
-            snippet       = d.get("snippet", ""),
-            content       = d.get("content", ""),
-            position      = d.get("position", 0),
-            final_score   = d.get("final_score", 0.0),
-            rerank_score  = d.get("rerank_score", 0.0),
-            pipeline_path = d.get("pipeline_path", []),
-        )
-
-
-@dataclass
-class WebSearchState:
-    """
-    Shared mutable state flowing through every stage of the pipeline.
-    """
-    # Input
-    original_query: str
-
-    # After QueryTransformStage
-    rewritten_query: str = ""
-
-    # After DuckDuckGoStage
-    raw_results: List[WebSearchResult] = field(default_factory=list)
-
-    # After FetchStage
-    fetched_results: List[WebSearchResult] = field(default_factory=list)
-
-    # After DeduplicationStage
-    deduped_results: List[WebSearchResult] = field(default_factory=list)
-
-    # Final output (after Rerank + Truncation)
-    results: List[WebSearchResult] = field(default_factory=list)
-
-    # Diagnostics
-    cache_hit: bool = False
-
+from app.services.skill.web_search_models import WebSearchResult,WebSearchState
+from app.services.skill.web_search_cache import SearchResultCache
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Base Stage
@@ -220,56 +116,6 @@ class RateLimiter:
             logger.debug(f"[RateLimiter] throttled — waiting {wait:.2f}s")
             await asyncio.sleep(wait)
             self._tokens = 0.0
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Search result cache  (backed by MemoryCacheStore from cache_backend)
-# ═══════════════════════════════════════════════════════════════════════════
-
-class SearchResultCache:
-    """
-    Thin facade over MemoryCacheStore that handles serialisation and key
-    encoding for WebSearchResult lists.
-
-    TTL is delegated entirely to MemoryCacheStore.mset_with_ttl / mget_ttl
-    — no timestamp bookkeeping lives in this class.
-
-    Key encoding  : sha256(query.strip().lower()) — stable & collision-resistant.
-    Serialisation : List[WebSearchResult] ↔ JSON bytes via to_dict() / from_dict().
-    """
-
-    def __init__(self, max_size: int = 256, ttl: int = 3600):
-        self._ttl   = ttl
-        self._store = create_cache_backend(max_size=max_size)
-
-    def _make_key(self, query: str) -> str:
-        return hashlib.sha256(query.strip().lower().encode("utf-8")).hexdigest()
-
-    def get(self, query: str) -> Optional[List[WebSearchResult]]:
-        key = self._make_key(query)
-        raw = self._store.mget_ttl([key])[0]
-        if raw is None:
-            return None
-        try:
-            return [WebSearchResult.from_dict(d) for d in json.loads(raw)]
-        except (json.JSONDecodeError, KeyError):
-            self._store.mdelete([key])
-            return None
-
-    def set(self, query: str, results: List[WebSearchResult]) -> None:
-        key     = self._make_key(query)
-        payload = json.dumps(
-            [r.to_dict() for r in results], ensure_ascii=False
-        ).encode()
-        self._store.mset_with_ttl([(key, payload)], ttl_seconds=self._ttl)
-
-    def clear(self) -> None:
-        self._store.clear()
-
-    def stats(self) -> dict:
-        s = self._store.get_stats()
-        s["ttl_seconds"] = self._ttl
-        return s
 
 
 # ═══════════════════════════════════════════════════════════════════════════

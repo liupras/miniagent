@@ -134,3 +134,8 @@ sql_agent:
   name_not_allowed: "Use of '{name}' is not allowed"
   subscript_calls_not_allowed: "Subscript-based calls are not allowed"
   syntax_error: "Syntax error: {error}"
+
+cache:
+  not_found: "Unregistered cache name: {name}, available: {count} caches"
+  already_exists: "Cache '{name}' already exists"
+  key_decode_error: "The cache key for {name} is in an invalid format: {raw_key} ({e})"

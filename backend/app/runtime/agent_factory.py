@@ -5,41 +5,20 @@
 # @description: AgentFactory — builds, caches, and invalidates AgentRunner
 #               instances.  Designed to be injected into ServiceContainer.
 
-"""
-Caching strategy
-────────────────
-Each AgentRunner is keyed by agent_id (int).  The cache holds the compiled
-LangGraph graph + resolved tools, so repeated requests for the same agent
-skip DB + model-binding overhead.
-
-Cache invalidation
-──────────────────
-Call factory.invalidate(agent_id) whenever:
-  • The Agent record is updated (system_prompt, llm_provider, …).
-  • Tool records are added / removed / updated.
-  • AgentToolRelation rows change.
-  • A SmartRouter's RouterConfig is modified (also call router_factory.invalidate()).
-
-A bulk invalidate() (no args) clears the entire cache — useful after
-system language changes that affect all PromptLoaders.
-
-Thread / concurrency safety
-────────────────────────────
-All methods are async.  The cache dict itself is not protected by a lock,
-which is acceptable in a single-process asyncio server (FastAPI/Uvicorn).
-If multi-process deployment is used, the cache is per-process by design
-(same pattern as SmartRouterFactory and VectorStoreRegistry).
-"""
-
 from __future__ import annotations
-
-from typing import Dict, Optional
+from typing import Any
 
 from loguru import logger
 
+from app.runtime.cache.lazy_cache import AsyncLazyCache
 from app.runtime.tool_builder import build_tools_for_agent
 from app.runtime.agent_runner import AgentRunner, build_agent_runner
 
+from app.core.i18n.i18n import t
+from app.schemas.common import NotFoundError
+class AgentNotFoundError(NotFoundError):
+    def __init__(self, agent_name: Any):
+        super().__init__("Agent", agent_name)
 
 class AgentFactory:
     """
@@ -60,8 +39,14 @@ class AgentFactory:
                         shared infrastructure.
         """
         self._container = container
-        self._cache: Dict[int, AgentRunner] = {}
 
+        self._cache = AsyncLazyCache[int, AgentRunner](
+            builder=self._build_runner,
+            name="agent_runner",
+            description="(agent_id) → AgentRunner",
+        )
+        container.cache_registry.register(self._cache.name, self._cache)
+        
         self._agent_db = container.agent_db
         self._tool_db = container.tool_db
         self._relation_db = container.agent_tool_relation_db
@@ -72,21 +57,7 @@ class AgentFactory:
     # ──────────────────────────────────────────────────────────────────────
 
     async def get_runner(self, agent_id: int) -> AgentRunner:
-        """
-        Return a ready AgentRunner for *agent_id*.
-
-        On cache hit the runner is returned immediately (O(1) dict lookup).
-        On cache miss the runner is built from DB data, compiled, and cached.
-
-        Raises:
-            ValueError  if agent_id does not exist or agent is inactive.
-        """
-        if agent_id in self._cache:
-            return self._cache[agent_id]
-
-        runner = await self._build_runner(agent_id)
-        self._cache[agent_id] = runner
-        return runner
+        return await self._cache.get_or_build(agent_id)
 
     async def get_runner_by_name(self, name: str) -> AgentRunner:
         """
@@ -96,28 +67,8 @@ class AgentFactory:
         """
         agent_orm = await self._agent_db.get_agent_by_name(name)
         if not agent_orm:
-            raise ValueError(f"Agent '{name}' not found.")
+            raise AgentNotFoundError(name)
         return await self.get_runner(agent_orm.id)
-
-    def invalidate(self, agent_id: Optional[int] = None) -> None:
-        """
-        Evict one or all runners from the cache.
-
-        Args:
-            agent_id    If given, evict only that agent.
-                        If None, clear the entire cache.
-        """
-        if agent_id is not None:
-            evicted = self._cache.pop(agent_id, None)
-            if evicted:
-                logger.info(
-                    f"[AgentFactory] Evicted cached runner "
-                    f"for agent_id={agent_id} ('{evicted.agent_name}')."
-                )
-        else:
-            count = len(self._cache)
-            self._cache.clear()
-            logger.info(f"[AgentFactory] Cleared entire agent cache ({count} runner(s)).")
 
     # ──────────────────────────────────────────────────────────────────────
     # Internal build pipeline
@@ -138,10 +89,9 @@ class AgentFactory:
         # ── 1. Agent record ────────────────────────────────────────────────
         agent_orm = await self._agent_db.get_agent(agent_id)
         if not agent_orm:
-            raise ValueError(f"Agent id={agent_id} not found in database.")
+            raise AgentNotFoundError(agent_id)
         if not agent_orm.is_active:
-            raise ValueError(f"Agent '{agent_orm.name}' (id={agent_id}) is inactive.")
-
+            raise ValueError(t("agent.inactive", agent=agent_orm.name, id=agent_id))
         logger.debug(f"[AgentFactory] Building runner for agent '{agent_orm.name}'.")
 
         # ── 2. Tool relations (ordered by priority) ────────────────────────
