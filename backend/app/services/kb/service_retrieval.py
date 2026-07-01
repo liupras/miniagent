@@ -11,6 +11,20 @@ from loguru import logger
 
 from .retrieval_model import ChunkResult,KBInfo
 
+from app.schemas.common import NotFoundError
+
+class KBNotFoundError(NotFoundError):
+    def __init__(self, kb_id: int):
+        super().__init__("KB", kb_id)
+
+class StrategyConfigNotFoundError(NotFoundError):
+    def __init__(self, kb_id: int):
+        super().__init__("StrategyConfig", kb_id)
+
+class LLMConfigNotFoundError(NotFoundError):
+    def __init__(self, kb_id: int):
+        super().__init__("LLM", kb_id)
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Query result models
 # ─────────────────────────────────────────────────────────────────────────────
@@ -208,16 +222,14 @@ class KBRetrievalService:
         # ── 1. Active strategy ────────────────────────────────────────────
         strategy = await self.kb_db.get_active_strategy_config(kb_id)
         if strategy is None:
-            raise ValueError(
-                f"No active StrategyConfig found for KnowledgeBase {kb_id}."
-            )
+            logger.error(f"[KBRetrievalService.query] No active strategy for KB {kb_id}")
+            raise StrategyConfigNotFoundError(kb_id)
 
         # ── 2. LLM config linked to the KB ───────────────────────────────
         llm_config = await self.kb_db.get_llm_by_kb_id(kb_id)
         if llm_config is None:
-            raise ValueError(
-                f"No LLM configuration found for KnowledgeBase {kb_id}."
-            )
+            logger.error(f"[KBRetrievalService.query] No LLM config for KB {kb_id}")
+            raise LLMConfigNotFoundError(kb_id)
 
         # ── 3. Get or build pipeline (cached) ─────────────────────────────
         try:
@@ -276,7 +288,7 @@ class KBRetrievalService:
         if not kb_info:
             kb = await self.kb_db.get_kb(kb_id)
             if not kb:
-                raise ValueError(f"Knowledge Base with ID {kb_id} not found.")
+                raise KBNotFoundError(kb_id)
             kb_info = KBInfo(name=kb.name,
                 keywords=kb.keywords,
                 description=kb.description)

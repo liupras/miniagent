@@ -7,7 +7,8 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, Field
+
+from app.schemas.common import ApiResponse
 
 router = APIRouter()
 
@@ -21,18 +22,7 @@ def _get_web_search_service(request: Request):
     """
     return request.app.state.container.web_search_service
 
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Request / Response schemas
-# ═══════════════════════════════════════════════════════════════════════════
-
-class CacheInfoResponse(BaseModel):
-    """Per-tool result-cache statistics."""
-    pipelines: dict = Field(description="Mapping of tool_name → cache stats dict (or null).")
-
-
-class MessageResponse(BaseModel):
-    message: str
+from app.schemas.admin.web_search import CacheInfoResponse
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -41,20 +31,20 @@ class MessageResponse(BaseModel):
 
 @router.delete(
     "/cache",
-    response_model=MessageResponse,
+    response_model=ApiResponse,
     summary="Invalidate all pipeline caches",
     description="Evict every cached WebSearchPipeline.  Next call per tool rebuilds from DB.",
 )
 async def invalidate_all_cache(
     service=Depends(_get_web_search_service),
-) -> MessageResponse:
+) -> ApiResponse:
     service.invalidate_all()
-    return MessageResponse(message="All web-search pipeline caches have been cleared.")
+    return ApiResponse()
 
 
 @router.delete(
     "/{tool_name}/cache",
-    response_model=MessageResponse,
+    response_model=ApiResponse,
     summary="Invalidate pipeline cache for one tool",
     description=(
         "Evict the cached WebSearchPipeline for *tool_name*.  "
@@ -65,16 +55,14 @@ async def invalidate_all_cache(
 async def invalidate_tool_cache(
     tool_name: str,
     service=Depends(_get_web_search_service),
-) -> MessageResponse:
+) -> ApiResponse:
     service.invalidate(tool_name)
-    return MessageResponse(
-        message=f"Pipeline cache for tool {tool_name!r} has been cleared."
-    )
+    return ApiResponse()
 
 
 @router.get(
     "/cache/info",
-    response_model=CacheInfoResponse,
+    response_model=ApiResponse,
     summary="Get result-cache statistics",
     description=(
         "Return per-tool search-result cache statistics "
@@ -84,5 +72,6 @@ async def invalidate_tool_cache(
 )
 async def cache_info(
     service=Depends(_get_web_search_service),
-) -> CacheInfoResponse:
-    return CacheInfoResponse(pipelines=service.cache_info())
+) -> ApiResponse:
+    data = CacheInfoResponse(pipelines=service.cache_info())
+    return ApiResponse(data=data)

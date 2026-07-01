@@ -17,6 +17,8 @@ from typing import Any, Dict, Optional
 import duckdb
 from loguru import logger
 
+from app.core.i18n.i18n import t
+
 # ─────────────────────────────────────────────
 # Whitelist: modules the sandbox is allowed to
 # import.  Everything else is blocked.
@@ -68,29 +70,33 @@ class _ASTSecurityScanner(ast.NodeVisitor):
         for alias in node.names:
             root = alias.name.split(".")[0]
             if root not in ALLOWED_MODULES:
-                raise ValueError(f"Import of '{alias.name}' is not allowed.")
+                logger.warning(f"Import of '{alias.name}' is not allowed.")
+                raise ValueError(t("sql_agent.import_not_allowed", file_path=alias.name))
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom):
         root = (node.module or "").split(".")[0]
         if root not in ALLOWED_MODULES:
-            raise ValueError(f"Import from '{node.module}' is not allowed.")
+            logger.warning(f"Import from '{node.module}' is not allowed.")
+            raise ValueError(t("sql_agent.import_not_allowed", file_path=node.module))
         self.generic_visit(node)
 
     def visit_Name(self, node: ast.Name):
         if node.id in self._FORBIDDEN_NAMES:
-            raise ValueError(f"Use of '{node.id}' is not allowed.")
+            logger.warning(f"Use of '{node.id}' is not allowed.")
+            raise ValueError(t("sql_agent.name_not_allowed", name=node.id))
         self.generic_visit(node)
 
     def visit_Attribute(self, node: ast.Attribute):
         if node.attr in self._FORBIDDEN_ATTRS:
-            raise ValueError(f"Access to attribute '{node.attr}' is not allowed.")
+            logger.warning(f"Access to attribute '{node.attr}' is not allowed.")
+            raise ValueError(t("sql_agent.name_not_allowed", name=node.attr))
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call):
         # Block calls like __builtins__['eval'](...) 
         if isinstance(node.func, ast.Subscript):
-            raise ValueError("Subscript-based calls are not allowed.")
+            raise ValueError(t("sql_agent.subscript_calls_not_allowed"))
         self.generic_visit(node)
 
 
@@ -99,7 +105,8 @@ def _scan_ast(code: str) -> None:
     try:
         tree = ast.parse(code)
     except SyntaxError as e:
-        raise ValueError(f"Syntax error: {e}") from e
+        logger.warning(f"Syntax error in submitted code: {e}")
+        raise ValueError(t("sql_agent.syntax_error", error=e)) from e
     _ASTSecurityScanner().visit(tree)
 
 
@@ -114,7 +121,8 @@ def _make_safe_importer(allowed: frozenset):
     def _safe_import(name, *args, **kwargs):
         root = name.split(".")[0]
         if root not in allowed:
-            raise ImportError(f"Import of '{name}' is blocked by the sandbox.")
+            logger.warning(f"Import of '{name}' is not allowed.")
+            raise ImportError(t("sql_agent.import_not_allowed", file_path=name))
         return _real_import(name, *args, **kwargs)
 
     return _safe_import

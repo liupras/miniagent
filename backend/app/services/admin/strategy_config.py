@@ -7,20 +7,22 @@
 from __future__ import annotations
 from typing import Any
 
-from fastapi import HTTPException, status
-
 from app.schemas.admin.strategy_config import (
     StrategyConfigCreate,
     StrategyConfigListOut,
     StrategyConfigOut,
     StrategyConfigUpdate,
 )
-from app.schemas.common import NotFoundError,AlreadyExistsError
+from app.schemas.common import NotFoundError,BadRequestError
 
 class StrategyConfigNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("StrategyConfig", entity_id)
-       
+
+class StrategyConfigBadRequestError(BadRequestError):
+    def __init__(self, entity_id: Any):
+        super().__init__("StrategyConfig", entity_id)
+        
 class StrategyConfigService:
     """Business logic for StrategyConfig."""
 
@@ -88,10 +90,8 @@ class StrategyConfigService:
     async def update(self, config_id: str, payload: StrategyConfigUpdate) -> StrategyConfigOut:
         data = payload.model_dump(exclude_none=True)
         if not data:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No fields provided for update.",
-            )
+            raise StrategyConfigBadRequestError(config_id)
+        
         obj = await self._get_or_404(config_id)
         if not obj:
             raise StrategyConfigNotFoundError(config_id)
@@ -114,10 +114,7 @@ class StrategyConfigService:
         obj = await self._get_or_404(config_id)
         rows = await self._db.activate(config_id, obj.kb_id)
         if rows == 0:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Activation failed.",
-            )
+            raise StrategyConfigNotFoundError(config_id)
         if not self._retrieval_service:
             self._retrieval_service.invalidate(kb_id=obj.kb_id)
         return await self._get_or_404(config_id)

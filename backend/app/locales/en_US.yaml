@@ -48,6 +48,7 @@ tool:
   inactive: "Skill '{name}' is not enabled or does not exist"
   already_exists: Skill already exists
   already_exists_with_name: "Skill '{name}' already exists"
+  tool_type_invalid: "tool_type must be one of {VALID_TOOL_TYPES}"
 
 llm:
   not_found: LLM does not exist
@@ -76,9 +77,11 @@ strategy_config:
   no_active_for_kb: "No StrategyConfig is enabled for knowledge base {kb_id}"
   no_fields_to_update: No updatable fields were provided
   activation_failed: Strategy activation failed
+  bad_request: Bad request
 
 router_config:
   not_found: The route configuration does not exist
+  max_kb_count: "max_kb_count must be >= 1"
 
 progress:
   stage:
@@ -124,3 +127,10 @@ progress:
     removing_vectors: 🗑️  Removing vectors …
     removing_bm25: 🗑️  Removing BM25 entries …
     removing_chunks: 🗑️  Removing SQLite chunk records …
+
+sql_agent:
+  primary_key_not_found: "Primary key column(s) {missing} not found"
+  import_not_allowed: "Import of '{file_path}' is not allowed"
+  name_not_allowed: "Use of '{name}' is not allowed"
+  subscript_calls_not_allowed: "Subscript-based calls are not allowed"
+  syntax_error: "Syntax error: {error}"

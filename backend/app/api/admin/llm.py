@@ -146,4 +146,4 @@ async def delete_llm(
 ):
 
     await svc.delete_llm(llm_id)
-    return ApiResponse(message="LLM deleted successfully")
+    return ApiResponse()

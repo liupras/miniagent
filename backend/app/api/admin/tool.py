@@ -100,7 +100,7 @@ async def toggle_tool(
     caller_id: int            = Depends(_edit),
 ):
     await svc.toggle_active(tool_id)    
-    return ApiResponse(message="Tool active status updated successfully")
+    return ApiResponse()
 
 
 @router.delete("/{tool_id}", response_model=ApiResponse, summary="Delete tool")

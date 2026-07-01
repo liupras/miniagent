@@ -67,3 +67,9 @@ class EmptyDataError(BaseDomainError):
     
     def __init__(self, entity_name: str, entity_id: Any):
         super().__init__(entity_name, entity_id, "has no valid data or chunks left")
+
+class BadRequestError(BaseDomainError):
+    error_key = "bad_request"
+    
+    def __init__(self, entity_name: str, entity_id: Any):
+        super().__init__(entity_name, entity_id)

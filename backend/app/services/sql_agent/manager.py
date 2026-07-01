@@ -8,7 +8,9 @@ import pandas as pd
 from loguru import logger
 import os
 
-from ...infra.db.duckdb_manager import DuckDBManager
+from app.infra.db.duckdb_manager import DuckDBManager
+
+from app.core.i18n.i18n import t
 
 class DBManager:
 
@@ -79,7 +81,7 @@ class DBManager:
             if pk_cols:
                 missing = [c for c in pk_cols if c not in df_new.columns]
                 if missing:
-                    raise ValueError(f"Primary key column(s) {missing} not found in CSV.")
+                    raise ValueError(t("sql_agent.primary_key_not_found", missing=", ".join(missing)))
                 
                 cols_def = []
                 for col in df_new.columns:

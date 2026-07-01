@@ -22,6 +22,8 @@ from app.infra.db.initializer import db_manager, init_database_on_startup
 from app.core.service_container import ServiceContainer
 from app.schemas.common import ApiResponse, BaseDomainError, NotFoundError, AlreadyExistsError
 
+from app.core.i18n.i18n import t
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     """Application lifecycle management"""
@@ -152,8 +154,8 @@ def handle_exception(exc: Exception) -> JSONResponse:
     # Handle other exceptions
     logger.error(f"❌ Unhandled exception: {exc}")
     
-    error_data = {"error": str(exc) if settings.debug else "An error occurred"}
-    return create_api_response(status_code=500,code=500, message="Internal Server Error", data=error_data)
+    error_data = {"error": str(exc) if settings.debug else t("common.error_500")}
+    return create_api_response(status_code=500,code=500, message=t("common.error_500"), data=error_data)
     
 # ==================== API router====================
 from app.api.admin.llm import router as admin_llm_router

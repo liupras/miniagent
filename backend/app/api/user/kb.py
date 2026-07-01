@@ -88,18 +88,15 @@ async def query_knowledge_base(
     ``KBRetrievalService`` — subsequent calls to the same KB with the same
     active StrategyConfig reuse the cached pipeline with no rebuilding cost.
     """
-    if not container.kb_db.kb_exists(kb_id):
-        return ApiResponse(code=404,message=t("kb.not_found_with_id",kb_id=kb_id))
 
-    try:
-        result: QueryResult = await service.query(
-            kb_id           = kb_id,
-            query           = body.query,
-            metadata_filter = body.metadata_filter,
-        )
-    except Exception as exc:
-        logger.error(f"[query_knowledge_base]->{exc}")
-        return ApiResponse(code=500,message=t("common.error_500"))
+    # check if the knowledge base exists; raises KBNotFoundError if not
+    await container.kb_service.kb_exists(kb_id)
+
+    result: QueryResult = await service.query(
+        kb_id           = kb_id,
+        query           = body.query,
+        metadata_filter = body.metadata_filter,
+    )
 
     data = QueryResponse(
         kb_id      = result.kb_id,
@@ -141,16 +138,13 @@ async def query_smart_router(
     ``KBRetrievalService``; the SmartRouter itself is cached per
     ``router_config_id`` inside ``SmartRouterFactory``.
     """
-    try:
-        result: SmartRouterQueryResult = await service.query(
-            router_config_id = router_config_id,
-            query            = body.query,
-            kb_ids           = body.kb_ids,
-            metadata_filter  = body.metadata_filter,
-        )
-    except Exception as exc:
-        logger.error(f"[query_smart_router]->{exc}")
-        return ApiResponse(code=500,message=t("common.error_500"))
+
+    result: SmartRouterQueryResult = await service.query(
+        router_config_id = router_config_id,
+        query            = body.query,
+        kb_ids           = body.kb_ids,
+        metadata_filter  = body.metadata_filter,
+    )
 
     data = SmartRouterQueryResponse(
         router_config_id = result.router_config_id,

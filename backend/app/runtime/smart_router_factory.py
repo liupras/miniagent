@@ -6,8 +6,16 @@
 
 from typing import Dict
 
+from loguru import logger
+
 from app.infra.db.database import RouterConfig
 from app.services.kb.smart_router import SmartRouter
+
+from app.schemas.common import NotFoundError
+
+class RouterConfigNotFoundError(NotFoundError):
+    def __init__(self, router_config_id: str):
+        super().__init__("RouterConfig", router_config_id)
 
 class SmartRouterFactory:
     """
@@ -30,7 +38,8 @@ class SmartRouterFactory:
         # 1. Load RouterConfig from DB
         router_config_orm = await self.container.router_config_db.get_by_id(router_config_id)
         if not router_config_orm:
-            raise ValueError(f"RouterConfig {router_config_id} not found")
+            logger.error(f"RouterConfig {router_config_id} not found in DB")
+            raise RouterConfigNotFoundError(router_config_id)
 
         # 2. Convert to dataclass
         router_config = RouterConfig(

@@ -27,6 +27,7 @@ CACHE_KEY_PREFIX  = "user_perms:" # "user_perms:<user_id>"
 # Shared HTTPBearer scheme (stateless, safe to be module-level)
 _bearer_scheme = HTTPBearer(auto_error=True)
 
+from app.core.i18n.i18n import t
 
 # ── AuthPermission ─────────────────────────────────────────────────────────────
 
@@ -59,7 +60,7 @@ class AuthPermission:
     # ── Internal helpers ───────────────────────────────────────────────────
 
     @staticmethod
-    def _unauthorized(detail: str = "Invalid or expired token.") -> HTTPException:
+    def _unauthorized(detail: str = "Invalid or expired token") -> HTTPException:
         return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=detail,
@@ -100,7 +101,7 @@ class AuthPermission:
         username: Optional[str] = self._jwt_auth.verify_token(token)
         if not username:
             logger.warning("Token verification failed (expired or invalid).")
-            raise self._unauthorized()
+            raise self._unauthorized(t("auth.token_invalid"))
 
         # Step 2 — username → User row
         async with self._user_db.get_session() as session:
@@ -108,12 +109,12 @@ class AuthPermission:
 
         if user is None:
             logger.warning("Token valid but username '%s' not found in DB.", username)
-            raise self._unauthorized("User account not found.")
+            raise self._unauthorized(t("auth.user_not_found"))
 
         # Step 3 — reject disabled accounts
         if not user.is_active:
             logger.warning("Blocked login for deactivated user '%s'.", username)
-            raise self._unauthorized("User account is disabled.")
+            raise self._unauthorized(t("auth.user_disabled"))
 
         logger.debug("Token resolved: '%s' → user_id=%s", username, user.id)
         return user.id
@@ -255,12 +256,12 @@ class AuthPermission:
                 if request is None:
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="Authentication required (no Request in scope).",
+                        detail=t("auth.auth_required"),
                     )
                 # Extract Bearer token manually from the Authorization header
                 auth_header: str = request.headers.get("Authorization", "")
                 if not auth_header.startswith("Bearer "):
-                    raise auth._unauthorized("Missing Bearer token.")
+                    raise auth._unauthorized(t("auth.missing_bearer"))
                 token = auth_header[len("Bearer "):]
                 user_id = await auth.resolve_user_id(token)
                 await auth.check(user_id, permission_code)

@@ -7,9 +7,17 @@
 from __future__ import annotations
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel,Field
+
+from loguru import logger
+
+from app.schemas.common import NotFoundError
+
+class AgentNotFoundError(NotFoundError):
+    def __init__(self, agent_id: int):
+        super().__init__("Agent", agent_id)
 
 router = APIRouter()
 
@@ -73,7 +81,8 @@ async def chat(
     try:
         runner = await factory.get_runner(agent_id)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+        logger.error(f"Agent {agent_id} not found: {exc}")
+        raise AgentNotFoundError(agent_id)
 
     answer = await runner.invoke(
         query=body.query,
@@ -102,7 +111,8 @@ async def chat_stream(
     try:
         runner = await factory.get_runner(agent_id)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+        logger.error(f"Agent {agent_id} not found: {exc}")
+        raise AgentNotFoundError(agent_id)
 
     async def _sse_generator():
         async for chunk in runner.stream(

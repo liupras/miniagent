@@ -46,14 +46,12 @@ async def search(
     body: WebSearchRequest,
     service=Depends(_get_web_search_service),
 ) -> ApiResponse:
-    try:
-        state = await service.search(
-            tool_name=tool_name, 
-            query=body.query,
-            llm_provider_id=body.llm_provider_id)
-    except Exception as exc:
-        logger.error(f"[search]->{exc}")
-        return ApiResponse(code=500,message=t("common.error_500"))
+    
+    state = await service.search(
+        tool_name=tool_name, 
+        query=body.query,
+        llm_provider_id=body.llm_provider_id
+    )
 
     results = [
         WebSearchResultItem(
@@ -95,12 +93,9 @@ async def search_for_llm(
     body: WebSearchRequest,
     service=Depends(_get_web_search_service),
 ) -> ApiResponse:
-    try:
-        state   = await service.search(tool_name, body.query)
-        context = service._pipeline_cache[tool_name].__class__.format_for_llm(state)
-    except Exception as exc:
-        logger.error(f"[search_for_llm]->{exc}")
-        return ApiResponse(code=500,message=t("common.error_500"))
+    
+    state   = await service.search(tool_name, body.query)
+    context = service._pipeline_cache[tool_name].__class__.format_for_llm(state)
 
     data = ForLLMResponse(
         tool_name       = tool_name,

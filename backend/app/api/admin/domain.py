@@ -115,7 +115,7 @@ async def delete_domain(
     caller_id: int            = Depends(_delete),
 ) -> ApiResponse:
     await svc.delete_domain(domain_id)
-    return ApiResponse(message="Domain deleted successfully")
+    return ApiResponse()
 
 
 @router.post("/bulk-delete", summary="Bulk delete domains")

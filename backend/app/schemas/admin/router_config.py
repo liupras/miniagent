@@ -8,6 +8,8 @@ from datetime import datetime
 from typing import Any, Optional
 from pydantic import BaseModel, field_validator
 
+from app.core.i18n.i18n import t
+
 VALID_SELECTION_STRATEGIES = {"keyword", "embedding"}
 
 
@@ -30,7 +32,7 @@ class RouterConfigBase(BaseModel):
     @classmethod
     def validate_max_kb_count(cls, v: int) -> int:
         if v < 1:
-            raise ValueError("max_kb_count must be >= 1")
+            raise ValueError(t("router_config.max_kb_count"))
         return v
 
 

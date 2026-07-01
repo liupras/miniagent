@@ -138,7 +138,7 @@ async def toggle_kb_active(
     caller_id: int            = Depends(_edit),
 ) -> ApiResponse:
     await svc.toggle_kb_active(kb_id)
-    return ApiResponse(message= "Knowledge base active status updated successfully")
+    return ApiResponse()
 
 @router.get(
     "/{kb_id}/stats",

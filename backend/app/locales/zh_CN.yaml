@@ -48,6 +48,7 @@ tool:
   inactive: "技能 '{name}' 未启用或不存在"
   already_exists: 技能已存在
   already_exists_with_name: "技能 '{name}' 已存在"
+  tool_type_invalid: "tool_type 必须是 {VALID_TOOL_TYPES} 之一"
 
 llm:
   not_found: LLM不存在
@@ -76,9 +77,11 @@ strategy_config:
   no_active_for_kb: "知识库 {kb_id} 没有启用的 StrategyConfig"
   no_fields_to_update: 未提供任何可更新字段
   activation_failed: 策略激活失败
+  bad_request: 请求无效
 
 router_config:
   not_found: 路由配置不存在
+  max_kb_count: "max_kb_count 必须 >= 1"
 
 progress:
   stage:
@@ -124,3 +127,10 @@ progress:
     removing_vectors: 🗑️  删除向量 …
     removing_bm25: 🗑️  删除 BM25 索引 …
     removing_chunks: 🗑️  删除 关系数据库的分块记录 …
+
+sql_agent:
+  primary_key_not_found: "主键列缺失 {missing} "
+  import_not_allowed: "不允许导入 '{file_path}'"
+  name_not_allowed: "不允许使用 '{name}'"
+  subscript_calls_not_allowed: "不允许使用下标调用"
+  syntax_error: "语法错误: {error}"

@@ -9,6 +9,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.core.i18n.i18n import t
+
 VALID_TOOL_TYPES = {"function", "api", "smart_router", "sql_agent"}
 
 ToolType = Literal["function", "api", "smart_router", "sql_agent"]
@@ -30,7 +32,7 @@ class ToolBase(BaseModel):
     @classmethod
     def validate_tool_type(cls, v: str) -> str:
         if v not in VALID_TOOL_TYPES:
-            raise ValueError(f"tool_type must be one of {VALID_TOOL_TYPES}")
+            raise ValueError(t("tool.tool_type_invalid", VALID_TOOL_TYPES=VALID_TOOL_TYPES))
         return v
 
 
@@ -55,7 +57,7 @@ class ToolUpdate(BaseModel):
     @classmethod
     def validate_tool_type(cls, v: str | None) -> str | None:
         if v is not None and v not in VALID_TOOL_TYPES:
-            raise ValueError(f"tool_type must be one of {VALID_TOOL_TYPES}")
+            raise ValueError(t("tool.tool_type_invalid", VALID_TOOL_TYPES=VALID_TOOL_TYPES))
         return v
 
 

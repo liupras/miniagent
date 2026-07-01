@@ -4,7 +4,7 @@
 # @date    : 2026-05-23
 # @description: Route model definitions for frontend route management
 
-from typing import Generic, Optional, TypeVar
+from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
 class RouteMeta(BaseModel):

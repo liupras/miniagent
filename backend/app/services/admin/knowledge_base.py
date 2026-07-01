@@ -45,6 +45,13 @@ class KnowledgeBaseService:
             is_active=is_active
         )
         return total, [KnowledgeBaseRead.model_validate(item) for item in items]
+    
+    async def kb_exists(self, kb_id: int) -> bool:
+        result = await self.db.kb_exists(kb_id)
+        if not result:
+            raise KBNotFoundError(kb_id)
+        return result
+    
 
     async def get_kb(self, kb_id: int) -> Optional[KnowledgeBaseRead]:
         """Get a single knowledge base by ID."""

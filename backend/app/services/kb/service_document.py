@@ -6,7 +6,6 @@
 
 import asyncio
 from typing import  Any, Optional
-from fastapi import HTTPException
 from langchain_core.documents import Document as LC_Document
 
 from loguru import logger
@@ -432,7 +431,7 @@ class KBDocumentService:
     ) -> DocumentChunksOut:
         doc = await self.doc_db.get_doc(doc_id)
         if not doc:
-            raise HTTPException(status_code=404, detail="Document not found")
+            raise DocumentNotFoundError(doc_id)
 
         parents, total_parents = await self.pc_db.get_parent_chunks_by_doc(
             doc_id, page, page_size

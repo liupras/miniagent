@@ -52,15 +52,12 @@ async def query(
     The agent may perform multiple internal tool-call rounds (schema lookup →
     SQL generation → execution) before producing its final answer.
     """
-    try:
-        answer = await service.run(
-            user_query=body.query,
-            llm_provider_id=body.llm_provider_id,
-            schema_name=body.schema_name,
-        )
-    except Exception as exc:
-        logger.error(f"[query]->{exc}")
-        return ApiResponse(code=500,message=t("common.error_500"))
+    
+    answer = await service.run(
+        user_query=body.query,
+        llm_provider_id=body.llm_provider_id,
+        schema_name=body.schema_name,
+    )
 
     data = QueryResponse(
         answer=answer,

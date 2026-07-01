@@ -6,8 +6,16 @@
 
 from typing import Dict
 
+from loguru import logger
+
 from app.retrieval.vector_store import VectorStoreManager
 from app.core.config import settings
+
+from app.schemas.common import NotFoundError
+
+class KBNotFoundError(NotFoundError):
+    def __init__(self, kb_id: int):
+        super().__init__("KB", kb_id)
 
 
 class VectorStoreRegistry:
@@ -38,14 +46,15 @@ class VectorStoreRegistry:
         """
         Return the VectorStoreManager for *kb_id*, creating it if necessary.
 
-        Raises ValueError if the KB does not exist.
+        Raises KBNotFoundError if the KB does not exist.
         """
         if kb_id in self._stores:
             return self._stores[kb_id]
 
         kb = await self.kb_db.get_kb(kb_id)
         if not kb:
-            raise ValueError(f"KB {kb_id} not found")
+            logger.error(f"KB {kb_id} not found in database.")
+            raise KBNotFoundError(kb_id)
 
         store = await self._create_store_from_kb(kb)
         self._stores[kb_id] = store

@@ -6,35 +6,16 @@
 #               Uses AuthPermission from ServiceContainer (no module-level imports).
 
 from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel
 
-# ── Response schemas ───────────────────────────────────────────────────────────
-
-class CacheStatsResponse(BaseModel):
-    backend:         str
-    max_size:        int
-    current_size:    int
-    hits:            int
-    misses:          int
-    hit_rate:        str
-    ttl_expirations: int
-
-
-class RefreshResponse(BaseModel):
-    user_id:     int
-    permissions: list[str]
-    message:     str
-
-
-class InvalidateResponse(BaseModel):
-    message: str
-
+from app.schemas.common import ApiResponse
+from app.schemas.auth.permission import CacheStatsResponse, RefreshResponse
+    
 router = APIRouter()
 
 def _auth(request: Request):
     return request.app.state.container.auth
 
-@router.get("/stats", response_model=CacheStatsResponse,
+@router.get("/stats", response_model=ApiResponse,
             summary="Query permission cache statistics")
 async def cache_stats(
     request: Request,
@@ -44,9 +25,10 @@ async def cache_stats(
     # Inline dependency: resolve auth from container then check permission
     auth = _auth(request)
     # Re-use the auth.require pattern via a manual call for router-level simplicity
-    return CacheStatsResponse(**auth.stats())
+    data = CacheStatsResponse(**auth.stats())
+    return ApiResponse(data=data)
 
-@router.post("/refresh/me", response_model=RefreshResponse,
+@router.post("/refresh/me", response_model=ApiResponse,
              summary="Refresh the current user's permission cache")
 async def refresh_my_cache(request: Request):
     auth = _auth(request)
@@ -54,13 +36,12 @@ async def refresh_my_cache(request: Request):
     token = auth_header.removeprefix("Bearer ").strip()
     user_id = await auth.resolve_user_id(token)
     perms = await auth.refresh(user_id)
-    return RefreshResponse(
+    return ApiResponse(data=RefreshResponse(
         user_id=user_id,
-        permissions=sorted(perms),
-        message="Your permission cache has been refreshed.",
-    )
+        permissions=sorted(perms)
+    ))
 
-@router.post("/refresh/{target_user_id}", response_model=RefreshResponse,
+@router.post("/refresh/{target_user_id}", response_model=ApiResponse,
              summary="Refresh a specific user's permission cache (admin)")
 async def refresh_user(
     target_user_id: int,
@@ -74,13 +55,12 @@ async def refresh_user(
     caller_id = await auth.resolve_user_id(token)
     await auth.check(caller_id, "system:cache:refresh")
     perms = await auth.refresh(target_user_id)
-    return RefreshResponse(
+    return ApiResponse(data=RefreshResponse(
         user_id=target_user_id,
-        permissions=sorted(perms),
-        message=f"Permission cache for user {target_user_id} refreshed.",
-    )
+        permissions=sorted(perms)
+    ))
 
-@router.delete("/invalidate/{target_user_id}", response_model=InvalidateResponse,
+@router.delete("/invalidate/{target_user_id}", response_model=ApiResponse,
                summary="Invalidate a specific user's permission cache (admin)")
 async def invalidate_user(target_user_id: int, request: Request):
     auth = _auth(request)
@@ -89,11 +69,9 @@ async def invalidate_user(target_user_id: int, request: Request):
     caller_id = await auth.resolve_user_id(token)
     await auth.check(caller_id, "system:cache:refresh")
     auth.invalidate(target_user_id)
-    return InvalidateResponse(
-        message=f"Cache entry for user {target_user_id} invalidated.",
-    )
+    return ApiResponse()
 
-@router.delete("/invalidate/all", response_model=InvalidateResponse,
+@router.delete("/invalidate/all", response_model=ApiResponse,
                summary="Flush the entire permission cache (admin)")
 async def invalidate_all(request: Request):
     auth = _auth(request)
@@ -102,4 +80,4 @@ async def invalidate_all(request: Request):
     caller_id = await auth.resolve_user_id(token)
     await auth.check(caller_id, "system:cache:refresh")
     auth.invalidate_all()
-    return InvalidateResponse(message="All permission cache entries flushed.")
+    return ApiResponse()
