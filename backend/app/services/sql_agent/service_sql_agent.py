@@ -290,7 +290,7 @@ class SQLAgentService:
         # ── 6. Construct and return SQLAgent ─────────────────────────────
         logger.debug(
             f"[SQLAgentService] building agent  "
-            f"llm_provider_id={llm_provider_id}  schema={schema_name!r}  lang={resolved_lang!r}"
+            f"llm_provider_id={llm_provider_id}  schema={schema_name!r} "
         )
         llm = AgentLLM(client=client, 
             model=llm_config.model_name,

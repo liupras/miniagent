@@ -95,14 +95,14 @@ class StrategyConfigService:
         obj = await self._get_or_404(config_id)
         if not obj:
             raise StrategyConfigNotFoundError(config_id)
-        if not self._retrieval_service:
+        if self._retrieval_service:
             self._retrieval_service.invalidate(kb_id=obj.kb_id)
         await self._db.update(config_id,data)
         return await self._get_or_404(config_id)
 
     async def delete(self, config_id: str) -> int:
         kb_id = await self._db.delete(config_id)
-        if not self._retrieval_service:
+        if self._retrieval_service:
             self._retrieval_service.invalidate(kb_id=kb_id)
         return kb_id
 
@@ -115,6 +115,6 @@ class StrategyConfigService:
         rows = await self._db.activate(config_id, obj.kb_id)
         if rows == 0:
             raise StrategyConfigNotFoundError(config_id)
-        if not self._retrieval_service:
+        if self._retrieval_service:
             self._retrieval_service.invalidate(kb_id=obj.kb_id)
         return await self._get_or_404(config_id)

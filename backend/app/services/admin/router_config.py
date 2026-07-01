@@ -47,7 +47,7 @@ class RouterConfigService:
         if record is None:
             raise RouterConfigNotFoundError(config_id)
         
-        if not self._smart_router_service:
+        if self._smart_router_service:
             self._smart_router_service.invalidate(router_config_id=config_id)
 
         return RouterConfigResponse.model_validate(record)
