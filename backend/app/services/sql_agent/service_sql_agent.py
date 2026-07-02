@@ -4,58 +4,42 @@
 # @date    : 2026-05-03
 # @description: SQLAgent Service — builds and caches SQLAgent instances
 #               from LLM config stored in the database, with i18n prompt support.
-#
-# Design
-# ──────
-#  SQLAgentService owns a Dict[llm_provider_id, SQLAgent] cache.
-#  On first call for a given llm_provider_id the service:
-#    1. resolves the LLM row via the LLM table (llm_provider_id)
-#    2. builds an AgentLLM from the resolved config
-#    3. constructs SQLAgent(llm, tools, schema_name, system_prompt_template, tool_schema)
-#    4. stores it in _agent_cache
-#  Subsequent calls with the same llm_provider_id + schema_name hit the cache.
-#
-#  Cache invalidation
-#  ──────────────────
-#  Call invalidate(llm_provider_id, schema_name) to evict a single agent.
-#  Call invalidate_all() to clear everything.
+
 
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 
 from app.runtime.cache.lazy_cache import AsyncLazyCache
-
 from .agent import SQLAgent,SQLAgentConfig
 from .tool import SQLTools
 from .manager import DBManager
 
 from app.infra.db.database import Tool
 
+from app.core.i18n.i18n import t
+from app.schemas.common import NotFoundError
+
+class ToolNotFoundError(NotFoundError):
+    def __init__(self, tool_name: str):
+        super().__init__("Tool", tool_name)
+
+class LLMNotFoundError(NotFoundError):
+    def __init__(self, llm_id: int):
+        super().__init__("LLM", llm_id)
+
 if TYPE_CHECKING:
     from app.core.service_container import ServiceContainer
 
 # Cache key: (llm_provider_id, schema_name)
-_CacheKey = Tuple[int, str]
+#_CacheKey = Tuple[int, str]
 
 class SQLAgentService:
     """
     Application-level service that manages SQLAgent instances.
-
-    Lifecycle
-    ─────────
-    Instantiated once inside ServiceContainer and held at
-    ``container.sql_agent_service``.  Each agent is lazily built on the first
-    ``run()`` call for a (llm_provider_id, schema_name) pair and then cached.
-
-    Thread / concurrency safety
-    ───────────────────────────
-    A per-key asyncio.Lock prevents the thundering-herd problem: if two
-    coroutines request the same agent simultaneously, only one builds it
-    while the other awaits the lock.
     """
 
     def __init__(self, container: "ServiceContainer") -> None:
@@ -70,28 +54,23 @@ class SQLAgentService:
         # DBManager wraps the same DuckDB connection for CSV import operations
         self._db_manager = DBManager(duckdb_manager=self._duckdb_manager)
 
-        self._agent_cache = AsyncLazyCache[_CacheKey, SQLAgent](
+        self._agent_cache = AsyncLazyCache[str, SQLAgent](
             builder=self._build_agent,
             name="sql_agent",
-            description="(llm_provider_id, schema_name) → SQLAgent",
+            description="tool_name → SQLAgent",
         )
         container.cache_registry.register(
             self._agent_cache.name,
             self._agent_cache,
-            key_codec=lambda raw: (raw[0], raw[1]) if isinstance(raw, (list, tuple)) else raw,
+            #key_codec=lambda raw: (raw[0], raw[1]) if isinstance(raw, (list, tuple)) else raw,
         )
-        
-        # per-key build locks
-        self._build_locks: Dict[_CacheKey, asyncio.Lock] = {}
 
     # ── Public API ────────────────────────────────────────────────────────
 
     async def run(
         self,
         user_query: str,
-        llm_provider_id: int = 1,
-        schema_name: str = "main",
-        tool_name: str = "",
+        tool_name: str = "sql_agent",
     ) -> str:
         """
         Execute a natural-language data query using the configured SQLAgent.
@@ -100,24 +79,16 @@ class SQLAgentService:
         ──────────
         user_query : str
             The natural-language question from the user.
-        llm_provider_id : int
-            ID of the LLM row in the database whose config drives the agent.
-        schema_name : str
-            DuckDB schema the agent should operate within (default: "main").
+        tool_name : str
+            Name of the tool to use (default: "sql_agent").
 
         Returns
         ───────
         str
             Final natural-language answer produced by the agent.
-
-        Raises
-        ──────
-        ValueError
-            If the LLM row does not exist or is inactive.
         """
-        agent = await self._agent_cache.get_or_build(
-            (llm_provider_id, schema_name), llm_provider_id, schema_name, tool_name
-        )
+        agent = await self._agent_cache.get_or_build(tool_name)
+
         # run() is synchronous in the original SQLAgent implementation;
         # wrap it in asyncio.to_thread so we don't block the event loop.
         return await asyncio.to_thread(agent.run, user_query)
@@ -182,18 +153,26 @@ class SQLAgentService:
         )
 
     async def _build_agent(
-        self, key: _CacheKey, llm_provider_id: int, schema_name: str, tool_name: str
+        self, tool_name: str
     ) -> SQLAgent:
         """Load LLM config + prompts from DB and construct a SQLAgent."""
 
-        # ── 1. Resolve LLM config ────────────────────────────────────────
-        llm_config = await self._llm_db.get(llm_id=llm_provider_id)
-        if llm_config is None:
-            raise ValueError(
-                f"LLM provider id={llm_provider_id!r} not found in database."
-            )
+        tool: Optional[Tool] = await self._tool_db.get_by_name(tool_name)
+        if tool is None:
+            logger.error(f"[SQLAgentService] tool {tool_name!r} not found in database.")
+            raise ToolNotFoundError(tool_name)
+        if not tool.is_active:
+            raise ValueError(t("tool.inactive", name=tool_name))
+        
+        config = tool.config or {}
+        llm_id = config.get("llm_id", 1)
+        llm_config = await self._llm_db.get(llm_id=llm_id)
+        if not llm_config:
+            logger.error(f"[SQLAgentService] LLM {llm_id} not found in database.")
+            raise LLMNotFoundError(llm_id)
+        
+        schema_name = config.get("schema_name", "main")
 
-        # ── 2. Build AgentLLM from config ────────────────────────────────
         from app.infra.llm import LLMClient, AgentLLM  # local import to avoid circular deps
         client = LLMClient(
             base_url=llm_config.base_url,
@@ -201,22 +180,13 @@ class SQLAgentService:
             temperature=0,
         )
 
-        # ── 3. Build SQLTools (wraps the global DuckDB connection) ────────
+        # ── Build SQLTools (wraps the global DuckDB connection) ────────
         sql_tools = SQLTools(
             duckdb_manager=self._duckdb_manager,
             schema_name=schema_name,
         )
-
-        # ── 4. Optionally resolve Tool row ───────────────────────────────
-        tool: Optional[Tool] = None
-        if tool_name:
-            tool = await self._tool_db.get_by_name(tool_name)
-            if tool is None:
-                raise ValueError(f"Tool {tool_name!r} not found in database.")
-            if not tool.is_active:
-                raise ValueError(f"Tool {tool_name!r} is inactive.")
             
-        # ── 5. Load prompts via PromptLoader ────────────────────────
+        # ── Load prompts via PromptLoader ────────────────────────
         from app.core.prompt_loader import prompt_loader
         system_prompt_template = prompt_loader.get("sql_agent.system_prompt_template") or None
         agent_llm_tool_schema_template = prompt_loader.get("agent_llm.tool_schema") or None
@@ -252,7 +222,7 @@ class SQLAgentService:
         # ── 6. Construct and return SQLAgent ─────────────────────────────
         logger.debug(
             f"[SQLAgentService] building agent  "
-            f"llm_provider_id={llm_provider_id}  schema={schema_name!r} "
+            f"llm_provider_id={llm_id}  schema={schema_name!r} "
         )
         llm = AgentLLM(client=client, 
             model=llm_config.model_name,

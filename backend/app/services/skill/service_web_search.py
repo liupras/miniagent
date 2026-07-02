@@ -33,9 +33,9 @@ if TYPE_CHECKING:
 
 from app.core.i18n.i18n import t
 from app.schemas.common import NotFoundError
-class WebSearchNotFoundError(NotFoundError):
+class ToolNotFoundError(NotFoundError):
     def __init__(self, tool_name: str):
-        super().__init__("WebSearch tool", tool_name)
+        super().__init__("Tool", tool_name)
 
 class LLMNotFoundError(NotFoundError):
     def __init__(self, llm_id: int):
@@ -90,7 +90,7 @@ class WebSearchService:
         tool: Optional[Tool] = await self._tool_db.get_by_name(tool_name)
         if tool is None:
             logger.error(f"[WebSearchService] tool {tool_name!r} not found in database.")
-            raise WebSearchNotFoundError(tool_name)
+            raise ToolNotFoundError(tool_name)
         if not tool.is_active:
             raise ValueError(t("tool.inactive", name=tool_name))
         

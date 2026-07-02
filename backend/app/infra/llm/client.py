@@ -5,13 +5,16 @@
 # @description: General LLM client
 
 from litellm import completion, embedding
-from openai import OpenAI
 from typing import Any, Optional,Dict,List,Generator,Union
 import base64
 import mimetypes
+
 from loguru import logger
 
 Message = Dict[str, Any]
+
+import litellm
+litellm._turn_on_debug()
 
 def generate_stream_response(generator: Generator[str, None, None]):
     """Convert the generator to SSE streaming response format"""

@@ -41,7 +41,3 @@ class ForLLMResponse(BaseModel):
     rewritten_query: str
     cache_hit:       bool
     context:         str = Field(description="Formatted context block ready for LLM injection.")
-
-
-class MessageResponse(BaseModel):
-    message: str

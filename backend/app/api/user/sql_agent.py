@@ -8,11 +8,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
 
-from loguru import logger
-
-from app.schemas.user.sql_agent import QueryRequest,QueryResponse
+from app.schemas.user.sql_agent import QueryRequest
 from app.schemas.common import ApiResponse
-from app.core.i18n.i18n import t
 
 router = APIRouter()
 
@@ -55,13 +52,7 @@ async def query(
     
     answer = await service.run(
         user_query=body.query,
-        llm_provider_id=body.llm_provider_id,
-        schema_name=body.schema_name,
+        tool_name=body.tool_name,        
     )
 
-    data = QueryResponse(
-        answer=answer,
-        llm_provider_id=body.llm_provider_id,
-        schema_name=body.schema_name,
-    )
-    return ApiResponse(data=data)
+    return ApiResponse(data=answer)
