@@ -9,9 +9,11 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass
 from langchain_ollama import OllamaEmbeddings
 from langchain_community.utils.math import cosine_similarity
+from loguru import logger
+
+from app.runtime.cache.lazy_cache import AsyncLazyCache
 
 from .retrieval_model import ChunkResult
-from .service_retrieval import KBRetrievalService
 from .retrieval_model import KBInfo
 from app.repositories.async_embedding import AsyncEmbeddingDatabase
 
@@ -49,7 +51,7 @@ class SmartRouter:
 
     def __init__(
         self,
-        kb_services: KBRetrievalService,
+        container,
         router_config:RouterConfig,
         embedding_db:AsyncEmbeddingDatabase
     ):
@@ -59,17 +61,33 @@ class SmartRouter:
         selection_strategy: KB selection method
         llm_selector: async function(query) -> List[int], for LLM-based selection
         """
-        self.kb_services = kb_services
+        from app.core.service_container import ServiceContainer
+        if not isinstance(container, ServiceContainer):
+            raise TypeError(f"Expected ServiceContainer, got {type(container)}")
+        
+        self.container = container
+
+        self.kb_services = container.retrieval_service
         self.router_config = router_config
         self.embedding_db = embedding_db
-        self._kb_embedding_cache: Dict[int, List[float]] = {}
 
-    async def _get_kb_embedding(self, kb_id: int, embedding) -> Optional[List[float]]:
+        self._kb_embedding_cache: AsyncLazyCache = AsyncLazyCache[int, List[float]](
+            builder=self._build_kb_embedding,
+            name="smart_router_kb_embedding",
+            description="kb_id → Embedding, Embedding vector for a KB's name/description/keywords",
+        )
+        container.cache_registry.register(
+            self._kb_embedding_cache.name,
+            self._kb_embedding_cache,            
+        )
 
-        if kb_id in self._kb_embedding_cache:
-            return self._kb_embedding_cache[kb_id]
+    async def _build_kb_embedding(self, kb_id: int, embedding) -> Optional[List[float]]:
+        """
+        AsyncLazyCache builder for the KB embedding cache.
 
-        # Construct kb_text
+        `kb_id` is injected automatically as the cache key; `embedding` is
+        the extra arg passed through from _get_kb_embedding().
+        """
         info: KBInfo = await self.kb_services.get_kb_info(kb_id=kb_id)
 
         text_parts = [info.name or ""]
@@ -86,22 +104,15 @@ class SmartRouter:
         kb_text = " ".join(text_parts).strip()
 
         if not kb_text:
+            logger.debug(f"[SmartRouter] kb={kb_id} has no embeddable text — caching None")
             return None
 
-        # Compute embedding
         kb_vec = embedding.embed_query(kb_text)
-
-        # Write to cache
-        self._kb_embedding_cache[kb_id] = kb_vec
-
         return kb_vec
-    
-    def invalidate(self, kb_id: int = None):
-        if kb_id:
-            self._kb_embedding_cache.pop(kb_id)
-        else:
-            self._kb_embedding_cache.clear()
 
+    async def _get_kb_embedding(self, kb_id: int, embedding) -> Optional[List[float]]:
+        return await self._kb_embedding_cache.get_or_build(kb_id, embedding)
+    
     async def query(
         self,
         query: str,

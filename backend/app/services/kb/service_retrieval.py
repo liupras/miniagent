@@ -9,6 +9,9 @@ from dataclasses import dataclass
 
 from loguru import logger
 
+from app.runtime.cache.lazy_cache import AsyncLazyCache
+from app.services.kb.retrieval import RetrievalPipeline
+
 from .retrieval_model import ChunkResult,KBInfo
 
 from app.schemas.common import NotFoundError
@@ -19,11 +22,13 @@ class KBNotFoundError(NotFoundError):
 
 class StrategyConfigNotFoundError(NotFoundError):
     def __init__(self, kb_id: int):
-        super().__init__("StrategyConfig", kb_id)
+        super().__init__("Strategy_Config", kb_id)
 
 class LLMConfigNotFoundError(NotFoundError):
     def __init__(self, kb_id: int):
         super().__init__("LLM", kb_id)
+
+from app.core.i18n.i18n import t
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Query result models
@@ -89,95 +94,84 @@ class KBRetrievalService:
         self.bm25            = bm25_manager
         self.domain_registry = container.domain_registry
         self.domain_db = container.domain_db
-
-        # Pipeline cache: (kb_id, config_id) → RetrievalPipeline
-        # Keyed by config_id so that activating a new StrategyConfig version
-        # automatically triggers a rebuild on the next request.
-        self._pipeline_cache: Dict[tuple, Any] = {}
-        self._kb_info_cache: Dict[int, KBInfo] = {}
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # Pipeline cache management
-    # ─────────────────────────────────────────────────────────────────────────
-
-    def _cache_key(self, kb_id: int, config_id: str) -> tuple:
-        return (kb_id, config_id)
-
-    def _get_cached_pipeline(self, kb_id: int, config_id: str):
-        """Return the cached pipeline for (kb_id, config_id), or None."""
-        return self._pipeline_cache.get(self._cache_key(kb_id, config_id))
-
-    def _set_cached_pipeline(self, kb_id: int, config_id: str, pipeline) -> None:
-        self._pipeline_cache[self._cache_key(kb_id, config_id)] = pipeline
-        logger.info(
-            f"[KBRetrievalService] Pipeline cached: "
-            f"kb={kb_id} config_id={config_id}"
+        
+        self._pipeline_cache: AsyncLazyCache = AsyncLazyCache[int, RetrievalPipeline](
+            builder=self._build_pipeline,
+            name="kb_retrieval_pipeline",
+            description="kb_id → RetrievalPipeline (active StrategyConfig)",
         )
+        container.cache_registry.register(
+            self._pipeline_cache.name,
+            self._pipeline_cache,
+            #key_codec=lambda raw: raw,  # kb_id is a plain int
+        )
+
+        self._kb_info_cache: AsyncLazyCache = AsyncLazyCache[int, KBInfo](
+            builder=self._build_kb_info,
+            name="kb_info",
+            description="kb_id → KBInfo (name/keywords/description)",
+        )
+        container.cache_registry.register(
+            self._kb_info_cache.name,
+            self._kb_info_cache,
+            #key_codec=lambda raw: raw,
+        )
+        
 
     def invalidate(self, kb_id: Optional[int] = None) -> None:
         """
-        Evict pipeline(s) from the cache.
-
-        Parameters
-        ----------
-        kb_id   When given, evict only pipelines for that KB.
-                When None, evict all cached pipelines (e.g. after a global
-                language change via SystemSettings).
+        Evict pipeline(s) from the cache.       
         """
         if kb_id is None:
-            count = len(self._pipeline_cache)
-            self._pipeline_cache.clear()
-            logger.info(f"[KBRetrievalService] Pipeline cache cleared ({count} entries)")
-        else:
-            keys_to_drop = [k for k in self._pipeline_cache if k[0] == kb_id]
-            for k in keys_to_drop:
-                del self._pipeline_cache[k]
+            p_count = self._pipeline_cache.invalidate_all()
+            k_count = self._kb_info_cache.invalidate_all()
+            self._pipeline_config_id.clear()
             logger.info(
-                f"[KBRetrievalService] Pipeline cache invalidated: "
-                f"kb={kb_id} ({len(keys_to_drop)} entries removed)"
+                f"[KBRetrievalService] Full cache clear: "
+                f"pipelines={p_count} kb_info={k_count}"
             )
+            return
 
-    # ─────────────────────────────────────────────────────────────────────────
-    # Internal pipeline builder
-    # ─────────────────────────────────────────────────────────────────────────
+        p_removed = self._pipeline_cache.invalidate(kb_id)
+        k_removed = self._kb_info_cache.invalidate(kb_id)
+        self._pipeline_config_id.pop(kb_id, None)
+        logger.info(
+            f"[KBRetrievalService] Invalidated kb={kb_id}: "
+            f"pipeline_removed={p_removed} kb_info_removed={k_removed}"
+        )
 
-    async def _build_pipeline(self, kb_id: int, strategy, llm_config):
+    async def _build_pipeline(self, kb_id: int):
         """
         Build a RetrievalPipeline from the given StrategyConfig and LLM config.
         """
-        from .retrieval import RetrievalPipeline  # local import avoids circular deps
+        # ── Active strategy ────────────────────────────────────────────
+        strategy = await self.kb_db.get_active_strategy_config(kb_id)
+        if strategy is None:
+            logger.error(f"[KBRetrievalService.query] No active strategy for KB {kb_id}")
+            raise StrategyConfigNotFoundError(kb_id)
+
+        # ── LLM config linked to the KB ───────────────────────────────
+        llm_config = await self.kb_db.get_llm_by_kb_id(kb_id)
+        if llm_config is None:
+            logger.error(f"[KBRetrievalService.query] No LLM config for KB {kb_id}")
+            raise LLMConfigNotFoundError(kb_id)        
+        
         return await RetrievalPipeline.create(
             config       = strategy,
             llm_config   = llm_config,
             container    = self._container
         )
-
-    async def _get_or_build_pipeline(self, kb_id: int, strategy, llm_config):
-        """
-        Return the cached pipeline for the active strategy, building it if
-        necessary.
-
-        Cache key is (kb_id, config_id).  When the admin activates a new
-        StrategyConfig version, config_id changes, the old key is never hit
-        again, and a fresh pipeline is built on the next request.
-        """
-        config_id = strategy.config_id
-        pipeline  = self._get_cached_pipeline(kb_id, config_id)
-
-        if pipeline is not None:
-            logger.debug(
-                f"[KBRetrievalService] Pipeline cache hit: "
-                f"kb={kb_id} config_id={config_id}"
-            )
-            return pipeline
-
-        logger.info(
-            f"[KBRetrievalService] Pipeline cache miss — building: "
-            f"kb={kb_id} config_id={config_id}"
+    
+    async def _build_kb_info(self, kb_id: int) -> "KBInfo":
+        """AsyncLazyCache builder for the kb_info cache."""
+        kb = await self.kb_db.get_kb(kb_id)
+        if not kb:
+            raise KBNotFoundError(kb_id)
+        return KBInfo(
+            name=kb.name,
+            keywords=kb.keywords,
+            description=kb.description,
         )
-        pipeline = await self._build_pipeline(kb_id, strategy, llm_config)
-        self._set_cached_pipeline(kb_id, config_id, pipeline)
-        return pipeline
 
     # ─────────────────────────────────────────────────────────────────────────
     # Query
@@ -192,61 +186,19 @@ class KBRetrievalService:
         """
         Execute the full retrieval pipeline for *query* against knowledge
         base *kb_id* and return a structured :class:`QueryResult`.
-
-        Pipeline assembly (with caching)
-        ---------------------------------
-        1. Load the KB's active ``StrategyConfig`` from ``kb_db``.
-        2. Load the ``LLM`` config linked to the KB.
-        3. Return the cached pipeline for (kb_id, config_id), or build and
-           cache a new one if this is the first request for this config.
-        4. Run the pipeline, passing ``metadata_filter`` only at run time —
-           never baked into the cached pipeline object.
-        5. Wrap the ``RetrievalConfidence`` output as a ``QueryResult``.
-
-        Raises
-        ------
-        ValueError   KB not found, no active strategy, or no LLM config.
-        RuntimeError Pipeline build or execution failure.
         """
-        # ── 1. Active strategy ────────────────────────────────────────────
-        strategy = await self.kb_db.get_active_strategy_config(kb_id)
-        if strategy is None:
-            logger.error(f"[KBRetrievalService.query] No active strategy for KB {kb_id}")
-            raise StrategyConfigNotFoundError(kb_id)
-
-        # ── 2. LLM config linked to the KB ───────────────────────────────
-        llm_config = await self.kb_db.get_llm_by_kb_id(kb_id)
-        if llm_config is None:
-            logger.error(f"[KBRetrievalService.query] No LLM config for KB {kb_id}")
-            raise LLMConfigNotFoundError(kb_id)
-
-        # ── 3. Get or build pipeline (cached) ─────────────────────────────
-        try:
-            pipeline = await self._get_or_build_pipeline(kb_id, strategy, llm_config)
-        except Exception as exc:
-            logger.exception(
-                f"[KBRetrievalService.query] pipeline build failed kb={kb_id}"
-            )
-            raise RuntimeError(f"Pipeline build error: {exc}") from exc
-
-        # ── 4. Run pipeline — metadata_filter is per-request ─────────────
-        try:
-            state = await pipeline.run(
-                query           = query,
-                metadata_filter = metadata_filter,
-            )
-        except Exception as exc:
-            logger.exception(
-                f"[KBRetrievalService.query] pipeline run failed "
-                f"kb={kb_id} query={query!r}"
-            )
-            raise RuntimeError(f"Retrieval error: {exc}") from exc
+        pipeline = await self._pipeline_cache.get_or_build(kb_id)
+        state = await pipeline.run(
+            query           = query,
+            metadata_filter = metadata_filter,
+        )
 
         confidence = state.confidence
         if confidence is None:
-            raise RuntimeError("Pipeline returned no confidence result.")
+            logger.warning(f"[KBRetrievalService.query] No confidence result for kb={kb_id} query={query}")
+            raise RuntimeError(t("kb.no_confidence"))
 
-        # ── 5. Serialise to QueryResult ───────────────────────────────────
+        # ── Serialise to QueryResult ───────────────────────────────────
         chunks_out: List[ChunkResult] = [
             ChunkResult(
                 chunk_id       = rc.chunk_id,
@@ -272,16 +224,7 @@ class KBRetrievalService:
             chunks     = chunks_out,
         )
     
-    async def get_kb_info(self,kb_id:int)->KBInfo:
-        kb_info = self._kb_info_cache.get(kb_id)
-        if not kb_info:
-            kb = await self.kb_db.get_kb(kb_id)
-            if not kb:
-                raise KBNotFoundError(kb_id)
-            kb_info = KBInfo(name=kb.name,
-                keywords=kb.keywords,
-                description=kb.description)
-            self._kb_info_cache[kb_id] = kb_info
-        return kb_info
+    async def get_kb_info(self, kb_id: int) -> "KBInfo":
+        return await self._kb_info_cache.get_or_build(kb_id)
         
 

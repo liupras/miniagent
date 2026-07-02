@@ -27,6 +27,7 @@ entity:
 kb:
   not_found: 知识库不存在
   not_found_with_id: "知识库 {kb_id} 不存在"
+  no_confidence: "未返回置信度结果"
 
 document:
   not_found: 文档不存在

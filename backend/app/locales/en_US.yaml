@@ -27,6 +27,7 @@ entity:
 kb:
   not_found: Knowledge base does not exist
   not_found_with_id: "Knowledge base {kb_id} does not exist"
+  no_confidence: "No confidence result returned"
 
 document:
   not_found: Document does not exist

@@ -129,6 +129,9 @@ Several layers cache compiled objects in-process:
 - WebSearchService,web_search_pipeline — tool_name → WebSearchPipeline 
 - SQLAgentService,sql_agent — tool_name → SQLAgent
 - AgentFactory,agent_runner — agent_id → AgentRunner
+- KBRetrievalService,kb_retrieval_pipeline — kb_id → RetrievalPipeline,kb_id → KBInfo
+- SmartRouterFactory,smart_router — router_config_id → SmartRouter
+- SmartRouter,smart_router_kb_embedding — kb_id → Embedding
 
 ### MemoryCacheStore
 - WebSearchPipeline
@@ -137,5 +140,6 @@ Several layers cache compiled objects in-process:
 - VectorStoreRegistry — per kb_id
 - SmartRouterFactory — per router_config_id
 - KBRetrievalService — per (kb_id, config_id)
+- SmartRouterFactory
   
 After DB updates, call the matching invalidate() or users see stale config. Admin services often do this already — follow that pattern.

@@ -11,7 +11,7 @@ from app.schemas.admin.router_config import RouterConfigResponse, RouterConfigUp
 
 class RouterConfigNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
-        super().__init__("RouterConfig", entity_id)
+        super().__init__("Router_Config", entity_id)
 
 class RouterConfigService:
 

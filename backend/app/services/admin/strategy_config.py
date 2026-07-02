@@ -17,11 +17,11 @@ from app.schemas.common import NotFoundError,BadRequestError
 
 class StrategyConfigNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
-        super().__init__("StrategyConfig", entity_id)
+        super().__init__("Strategy_Config", entity_id)
 
 class StrategyConfigBadRequestError(BadRequestError):
     def __init__(self, entity_id: Any):
-        super().__init__("StrategyConfig", entity_id)
+        super().__init__("Strategy_Config", entity_id)
         
 class StrategyConfigService:
     """Business logic for StrategyConfig."""
