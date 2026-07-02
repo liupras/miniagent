@@ -118,29 +118,29 @@ Domains are configured in seed data and registered at startup:
 
 ## Singleton
 
-- app.core.PromptLoader, prompt_loader
-- app.core.I18n, t
+- prompt_loader(app.core.prompt_loader.py)
+- t,translations(app.core.I18n.I18n.py)
+- cache_registry(app.infra.store_registry.py)
 
-## Caching rules (easy to break)
-Several layers cache compiled objects in-process:
+## Caching
 
-### AsyncLazyCache
+### AsyncLazyCache(Memory)
 
-- WebSearchService,web_search_pipeline — tool_name → WebSearchPipeline 
-- SQLAgentService,sql_agent — tool_name → SQLAgent
-- AgentFactory,agent_runner — agent_id → AgentRunner
-- KBRetrievalService,kb_retrieval_pipeline — kb_id → RetrievalPipeline,kb_id → KBInfo
-- SmartRouterFactory,smart_router — router_config_id → SmartRouter
-- SmartRouter,smart_router_kb_embedding — kb_id → Embedding
-- VectorStoreRegistry,vector_store_manager — kb_id → VectorStoreManager
+- WebSearchService(web_search_pipeline) — tool_name → WebSearchPipeline 
+- SQLAgentService(sql_agent) — tool_name → SQLAgent
+- AgentFactory(agent_runner) — agent_id → AgentRunner
+- KBRetrievalService(kb_retrieval_pipeline) — kb_id → RetrievalPipeline,kb_id → KBInfo
+- SmartRouterFactory(smart_router) — router_config_id → SmartRouter
+- SmartRouter(smart_router_kb_embedding) — kb_id → Embedding
+- VectorStoreRegistry(vector_store_manager) — kb_id → VectorStoreManager
 
-### MemoryCacheStore
-- WebSearchPipeline
+### CacheStoreRegistry
 
-- AgentFactory — per agent_id
-- VectorStoreRegistry — per kb_id
-- SmartRouterFactory — per router_config_id
-- KBRetrievalService — per (kb_id, config_id)
-- SmartRouterFactory
-  
+- AuthPermission — auth,user_perms:
+- BM25Manager — bm25
+- RetrievalPipeline  — retrieval
+- SearchResultCache — web_search
+- SchemaContextBuilder — schema_context
+
+
 After DB updates, call the matching invalidate() or users see stale config. Admin services often do this already — follow that pattern.

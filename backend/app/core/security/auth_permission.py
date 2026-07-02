@@ -15,7 +15,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from loguru import logger
 
 from app.core.i18n.i18n_http import raise_forbidden
-from app.infra.cache_backend import create_cache_backend
+from app.infra.cache.factory import create_cache_backend
 
 # ── Module-level constants ─────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ class AuthPermission:
         self._jwt_auth  = jwt_auth
         self._user_db   = container.user_db
         self._menu_db   = container.menu_db
-        self._cache     = create_cache_backend(max_size=cache_max_size)
+        self._cache     = create_cache_backend(namespace="auth", max_size=cache_max_size)
         self._cache_ttl = cache_ttl_seconds
         logger.info(
             "AuthPermission initialised — cache max_size=%d, ttl=%.0fs",
@@ -279,16 +279,6 @@ class AuthPermission:
         self._cache.mdelete([self._cache_key(user_id)])
         logger.info("Permission cache invalidated for user_id=%s", user_id)
 
-    def invalidate_all(self) -> None:
-        """Flush the entire permission cache (call after bulk role/menu changes)."""
-        keys = list(self._cache.yield_keys(prefix=CACHE_KEY_PREFIX))
-        self._cache.mdelete(keys)
-        logger.info("Entire permission cache flushed (%d entries).", len(keys))
-
     async def refresh(self, user_id: int) -> Set[str]:
         """Force-reload one user's permissions from DB and repopulate cache."""
         return await self._load_permissions(user_id)
-
-    def stats(self) -> dict:
-        """Return LRU cache hit/miss/TTL statistics."""
-        return self._cache.get_stats()

@@ -8,7 +8,7 @@ import hashlib
 import json
 from typing import List, Optional
 
-from app.infra.cache_backend import create_cache_backend
+from app.infra.cache.factory import create_cache_backend
 from app.services.skill.web_search_models import WebSearchResult
 
 
@@ -26,7 +26,7 @@ class SearchResultCache:
 
     def __init__(self, max_size: int = 256, ttl: int = 3600):
         self._ttl   = ttl
-        self._store = create_cache_backend(max_size=max_size)
+        self._store = create_cache_backend(namespace="web_search", max_size=max_size)
 
     def _make_key(self, query: str) -> str:
         return hashlib.sha256(query.strip().lower().encode("utf-8")).hexdigest()

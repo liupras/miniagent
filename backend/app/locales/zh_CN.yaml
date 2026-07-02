@@ -140,3 +140,4 @@ cache:
   not_found: "未注册的缓存名称: {name}，可用: {count} 个缓存"
   already_exists: "缓存 '{name}' 已存在"
   key_decode_error: "缓存 {name} 的 key 格式非法: {raw_key} ({e})"
+  unregistered_namespace: "未注册的缓存 namespace: {namespace}，可用: {all_namespaces}"

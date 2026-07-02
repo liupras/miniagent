@@ -20,7 +20,7 @@ from pydantic import Field, ConfigDict
 from loguru import logger
 from rank_bm25 import BM25Okapi
 from langchain_core.stores import BaseStore
-from app.infra.cache_backend import create_cache_backend
+from app.infra.cache.factory import create_cache_backend
 from app.core.config import settings
 
 class BM25Manager:
@@ -36,7 +36,8 @@ class BM25Manager:
         self.storage_dir = storage_dir      
 
         self.cache = cache_backend or create_cache_backend(
-            backend_type,
+            namespace="bm25",
+            backend_type=backend_type,
             max_size=max_cache_size
         )
 
@@ -254,21 +255,6 @@ class BM25Manager:
         results.sort(key=lambda x: x["score"], reverse=True)
         return results[:top_k]
 
-    # ==========================================
-    # Management Interface
-    # ==========================================
-
-    def clear_cache(self, kb_id: Optional[str] = None):
-        """Clear the cache. Since the BaseStore interface does not uniformly support `clear`, delete manually by key."""
-        if kb_id:
-            self.cache.mdelete([self._obj_key(kb_id), self._docs_key(kb_id)])
-        else:
-            # If it's a MemoryCacheStore, we previously defined a custom clear method.
-            if hasattr(self.cache, 'clear'):
-                self.cache.clear()
-            else:
-                logger.warning("Currently, CacheBackend does not support global cleanup.")
-
     def as_retriever(
         self,
         kb_id: str,
@@ -421,7 +407,7 @@ def test_persistence_across_restart():
     import tempfile, shutil
     temp_dir = tempfile.mkdtemp()
 
-    cache = MemoryCacheStore(max_size=100)
+    cache = create_cache_backend("memory", max_size=100)
     manager = BM25Manager(
         storage_dir=temp_dir,
         cache_backend=cache
@@ -436,7 +422,7 @@ def test_persistence_across_restart():
     # Simulate a restart (re-instantiate)
     new_manager = BM25Manager(
         storage_dir=temp_dir,
-        cache_backend=MemoryCacheStore(max_size=100)
+        cache_backend=create_cache_backend("memory", max_size=100)
     )
 
     results = new_manager.search(kb, "持久化", top_k=5)
@@ -506,7 +492,7 @@ if __name__ == "__main__":
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     from app.core.config import settings
-    from app.infra.cache_backend import MemoryCacheStore
+
     cache = create_cache_backend(
         "memory",
         max_size=settings.bm25_max_cache_size

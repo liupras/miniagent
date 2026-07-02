@@ -140,3 +140,4 @@ cache:
   not_found: "Unregistered cache name: {name}, available: {count} caches"
   already_exists: "Cache '{name}' already exists"
   key_decode_error: "The cache key for {name} is in an invalid format: {raw_key} ({e})"
+  unregistered_namespace: "Unregistered cache namespace: {namespace}, available: {all_namespaces}"

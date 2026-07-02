@@ -30,7 +30,7 @@ from .citation_merger import CitationMerger
 from app.infra.db.database import StrategyConfig,LLM
 from app.repositories import AsyncParentChunkDatabase, AsyncChunkDatabase, AsyncDocumentDatabase
 from app.infra.llm import LLMClient
-from app.infra.cache_backend import create_cache_backend
+from app.infra.cache.factory import create_cache_backend
 from app.retrieval.reranker.base import RerankMode
 from app.retrieval.reranker.factory import RerankerFactory
 from app.retrieval.adaptive_threshold import AdaptiveThresholdMixin
@@ -1245,7 +1245,9 @@ class RetrievalPipeline:
         if cache_backend is not None:
             cache = cache_backend
         else:
-            cache = create_cache_backend("memory", max_size=cache_max_size)
+            cache = create_cache_backend(
+                namespace="retrieval", backend_type="memory", max_size=cache_max_size
+            )
 
         return cls(
             cfg    = cfg,

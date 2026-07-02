@@ -17,7 +17,8 @@ import re
 from typing import List, Dict, Any, Optional
 from loguru import logger
 
-from app.infra.cache_backend import MemoryCacheStore,create_cache_backend
+from app.infra.cache.memory import MemoryCacheStore
+from app.infra.cache.factory import create_cache_backend
 
 # If a schema has fewer than this many tables, skip filtering and inject everything.
 TABLE_INJECT_THRESHOLD = 10
@@ -70,7 +71,7 @@ class SchemaContextBuilder:
         self._prompt_template_1 = prompt_template_1 or self._default_prompt_template_1()
         self._prompt_2 = prompt_2 or self._default_prompt_2()
         self._prompt_3 = prompt_3 or self._default_prompt_3()
-        self._cache       = cache or create_cache_backend()
+        self._cache       = cache or create_cache_backend(namespace="schema_context", max_size=256)
         self._schema_ttl  = schema_ttl
         self._sample_ttl  = sample_ttl
         self._sample_limit = sample_limit
