@@ -8,12 +8,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
 
-from loguru import logger
-
 from app.schemas.common import ApiResponse
-from app.core.i18n.i18n import t
 
-from app.schemas.user.web_search import WebSearchRequest,WebSearchResultItem,WebSearchResponse,ForLLMResponse,MessageResponse
+from app.schemas.user.web_search import WebSearchRequest,WebSearchResultItem,WebSearchResponse,ForLLMResponse
 
 router = APIRouter()
 
@@ -21,7 +18,7 @@ router = APIRouter()
 # Dependency helper
 # ═══════════════════════════════════════════════════════════════════════════
 
-def _get_web_search_service(request: Request):
+def _get_service(request: Request):
     """
     Resolve WebSearchService from app.state.container.
     """
@@ -44,13 +41,12 @@ def _get_web_search_service(request: Request):
 async def search(
     tool_name: str,
     body: WebSearchRequest,
-    service=Depends(_get_web_search_service),
+    service=Depends(_get_service),
 ) -> ApiResponse:
     
     state = await service.search(
         tool_name=tool_name, 
-        query=body.query,
-        llm_provider_id=body.llm_provider_id
+        query=body.query
     )
 
     results = [
@@ -91,11 +87,13 @@ async def search(
 async def search_for_llm(
     tool_name: str,
     body: WebSearchRequest,
-    service=Depends(_get_web_search_service),
+    service=Depends(_get_service),
 ) -> ApiResponse:
     
-    state   = await service.search(tool_name, body.query)
-    context = service._pipeline_cache[tool_name].__class__.format_for_llm(state)
+    state   = await service.search(
+        tool_name=tool_name, 
+        query=body.query)
+    context = service._pipeline_cache._store[tool_name].__class__.format_for_llm(state)
 
     data = ForLLMResponse(
         tool_name       = tool_name,

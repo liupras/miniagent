@@ -30,10 +30,16 @@ from .web_search import WebSearchPipeline, WebSearchState
 
 if TYPE_CHECKING:
     from app.core.service_container import ServiceContainer
-    
-# ═══════════════════════════════════════════════════════════════════════════
-# WebSearchService
-# ═══════════════════════════════════════════════════════════════════════════
+
+from app.core.i18n.i18n import t
+from app.schemas.common import NotFoundError
+class WebSearchNotFoundError(NotFoundError):
+    def __init__(self, tool_name: str):
+        super().__init__("WebSearch tool", tool_name)
+
+class LLMNotFoundError(NotFoundError):
+    def __init__(self, llm_id: int):
+        super().__init__("LLM", llm_id)
 
 class WebSearchService:
     """
@@ -60,36 +66,40 @@ class WebSearchService:
         
     async def search(
         self,        
-        query: str,
-        llm_provider_id:int=1,
+        query: str,        
         tool_name: str="web_search",
     ) -> WebSearchState:
         """
         Execute a web search using the pipeline configured for *tool_name*.
         """
-        pipeline = await self._pipeline_cache.get_or_build(tool_name,llm_provider_id)
+        pipeline = await self._pipeline_cache.get_or_build(tool_name)
         return await pipeline.run(query)
 
     async def format_for_llm(
         self,        
-        query: str,
-        llm_provider_id:int=1,
+        query: str,        
         tool_name: str="web_search",
     ) -> str:
         """Convenience wrapper: run search and return an LLM-ready context block."""
-        state = await self.search(tool_name=tool_name, query=query,llm_provider_id=llm_provider_id)
+        state = await self.search(tool_name=tool_name, query=query)
         return WebSearchPipeline.format_for_llm(state)
 
-    async def _build_pipeline(self, tool_name: str,llm_provider_id:int) -> WebSearchPipeline:
+    async def _build_pipeline(self, tool_name: str) -> WebSearchPipeline:
         """Load Tool + LLM rows from DB and construct a WebSearchPipeline."""
         # ── 1. Load Tool ─────────────────────────────────────────────────
         tool: Optional[Tool] = await self._tool_db.get_by_name(tool_name)
         if tool is None:
-            raise ValueError(f"Tool {tool_name!r} not found in database.")
+            logger.error(f"[WebSearchService] tool {tool_name!r} not found in database.")
+            raise WebSearchNotFoundError(tool_name)
         if not tool.is_active:
-            raise ValueError(f"Tool {tool_name!r} is inactive.")
-
-        llm_config = await self._llm_db.get(llm_id=llm_provider_id)
+            raise ValueError(t("tool.inactive", name=tool_name))
+        
+        config = tool.config or {}
+        llm_id = config.get("llm_id", 1)
+        llm_config = await self._llm_db.get(llm_id=llm_id)
+        if not llm_config:
+            logger.error(f"[WebSearchService] LLM {llm_id} not found in database.")
+            raise LLMNotFoundError(llm_id)
 
         from app.core.prompt_loader import prompt_loader
         query_rewrite_web_search_prompt_template = prompt_loader.get("web_search.query_rewrite")

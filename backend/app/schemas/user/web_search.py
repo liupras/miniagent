@@ -11,9 +11,7 @@ from pydantic import BaseModel, Field
 
 class WebSearchRequest(BaseModel):
     """Request body for all search endpoints."""
-    query: str = Field(..., min_length=1, max_length=2000, description="User search query.")
-    llm_provider_id:int = Field(default=1, description="LLM config Id.")
-
+    query: str = Field(..., min_length=1, max_length=2000, description="User search query.")   
 class WebSearchResultItem(BaseModel):
     """A single search result returned to the client."""
     title:        str

@@ -38,6 +38,7 @@
     "description": "通过互联网实时搜索，获取公开网页、新闻及政策文件等最新信息。当知识库（公司法、劳动法）中无法找到相关内容，或问题涉及近期动态、司法解释更新、地方性法规及具体案例时，优先调用本工具补充检索。",
     "tool_type": "function",
     "config": {
+      "llm_id": 1,
       "callable_path": "skill.web_search_tool:web_search",
       "is_async": true,
       "enable_query_rewrite": false,
@@ -61,7 +62,7 @@
       "max_total_chars": 9000,
       "reranker": {
         "backend": "local",
-        "model_name": "bge-reranker-base",
+        "model_name": "BAAI/bge-reranker-base",
         "max_length": 512,
         "batch_size": 64
       }

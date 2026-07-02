@@ -63,17 +63,6 @@ class KBRetrievalService:
     (kb_id, config_id).  A pipeline is built once on first use and reused for
     all subsequent requests to the same KB with the same active StrategyConfig.
 
-    Cache invalidation
-    ──────────────────
-    Call invalidate(kb_id) whenever:
-      - A new StrategyConfig version is activated for that KB.
-      - The system language (SystemSettings["system_language"]) is changed.
-      - Documents are added / deleted and the caller wants fresh BM25 state.
-
-    The cache is per-instance, so KBRetrievalService must be a long-lived
-    singleton (injected via ServiceContainer), NOT recreated per request.
-    See kb_router.py for the correct dependency injection pattern.
-
     metadata_filter and the pipeline cache
     ───────────────────────────────────────
     metadata_filter is a per-request parameter — it must NOT be baked into
