@@ -11,6 +11,7 @@ from loguru import logger
 from app.retrieval.vector_store import VectorStoreManager
 from app.core.config import settings
 
+from app.runtime.cache.lazy_cache import AsyncLazyCache
 from app.schemas.common import NotFoundError
 
 class KBNotFoundError(NotFoundError):
@@ -21,54 +22,46 @@ class KBNotFoundError(NotFoundError):
 class VectorStoreRegistry:
     """
     Lazy cache of per-KB VectorStoreManager instances.
-
-    Each KB has its own embedding model configuration, so a separate
-    VectorStoreManager is needed per KB.  This registry creates them on first
-    access and caches them for reuse.
-
-    Usage by services
-    ─────────────────
-    Services call registry.get(kb_id) to resolve the VectorStoreManager for
-    a specific KB.  They hold a reference to the registry (not to individual
-    managers) so they can serve all KBs without being re-instantiated.
     """
 
     def __init__(self, container):
         from app.core.service_container import ServiceContainer
         if not isinstance(container, ServiceContainer):
             raise TypeError(f"Expected ServiceContainer, got {type(container)}")
-        
-        self._stores: Dict[int, VectorStoreManager] = {}
+
+        self._stores: AsyncLazyCache = AsyncLazyCache(
+            builder=self._build_store,
+            name="vector_store_manager",
+            description="kb_id → VectorStoreManager",
+        )
+        container.cache_registry.register(
+            self._stores.name,
+            self._stores,
+            #key_codec=lambda raw: raw,  # kb_id is a plain int
+        )
+
         self.kb_db   = container.kb_db
         self.embed_db = container.embed_db
 
-    async def get(self, kb_id: int) -> VectorStoreManager:
+    async def get(self, kb_id: int) -> "VectorStoreManager":
         """
         Return the VectorStoreManager for *kb_id*, creating it if necessary.
-
-        Raises KBNotFoundError if the KB does not exist.
         """
-        if kb_id in self._stores:
-            return self._stores[kb_id]
-
+        return await self._stores.get_or_build(kb_id)
+    
+    async def _build_store(self, kb_id: int) -> "VectorStoreManager":
+        """
+        AsyncLazyCache builder. `kb_id` is injected automatically as the
+        cache key.
+        """
         kb = await self.kb_db.get_kb(kb_id)
         if not kb:
             logger.error(f"KB {kb_id} not found in database.")
             raise KBNotFoundError(kb_id)
 
-        store = await self._create_store_from_kb(kb)
-        self._stores[kb_id] = store
-        return store
-
-    async def _create_store_from_kb(self, kb) -> VectorStoreManager:
         embed_data = await self.embed_db.get_by_id(kb.embedding_id)
         return VectorStoreManager(
-            db_path        = settings.get_vector_db_path(),
-            ollama_base_url = embed_data.base_url,
-            embed_model    = embed_data.model_name,
+            db_path=settings.get_vector_db_path(),
+            ollama_base_url=embed_data.base_url,
+            embed_model=embed_data.model_name,
         )
-
-    def remove(self, kb_id: int) -> None:
-        """Evict the cached VectorStoreManager for *kb_id*."""
-        if kb_id in self._stores:
-            del self._stores[kb_id]

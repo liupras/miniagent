@@ -132,6 +132,7 @@ Several layers cache compiled objects in-process:
 - KBRetrievalService,kb_retrieval_pipeline — kb_id → RetrievalPipeline,kb_id → KBInfo
 - SmartRouterFactory,smart_router — router_config_id → SmartRouter
 - SmartRouter,smart_router_kb_embedding — kb_id → Embedding
+- VectorStoreRegistry,vector_store_manager — kb_id → VectorStoreManager
 
 ### MemoryCacheStore
 - WebSearchPipeline
