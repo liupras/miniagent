@@ -17,70 +17,7 @@
         "component": "agentManagement/agent/index",
         "sort_order": 2
     },
-    {
-        "id": 3,
-        "parent_id": 1,
-        "name": "tool:list", 
-        "title_key": "menus.agentManagement.skill",
-        "path": "/agentManagement/skill",
-        "component": "agentManagement/skill/index",
-        "sort_order": 3
-    },
-    {
-        "id": 4,
-        "parent_id": null,
-        "name": "kb:default", 
-        "title_key": "menus.kb.default",
-        "path": "/kbManagement",        
-        "icon": "ep:document-copy",
-        "sort_order": 5
-    },
-    {
-        "id": 5,
-        "parent_id": 4,
-        "name": "domain:list", 
-        "title_key": "menus.kb.domain",
-        "path": "/kbManagement/domain",        
-        "component": "kbManagement/domain/index",  
-        "sort_order": 6
-    },
-    {
-        "id": 6,
-        "parent_id": 4,
-        "name": "router_config:list", 
-        "title_key": "menus.kb.routerConfig",
-        "path": "/kbManagement/router_config",        
-        "component": "kbManagement/router_config/index",  
-        "sort_order": 6
-    },
-    {
-        "id": 7,
-        "parent_id": 4,
-        "name": "strategy_config:list", 
-        "title_key": "menus.kb.strategyConfig",
-        "path": "/kbManagement/strategy_config",        
-        "component": "kbManagement/strategy_config/index",  
-        "sort_order": 7
-    },
-    {
-        "id": 8,
-        "parent_id": 4,
-        "name": "knowledge_base:list", 
-        "title_key": "menus.kb.kownledgeBase",
-        "path": "/kbManagement/knowledge_base",        
-        "component": "kbManagement/knowledge_base/index",  
-        "sort_order": 8
-    },
-    {
-        "id": 9,
-        "parent_id": 4,
-        "name": "document:list", 
-        "title_key": "menus.kb.document",
-        "path": "/kbManagement/document",        
-        "component": "kbManagement/document/index",  
-        "sort_order": 9
-    },
-    {
+        {
         "id":1000,
         "parent_id": 2,
         "name": "agent:add",
@@ -106,6 +43,15 @@
         "icon": "ep:delete",        
         "menu_type": "button",
         "description": "智能体-删除"
+    },
+    {
+        "id": 3,
+        "parent_id": 1,
+        "name": "tool:list", 
+        "title_key": "menus.agentManagement.skill",
+        "path": "/agentManagement/skill",
+        "component": "agentManagement/skill/index",
+        "sort_order": 3
     },
     {
         "id":1003,
@@ -135,6 +81,24 @@
         "description": "技能-删除"
     },
     {
+        "id": 4,
+        "parent_id": null,
+        "name": "kb:default", 
+        "title_key": "menus.kb.default",
+        "path": "/kbManagement",        
+        "icon": "ep:document-copy",
+        "sort_order": 5
+    },
+    {
+        "id": 5,
+        "parent_id": 4,
+        "name": "domain:list", 
+        "title_key": "menus.kb.domain",
+        "path": "/kbManagement/domain",        
+        "component": "kbManagement/domain/index",  
+        "sort_order": 6
+    },
+    {
         "id":1006,
         "parent_id": 5,
         "name": "domain:add",
@@ -162,6 +126,15 @@
         "description": "领域-删除"
     },
     {
+        "id": 6,
+        "parent_id": 4,
+        "name": "router_config:list", 
+        "title_key": "menus.kb.routerConfig",
+        "path": "/kbManagement/router_config",        
+        "component": "kbManagement/router_config/index",  
+        "sort_order": 6
+    },
+    {
         "id":1009,
         "parent_id": 6,
         "name": "router_config:edit",
@@ -169,6 +142,15 @@
         "icon": "ep:edit",        
         "menu_type": "button",
         "description": "路由策略-编辑"
+    },
+    {
+        "id": 7,
+        "parent_id": 4,
+        "name": "strategy_config:list", 
+        "title_key": "menus.kb.strategyConfig",
+        "path": "/kbManagement/strategy_config",        
+        "component": "kbManagement/strategy_config/index",  
+        "sort_order": 7
     },
     {
         "id":1010,
@@ -198,6 +180,15 @@
         "description": "检索策略-删除"
     },
     {
+        "id": 8,
+        "parent_id": 4,
+        "name": "knowledge_base:list", 
+        "title_key": "menus.kb.kownledgeBase",
+        "path": "/kbManagement/knowledge_base",        
+        "component": "kbManagement/knowledge_base/index",  
+        "sort_order": 8
+    },
+    {
         "id":1013,
         "parent_id": 8,
         "name": "knowledge_base:add",
@@ -223,7 +214,16 @@
         "icon": "ep:edit",        
         "menu_type": "button",
         "description": "知识库-编辑"
-    },   
+    },
+    {
+        "id": 9,
+        "parent_id": 4,
+        "name": "document:list", 
+        "title_key": "menus.kb.document",
+        "path": "/kbManagement/document",        
+        "component": "kbManagement/document/index",  
+        "sort_order": 9
+    },
     {
         "id":1016,
         "parent_id": 9,
@@ -250,5 +250,32 @@
         "icon": "ep:delete",        
         "menu_type": "button",
         "description": "文档库-删除"
+    },
+    {
+        "id": 100,
+        "parent_id": null,
+        "name": "setting:default", 
+        "title_key": "menus.setting.default",
+        "path": "/setting",
+        "icon":"ep:setting",
+        "sort_order": 100
+    },
+    {
+        "id": 101,
+        "parent_id": 100,
+        "name": "object_cache:list", 
+        "title_key": "menus.setting.objectCache",
+        "path": "/setting/object_cache",
+        "component": "setting/object_cache/index",  
+        "sort_order": 101
+    },    
+    {
+        "id":1101,
+        "parent_id": 101,
+        "name": "object_cache:edit",
+        "title_key": "buttons.edit",
+        "icon": "ep:edit",       
+        "menu_type": "button",
+        "description": "缓存-失效操作"
     }
 ]

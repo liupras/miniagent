@@ -103,9 +103,9 @@ menus:
     strategyConfig: 检索策略
     kownledgeBase: 基本信息
     document: 文档
-  system:
-    default: 系统管理
-    cache: 缓存
+  setting:
+    default: 系统设置
+    objectCache: 对象缓存
 
 status:
   pureLoad: 加载中...
@@ -447,4 +447,23 @@ document:
     empty: 该文档暂无分块数据
     loadError: 分块加载失败
 
+cache:
+  title: 缓存管理
+  name: 缓存名称
+  size: 条目数
+  viewKeys: 查看 Key
+  invalidateAll: 清空
+  invalidate: 失效
+  tip: 提示
+  key: Key
+  keysOf: 的缓存 Key
+  searchKeyPlaceholder: 搜索 Key
+  invalidateEverywhereMode: 全局失效（对所有缓存生效）
+  confirmInvalidateAll: 确定要清空缓存「{name}」的全部记录吗？
+  confirmInvalidateKey: 确定要失效该 Key 吗？
+  invalidateAllSuccess: 已清空 {count} 条记录
+  invalidateKeySuccess: 该 Key 已失效
+  keyNotFound: 未命中该 Key，可能已被清理
+  invalidateEverywhereResult: 已在 {hit}/{total} 个缓存中失效该 Key
+  noKeys: 暂无缓存 Key
 

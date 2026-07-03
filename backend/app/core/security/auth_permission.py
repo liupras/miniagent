@@ -53,8 +53,8 @@ class AuthPermission:
         self._cache     = create_cache_backend(namespace="auth", max_size=cache_max_size)
         self._cache_ttl = cache_ttl_seconds
         logger.info(
-            "AuthPermission initialised — cache max_size=%d, ttl=%.0fs",
-            cache_max_size, cache_ttl_seconds,
+            "AuthPermission initialised — cache max_size={:d}, ttl={:.0f}s",
+            cache_max_size, cache_ttl_seconds
         )
 
     # ── Internal helpers ───────────────────────────────────────────────────
@@ -108,15 +108,15 @@ class AuthPermission:
             user = await self._user_db._get_user_by_username(session, username)
 
         if user is None:
-            logger.warning("Token valid but username '%s' not found in DB.", username)
+            logger.warning("Token valid but username '{}' not found in DB.", username)
             raise self._unauthorized(t("auth.user_not_found"))
 
         # Step 3 — reject disabled accounts
         if not user.is_active:
-            logger.warning("Blocked login for deactivated user '%s'.", username)
+            logger.warning("Blocked login for deactivated user '{}'.", username)
             raise self._unauthorized(t("auth.user_disabled"))
 
-        logger.debug("Token resolved: '%s' → user_id=%s", username, user.id)
+        logger.debug("Token resolved: '{}' → user_id={}", username, user.id)
         return user.id
 
     # ── Permission cache ───────────────────────────────────────────────────
@@ -129,16 +129,16 @@ class AuthPermission:
             [(self._cache_key(user_id), self._encode(perms))],
             ttl_seconds=self._cache_ttl,
         )
-        logger.debug("Permissions cached for user_id=%s (%d codes)", user_id, len(perms))
+        logger.debug("Permissions cached for user_id={} ({} codes)", user_id, len(perms))
         return perms
 
     async def get_permissions(self, user_id: int) -> Set[str]:
         """Return permission set: TTL cache → DB fallback."""
         cached = self._cache.mget_ttl([self._cache_key(user_id)])[0]
         if cached is not None:
-            logger.debug("Permission cache HIT for user_id=%s", user_id)
+            logger.debug("Permission cache HIT for user_id={}", user_id)
             return self._decode(cached)
-        logger.debug("Permission cache MISS for user_id=%s", user_id)
+        logger.debug("Permission cache MISS for user_id={}", user_id)
         return await self._load_permissions(user_id)
 
     # ── Core permission check ──────────────────────────────────────────────
@@ -150,7 +150,7 @@ class AuthPermission:
         perms = await self.get_permissions(user_id)
         if SUPER_PERMISSION in perms or required in perms:
             return
-        logger.warning("Access denied — user_id=%s lacks '%s'", user_id, required)
+        logger.warning("Access denied — user_id={} lacks '{}'", user_id, required)
         raise_forbidden("auth.permission_denied", required=required)
 
     # ── FastAPI dependency factories ───────────────────────────────────────
@@ -277,7 +277,7 @@ class AuthPermission:
     def invalidate(self, user_id: int) -> None:
         """Remove a single user's cache entry (call after role change)."""
         self._cache.mdelete([self._cache_key(user_id)])
-        logger.info("Permission cache invalidated for user_id=%s", user_id)
+        logger.info("Permission cache invalidated for user_id={}", user_id)
 
     async def refresh(self, user_id: int) -> Set[str]:
         """Force-reload one user's permissions from DB and repopulate cache."""

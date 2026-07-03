@@ -102,9 +102,9 @@ menus:
     strategyConfig: Strategy Config
     kownledgeBase: knowledge Base
     document: Document
-  system:
-    default: System Management
-    cache: Cache Management
+  setting:
+    default: Settings
+    objectCache: Object Cache
 
 status:
   pureLoad: Loading...
@@ -444,3 +444,23 @@ document:
     textLabel: Text
     empty: No chunks found for this document
     loadError: Failed to load chunks
+
+cache:
+  title: Cache Management
+  name: Cache Name
+  size: Entry Count
+  viewKeys: View Keys
+  invalidateAll: Invalidate All
+  invalidate: Invalidate
+  tip: Tip
+  key: Key
+  keysOf: "'s Cache Keys"
+  searchKeyPlaceholder: Search Keys
+  invalidateEverywhereMode: Global Invalidate (Affects All Caches)
+  confirmInvalidateAll: Are you sure you want to invalidate all records in cache "{name}"?
+  confirmInvalidateKey: Are you sure you want to invalidate this Key?
+  invalidateAllSuccess: Successfully invalidated {count} records
+  invalidateKeySuccess: This Key has been invalidated
+  keyNotFound: Key not found, it may have been cleared
+  invalidateEverywhereResult: Key invalidated in {hit}/{total} caches
+  noKeys: No cache keys available

@@ -82,7 +82,7 @@ class DomainService:
         if existing:
             raise DomainAlreadyExistsError(existing.id)
         domain = await self._repo.create(payload.model_dump(exclude_unset=True))
-        logger.info("Created domain '%s' (id=%s)", domain.name, domain.id)
+        logger.info("Created domain '{}' (id={})", domain.name, domain.id)
         return DomainRead.model_validate(domain)
 
     async def update_domain(self, domain_id: int, payload: DomainUpdate) -> DomainRead:
@@ -95,14 +95,14 @@ class DomainService:
         domain = await self._repo.update(domain_id, payload.model_dump(exclude_unset=True))
         if domain is None:
             raise DomainNotFoundError(domain_id)
-        logger.info("Updated domain id=%s", domain_id)
+        logger.info("Updated domain id={}", domain_id)
         return DomainRead.model_validate(domain)
 
     async def delete_domain(self, domain_id: int) -> None:
         deleted = await self._repo.delete(domain_id)
         if not deleted:
             raise DomainNotFoundError(domain_id)
-        logger.info("Deleted domain id=%s", domain_id)
+        logger.info("Deleted domain id={}", domain_id)
 
     async def bulk_delete(self, ids: list[int]) -> int:
         count = await self._repo.bulk_delete(ids)

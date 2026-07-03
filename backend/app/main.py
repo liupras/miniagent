@@ -153,6 +153,7 @@ def handle_exception(exc: Exception) -> JSONResponse:
     
     # Handle other exceptions
     logger.error(f"❌ Unhandled exception: {exc}")
+    logger.exception(f"❌ Unhandled exception: {exc}")
     
     error_data = {"error": str(exc) if settings.debug else t("common.error_500")}
     return create_api_response(status_code=500,code=500, message=t("common.error_500"), data=error_data)
@@ -196,6 +197,9 @@ app.include_router(admin_sql_agent_router,prefix="/api/v1/admin/sql-agent", tags
 
 from app.api.admin.web_search import router as admin_web_search_router
 app.include_router(admin_web_search_router,prefix="/api/v1/admin/skill", tags=["Admin - Skill - Web Search"])
+
+from app.api.admin.object_cache import router as admin_object_cache_router
+app.include_router(admin_object_cache_router,prefix="/api/v1/admin/object-cache", tags=["Admin - Object Cache"])
 
 from app.api.user.kb import router as kb_router
 app.include_router(kb_router,prefix="/api/v1/kb", tags=["Knowledge Base"])
