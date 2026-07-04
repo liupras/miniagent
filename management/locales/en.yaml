@@ -454,7 +454,6 @@ cache:
   invalidate: Invalidate
   tip: Tip
   key: Key
-  keysOf: "'s Cache Keys"
   searchKeyPlaceholder: Search Keys
   invalidateEverywhereMode: Global Invalidate (Affects All Caches)
   confirmInvalidateAll: Are you sure you want to invalidate all records in cache "{name}"?

@@ -47,7 +47,7 @@ export function useCache() {
   async function onSearch() {
     loading.value = true;
     try {
-      const { data } = await getCacheStats();
+      const data = await getCacheStats();
       dataList.value = Object.values(data ?? {});
     } finally {
       loading.value = false;
@@ -61,7 +61,7 @@ export function useCache() {
 
   async function refreshCurrentCache() {
     if (!currentCache.value) return;
-    const { data } = await getCacheStats(currentCache.value.name);
+    const data = await getCacheStats(currentCache.value.name);
     currentCache.value = data?.[currentCache.value.name] ?? currentCache.value;
     // 同步刷新主表格中对应行
     const idx = dataList.value.findIndex(

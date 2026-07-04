@@ -68,7 +68,7 @@ watch(
 <template>
   <el-dialog
     v-model="dialogVisible"
-    :title="cache ? `${t('cache.keysOf')} ${cache.name}` : ''"
+    :title="cache ? `${cache.name}` : ''"
     width="640px"
     destroy-on-close
   >
@@ -97,7 +97,7 @@ watch(
           </template>
         </el-table-column>
         <el-table-column
-          :label="t('cache.operation')"
+          :label="t('labels.operation')"
           width="120"
           align="right"
         >
@@ -129,7 +129,7 @@ watch(
 
     <template #footer>
       <el-button @click="dialogVisible = false">{{
-        t("button.close")
+        t("buttons.close")
       }}</el-button>
       <el-button type="primary" @click="emit('refresh')">
         {{ t("buttons.refresh") }}

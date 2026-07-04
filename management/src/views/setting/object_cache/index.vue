@@ -34,7 +34,7 @@ const {
     >
       <template #buttons>
         <el-button
-          v-auth="'system:cache:list'"
+          v-auth="'object_cache:list'"
           type="primary"
           @click="onSearch"
         >
@@ -54,7 +54,7 @@ const {
         >
           <template #operation="{ row }">
             <el-button
-              v-auth="'system:cache:list'"
+              v-auth="'object_cache:list'"
               link
               type="primary"
               :size="size"
@@ -68,7 +68,7 @@ const {
             >
               <template #reference>
                 <el-button
-                  v-auth="'system:cache:invalidate'"
+                  v-auth="'object_cache:edit'"
                   link
                   type="danger"
                   :size="size"

@@ -456,7 +456,6 @@ cache:
   invalidate: 失效
   tip: 提示
   key: Key
-  keysOf: 的缓存 Key
   searchKeyPlaceholder: 搜索 Key
   invalidateEverywhereMode: 全局失效（对所有缓存生效）
   confirmInvalidateAll: 确定要清空缓存「{name}」的全部记录吗？

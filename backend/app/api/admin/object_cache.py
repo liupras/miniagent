@@ -4,15 +4,6 @@
 # @date    : 2026-05-29
 # @description: Object Cache API Router 
 
-#
-# 集成说明（请按项目实际情况调整）：
-# 1. `get_service` 假设 ServiceContainer 上已挂载 `cache_registry: CacheRegistry` 属性，
-#    与项目里 SQLAgentService / WebSearchService 等服务同样通过 Depends(get_service_container) 获取。
-# 2. 权限校验沿用项目 RBAC 惯例，示例中用 `require_permission("system:cache:xxx")` 占位，
-#    请替换为项目里实际的权限依赖（对应超管通配符 "*:*:*"）。
-# 3. 统一走 BaseDomainError -> 全局异常处理器 -> HTTP 200 + 业务错误码 的约定，
-#    因此这里只抛领域异常，不手写 HTTPException。
-
 from __future__ import annotations
 
 from typing import Dict, Optional
