@@ -106,6 +106,7 @@ menus:
   setting:
     default: 系统设置
     objectCache: 对象缓存
+    valueCache: 数值缓存
 
 status:
   pureLoad: 加载中...
@@ -161,7 +162,9 @@ labels:
   deactivated: 已禁用
 
   yes: 是
-  no: 否  
+  no: 否
+
+  tip: 提示
 
 search:
   pureTotal: 共
@@ -448,13 +451,12 @@ document:
     loadError: 分块加载失败
 
 cache:
-  title: 缓存管理
+  title: 对象缓存管理
   name: 缓存名称
   size: 条目数
   viewKeys: 查看 Key
   invalidateAll: 清空
   invalidate: 失效
-  tip: 提示
   key: Key
   searchKeyPlaceholder: 搜索 Key
   invalidateEverywhereMode: 全局失效（对所有缓存生效）
@@ -465,4 +467,25 @@ cache:
   keyNotFound: 未命中该 Key，可能已被清理
   invalidateEverywhereResult: 已在 {hit}/{total} 个缓存中失效该 Key
   noKeys: 暂无缓存 Key
+
+valueCache:
+  title: 键值缓存管理
+  namespace: 命名空间
+  backendType: 后端类型
+  size: 数量
+  viewKeys: 查看 Key
+  clearAll: 清空全部
+  confirmClear: 确定要清空命名空间 "{namespace}" 下的全部缓存吗？
+  confirmClearAll: 确定要清空所有命名空间下的全部缓存吗？此操作不可恢复。
+  clearSuccess: 已清空 {count} 条记录
+  clearAllSuccess: 已清空 {count} 条记录
+  keysOf: Key 列表 -
+  key: Key
+  prefixPlaceholder: 按前缀过滤（回车查询）
+  deleteSelected: 删除选中
+  confirmDeleteSelected: 确定要删除选中的 {count} 个 Key 吗？
+  deleteKeysSuccess: 已删除 {count} 个 Key
+  keyNotFound: 未找到匹配的 Key
+  noKeys: 暂无 Key
+  truncatedHint: 结果已按 limit={limit} 截断，请缩小前缀范围查看更多
 

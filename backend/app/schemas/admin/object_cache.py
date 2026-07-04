@@ -2,8 +2,7 @@
 # -*- coding:utf-8 -*-
 # @author  : Liu Lijun
 # @date    : 2026-07-03
-# @description: LLM Pydantic Schemas
-# @description: Request/response model for cache management interface.
+# @description: Object cache Pydantic Schemas
 
 from __future__ import annotations
 

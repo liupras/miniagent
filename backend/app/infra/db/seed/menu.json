@@ -277,5 +277,23 @@
         "icon": "ep:edit",       
         "menu_type": "button",
         "description": "缓存-失效操作"
+    },
+    {
+        "id": 102,
+        "parent_id": 100,
+        "name": "value_cache:list", 
+        "title_key": "menus.setting.valueCache",
+        "path": "/setting/value_cache",
+        "component": "setting/value_cache/index",  
+        "sort_order": 102
+    },    
+    {
+        "id":1102,
+        "parent_id": 102,
+        "name": "value_cache:edit",
+        "title_key": "buttons.edit",
+        "icon": "ep:edit",       
+        "menu_type": "button",
+        "description": "缓存-失效操作"
     }
 ]

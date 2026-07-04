@@ -122,6 +122,9 @@ class ServiceContainer:
 
         self.cache_registry = CacheRegistry()
 
+        from app.infra.cache.store_registry import cache_registry as value_cache_registry
+        self.value_cache_registry = value_cache_registry
+
         self.vector_registry = VectorStoreRegistry(self)
         self.router_factory = SmartRouterFactory(self)
         self.domain_registry = DomainRegistry()

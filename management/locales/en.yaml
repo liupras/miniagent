@@ -105,6 +105,7 @@ menus:
   setting:
     default: Settings
     objectCache: Object Cache
+    valueCache: Value Cache
 
 status:
   pureLoad: Loading...
@@ -161,6 +162,8 @@ labels:
 
   yes: Yes
   no: No
+
+  tip: Tip
 
 search:
   pureTotal: Total
@@ -446,13 +449,12 @@ document:
     loadError: Failed to load chunks
 
 cache:
-  title: Cache Management
+  title: Object Cache Management
   name: Cache Name
   size: Entry Count
   viewKeys: View Keys
   invalidateAll: Invalidate All
   invalidate: Invalidate
-  tip: Tip
   key: Key
   searchKeyPlaceholder: Search Keys
   invalidateEverywhereMode: Global Invalidate (Affects All Caches)
@@ -463,3 +465,24 @@ cache:
   keyNotFound: Key not found, it may have been cleared
   invalidateEverywhereResult: Key invalidated in {hit}/{total} caches
   noKeys: No cache keys available
+
+valueCache:
+  title: Key-Value Cache Management
+  namespace: Namespace
+  backendType: Backend Type
+  size: Size
+  viewKeys: View Keys
+  clearAll: Clear All
+  confirmClear: Are you sure you want to clear all entries under namespace "{namespace}"?
+  confirmClearAll: Are you sure you want to clear all entries in every namespace? This cannot be undone.
+  clearSuccess: Cleared {count} entries
+  clearAllSuccess: Cleared {count} entries
+  keysOf: Keys of
+  key: Key
+  prefixPlaceholder: Filter by prefix (press Enter)
+  deleteSelected: Delete Selected
+  confirmDeleteSelected: Are you sure you want to delete the selected {count} key(s)?
+  deleteKeysSuccess: Deleted {count} key(s)
+  keyNotFound: No matching key found
+  noKeys: No keys
+  truncatedHint: Results truncated at limit={limit}, narrow the prefix to see more

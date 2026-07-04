@@ -75,7 +75,7 @@ export function useCache() {
   function handleInvalidateAll(row: CacheStatsItem) {
     ElMessageBox.confirm(
       t("cache.confirmInvalidateAll", { name: row.name }),
-      t("cache.tip"),
+      t("labels.tip"),
       {
         confirmButtonText: t("buttons.confirm"),
         cancelButtonText: t("buttons.cancel"),
