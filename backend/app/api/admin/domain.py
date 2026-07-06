@@ -28,6 +28,12 @@ router = APIRouter()
 def get_service(request: Request) -> DomainService:
     return request.app.state.container.domain_service
 
+from app.runtime.cache.models import CacheType
+from app.runtime.cache.registry import CacheRegistry
+
+def get_cache(request: Request)->CacheRegistry:
+    return request.app.state.container.cache_registry
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -99,9 +105,12 @@ async def update_domain(
     domain_id: int,
     payload: DomainUpdate,
     svc:       DomainService   = Depends(get_service),
+    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_edit),
 ) -> ApiResponse:
     domain = await svc.update_domain(domain_id, payload)
+    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
+    cache.invalidate_all(CacheType.VECTOR_STORE_MANAGER)
     return ApiResponse(data=domain)
 
 
@@ -112,9 +121,14 @@ async def update_domain(
 async def delete_domain(
     domain_id: int, 
     svc:       DomainService   = Depends(get_service),
+    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_delete),
 ) -> ApiResponse:
     await svc.delete_domain(domain_id)
+    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
+    cache.invalidate_all(CacheType.VECTOR_STORE_MANAGER)
+    cache.invalidate_all(CacheType.KB_INFO)
+    cache.invalidate_all(CacheType.KB_EMBEDDING)
     return ApiResponse()
 
 
@@ -122,7 +136,12 @@ async def delete_domain(
 async def bulk_delete_tools(
     ids: list[int],
     svc:       DomainService   = Depends(get_service),
+    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_delete),
 ):
     deleted = await svc.bulk_delete(ids)
+    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
+    cache.invalidate_all(CacheType.VECTOR_STORE_MANAGER)
+    cache.invalidate_all(CacheType.KB_INFO)
+    cache.invalidate_all(CacheType.KB_EMBEDDING)
     return ApiResponse(data={"deleted": deleted})

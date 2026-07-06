@@ -195,9 +195,6 @@ app.include_router(admin_task_router,prefix="/api/v1/admin/tasks", tags=["Admin 
 from app.api.admin.sql_agent import router as admin_sql_agent_router
 app.include_router(admin_sql_agent_router,prefix="/api/v1/admin/sql-agent", tags=["Admin - SQL Agent"])
 
-from app.api.admin.web_search import router as admin_web_search_router
-app.include_router(admin_web_search_router,prefix="/api/v1/admin/skill", tags=["Admin - Skill - Web Search"])
-
 from app.api.admin.object_cache import router as admin_object_cache_router
 app.include_router(admin_object_cache_router,prefix="/api/v1/admin/object-cache", tags=["Admin - Object Cache"])
 

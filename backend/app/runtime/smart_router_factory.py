@@ -30,10 +30,11 @@ class SmartRouterFactory:
         
         self.container = container
 
+        from app.runtime.cache.models import CacheType, CACHE_META
         self._cache: AsyncLazyCache = AsyncLazyCache[str, SmartRouter](
             builder=self._build_router,
-            name="smart_router",
-            description="router_config_id → SmartRouter",
+            name=CacheType.SMART_ROUTER,
+            description=f"{CACHE_META[CacheType.SMART_ROUTER].key_name} → {CACHE_META[CacheType.SMART_ROUTER].value_name}",
         )
         container.cache_registry.register(
             self._cache.name,

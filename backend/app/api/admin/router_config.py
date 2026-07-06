@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, Request
 from app.schemas.admin.router_config import RouterConfigUpdate
 from app.services.admin.router_config import RouterConfigService
 from app.schemas.common import ApiResponse
-from app.services.kb.service_smart_router import KBSmartRouterService
 from app.core.security.auth_permission import AuthPermission
 
 router = APIRouter()
@@ -21,21 +20,11 @@ router = APIRouter()
 def get_service(request: Request) -> RouterConfigService:
     return request.app.state.container.router_config_service
 
+from app.runtime.cache.models import CacheType
+from app.runtime.cache.registry import CacheRegistry
 
-def get_service_smart_router(
-    request: Request
-) -> KBSmartRouterService:
-    """
-    Return the long-lived KBSmartRouterService singleton from ServiceContainer.
-
-    The service delegates to SmartRouterFactory, which caches one SmartRouter
-    per router_config_id.  Must be a singleton — never recreate per request.
-
-    Call container.smart_router_service.invalidate(router_config_id) after
-    updating a RouterConfig in the DB.
-    """
-    return request.app.state.container.smart_router_service
-
+def get_cache(request: Request)->CacheRegistry:
+    return request.app.state.container.cache_registry
 
 _list_router_config   = AuthPermission.Permission("router_config:list")
 _edit_router_config   = AuthPermission.Permission("router_config:edit")
@@ -75,13 +64,12 @@ async def get_router_config(
 async def update_router_config(
     config_id:          str, 
     payload:            RouterConfigUpdate,
-    _svc:               RouterConfigService     = Depends(get_service),
-    _svc_smart_router:  KBSmartRouterService    = Depends(get_service_smart_router),
+    _svc:               RouterConfigService     = Depends(get_service),    
+    cache:     CacheRegistry = Depends(get_cache),
     caller_id:          int                     = Depends(_edit_router_config)
 ):
   
     await _svc.update(config_id, payload)
-    if _svc_smart_router:
-        _svc_smart_router.invalidate(config_id)
+    cache.invalidate(CacheType.SMART_ROUTER,config_id)
     return ApiResponse()
    

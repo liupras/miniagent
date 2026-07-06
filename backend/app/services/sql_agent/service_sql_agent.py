@@ -54,10 +54,11 @@ class SQLAgentService:
         # DBManager wraps the same DuckDB connection for CSV import operations
         self._db_manager = DBManager(duckdb_manager=self._duckdb_manager)
 
+        from app.runtime.cache.models import CacheType, CACHE_META
         self._agent_cache = AsyncLazyCache[str, SQLAgent](
             builder=self._build_agent,
-            name="sql_agent",
-            description="tool_name → SQLAgent",
+            name=CacheType.SQL_AGENT,
+            description=f"{CACHE_META[CacheType.SQL_AGENT].key_name} → {CACHE_META[CacheType.SQL_AGENT].value_name}",
         )
         container.cache_registry.register(
             self._agent_cache.name,

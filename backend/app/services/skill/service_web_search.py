@@ -57,13 +57,13 @@ class WebSearchService:
         self._tool_db   = container.tool_db
         self._llm_db = container.llm_db
 
+        from app.runtime.cache.models import CacheType, CACHE_META
         self._pipeline_cache = AsyncLazyCache[str, WebSearchPipeline](
             builder=self._build_pipeline,
-            name="web_search_pipeline",
-            description="tool_name → WebSearchPipeline",
+            name=CacheType.WEB_SEARCH_PIPELINE,
+            description=f"{CACHE_META[CacheType.WEB_SEARCH_PIPELINE].key_name} → {CACHE_META[CacheType.WEB_SEARCH_PIPELINE].value_name}",
         )
-        container.cache_registry.register(self._pipeline_cache.name, self._pipeline_cache) 
-        
+
     async def search(
         self,        
         query: str,        

@@ -9,9 +9,9 @@ from __future__ import annotations
 import os
 import shutil
 import tempfile
-from typing import Any, Dict, Optional
+from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from pydantic import BaseModel, Field
 
 from loguru import logger
@@ -46,27 +46,6 @@ class ImportCsvResponse(BaseModel):
     )
     schema_name: str
     table_name: Optional[str]
-
-
-class CacheInfoResponse(BaseModel):
-    """Current agent cache state."""
-
-    cache: Dict[str, Any]
-
-
-class InvalidateCacheRequest(BaseModel):
-    """Optional body for targeted cache eviction."""
-
-    llm_provider_id: Optional[int] = Field(
-        default=None,
-        description="Evict only agents for this LLM provider. "
-                    "Omit to evict ALL cached agents.",
-    )
-    schema_name: Optional[str] = Field(
-        default="main",
-        description="Schema name to evict (used together with llm_provider_id).",
-    )
-
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Endpoints
@@ -168,36 +147,3 @@ async def import_csv(
     )
     return ApiResponse(data=data)
 
-
-@router.get(
-    "/cache",
-    response_model=ApiResponse,
-    summary="Inspect the agent cache",
-    description="Returns the set of (llm_provider_id, schema_name) pairs currently cached.",
-)
-async def cache_info(service=Depends(_get_service)) -> ApiResponse:
-    data= CacheInfoResponse(cache=service.cache_info())
-    return ApiResponse(data=data)
-
-
-@router.post(
-    "/cache/invalidate",
-    status_code=status.HTTP_204_NO_CONTENT,
-    summary="Invalidate cached agents",
-    description=(
-        "Evict one agent (when llm_provider_id is provided) or ALL cached agents "
-        "(when the body is empty or llm_provider_id is omitted). "
-        "Use after updating LLM configs or prompt templates."
-    ),
-)
-async def invalidate_cache(
-    body: InvalidateCacheRequest = InvalidateCacheRequest(),
-    service=Depends(_get_service),
-) -> None:
-    if body.llm_provider_id is not None:
-        service.invalidate(
-            llm_provider_id=body.llm_provider_id,
-            schema_name=body.schema_name or "main",
-        )
-    else:
-        service.invalidate_all()

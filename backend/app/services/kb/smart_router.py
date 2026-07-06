@@ -71,10 +71,11 @@ class SmartRouter:
         self.router_config = router_config
         self.embedding_db = embedding_db
 
+        from app.runtime.cache.models import CacheType, CACHE_META
         self._kb_embedding_cache: AsyncLazyCache = AsyncLazyCache[int, List[float]](
             builder=self._build_kb_embedding,
-            name="smart_router_kb_embedding",
-            description="kb_id → Embedding, Embedding vector for a KB's name/description/keywords",
+            name=CacheType.KB_EMBEDDING,
+            description=f"{CACHE_META[CacheType.KB_EMBEDDING].key_name}  → {CACHE_META[CacheType.KB_EMBEDDING].value_name}"
         )
         container.cache_registry.register(
             self._kb_embedding_cache.name,

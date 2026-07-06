@@ -29,10 +29,16 @@ router = APIRouter()
 def get_container(request: Request) -> ServiceContainer:
     return request.app.state.container
 
-def get_llm_service(
+def get_service(
     container: ServiceContainer = Depends(get_container),
 ) -> LLMService:
     return container.llm_service
+
+from app.runtime.cache.models import CacheType
+from app.runtime.cache.registry import CacheRegistry
+
+def get_cache(request: Request)->CacheRegistry:
+    return request.app.state.container.cache_registry
 
 # ──────────────────────────────────────────────
 # Routes
@@ -45,7 +51,7 @@ def get_llm_service(
 )
 async def get_llm_options(
     provider_name: Optional[str] = Query(None, description="Filter by provider"),
-    svc: LLMService = Depends(get_llm_service),
+    svc: LLMService = Depends(get_service),
 ):
 
     options: List[LLMOptionItem] = await svc.get_options(provider_name)
@@ -57,7 +63,7 @@ async def get_llm_options(
     response_model=ApiResponse,
     summary="List all distinct provider names",
 )
-async def list_providers(svc: LLMService = Depends(get_llm_service)):
+async def list_providers(svc: LLMService = Depends(get_service)):
     providers = await svc.list_providers()
     return ApiResponse(data=providers)
 
@@ -69,7 +75,7 @@ async def list_providers(svc: LLMService = Depends(get_llm_service)):
 )
 async def list_models(
     provider_name: Optional[str] = Query(None),
-    svc: LLMService = Depends(get_llm_service),
+    svc: LLMService = Depends(get_service),
 ):
     models = await svc.list_models(provider_name)
     return ApiResponse(data=models)
@@ -81,7 +87,7 @@ async def list_llms(
     page_size: int = Query(20, ge=1, le=100),
     provider_name: Optional[str] = Query(None, description="Exact provider filter"),
     model_name: Optional[str] = Query(None, description="Fuzzy model name filter"),
-    svc: LLMService = Depends(get_llm_service),
+    svc: LLMService = Depends(get_service),
 ):
     params = LLMListParams(
         page=page,
@@ -96,7 +102,7 @@ async def list_llms(
 @router.get("/{llm_id}", response_model=ApiResponse, summary="Get LLM by id")
 async def get_llm(
     llm_id: int,
-    svc: LLMService = Depends(get_llm_service),
+    svc: LLMService = Depends(get_service),
 ):
     row = await svc.get_llm(llm_id)
     return ApiResponse(data=LLMOut.model_validate(row))
@@ -110,7 +116,7 @@ async def get_llm(
 )
 async def create_llm(
     payload: LLMCreate,
-    svc: LLMService = Depends(get_llm_service),
+    svc: LLMService = Depends(get_service),
 ):
     llm_out = await svc.create_llm(payload)
     return ApiResponse(data=llm_out)
@@ -123,9 +129,14 @@ async def create_llm(
 )
 async def upsert_llm(
     payload: LLMUpsert,
-    svc: LLMService = Depends(get_llm_service),
+    svc: LLMService = Depends(get_service),
+    cache:     CacheRegistry = Depends(get_cache),
 ):
     llm_out = await svc.upsert_llm(payload)
+    cache.invalidate_all(CacheType.WEB_SEARCH_PIPELINE)
+    cache.invalidate_all(CacheType.SQL_AGENT)
+    cache.invalidate_all(CacheType.AGENT_RUNNER)
+    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
     return ApiResponse(data=llm_out)
 
 
@@ -133,17 +144,27 @@ async def upsert_llm(
 async def update_llm(
     llm_id: int,
     payload: LLMUpdate,
-    svc: LLMService = Depends(get_llm_service),
+    svc: LLMService = Depends(get_service),
+    cache:     CacheRegistry = Depends(get_cache),
 ):
     llm_out = await svc.update_llm(llm_id, payload)
+    cache.invalidate_all(CacheType.WEB_SEARCH_PIPELINE)
+    cache.invalidate_all(CacheType.SQL_AGENT)
+    cache.invalidate_all(CacheType.AGENT_RUNNER)
+    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
     return ApiResponse(data=llm_out)
 
 
 @router.delete("/{llm_id}", response_model=ApiResponse, summary="Delete LLM")
 async def delete_llm(
     llm_id: int,
-    svc: LLMService = Depends(get_llm_service),
+    svc: LLMService = Depends(get_service),
+    cache:     CacheRegistry = Depends(get_cache),
 ):
 
     await svc.delete_llm(llm_id)
+    cache.invalidate_all(CacheType.WEB_SEARCH_PIPELINE)
+    cache.invalidate_all(CacheType.SQL_AGENT)
+    cache.invalidate_all(CacheType.AGENT_RUNNER)
+    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
     return ApiResponse()

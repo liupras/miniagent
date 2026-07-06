@@ -40,10 +40,11 @@ class AgentFactory:
         """
         self._container = container
 
+        from app.runtime.cache.models import CacheType, CACHE_META
         self._cache = AsyncLazyCache[int, AgentRunner](
             builder=self._build_runner,
-            name="agent_runner",
-            description="(agent_id) → AgentRunner",
+            name=CacheType.AGENT_RUNNER,
+            description=f"{CACHE_META[CacheType.AGENT_RUNNER].key_name} → {CACHE_META[CacheType.AGENT_RUNNER].value_name}",
         )
         container.cache_registry.register(self._cache.name, self._cache)
         

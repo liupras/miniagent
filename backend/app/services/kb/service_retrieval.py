@@ -95,10 +95,11 @@ class KBRetrievalService:
         self.domain_registry = container.domain_registry
         self.domain_db = container.domain_db
         
+        from app.runtime.cache.models import CacheType, CACHE_META
         self._pipeline_cache: AsyncLazyCache = AsyncLazyCache[int, RetrievalPipeline](
             builder=self._build_pipeline,
-            name="kb_retrieval_pipeline",
-            description="kb_id → RetrievalPipeline (active StrategyConfig)",
+            name=CacheType.KB_RETRIEVAL_PIPELINE,
+            description=f"{CACHE_META[CacheType.KB_RETRIEVAL_PIPELINE].key_name} → {CACHE_META[CacheType.KB_RETRIEVAL_PIPELINE].value_name}",
         )
         container.cache_registry.register(
             self._pipeline_cache.name,
@@ -108,8 +109,8 @@ class KBRetrievalService:
 
         self._kb_info_cache: AsyncLazyCache = AsyncLazyCache[int, KBInfo](
             builder=self._build_kb_info,
-            name="kb_info",
-            description="kb_id → KBInfo (name/keywords/description)",
+            name=CacheType.KB_INFO,
+            description=f"{CACHE_META[CacheType.KB_INFO].key_name} → {CACHE_META[CacheType.KB_INFO].value_name}",
         )
         container.cache_registry.register(
             self._kb_info_cache.name,

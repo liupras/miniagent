@@ -29,10 +29,11 @@ class VectorStoreRegistry:
         if not isinstance(container, ServiceContainer):
             raise TypeError(f"Expected ServiceContainer, got {type(container)}")
 
+        from app.runtime.cache.models import CacheType, CACHE_META
         self._stores: AsyncLazyCache = AsyncLazyCache(
             builder=self._build_store,
-            name="vector_store_manager",
-            description="kb_id → VectorStoreManager",
+            name=CacheType.VECTOR_STORE_MANAGER,
+            description=f"{CACHE_META[CacheType.VECTOR_STORE_MANAGER].key_name}  → {CACHE_META[CacheType.VECTOR_STORE_MANAGER].value_name}",
         )
         container.cache_registry.register(
             self._stores.name,

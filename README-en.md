@@ -124,17 +124,18 @@ Domains are configured in seed data and registered at startup:
 
 ## Caching
 
-### AsyncLazyCache(Memory)
+### Object cache
 
-- WebSearchService(web_search_pipeline) — tool_name → WebSearchPipeline 
-- SQLAgentService(sql_agent) — tool_name → SQLAgent
-- AgentFactory(agent_runner) — agent_id → AgentRunner
-- KBRetrievalService(kb_retrieval_pipeline) — kb_id → RetrievalPipeline,kb_id → KBInfo
-- SmartRouterFactory(smart_router) — router_config_id → SmartRouter
-- SmartRouter(smart_router_kb_embedding) — kb_id → Embedding
-- VectorStoreRegistry(vector_store_manager) — kb_id → VectorStoreManager
+- web_search_pipeline		(WebSearchService) 		— tool_name → WebSearchPipeline 
+- sql_agent					(SQLAgentService) 		— tool_name → SQLAgent
+- agent_runner				(AgentFactory) 			— agent_id → AgentRunner
+- smart_router				(SmartRouterFactory) 	— router_config_id → SmartRouter
+- kb_retrieval_pipeline		(KBRetrievalService) 	— kb_id → RetrievalPipeline
+- kb_info					(KBRetrievalService)	— kb_id → KBInfo
+- kb_embedding				(SmartRouter) 			— kb_id → Embedding
+- vector_store_manager		(VectorStoreRegistry) 	— kb_id → VectorStoreManager
 
-### CacheStoreRegistry
+### Value cache
 
 - AuthPermission — auth,user_perms:
 - BM25Manager — bm25
