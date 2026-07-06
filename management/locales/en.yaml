@@ -102,6 +102,7 @@ menus:
     strategyConfig: Strategy Config
     kownledgeBase: knowledge Base
     document: Document
+    table: Table
   setting:
     default: Settings
     objectCache: Object Cache
@@ -486,3 +487,29 @@ valueCache:
   keyNotFound: No matching key found
   noKeys: No keys
   truncatedHint: Results truncated at limit={limit}, narrow the prefix to see more
+
+tableManagement:
+  title: Table Management
+  schema: Schema
+  table: Table
+  tableName: Table Name
+  rowCount: Rows
+  columnCount: Columns
+  operations: Operations
+  refresh: Refresh
+  preview: Preview
+  delete: Delete
+  deleteConfirm: 'Delete table "{tableName}"? This cannot be undone.'
+  deleteSuccess: Table deleted successfully
+  importTable: Import Table
+  importTitle: Import CSV / Excel File
+  uploadFile: File
+  uploadHint: Drop a CSV or Excel (.xlsx / .xls) file here, or click to select
+  selectFileFirst: Please select a file to import first
+  importSuccess: "Import succeeded: {tablePath}"
+  sheetName: Sheet Name
+  sheetNamePlaceholder: Defaults to the first sheet if left blank
+  primaryKey: Primary Key
+  primaryKeyPlaceholder: "Comma-separated for composite keys, e.g. id,order_no"
+  forceCast: Force Type Cast
+  allowNewColumns: Allow New Columns

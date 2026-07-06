@@ -3,6 +3,8 @@ common:
   failed: Operation failed
   error_415: "Unsupported content type '{content_type}'"
   error_500: Internal service error, please contact the administrator
+  error_unsupported_file_type: "Unsupported file type for '{filename}'. Allowed extensions: {allowed}"
+  error_404_table: 'Table "{schema_name}"."{table_name}" was not found'
 
 auth:
   login_failed: Incorrect username or password
@@ -135,6 +137,8 @@ sql_agent:
   name_not_allowed: "Use of '{name}' is not allowed"
   subscript_calls_not_allowed: "Subscript-based calls are not allowed"
   syntax_error: "Syntax error: {error}"
+  unsupported_file_type: "Unsupported file_type: '{file_type}', expected 'csv' or 'excel'"
+  delete_success: 'Table "{schema_name}"."{table_name}" deleted'
 
 cache:
   not_found: "Unregistered cache name: {name}, available: {count} caches"

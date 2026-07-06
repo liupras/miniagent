@@ -189,11 +189,11 @@ app.include_router(admin_kownledge_base,prefix="/api/v1/admin/knowledge-bases", 
 from app.api.admin.document import router as admin_document_router
 app.include_router(admin_document_router,prefix="/api/v1/admin/documents", tags=["Admin - Document"])
 
-from app.api.admin.task import router as admin_task_router
-app.include_router(admin_task_router,prefix="/api/v1/admin/tasks", tags=["Admin - Task"])
-
 from app.api.admin.sql_agent import router as admin_sql_agent_router
 app.include_router(admin_sql_agent_router,prefix="/api/v1/admin/sql-agent", tags=["Admin - SQL Agent"])
+
+from app.api.admin.task import router as admin_task_router
+app.include_router(admin_task_router,prefix="/api/v1/admin/tasks", tags=["Admin - Task"])
 
 from app.api.admin.object_cache import router as admin_object_cache_router
 app.include_router(admin_object_cache_router,prefix="/api/v1/admin/object-cache", tags=["Admin - Object Cache"])

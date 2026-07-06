@@ -148,3 +148,4 @@ cython_debug/
 /backend/files
 /backend/logs
 /backend/models
+/.pnpm-store

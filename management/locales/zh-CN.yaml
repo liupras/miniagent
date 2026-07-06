@@ -103,6 +103,7 @@ menus:
     strategyConfig: 检索策略
     kownledgeBase: 基本信息
     document: 文档
+    table: 表格
   setting:
     default: 系统设置
     objectCache: 对象缓存
@@ -488,4 +489,30 @@ valueCache:
   keyNotFound: 未找到匹配的 Key
   noKeys: 暂无 Key
   truncatedHint: 结果已按 limit={limit} 截断，请缩小前缀范围查看更多
+
+tableManagement:
+  title: 表格管理
+  schema: 模式
+  table: 表
+  tableName: 表名
+  rowCount: 行数
+  columnCount: 列数
+  operations: 操作
+  refresh: 刷新
+  preview: 预览
+  delete: 删除
+  deleteConfirm: '确定删除表 "{tableName}" 吗？该操作不可撤销。'
+  deleteSuccess: 表删除成功
+  importTable: 导入表
+  importTitle: 导入 CSV / Excel 文件
+  uploadFile: 文件
+  uploadHint: 将 CSV 或 Excel（.xlsx / .xls）文件拖拽至此，或点击选择
+  selectFileFirst: 请先选择要导入的文件
+  importSuccess: "导入成功：{tablePath}"
+  sheetName: 工作表名
+  sheetNamePlaceholder: 留空则默认导入第一个工作表
+  primaryKey: 主键
+  primaryKeyPlaceholder: "多个字段用逗号分隔，例如 id,order_no"
+  forceCast: 强制类型转换
+  allowNewColumns: 允许新增列
 

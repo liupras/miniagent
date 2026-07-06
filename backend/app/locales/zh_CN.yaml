@@ -3,6 +3,8 @@ common:
   failed: 操作失败
   error_415: "不支持的内容类型'{content_type}'"
   error_500: 内部服务错误，请联系管理员
+  error_unsupported_file_type: "文件“{filename}”类型不受支持，支持的扩展名：{allowed}"
+  error_404_table: '未找到表 "{schema_name}"."{table_name}"'
 
 auth:
   login_failed: 用户名或密码错误
@@ -135,6 +137,8 @@ sql_agent:
   name_not_allowed: "不允许使用 '{name}'"
   subscript_calls_not_allowed: "不允许使用下标调用"
   syntax_error: "语法错误: {error}"
+  unsupported_file_type: "不支持的 file_type：“{file_type}”，应为 'csv' 或 'excel'"
+  delete_success: '表 "{schema_name}"."{table_name}" 已删除'
 
 cache:
   not_found: "未注册的缓存名称: {name}，可用: {count} 个缓存"

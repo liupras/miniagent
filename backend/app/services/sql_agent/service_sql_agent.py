@@ -233,3 +233,58 @@ class SQLAgentService:
             tools=sql_tools,
             config=sql_agent_config,
         )
+    
+    async def import_table(
+        self,
+        file_path: str,
+        file_type: str,
+        schema_name: str,
+        table_name: str | None,
+        sheet_name: str | None,
+        primary_key: str | None,
+        force_cast: bool,
+        allow_new_columns: bool
+    ) -> dict:
+        return await asyncio.to_thread(
+            self._db_manager.import_table,
+            file_path=file_path,
+            file_type=file_type,
+            schema_name=schema_name,
+            table_name=table_name,
+            sheet_name=sheet_name,
+            primary_key=primary_key,
+            force_cast=force_cast,
+            allow_new_columns=allow_new_columns,
+        )
+
+    async def list_schemas(self) -> list[dict]:
+        return await asyncio.to_thread(self._db_manager.list_schemas)
+
+    async def list_tables(self, schema_name: str) -> list[dict]:
+        return await asyncio.to_thread(self._db_manager.list_tables, schema_name)
+
+    async def get_table_columns(self, schema_name: str, table_name: str) -> list[dict] | None:
+        return await asyncio.to_thread(self._db_manager.get_table_columns, schema_name, table_name)
+
+    async def preview_table(
+        self,
+        schema_name: str,
+        table_name: str,
+        page: int,
+        page_size: int,
+        order_by: str | None = None,
+        order_desc: bool = False
+    ) -> dict | None:
+        return await asyncio.to_thread(
+            self._db_manager.preview_table,
+            schema_name=schema_name,
+            table_name=table_name,
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
+        )
+
+    async def drop_table(self, schema_name: str, table_name: str) -> bool:
+        return await asyncio.to_thread(self._db_manager.drop_table, schema_name, table_name)
+
