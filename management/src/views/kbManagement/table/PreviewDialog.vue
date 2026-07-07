@@ -10,7 +10,7 @@ import {
   getTableData,
   type ColumnInfo,
   type TableInfo
-} from "@/api/tables";
+} from "@/api/table";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -42,17 +42,30 @@ const dialogTitle = computed(() =>
 // Reload from page 1 whenever the dialog opens for a (new) table.
 watch(
   () => [props.modelValue, props.table] as const,
-  ([open, table]) => {
+  async ([open, table]) => {
+    // ✨ 1. 加上 async 关键字
     if (open && table) {
-      pagination.page = 1;
-      loadColumns(table as TableInfo);
-      loadData(table as TableInfo);
+      // ✨ 2. 先执行「列结构加载」，并用 await 强行让代码在这里等待，直到它完全返回
+      await loadColumns(table as TableInfo);
+
+      // ✨ 3. 安全处理页码重置与「数据加载」
+      if (pagination.page !== 1) {
+        // 如果当前页码不是 1，这一步赋值会触发 el-pagination 的 @current-change 事件。
+        // 该事件会自动调用 handlePageChange() -> loadData()。
+        // 因为前面已经 await 确保列加载完成了，所以此时触发数据加载是绝对安全的，这里无需再手动调用。
+        pagination.page = 1;
+      } else {
+        // 如果原本就是第 1 页，赋值为 1 不会触发组件的任何事件。
+        // 此时我们需要手动使用 await 去安全地执行数据加载。
+        await loadData(table as TableInfo);
+      }
     }
   }
 );
 
 async function loadColumns(table: TableInfo) {
   columns.value = await getTableColumns(table.schemaName, table.tableName);
+  //console.log(columns.value);
 }
 
 async function loadData(table: TableInfo) {
@@ -62,6 +75,7 @@ async function loadData(table: TableInfo) {
       page: pagination.page,
       pageSize: pagination.pageSize
     });
+    //console.log(res);
     rows.value = res.rows;
     total.value = res.total;
   } finally {

@@ -497,12 +497,7 @@ tableManagement:
   tableName: 表名
   rowCount: 行数
   columnCount: 列数
-  operations: 操作
-  refresh: 刷新
   preview: 预览
-  delete: 删除
-  deleteConfirm: '确定删除表 "{tableName}" 吗？该操作不可撤销。'
-  deleteSuccess: 表删除成功
   importTable: 导入表
   importTitle: 导入 CSV / Excel 文件
   uploadFile: 文件

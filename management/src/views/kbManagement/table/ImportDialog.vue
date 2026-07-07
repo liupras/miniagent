@@ -15,7 +15,7 @@ import {
   isExcelFile,
   IMPORT_ACCEPT_EXTENSIONS,
   type ImportTableResult
-} from "@/api/tables";
+} from "@/api/table";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -98,7 +98,9 @@ async function handleConfirm() {
       allowNewColumns: form.allowNewColumns
     });
     ElMessage.success(
-      t("tableManagement.importSuccess", { tablePath: result.tablePath })
+      t("tableManagement.importSuccess", {
+        tablePath: result.tablePath || result.table_path
+      })
     );
     visible.value = false;
     emit("success", result);

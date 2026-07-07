@@ -495,12 +495,7 @@ tableManagement:
   tableName: Table Name
   rowCount: Rows
   columnCount: Columns
-  operations: Operations
-  refresh: Refresh
   preview: Preview
-  delete: Delete
-  deleteConfirm: 'Delete table "{tableName}"? This cannot be undone.'
-  deleteSuccess: Table deleted successfully
   importTable: Import Table
   importTitle: Import CSV / Excel File
   uploadFile: File

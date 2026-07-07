@@ -16,7 +16,7 @@ import {
   deleteTable,
   type SchemaInfo,
   type TableInfo
-} from "@/api/tables";
+} from "@/api/table.js";
 
 const { t } = useI18n();
 
@@ -30,15 +30,22 @@ const columns: TableColumns[] = [
   { label: t("tableManagement.rowCount"), prop: "rowCount", width: 120 },
   { label: t("tableManagement.columnCount"), prop: "columnCount", width: 120 },
   {
-    label: t("tableManagement.operations"),
+    label: t("labels.operation"),
     fixed: "right",
     width: 220,
     slot: "operation"
   }
 ];
 
+// TableManagement.vue 修改后的代码
 async function loadSchemas() {
-  schemas.value = await getSchemas();
+  const rawSchemas = (await getSchemas()) || [];
+
+  schemas.value = rawSchemas.map((item: any) => ({
+    ...item,
+    schemaName: item.schema_name
+  }));
+
   if (
     schemas.value.length &&
     !schemas.value.some(s => s.schemaName === currentSchema.value)
@@ -50,7 +57,15 @@ async function loadSchemas() {
 async function loadTables() {
   loading.value = true;
   try {
-    tableList.value = await getTables(currentSchema.value);
+    const rawTables = (await getTables(currentSchema.value)) || [];
+
+    tableList.value = rawTables.map((item: any) => ({
+      ...item,
+      schemaName: item.schema_name,
+      tableName: item.table_name,
+      rowCount: item.row_count,
+      columnCount: item.column_count
+    }));
   } finally {
     loading.value = false;
   }
@@ -67,7 +82,7 @@ onMounted(refresh);
 
 async function handleDelete(row: TableInfo) {
   await deleteTable(row.schemaName, row.tableName);
-  ElMessage.success(t("tableManagement.deleteSuccess"));
+  ElMessage.success(t("messages.deleteSuccess"));
   await loadTables();
 }
 
@@ -80,7 +95,7 @@ function openImportDialog() {
 }
 
 async function handleImportSuccess(result: { schemaName: string }) {
-  currentSchema.value = result.schemaName;
+  currentSchema.value = result.schemaName || result.schema_name || "main";
   await refresh();
 }
 
@@ -142,14 +157,12 @@ function openPreview(row: TableInfo) {
               {{ t("tableManagement.preview") }}
             </el-button>
             <el-popconfirm
-              :title="
-                t('tableManagement.deleteConfirm', { tableName: row.tableName })
-              "
+              :title="t('messages.deleteConfirm', { name: row.tableName })"
               @confirm="handleDelete(row)"
             >
               <template #reference>
                 <el-button v-auth="'table:delete'" link type="danger">
-                  {{ t("tableManagement.delete") }}
+                  {{ t("buttons.delete") }}
                 </el-button>
               </template>
             </el-popconfirm>
