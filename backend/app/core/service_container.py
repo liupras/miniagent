@@ -54,6 +54,7 @@ from app.services.admin.knowledge_base import KnowledgeBaseService
 from app.services.admin.embedding import EmbeddingService
 from app.services.admin.system_setting import SystemSettingService
 from app.services.admin.prompt import PromptService
+from app.runtime.conversation.service_chat import ChatService
 
 import importlib
 
@@ -128,6 +129,8 @@ class ServiceContainer:
         self.vector_registry = VectorStoreRegistry(self)
         self.router_factory = SmartRouterFactory(self)
         self.domain_registry = DomainRegistry()
+
+        self.chat_service = ChatService(chat_db=self.chat_db)
         self.agent_factory = AgentFactory(self)      
 
         # ── Service singletons ──────────────────────────────────────────
@@ -150,6 +153,7 @@ class ServiceContainer:
         self.embedding_service = EmbeddingService(db=self.embed_db)
         self.setting_service = SystemSettingService(db=self.setting_db)
         self.prompt_service = PromptService(db=self.prompt_db)
+        
 
     async def start(self):       
 

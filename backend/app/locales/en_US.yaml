@@ -44,6 +44,7 @@ agent:
   not_found_with_id: "Agent {id} does not exist"
   not_found_with_name: "Agent '{name}' does not exist"
   inactive: "Agent '{name}' (id={id}) is disabled"  
+  input_invalid: "Either 'agent_id' or 'agent_name' must be provided"
 
 tool:
   not_found: Skill does not exist

@@ -1,0 +1,85 @@
+# =============================================================================
+# Conversation Title Configuration
+# =============================================================================
+
+# Default title
+default_title: "......"
+
+# Cleaner maximum retention length
+max_length: 80
+
+# Generator final title maximum length
+max_title_length: 24
+
+trim_chars: "。，！？,.!?;；:：()[]{}<>「」『』\"' "
+
+# Not allowed as a title
+bad_titles:
+  - ""
+  - "-"
+  - "--"
+  - "..."
+  - "……"
+
+  # Chinese
+  - "你好"
+  - "您好"
+  - "谢谢"
+  - "继续"
+  - "还有"
+  - "还有呢"
+  - "帮忙"
+  - "问题"
+
+  # English
+  - "hi"
+  - "hello"
+  - "thanks"
+  - "thank you"
+  - "continue"
+  - "question"
+  - "test"
+
+languages:
+
+  zh_CN:
+
+    prefixes:
+      - 请问
+      - 请教
+      - 请教一下
+      - 帮我
+      - 麻烦
+      - 我想问一下
+      - 我想咨询一下
+      - 咨询一下
+      - 我想知道
+      - 有没有办法
+      - 有没有
+      - 能不能
+      - 可以帮我
+
+  en_US:
+
+    prefixes:
+      - please
+      - can you
+      - could you
+      - would you
+      - will you
+      - help me
+      - i need to
+      - i want to
+      - i'd like to
+      - i would like to
+
+    patterns:
+      - "^how\\s+to\\s+"
+      - "^how\\s+do\\s+i\\s+"
+      - "^how\\s+can\\s+i\\s+"
+      - "^what\\s+is\\s+"
+      - "^what\\s+are\\s+"
+      - "^why\\s+"
+      - "^can\\s+i\\s+"
+      - "^could\\s+i\\s+"
+      - "^is\\s+it\\s+possible\\s+to\\s+"

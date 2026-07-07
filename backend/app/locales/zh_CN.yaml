@@ -43,7 +43,8 @@ agent:
   not_found: Agent 不存在
   not_found_with_id: "Agent {id} 不存在"
   not_found_with_name: "Agent '{name}' 不存在"
-  inactive: "Agent '{name}' (id={id}) 已停用"  
+  inactive: "Agent '{name}' (id={id}) 已停用"
+  input_invalid: "必须提供“agent_id”或“agent_name”之一。"
 
 tool:
   not_found: 技能不存在

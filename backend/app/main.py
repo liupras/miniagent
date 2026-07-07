@@ -201,6 +201,9 @@ app.include_router(admin_object_cache_router,prefix="/api/v1/admin/object-cache"
 from app.api.admin.value_cache import router as admin_value_cache_router
 app.include_router(admin_value_cache_router,prefix="/api/v1/admin/value-cache", tags=["Admin - Value Cache"])
 
+from app.api.user.agent import router as agent_router
+app.include_router(agent_router,prefix="/api/v1/agent", tags=["Agent"])
+
 from app.api.user.kb import router as kb_router
 app.include_router(kb_router,prefix="/api/v1/kb", tags=["Knowledge Base"])
 

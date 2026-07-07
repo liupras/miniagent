@@ -118,9 +118,10 @@ Domains are configured in seed data and registered at startup:
 
 ## Singleton
 
-- prompt_loader(app.core.prompt_loader.py)
-- t,translations(app.core.I18n.I18n.py)
-- cache_registry(app.infra.store_registry.py)
+- prompt_loader，	app.core.prompt_loader.py
+- t,translations，	app.core.I18n.I18n.py
+- cache_registry，	app.infra.store_registry.py
+- title_generator，	app.runtime.conversation.title_generator.py
 
 ## Caching
 

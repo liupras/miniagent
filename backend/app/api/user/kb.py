@@ -10,8 +10,6 @@ from fastapi import (
     Depends,
 )
 
-from loguru import logger
-
 from app.services.kb.service_retrieval import QueryResult, KBRetrievalService
 from app.services.kb.service_smart_router import KBSmartRouterService, SmartRouterQueryResult
 from app.services.kb.retrieval_model import QueryRequest

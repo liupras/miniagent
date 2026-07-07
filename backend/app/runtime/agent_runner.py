@@ -15,27 +15,17 @@ from __future__ import annotations
 
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent
 from loguru import logger
 
-from app.repositories.async_chat import AsyncChatDatabase
 from app.infra.db.database import LLM
-from app.infra.llm.func import truncate_messages, estimate_messages_tokens
-
-# How many tokens to reserve for the model's *output*.
-# Input context is capped at  max_tokens - CONTEXT_TOKEN_RESERVE.
-CONTEXT_TOKEN_RESERVE: int = 500
-
-# Maximum number of historical turns fetched from the DB per request.
-# Each turn = 1 user message + 1 assistant message → up to 2 * DB_HISTORY_LIMIT rows.
-DB_HISTORY_LIMIT: int = 40
+from app.runtime.conversation.service_chat import ChatService
 
 class AgentRunner:
     """
-    Thin wrapper around a compiled LangChain agent with optional persistent
-    multi-turn memory backed by AsyncChatDatabase.
+    Thin wrapper around a compiled LangChain agent.
     """
 
     def __init__(
@@ -44,14 +34,14 @@ class AgentRunner:
         agent_name: str,
         agent,                  # compiled LangChain agent
         system_prompt: str,
-        chat_db: AsyncChatDatabase,
+        chat_service: ChatService,
         llm_config:LLM,
     ):
         self.agent_id = agent_id
         self.agent_name = agent_name
         self._agent = agent
         self._system_prompt = system_prompt
-        self._chat_db = chat_db
+        self._chat_service = chat_service
         self._llm_config = llm_config
 
     # ── Convenience properties (read through llm_config so values stay current) ──
@@ -100,14 +90,14 @@ class AgentRunner:
 
         # ── Persist user message ───────────────────────────────────────────
         if use_db:
-            await self._chat_db.save_message(
+            await self._chat_service.save_message(
                 user_id=user_id,
                 session_id=session_id,
                 role="user",
                 content=query,
             )
 
-        messages = await self._build_messages(query, history, user_id, session_id)
+        messages = await self._chat_service.build_messages(query, history, user_id, session_id)
         logger.debug(
             f"[AgentRunner:{self.agent_name}] invoke — "
             f"{len(messages)} message(s) in context."
@@ -121,7 +111,7 @@ class AgentRunner:
 
         # ── Persist assistant reply ────────────────────────────────────────
         if use_db:
-            await self._chat_db.save_message(
+            await self._chat_service.save_message(
                 user_id=user_id,
                 session_id=session_id,
                 role="assistant",
@@ -161,7 +151,7 @@ class AgentRunner:
 
         # ── Persist user message ───────────────────────────────────────────
         if use_db:
-            await self._chat_db.save_message(
+            await self._chat_service.save_message(
                 user_id=user_id,
                 session_id=session_id,
                 role="user",
@@ -195,113 +185,12 @@ class AgentRunner:
         # ── Persist complete assistant reply ───────────────────────────────
         if use_db and collected_chunks:
             full_reply = "".join(collected_chunks)
-            await self._chat_db.save_message(
+            await self._chat_service.save_message(
                 user_id=user_id,
                 session_id=session_id,
                 role="assistant",
                 content=full_reply,
             )
-
-    # ──────────────────────────────────────────────────────────────────────
-    # Internal helpers
-    # ──────────────────────────────────────────────────────────────────────
-
-    async def _load_db_history(
-        self,
-        user_id: str,
-        session_id: str,
-    ) -> List[Dict[str, str]]:
-        """
-        Fetch recent conversation turns from the database.
-
-        get_chat_history_latest() returns rows in *descending* order
-        (newest first).  We reverse them so the list is chronological
-        (oldest → newest) before returning.
-
-        Note: the current user message has already been written to the DB
-        before this helper is called, so we exclude the last row (which is
-        the message we just saved) to avoid duplicating it in history.
-        """
-        rows = await self._chat_db.get_chat_history_latest(
-            user_id=user_id,
-            session_id=session_id,
-            limit=DB_HISTORY_LIMIT + 1,  # +1 to cover the just-saved user msg
-        )
-        # Drop the first row (newest = the user message we just persisted).
-        rows = rows[1:]
-        # Desc order.
-        return [{"role": r["role"], "content": r["content"]} for r in rows]
-
-    async def _build_messages(
-        self,
-        query: str,
-        history: Optional[List[Dict[str, str]]],
-        user_id: Optional[str],
-        session_id: Optional[str],
-    ) -> List[BaseMessage]:
-        """
-                Build the LangChain message list for a single turn.
-
-        Priority rules
-        ──────────────
-        1. If caller passed an explicit ``history`` list, use it as-is
-           (backward-compatible with stateless callers).
-        2. If user_id + session_id are provided and no explicit history is
-           given, load history from the database.
-        3. Merge: [SystemMessage] + history + [HumanMessage(query)].
-        4. Truncate to fit within the LLM context budget.
-
-        Layout after truncation:
-            SystemMessage(system_prompt)
-            … history messages (oldest → newest, pruned from the middle) …
-            HumanMessage(query)
-        """
-        # ── Resolve history source ─────────────────────────────────────────
-        if history is not None:
-            # Caller supplied explicit history — use it directly.
-            resolved_history = history
-        elif user_id and session_id:
-            # Load from DB (already saved the current user msg, so skip it).
-            resolved_history = await self._load_db_history(user_id, session_id)
-        else:
-            resolved_history = []
-
-        # ── Build raw dict list for token budgeting ────────────────────────
-        system_dict = {"role": "system", "content": self._system_prompt}
-        query_dict = {"role": "user", "content": query}
-
-        # History comes in reverse-chronological
-        raw_msgs = (
-            [system_dict]
-            + [query_dict]
-            + list(resolved_history)
-        )
-
-        # Leave CONTEXT_TOKEN_RESERVE tokens for the model's output.
-        input_budget = max(self._max_tokens - CONTEXT_TOKEN_RESERVE, 512)
-        truncated = truncate_messages(raw_msgs, input_budget)
-
-        # ── Convert to LangChain message objects ───────────────────────────
-        msgs: List[BaseMessage] = []
-        for turn in truncated:
-            role = turn.get("role", "user")
-            content = turn.get("content", "")
-            if role == "system":
-                msgs.append(SystemMessage(content=content))
-            elif role == "user":
-                msgs.append(HumanMessage(content=content))
-            elif role == "assistant":
-                msgs.append(AIMessage(content=content))
-        
-        total_tokens = estimate_messages_tokens(
-            [{"role": t.get("role", ""), "content": t.get("content", "")} for t in truncated]
-        )
-        logger.debug(
-            f"[AgentRunner:{self.agent_name}] context — "
-            f"{len(msgs)} messages, ~{total_tokens} tokens "
-            f"(budget={input_budget})."
-        )
-        return msgs
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Builder function (called by AgentFactory)
@@ -310,7 +199,7 @@ class AgentRunner:
 async def build_agent_runner(
     agent_orm,              # Agent ORM row (with .llm eagerly loaded)
     tools: List[Any],       # List[BaseTool] from tool_builder   
-    chat_db: AsyncChatDatabase,
+    chat_service: ChatService,
 ) -> AgentRunner:
     """
     Construct an AgentRunner for *agent_orm*.
@@ -382,6 +271,6 @@ async def build_agent_runner(
         agent_name=agent_orm.name,
         agent=agent,
         system_prompt=system_prompt,
-        chat_db=chat_db,
+        chat_service=chat_service,
         llm_config=llm_config,
     )

@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.infra.db.async_base import AsyncBaseDatabase
 from app.infra.db.database import ChatSession, ChatMessage
 
+from app.runtime.conversation.title_generator import title_generator
 
 class AsyncChatDatabase(AsyncBaseDatabase):
 
@@ -49,6 +50,16 @@ class AsyncChatDatabase(AsyncBaseDatabase):
 
         async with self.get_session() as session:
             chat_session = await self._get_or_create_session(session, user_id, session_id)
+
+            # A title will only be generated using the current content if the role is "user" and the current session does not yet have a title.
+            if role == "user" and not chat_session.title:
+                try:
+                    generated_title = title_generator.generate(content)
+                    chat_session.title = generated_title
+                except Exception as e:                    
+                    from loguru import logger
+                    logger.error(f"Failed to generate title for session {session_id}: {e}")
+                    chat_session.title="..."
 
             message = ChatMessage(
                 user_id=user_id,
@@ -90,9 +101,7 @@ class AsyncChatDatabase(AsyncBaseDatabase):
             return [
                 {
                     "role": m.role,
-                    "content": m.content,
-                    "model": m.model,
-                    "temperature": m.temperature,
+                    "content": m.content,                    
                     "created_at": m.created_at
                 }
                 for m in messages

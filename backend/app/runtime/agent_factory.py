@@ -51,7 +51,7 @@ class AgentFactory:
         self._agent_db = container.agent_db
         self._tool_db = container.tool_db
         self._relation_db = container.agent_tool_relation_db
-        self._chat_db = container.chat_db
+        self._chat_service = container.chat_service
 
     # ──────────────────────────────────────────────────────────────────────
     # Public API
@@ -117,7 +117,7 @@ class AgentFactory:
         runner = await build_agent_runner(
             agent_orm=agent_orm,
             tools=lc_tools,            
-            chat_db=self._chat_db
+            chat_service=self._chat_service
         )
 
         return runner
