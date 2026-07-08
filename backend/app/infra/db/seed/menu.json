@@ -250,8 +250,7 @@
         "icon": "ep:delete",        
         "menu_type": "button",
         "description": "文档库-删除"
-    },
-    
+    },    
     {
         "id": 10,
         "parent_id": 4,
@@ -278,6 +277,24 @@
         "icon": "ep:delete",        
         "menu_type": "button",
         "description": "表格库-删除"
+    },    
+    {
+        "id": 11,
+        "parent_id": 4,
+        "name": "conversation:list", 
+        "title_key": "menus.kb.conversation",
+        "path": "/kbManagement/conversation",        
+        "component": "kbManagement/conversation/index",  
+        "sort_order": 10
+    },
+    {
+        "id":1021,
+        "parent_id": 10,
+        "name": "conversation:delete",
+        "title_key": "buttons.delete",
+        "icon": "ep:delete",        
+        "menu_type": "button",
+        "description": "会话-删除"
     },
     {
         "id": 100,

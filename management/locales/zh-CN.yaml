@@ -104,6 +104,7 @@ menus:
     kownledgeBase: 基本信息
     document: 文档
     table: 表格
+    conversation: 会话
   setting:
     default: 系统设置
     objectCache: 对象缓存

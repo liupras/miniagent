@@ -12,15 +12,26 @@ DB_HISTORY_LIMIT: int = 40
 # Input context is capped at  max_tokens - CONTEXT_TOKEN_RESERVE.
 CONTEXT_TOKEN_RESERVE: int = 500
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
-
-from app.repositories.async_chat import AsyncChatDatabase
-from app.infra.llm.func import truncate_messages, estimate_messages_tokens
 
 from loguru import logger
 
-class ChatService:
+from app.infra.db.database import ChatMessage, ChatSession
+from app.repositories.async_chat import AsyncChatDatabase
+from app.infra.llm.func import truncate_messages, estimate_messages_tokens
+
+from app.schemas.common import NotFoundError
+class SessionNotFoundError(NotFoundError):
+    def __init__(self, session_id: str):
+        super().__init__("Session", session_id)
+
+class MessageNotFoundError(NotFoundError):
+    def __init__(self, message_id: int):
+        super().__init__("Message", message_id)
+
+
+class ConversationService:
 
     def __init__(
         self,
@@ -140,3 +151,40 @@ class ChatService:
             f"(budget={input_budget})."
         )
         return msgs
+    
+
+    async def get_session(self, session_id: str) -> Optional[ChatSession]:
+        """Get a chat session by session ID."""
+        return await self._chat_db.get_session(session_id)
+
+    async def list_sessions(
+        self,
+        user_id: int,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[int, List[ChatSession]]:
+        """List chat sessions for a user."""
+        return await self._chat_db.list_sessions(user_id, page, page_size)
+
+    async def list_messages(
+        self,
+        session_id: str,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[int, List[ChatMessage]]:
+        """List chat messages for a session."""
+        return await self._chat_db.list_messages(session_id, page, page_size)
+
+    async def delete_session(self, session_id: str) -> bool:
+        """Delete a specific chat session."""
+        res = await self._chat_db.delete_session(session_id)
+        if not res:
+            raise SessionNotFoundError(session_id)
+        return res
+    
+    async def delete_message(self, message_id: int) -> bool:
+        """Delete a specific chat message."""
+        res = await self._chat_db.delete_message(message_id)
+        if not res:
+            raise MessageNotFoundError(message_id)
+        return res

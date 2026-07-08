@@ -21,7 +21,7 @@ from langchain.agents import create_agent
 from loguru import logger
 
 from app.infra.db.database import LLM
-from app.runtime.conversation.service_chat import ChatService
+from app.runtime.conversation.service_conversation import ConversationService
 
 class AgentRunner:
     """
@@ -34,14 +34,14 @@ class AgentRunner:
         agent_name: str,
         agent,                  # compiled LangChain agent
         system_prompt: str,
-        chat_service: ChatService,
+        chat_service: ConversationService,
         llm_config:LLM,
     ):
         self.agent_id = agent_id
         self.agent_name = agent_name
         self._agent = agent
         self._system_prompt = system_prompt
-        self._chat_service = chat_service
+        self._conversation_service = chat_service
         self._llm_config = llm_config
 
     # ── Convenience properties (read through llm_config so values stay current) ──
@@ -90,14 +90,14 @@ class AgentRunner:
 
         # ── Persist user message ───────────────────────────────────────────
         if use_db:
-            await self._chat_service.save_message(
+            await self._conversation_service.save_message(
                 user_id=user_id,
                 session_id=session_id,
                 role="user",
                 content=query,
             )
 
-        messages = await self._chat_service.build_messages(query, history, user_id, session_id)
+        messages = await self._conversation_service.build_messages(query, history, user_id, session_id)
         logger.debug(
             f"[AgentRunner:{self.agent_name}] invoke — "
             f"{len(messages)} message(s) in context."
@@ -111,7 +111,7 @@ class AgentRunner:
 
         # ── Persist assistant reply ────────────────────────────────────────
         if use_db:
-            await self._chat_service.save_message(
+            await self._conversation_service.save_message(
                 user_id=user_id,
                 session_id=session_id,
                 role="assistant",
@@ -151,7 +151,7 @@ class AgentRunner:
 
         # ── Persist user message ───────────────────────────────────────────
         if use_db:
-            await self._chat_service.save_message(
+            await self._conversation_service.save_message(
                 user_id=user_id,
                 session_id=session_id,
                 role="user",
@@ -185,7 +185,7 @@ class AgentRunner:
         # ── Persist complete assistant reply ───────────────────────────────
         if use_db and collected_chunks:
             full_reply = "".join(collected_chunks)
-            await self._chat_service.save_message(
+            await self._conversation_service.save_message(
                 user_id=user_id,
                 session_id=session_id,
                 role="assistant",
@@ -199,7 +199,7 @@ class AgentRunner:
 async def build_agent_runner(
     agent_orm,              # Agent ORM row (with .llm eagerly loaded)
     tools: List[Any],       # List[BaseTool] from tool_builder   
-    chat_service: ChatService,
+    chat_service: ConversationService,
 ) -> AgentRunner:
     """
     Construct an AgentRunner for *agent_orm*.

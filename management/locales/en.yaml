@@ -103,6 +103,7 @@ menus:
     kownledgeBase: knowledge Base
     document: Document
     table: Table
+    conversation: Conversation
   setting:
     default: Settings
     objectCache: Object Cache

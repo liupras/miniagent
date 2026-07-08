@@ -5,9 +5,9 @@
 # @description: Chat Database Management (Asynchronous Version)
 
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional,Tuple
 
-from sqlalchemy import select, func
+from sqlalchemy import delete, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infra.db.async_base import AsyncBaseDatabase
@@ -135,18 +135,73 @@ class AsyncChatDatabase(AsyncBaseDatabase):
                 }
                 for s in sessions
             ]
-
-    async def delete_session(self, user_id: str, session_id: str) -> bool:
-
+        
+    async def get_session(self, session_id: str) -> Optional[ChatSession]:
+        """Get a chat session by session ID."""
         async with self.get_session() as session:
-            # First check if it exists
-            stmt = select(ChatSession).filter_by(user_id=user_id, session_id=session_id)
+            stmt = select(ChatSession).where(ChatSession.session_id == session_id)
             result = await session.execute(stmt)
-            chat_session = result.scalars().first()
+            return result.scalar_one_or_none()
 
-            if not chat_session:
-                return False
+    async def list_sessions(
+        self,
+        user_id: int,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[int, List[ChatSession]]:
+        """List chat sessions for a user."""
+        async with self.get_session() as session:
+            # Get total count
+            count_query = select(func.count(ChatSession.id)).where(ChatSession.user_id == user_id)
+            total: int = (await session.execute(count_query)).scalar_one()
 
-            # Execute deletion
-            await session.delete(chat_session)
-            return True
+            # Get paginated results
+            offset = (page - 1) * page_size
+            query = select(ChatSession).where(ChatSession.user_id == user_id).order_by(ChatSession.created_at.desc())
+            result = await session.execute(query.offset(offset).limit(page_size))
+            sessions = result.scalars().all()
+
+            return total, list(sessions)
+
+    async def list_messages(
+        self,
+        session_id: str,
+        page: int = 1,
+        page_size: int = 20
+    ) -> Tuple[int, List[ChatMessage]]:
+        """List chat messages for a session."""
+        async with self.get_session() as session:
+            # Get total count
+            count_query = select(func.count(ChatMessage.id)).where(ChatMessage.session_id == session_id)
+            total: int = (await session.execute(count_query)).scalar_one()
+
+            # Get paginated results
+            offset = (page - 1) * page_size
+            query = select(ChatMessage).where(ChatMessage.session_id == session_id).order_by(ChatMessage.created_at.asc())
+            result = await session.execute(query.offset(offset).limit(page_size))
+            messages = result.scalars().all()
+
+            return total, list(messages)
+
+    async def delete_session(self, session_id: str) -> bool:
+        """Delete a chat session and all related messages."""
+        async with self.get_session() as session:
+            # First delete all messages in the session
+            await session.execute(
+                delete(ChatMessage).where(ChatMessage.session_id == session_id)
+            )
+            
+            # Then delete the session itself
+            result = await session.execute(
+                delete(ChatSession).where(ChatSession.session_id == session_id)
+            )
+            
+            return result.rowcount > 0
+        
+    async def delete_message(self, message_id: int) -> bool:
+        """Delete a specific chat message."""
+        async with self.get_session() as session:
+            result = await session.execute(
+                delete(ChatMessage).where(ChatMessage.id == message_id)
+            )
+            return result.rowcount > 0
