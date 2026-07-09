@@ -97,7 +97,14 @@ class AgentRunner:
                 content=query,
             )
 
-        messages = await self._conversation_service.build_messages(query, history, user_id, session_id)
+        messages = await self._conversation_service.build_messages(
+            query=query, 
+            system_prompt = self._system_prompt,
+            max_tokens=self._max_tokens,
+            history = history, 
+            user_id = user_id, 
+            session_id = session_id
+        )
         logger.debug(
             f"[AgentRunner:{self.agent_name}] invoke — "
             f"{len(messages)} message(s) in context."
@@ -158,7 +165,14 @@ class AgentRunner:
                 content=query,
             )
 
-        messages = await self._build_messages(query, history, user_id, session_id)
+        messages = await self._conversation_service.build_messages(
+            query=query, 
+            system_prompt = self._system_prompt,
+            max_tokens=self._max_tokens,
+            history = history, 
+            user_id = user_id, 
+            session_id = session_id
+        )
         logger.debug(
             f"[AgentRunner:{self.agent_name}] stream — "
             f"{len(messages)} message(s) in context."

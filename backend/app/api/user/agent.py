@@ -58,20 +58,16 @@ async def agent_invoke(
     """
     Run the Agent until it finishes responding, then return the final text result all at once.
     """
-    runner = await _resolve_runner(body, factory)
-    
-    try:
-        logger.info(f"[AgentTest] Invoking agent '{runner.agent_name}' with query: '{body.query}'")
-        answer = await runner.invoke(
-            query=body.query,
-            history=body.history,
-            user_id=body.user_id,
-            session_id=body.session_id
-        )
-        return ApiResponse(data={"answer": answer})
-    except Exception as exc:
-        logger.error(f"Agent invoke encountered an error: {exc}")
-        return ApiResponse(code=500, message=f"Internal Agent Error: {str(exc)}")
+    runner = await _resolve_runner(body, factory)    
+
+    logger.info(f"[AgentTest] Invoking agent '{runner.agent_name}' with query: '{body.query}'")
+    answer = await runner.invoke(
+        query=body.query,
+        history=body.history,
+        user_id=body.user_id,
+        session_id=body.session_id
+    )
+    return ApiResponse(data={"answer": answer})
 
 
 @router.post("/stream", summary="Streaming Token Output Call Agent Interface")

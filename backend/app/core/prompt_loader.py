@@ -50,10 +50,15 @@ class PromptLoader:
         """
         Return the resolved template for *key* in the active language.
         """
+        if key not in self._templates:
+            logger.error(
+                f"[PromptLoader] Unknown prompt key='{key}' ."
+            )
+            
         value = self._templates.get(key, {}).get(self._language, "")
 
         if not value:
-            logger.error(
+            logger.warning(
                 f"[PromptLoader] Unknown prompt key='{key}' — returning empty string."
             )
         return value

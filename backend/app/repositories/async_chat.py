@@ -62,7 +62,6 @@ class AsyncChatDatabase(AsyncBaseDatabase):
                     chat_session.title="..."
 
             message = ChatMessage(
-                user_id=user_id,
                 session_id=chat_session.id,
                 role=role,
                 content=content,
@@ -136,7 +135,7 @@ class AsyncChatDatabase(AsyncBaseDatabase):
                 for s in sessions
             ]
         
-    async def get_session(self, session_id: str) -> Optional[ChatSession]:
+    async def get_session_by_id(self, session_id: str) -> Optional[ChatSession]:
         """Get a chat session by session ID."""
         async with self.get_session() as session:
             stmt = select(ChatSession).where(ChatSession.session_id == session_id)

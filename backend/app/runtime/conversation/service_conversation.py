@@ -84,6 +84,8 @@ class ConversationService:
     async def build_messages(
         self,
         query: str,
+        system_prompt:str,
+        max_tokens:int,
         history: Optional[List[Dict[str, str]]],
         user_id: Optional[str],
         session_id: Optional[str],
@@ -116,7 +118,7 @@ class ConversationService:
             resolved_history = []
 
         # ── Build raw dict list for token budgeting ────────────────────────
-        system_dict = {"role": "system", "content": self._system_prompt}
+        system_dict = {"role": "system", "content": system_prompt}
         query_dict = {"role": "user", "content": query}
 
         # History comes in reverse-chronological
@@ -127,7 +129,7 @@ class ConversationService:
         )
 
         # Leave CONTEXT_TOKEN_RESERVE tokens for the model's output.
-        input_budget = max(self._max_tokens - CONTEXT_TOKEN_RESERVE, 512)
+        input_budget = max(max_tokens - CONTEXT_TOKEN_RESERVE, 512)
         truncated = truncate_messages(raw_msgs, input_budget)
 
         # ── Convert to LangChain message objects ───────────────────────────
@@ -146,7 +148,7 @@ class ConversationService:
             [{"role": t.get("role", ""), "content": t.get("content", "")} for t in truncated]
         )
         logger.debug(
-            f"[AgentRunner:{self.agent_name}] context — "
+            f"[ConversationService] context — "
             f"{len(msgs)} messages, ~{total_tokens} tokens "
             f"(budget={input_budget})."
         )
@@ -155,7 +157,7 @@ class ConversationService:
 
     async def get_session(self, session_id: str) -> Optional[ChatSession]:
         """Get a chat session by session ID."""
-        return await self._chat_db.get_session(session_id)
+        return await self._chat_db.get_session_by_id(session_id)
 
     async def list_sessions(
         self,
