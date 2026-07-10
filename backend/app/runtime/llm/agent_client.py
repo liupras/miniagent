@@ -18,7 +18,11 @@ class AgentLLM:
     ):
         self.client = client
         self.model = model
-        self._tool_prompt_template =  tool_prompt_template       
+        self._tool_prompt_template = (
+            tool_prompt_template
+            or self._default_tool_prompt()
+        )
+      
 
     def chat(self, messages: List[Dict], tool_schema=None) -> Dict[str, Any]:
         """
@@ -28,18 +32,10 @@ class AgentLLM:
         - or content
         """
 
-        if tool_schema and not self._has_tool_prompt(messages):
-            if not self._tool_prompt_template:
-                self._tool_prompt_template = self._default_tool_prompt()
-            
-            # Inject tools into prompt (Ollama/Qwen3 does not natively support function calling).
-            tool_prompt = self._tool_prompt_template.format(
-                tool_schema = json.dumps(tool_schema, indent=2, ensure_ascii=False))
-
-            full_messages = messages.copy()
-            full_messages.insert(0, {"role": "system", "content": tool_prompt,"_tool_prompt": True})
-        else: 
-            full_messages = messages.copy()            
+        full_messages = self._build_messages(
+            messages,
+            tool_schema,
+        )           
 
         resp = self.client.chat(
             model=self.model,
@@ -47,23 +43,76 @@ class AgentLLM:
             stream=False
         )
 
+        return self._build_response(resp)
+    
+    async def achat(
+        self,
+        messages,
+        tool_schema=None,
+    ):
+
+        full_messages = self._build_messages(
+            messages,
+            tool_schema,
+        )
+
+        resp = await self.client.achat(
+            model=self.model,
+            messages=full_messages,
+            stream=False,
+        )
+
+        return self._build_response(resp)
+    
+    def _build_messages(
+        self,
+        messages: List[Dict],
+        tool_schema=None,
+    ) -> List[Dict]:
+
+        full_messages = messages.copy()
+
+        if not tool_schema:
+            return full_messages
+
+        if self._has_tool_prompt(full_messages):
+            return full_messages
+
+        tool_prompt = self._tool_prompt_template.format(
+            tool_schema=json.dumps(
+                tool_schema,
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+
+        full_messages.insert(
+            0,
+            {
+                "role": "system",
+                "content": tool_prompt,
+                "_tool_prompt": True,
+            },
+        )
+
+        return full_messages
+    
+    @staticmethod
+    def _build_response(resp):
+
         content = resp.content.strip()
 
-        # =========================
-        # Parsing tool calls (JSON protocol)
-        # =========================
-        tool_calls = self._parse_tool_call(content)
+        tool_calls = AgentLLM._parse_tool_call(content)
 
         if tool_calls:
-            # Return the standard assistant message format, ensuring it includes the role.
             return {
                 "role": "assistant",
-                "content": content, # Preserve the original JSON text as content
-                "tool_calls": tool_calls 
+                "content": content,
+                "tool_calls": tool_calls,
             }
 
         return {
-            "content": content
+            "content": content,
         }
     
     @staticmethod

@@ -68,7 +68,7 @@ class SQLAgent:
             prompt_3=config.schema_context_prompt_3
         )
 
-    def run(self, user_query: str):
+    async def run(self, user_query: str):
         # 1. Build the table-context block (cached; cheap on repeated calls).
         #    This replaces the first 1-2 tool-call round trips in the old flow.
         context_block = self._ctx_builder.build_context_block(user_query)
@@ -87,7 +87,7 @@ class SQLAgent:
         ]
 
         for step in range(10):  # Up to 10 rounds of tool calls
-            response = self.llm.chat(messages=messages,tool_schema=self._tool_schema)
+            response = await self.llm.achat(messages=messages,tool_schema=self._tool_schema)
 
             # =========================
             # 1. If it's a tool call

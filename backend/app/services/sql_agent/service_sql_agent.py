@@ -94,7 +94,7 @@ class SQLAgentService:
 
         # run() is synchronous in the original SQLAgent implementation;
         # wrap it in asyncio.to_thread so we don't block the event loop.
-        return await asyncio.to_thread(agent.run, user_query)
+        return await agent.run(user_query)
 
     async def import_csv(
         self,
