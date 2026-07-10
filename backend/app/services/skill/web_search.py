@@ -61,7 +61,7 @@ from loguru import logger
 
 from app.retrieval.reranker.factory import RerankerFactory
 from app.retrieval.reranker.base import RerankMode
-from app.infra.llm import LLMClient
+from app.runtime.llm.client import LLMClient
 from app.retrieval.adaptive_threshold import AdaptiveThresholdMixin
 from app.infra.db.database import LLM,Tool
 
@@ -144,13 +144,12 @@ class QueryTransformStage(BaseStage):
         original = state.original_query.strip()
         prompt   = self._prompt_template.format_map({"query": original})
 
-        resp = await asyncio.to_thread(
-            self._llm.chat,
-            model=self._model,
+        resp = await self._llm.achat(
+           model=self._model,
             messages=[{"role": "user", "content": prompt}],
-            temperature = 0.0
+            temperature = 0.0 
         )
-        rewritten = str(resp).strip()
+        rewritten = resp.content.strip()
 
         # Deduplication: if semantically identical, keep original
         if self._normalise(original) == self._normalise(rewritten):

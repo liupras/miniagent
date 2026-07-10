@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from .schema_context import SchemaContextBuilder
+from app.runtime.llm.agent_client import AgentLLM
 
 @dataclass
 class SQLAgentConfig:
@@ -31,7 +32,7 @@ class SQLAgentConfig:
     para_code_desc: Optional[str] = None
 
 class SQLAgent:
-    def __init__(self, llm, tools, config:SQLAgentConfig):
+    def __init__(self, llm:AgentLLM, tools, config:SQLAgentConfig):
         self.llm = llm
         self.tools = tools
         self._config = config

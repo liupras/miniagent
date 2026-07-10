@@ -4,7 +4,7 @@
 # @date    : 2026-01-19
 # @description: Utility functions
 
-from typing import List,Dict
+from typing import Generator, List,Dict
 
 from app.utils.tokens import estimate_tokens
 
@@ -67,6 +67,15 @@ def truncate_messages(messages: List[Dict], max_token: int) -> List[Dict]:
     # Merge the final message list
     final_messages = system_msg + truncated_non_system
     return final_messages
+
+def generate_stream_response(generator: Generator[str, None, None]):
+    """Convert the generator to SSE streaming response format"""
+    for chunk in generator:
+        if chunk:
+            # SSE format: data: content\n\n
+            yield f"data: {chunk}\n\n"
+    # Streaming end marker
+    yield "data: [DONE]\n\n"
 
 if __name__ == "__main__":
     """

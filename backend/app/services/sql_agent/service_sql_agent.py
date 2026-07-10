@@ -19,6 +19,8 @@ from .tool import SQLTools
 from .manager import DBManager
 
 from app.infra.db.database import Tool
+from app.runtime.llm.client import LLMClient
+from app.runtime.llm.agent_client import AgentLLM
 
 from app.core.i18n.i18n import t
 from app.schemas.common import NotFoundError
@@ -172,9 +174,7 @@ class SQLAgentService:
             logger.error(f"[SQLAgentService] LLM {llm_id} not found in database.")
             raise LLMNotFoundError(llm_id)
         
-        schema_name = config.get("schema_name", "main")
-
-        from app.infra.llm import LLMClient, AgentLLM  # local import to avoid circular deps
+        schema_name = config.get("schema_name", "main")        
         client = LLMClient(
             base_url=llm_config.base_url,
             api_key=llm_config.api_key,
@@ -227,7 +227,8 @@ class SQLAgentService:
         )
         llm = AgentLLM(client=client, 
             model=llm_config.model_name,
-            tool_prompt_template=agent_llm_tool_schema_template)
+            tool_prompt_template=agent_llm_tool_schema_template
+        )
         return SQLAgent(
             llm=llm,
             tools=sql_tools,

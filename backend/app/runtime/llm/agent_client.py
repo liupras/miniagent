@@ -7,9 +7,15 @@
 import json
 from typing import List, Dict, Any
 
+from .client import LLMClient
+
 class AgentLLM:
-    def __init__(self, client, model: str,
-            tool_prompt_template: str=None):
+    def __init__(
+        self, 
+        client:LLMClient, 
+        model: str,            
+        tool_prompt_template: str=None
+    ):
         self.client = client
         self.model = model
         self._tool_prompt_template =  tool_prompt_template       
@@ -22,18 +28,18 @@ class AgentLLM:
         - or content
         """
 
-        if not self._tool_prompt_template:
-            self._tool_prompt_template = self._default_tool_prompt()
-        
-        # Inject tools into prompt (Ollama/Qwen3 does not natively support function calling).
-        tool_prompt = self._tool_prompt_template.format(
-            tool_schema = json.dumps(tool_schema, indent=2, ensure_ascii=False))
+        if tool_schema and not self._has_tool_prompt(messages):
+            if not self._tool_prompt_template:
+                self._tool_prompt_template = self._default_tool_prompt()
+            
+            # Inject tools into prompt (Ollama/Qwen3 does not natively support function calling).
+            tool_prompt = self._tool_prompt_template.format(
+                tool_schema = json.dumps(tool_schema, indent=2, ensure_ascii=False))
 
-        full_messages = messages.copy()
-
-        # To avoid duplicate insertions in the system prompt, insert only in the first round.
-        if tool_schema and not any("You can use the following tool" in m.get("content", "") for m in full_messages):
-            full_messages.insert(0, {"role": "system", "content": tool_prompt})
+            full_messages = messages.copy()
+            full_messages.insert(0, {"role": "system", "content": tool_prompt,"_tool_prompt": True})
+        else: 
+            full_messages = messages.copy()            
 
         resp = self.client.chat(
             model=self.model,
@@ -59,6 +65,14 @@ class AgentLLM:
         return {
             "content": content
         }
+    
+    @staticmethod
+    def _has_tool_prompt(messages: List[Dict])->bool:
+        return any(
+            m.get("_tool_prompt") is True
+            for m in messages
+        )
+
 
     def _default_tool_prompt(self) -> str:
         """Build a prompt; this is key."""

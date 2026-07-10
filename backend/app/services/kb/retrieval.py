@@ -29,7 +29,7 @@ from .citation_merger import CitationMerger
 
 from app.infra.db.database import StrategyConfig,LLM
 from app.repositories import AsyncParentChunkDatabase, AsyncChunkDatabase, AsyncDocumentDatabase
-from app.infra.llm import LLMClient
+from app.runtime.llm.client import LLMClient
 from app.infra.cache.factory import create_cache_backend
 from app.retrieval.reranker.base import RerankMode
 from app.retrieval.reranker.factory import RerankerFactory
@@ -131,13 +131,12 @@ class QueryRewriteStage(BaseQueryStage):
         
         prompt   = self._prompt_template.format_map({"query": query})
 
-        resp = await asyncio.to_thread(
-            self.llm.chat,
+        resp = await self.llm.achat(
             model=self.model,
             messages=[{"role": "user", "content": prompt}]
         )
 
-        new_query = str(resp).strip()
+        new_query = resp.content.strip()
 
         logger.debug(f"[QueryRewrite] {query} → {new_query}")
 
@@ -167,15 +166,14 @@ class QueryExpansionStage(BaseQueryStage):
         
         prompt   = self._prompt_template.format_map({"query": query, "expansion_num": self.expansion_num})
 
-        resp = await asyncio.to_thread(
-            self.llm.chat,
+        resp = await self.llm.achat(
             model=self.model,
             messages=[{"role": "user", "content": prompt}]
         )
 
         queries = [
             q.strip()
-            for q in str(resp).split("\n")
+            for q in resp.content.split("\n")
             if q.strip()
         ]
 
@@ -200,13 +198,12 @@ class HyDEStage(BaseQueryStage):
         
         prompt   = self._prompt_template.format_map({"query": query})
 
-        resp = await asyncio.to_thread(
-            self.llm.chat,
+        resp = await self.llm.achat(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
         )
 
-        hypothetical_doc = str(resp).strip()
+        hypothetical_doc = resp.content.strip()
 
         logger.debug(
             f"[HyDE] generated hypothetical doc len={len(hypothetical_doc)}"

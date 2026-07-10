@@ -19,7 +19,7 @@ from loguru import logger
 
 from app.infra.db.database import ChatMessage, ChatSession
 from app.repositories.async_chat import AsyncChatDatabase
-from app.infra.llm.func import truncate_messages, estimate_messages_tokens
+from app.runtime.llm.func import truncate_messages, estimate_messages_tokens
 
 from app.schemas.common import NotFoundError
 class SessionNotFoundError(NotFoundError):

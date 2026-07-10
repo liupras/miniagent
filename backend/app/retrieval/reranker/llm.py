@@ -40,7 +40,8 @@ from typing import List, Optional
 from loguru import logger
 
 from app.retrieval.reranker.base import BaseLLMReranker, Scorable
-from app.infra.llm import LLMClient, LLMClientError
+from app.runtime.llm.models import LLMClientError
+from app.runtime.llm.client import LLMClient
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Shared prompt templates

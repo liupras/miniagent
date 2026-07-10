@@ -4,141 +4,19 @@
 # @date    : 2026-01-19
 # @description: General LLM client
 
-from litellm import completion, embedding
-from typing import Any, Optional,Dict,List,Generator,Union
-import base64
-import mimetypes
+from litellm import completion, acompletion, embedding,aembedding
+from typing import Any, AsyncGenerator, Optional,Dict,List,Generator,Union
 
 from loguru import logger
+
+from .stream_parser import StreamParser
+from .models import LLMClientError,LLMResponse
 
 Message = Dict[str, Any]
 
 import litellm
 litellm._turn_on_debug()
-
-def generate_stream_response(generator: Generator[str, None, None]):
-    """Convert the generator to SSE streaming response format"""
-    for chunk in generator:
-        if chunk:
-            # SSE format: data: content\n\n
-            yield f"data: {chunk}\n\n"
-    # Streaming end marker
-    yield "data: [DONE]\n\n"
-
-class LLMClientError(Exception):
-    """LLM client custom exceptions"""
-    pass
-
-class LLMResponse:
-    """LLM response wrapper class"""
-    
-    def __init__(
-        self,
-        content: str,
-        thinking: Optional[str] = None,
-        model: Optional[str] = None,
-        usage: Optional[Dict] = None,
-
-        tool_calls: Optional[List] = None,
-        images: Optional[List] = None,
-        audio: Optional[List] = None,
-        videos: Optional[List] = None,
-
-        raw_response: Any = None,
-    ):
-        """
-        Initialize LLM response
-        """
-        self.content = content
-        self.thinking = thinking
-        self.model = model
-        self.usage = usage or {}
-
-        # multimodal extensions
-        self.tool_calls = tool_calls or []
-        self.images = images or []
-        self.audio = audio or []
-        self.videos = videos or []
-
-        self.raw_response = raw_response
-    
-    def __str__(self) -> str:
-        """String representation (only the main content is returned)"""
-        return self.content
-    
-    def __repr__(self) -> str:
-        """Detailed description"""
-        return f"LLMResponse(content_len={len(self.content)}, has_thinking={self.thinking is not None})"
-    
-    def get_full_response(self) -> str:
-        """Get the complete response (including thinking)."""
-        if self.thinking:
-            return f"[Thinking]\n{self.thinking}\n\n[Response]\n{self.content}"
-        return self.content
-    
-class MessageBuilder:
-    """
-    Optional helper.
-    Old messages remain compatible.
-    """
-
-    @staticmethod
-    def text(text: str):
-        return {
-            "type": "text",
-            "text": text
-        }
-
-    @staticmethod
-    def image_url(url: str):
-        return {
-            "type": "image_url",
-            "image_url": {
-                "url": url
-            }
-        }
-
-    @staticmethod
-    def image_file(path: str):
-        mime = mimetypes.guess_type(path)[0]
-        mime = mime or "image/png"
-
-        with open(path, "rb") as f:
-            b64 = base64.b64encode(
-                f.read()
-            ).decode()
-
-        return {
-            "type": "image_url",
-            "image_url": {
-                "url":
-                    f"data:{mime};base64,{b64}"
-            }
-        }
-
-    @staticmethod
-    def input_audio(
-            data_base64: str,
-            fmt: str = "wav"
-    ):
-        return {
-            "type": "input_audio",
-            "input_audio": {
-                "data": data_base64,
-                "format": fmt
-            }
-        }
-
-    @staticmethod
-    def video_url(url: str):
-        return {
-            "type": "video_url",
-            "video_url": {
-                "url": url
-            }
-        }
-    
-
+   
 class LLMClient:
     """
     General-purpose LLM client, supporting multiple mainstream LLM providers
@@ -189,54 +67,47 @@ class LLMClient:
         if self.base_url:
             params["api_base"] = self.base_url
 
-        return params
-    
-    def chat(
-            self, 
-            model:str, 
-            messages:List[Message], 
-            stream:bool=False, 
-            hide_thinking: Optional[bool] = None,
-            **kwargs
-        )-> Union[LLMResponse,str, Generator[str, None, None]]:
-        """
-        chat with model
-
-        :param model: Model name, e.g., "qwen3" or "gpt-4o-mini"
-        :param messages: Message list in the format [{"role": "user", "content": "Hello"}]
-        :param stream: Whether to use streaming mode
-        :param hide_thinking: Should the "thinking" section be hidden in the returned results?
-        :param kargs: Other parameters supported by the model,eg. max_tokens, top_p, etc.
-
-        :return: Response string or generator(if streaming mode)
-
-        """
-
         if "temperature" not in kwargs:
-            kwargs["temperature"] = self.temperature
-        if hide_thinking is None:
-            hide_thinking = self.hide_thinking
-        
-        try:
-            if stream:
-                return self._chat_stream(model, messages,hide_thinking, **kwargs)
-            else:
-                return self._chat_normal(model, messages,hide_thinking, **kwargs)
-        except Exception as e:
-            logger.error(f"[LLMClient] API Call failed: {str(e)}")
-            raise LLMClientError(f"API Call failed: {str(e)}")
-        
-    def _chat_normal(
+            params["temperature"] = self.temperature        
+
+        return params    
+       
+    def chat(
         self,
         model: str,
         messages: List[Message],
-        hide_thinking: bool = True,
         **kwargs
-    ) -> str:
+    ) -> LLMResponse:
         """Normal mode call"""
         logger.debug(f"Calling Model: {model},Message count: {len(messages)}.")
         
-        response = completion(
+        try:
+            response = completion(
+                **self._completion_kwargs(
+                    model=model,
+                    messages=messages,
+                    **kwargs,
+                )
+            )
+
+            return self._build_response(
+                response,
+                model,                
+            )
+        except Exception as e:
+            logger.error(f"[LLMClient] API Call failed: {str(e)}")
+            raise LLMClientError(f"API Call failed: {str(e)}")
+    
+    async def achat(
+        self,
+        model: str,
+        messages: List[Message],
+        **kwargs
+    ) -> LLMResponse:
+        """Normal mode call"""
+        logger.debug(f"Calling Model: {model},Message count: {len(messages)}.")
+        
+        response = await acompletion(
             **self._completion_kwargs(
                 model=model,
                 messages=messages,
@@ -244,6 +115,17 @@ class LLMClient:
             )
         )
 
+        return self._build_response(
+            response,
+            model,            
+        )    
+
+    def _build_response(
+        self,
+        response,
+        model: str,        
+    ) -> LLMResponse:
+        
         msg = response.choices[0].message
         content = getattr(
             msg,
@@ -252,7 +134,7 @@ class LLMClient:
         ) or ""
 
         thinking_content=None
-        if hide_thinking:
+        if self.hide_thinking:
             content,thinking_content = self._strip_thinking(content)
 
         usage = {}
@@ -281,7 +163,7 @@ class LLMClient:
                 raw_response=response
             )
     
-    def _chat_stream(
+    def stream(
         self,
         model: str,
         messages: List[Message],
@@ -299,47 +181,39 @@ class LLMClient:
                 **kwargs,
             )
         )
-        
-        in_think = False
 
+        parser = StreamParser(hide_thinking)
         for chunk in response:
+            token = parser.parse(chunk)
 
-            if not chunk.choices:
-                continue
-
-            delta = chunk.choices[0].delta
-            reasoning = getattr(
-                delta,
-                "reasoning_content",
-                None
+            if token:
+                yield token        
+    
+    async def astream(
+        self,
+        model: str,
+        messages: List[Message],
+        hide_thinking: bool = True,
+        **kwargs
+    ) -> AsyncGenerator[str, None]:
+        """Streaming mode call"""
+        logger.debug(f"Streaming call model: {model}, Message count: {len(messages)}.")
+        
+        response = await acompletion(
+            stream=True,
+            **self._completion_kwargs(
+                model=model,
+                messages=messages,
+                **kwargs,
             )
+        )
 
-            if reasoning:
-                if hide_thinking:
-                    continue
-                yield reasoning
-                continue
+        parser = StreamParser(hide_thinking)
+        async for chunk in response:
+            token = parser.parse(chunk)
 
-            content = getattr(
-                delta,
-                "content",
-                None
-            )
-
-            if not content:
-                continue
-
-            if hide_thinking:
-                if content == "<think>":
-                    in_think = True
-                    continue
-                if content == "</think>":
-                    in_think = False
-                    continue
-                if in_think:
-                    continue
-
-            yield content    
+            if token:
+                yield token
 
     def embed(
         self,
@@ -353,6 +227,31 @@ class LLMClient:
             texts = [texts]
         try:
             response = embedding(
+                model=model,
+                input=texts,
+                api_key=self.api_key,
+                api_base=self.base_url,
+            )
+            return [
+                item["embedding"]
+                for item in response.data
+            ]
+        except Exception as e:
+            logger.error(f"[LLMClient] Embedding call failed: {str(e)}")
+            raise LLMClientError(f"Embedding call failed: {str(e)}")
+        
+    async def aembed(
+        self,
+        model: str,
+        texts: Union[str, List[str]],
+    ) -> List[List[float]]:
+        """
+        Call the OpenAI-compatible /embeddings endpoint.
+        """
+        if isinstance(texts, str):
+            texts = [texts]
+        try:
+            response = await aembedding(
                 model=model,
                 input=texts,
                 api_key=self.api_key,

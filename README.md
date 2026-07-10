@@ -2,6 +2,8 @@
 
 为个人或小团队提供轻便好用、易于部署和维护的智能体/Agent平台。
 
+**Simple Architecture + Explicit Code（简单架构 + 显式代码）**
+
 ## 特性
 
 - 🤖 多智能体支持

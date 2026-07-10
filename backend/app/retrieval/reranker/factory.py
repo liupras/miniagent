@@ -11,7 +11,7 @@ from typing import Optional,List
 from app.infra.db.database import LLM
 from app.retrieval.reranker.bge import BGEReranker
 from app.retrieval.reranker.llm import LLMReranker
-from app.infra.llm import LLMClient
+from app.runtime.llm.client import LLMClient
 
 class RerankerFactory:
     """Reranker class"""

@@ -65,7 +65,7 @@ from typing import List, Optional
 from loguru import logger
 
 from app.retrieval.reranker.base import BaseReranker, Scorable
-from app.infra.llm import LLMClient
+from app.runtime.llm.client import LLMClient
 
 # ═══════════════════════════════════════════════════════════════════════════
 # ScoringBackend interface
