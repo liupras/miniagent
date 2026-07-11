@@ -8,6 +8,7 @@ import json
 from typing import List, Dict, Any
 
 from .client import LLMClient
+from app.runtime.types import MessageRole
 
 class AgentLLM:
     def __init__(
@@ -58,8 +59,7 @@ class AgentLLM:
 
         resp = await self.client.achat(
             model=self.model,
-            messages=full_messages,
-            stream=False,
+            messages=full_messages,            
         )
 
         return self._build_response(resp)
@@ -89,7 +89,7 @@ class AgentLLM:
         full_messages.insert(
             0,
             {
-                "role": "system",
+                "role": MessageRole.SYSTEM,
                 "content": tool_prompt,
                 "_tool_prompt": True,
             },
@@ -97,21 +97,21 @@ class AgentLLM:
 
         return full_messages
     
-    @staticmethod
-    def _build_response(resp):
+    def _build_response(self,resp):
 
         content = resp.content.strip()
 
-        tool_calls = AgentLLM._parse_tool_call(content)
+        tool_calls = self._parse_tool_call(content)
 
         if tool_calls:
             return {
-                "role": "assistant",
+                "role": MessageRole.ASSISTANT,
                 "content": content,
                 "tool_calls": tool_calls,
             }
 
         return {
+            "role": MessageRole.ASSISTANT,
             "content": content,
         }
     

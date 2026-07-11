@@ -5,14 +5,15 @@
 # @description: FastAPI router — Agent Testing & Evaluation endpoints
 
 from __future__ import annotations
+import json
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import StreamingResponse
+from sse_starlette.sse import EventSourceResponse
 from loguru import logger
 
 from app.schemas.user.agent import AgentRequest
 from app.schemas.common import ApiResponse
-from app.runtime.agent_factory import AgentFactory
+from app.runtime.agent.agent_factory import AgentFactory
 from app.core.i18n.i18n import t
 
 router = APIRouter()
@@ -72,6 +73,7 @@ async def agent_invoke(
 
 @router.post("/stream", summary="Streaming Token Output Call Agent Interface")
 async def agent_stream(
+    request: Request,
     body: AgentRequest,
     factory: AgentFactory = Depends(_get_agent_factory)
 ):
@@ -82,18 +84,22 @@ async def agent_stream(
     
     logger.info(f"[AgentTest] Streaming agent '{runner.agent_name}' with query: '{body.query}'")
 
-    async def sse_event_generator():
-        try:
-            async for token in runner.stream(
-                query=body.query,
-                history=body.history,
-                user_id=body.user_id,
-                session_id=body.session_id
-            ):
-                # Packaged as a standard SSE text block format returned
-                yield f"data: {token}\n\n"
-        except Exception as exc:
-            logger.error(f"Error during agent streaming: {exc}")
-            yield f"data: [ERROR: {str(exc)}]\n\n"
+    text_generator = runner.stream(
+        query=body.query, 
+        session_id=body.session_id, 
+        user_id=body.user_id,
+        history=body.history
+    )
 
-    return StreamingResponse(sse_event_generator(), media_type="text/event-stream")
+    async def sse_event_publisher():
+        async for chunk_str in text_generator:
+            if await request.is_disconnected():
+                break
+                
+            data_dict = json.loads(chunk_str)
+            yield {
+                "event": data_dict["event"],
+                "data": chunk_str
+            }
+
+    return EventSourceResponse(sse_event_publisher())

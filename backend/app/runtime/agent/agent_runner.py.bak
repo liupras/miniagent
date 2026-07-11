@@ -18,6 +18,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent
+from langchain_core.runnables import Runnable
 from loguru import logger
 
 from app.infra.db.database import LLM
@@ -32,7 +33,7 @@ class AgentRunner:
         self,
         agent_id: int,
         agent_name: str,
-        agent,                  # compiled LangChain agent
+        agent:Runnable,
         system_prompt: str,
         chat_service: ConversationService,
         llm_config:LLM,

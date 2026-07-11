@@ -7,6 +7,7 @@
 from typing import Generator, List,Dict
 
 from app.utils.tokens import estimate_tokens
+from app.runtime.types import MessageRole
 
 def estimate_messages_tokens(messages: List[Dict]) -> int:
     """
@@ -27,8 +28,8 @@ def truncate_messages(messages: List[Dict], max_token: int) -> List[Dict]:
     Rules: Preserve system prompts → Preserve from the latest history backwards → Ensure the user's current input is not truncated
     """
     # Detach the system prompt (must be retained).
-    system_msg = [msg for msg in messages if msg["role"] == "system"]
-    non_system_msgs = [msg for msg in messages if msg["role"] != "system"]
+    system_msg = [msg for msg in messages if msg["role"] == MessageRole.SYSTEM]
+    non_system_msgs = [msg for msg in messages if msg["role"] != MessageRole.SYSTEM]
 
     # Calculate the length of the system prompt
     system_length = estimate_messages_tokens(system_msg)

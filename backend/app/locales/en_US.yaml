@@ -153,3 +153,9 @@ session:
 
 message:
   not_found: The message was not found.
+
+agent_runner:
+  max_steps_error: "Error: Agent reached maximum iteration steps and was forced to terminate."
+  tool_not_found: "Error: Tool '{tool_name}' is not registered."
+  tool_exec_error: "Error executing tool {tool_name}: {error}"
+  tool_arg_error: "Tool argument JSON parsing failed: {e}, raw value: {tool_args}"

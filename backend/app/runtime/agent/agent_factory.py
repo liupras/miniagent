@@ -6,16 +6,20 @@
 #               instances.  Designed to be injected into ServiceContainer.
 
 from __future__ import annotations
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from loguru import logger
 
 from app.runtime.cache.lazy_cache import AsyncLazyCache
-from app.runtime.tool_builder import build_tools_for_agent
-from app.runtime.agent_runner import AgentRunner, build_agent_runner
+from app.runtime.agent.tool_builder import build_tools_for_agent
+from app.runtime.agent.agent_runner import AgentRunner, build_agent_runner
 
 from app.core.i18n.i18n import t
 from app.schemas.common import NotFoundError
+
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
+
 class AgentNotFoundError(NotFoundError):
     def __init__(self, agent_name: Any):
         super().__init__("Agent", agent_name)
@@ -32,7 +36,7 @@ class AgentFactory:
         answer = await runner.invoke(query, history)
     """
 
-    def __init__(self, container):
+    def __init__(self, container:ServiceContainer):
         """
         Args:
             container   ServiceContainer — provides router_factory and other
