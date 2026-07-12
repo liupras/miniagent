@@ -54,8 +54,7 @@ class GenericReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
         for step in range(max_steps):
             response_dict = await self.agent_llm.achat(messages, tool_schema=self.tool_schemas)
 
-            if "role" not in response_dict:
-                response_dict["role"] = MessageRole.ASSISTANT
+            response_dict = self._normalize_response(response_dict)
                 
             messages.append(response_dict)
    
@@ -95,8 +94,7 @@ class GenericReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
         for step in range(max_steps):
             response_dict = self.agent_llm.chat(messages, tool_schema=self.tool_schemas)
             
-            if "role" not in response_dict:
-                response_dict["role"] = MessageRole.ASSISTANT
+            response_dict = self._normalize_response(response_dict)
                 
             messages.append(response_dict)
 
@@ -123,6 +121,21 @@ class GenericReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
             self._handle_max_steps_error(messages)
 
         return {"messages": messages}
+    
+    def _normalize_response(self, response_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """The return result of the standardized large model: ensure that the role exists and that the parameters of tool_calls conform to the standard string specification."""
+        # 1. Fill in the missing role
+        if "role" not in response_dict:
+            response_dict["role"] = MessageRole.ASSISTANT
+            
+        # 2. Casts dict-type utility arguments to standard JSON strings.
+        if "tool_calls" in response_dict:
+            for tool_call in response_dict["tool_calls"]:
+                func_info = tool_call.get("function", {})
+                if "arguments" in func_info and isinstance(func_info["arguments"], dict):
+                    func_info["arguments"] = json.dumps(func_info["arguments"], ensure_ascii=False)
+                    
+        return response_dict
 
     def _prepare_context(self, input: Dict[str, Any], config: Optional[RunnableConfig]) -> Tuple[List[Dict[str, Any]], int]:
         """Initialize historical messages, inject system prompts, and parse the maximum step limit."""
@@ -153,7 +166,7 @@ class GenericReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
             return observation
         
         try:
-            observation = await self.tools_map[tool_name].ainvoke(tool_args) if self.tools_map[tool_name].is_async else self.tools_map[tool_name].invoke(tool_args)
+            observation = await self.tools_map[tool_name].ainvoke(tool_args)
             return str(observation)
         except Exception as e:                        
             observation = t("agent_runner.tool_exec_error", tool_name=tool_name, error=e)

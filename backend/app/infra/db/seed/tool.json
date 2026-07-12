@@ -39,7 +39,7 @@
     "tool_type": "function",
     "config": {
       "llm_id": 1,
-      "callable_path": "skill.web_search_tool:web_search",
+      "callable_path": "app.services.skill.web_search_tool:web_search",
       "is_async": true,
       "enable_query_rewrite": false,
       "ddg_max_results": 9,
@@ -92,7 +92,7 @@
     "tool_type": "sql_agent",
     "config": {
       "llm_id": 2,
-      "callable_path": "sql_agent.sql_agent_tool:run",
+      "callable_path": "app.services.sql_agent.sql_agent_tool:run",
       "is_async": true,
       "schema_name": "main"
     },

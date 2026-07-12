@@ -53,7 +53,9 @@ from langchain_core.tools import StructuredTool, BaseTool
 from pydantic import BaseModel, Field, create_model
 from loguru import logger
 import inspect
-from app.infra.db.database import Agent
+
+from app.infra.db.database import Agent as AgentORM
+from app.infra.db.database import Tool as ToolORM
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -168,7 +170,7 @@ def _build_function_tool(
     if agent_orm is not None and "agent" in inspect.signature(fn).parameters:
         fn = fn(container = container,agent=agent_orm,tool_name=tool_orm.name)
 
-    args_schema = _build_pydantic_model(tool_orm.name, tool_orm.schema or {})
+    args_schema = _build_pydantic_model(tool_orm.name, tool_orm.tool_schema or {})
     is_async: bool = config.get("is_async", inspect.iscoroutinefunction(fn))
 
     return StructuredTool(
@@ -207,7 +209,7 @@ def _build_sql_agent_tool(
     if agent_orm is not None and "schema_name" in inspect.signature(fn).parameters:
         fn = fn(container = container,agent=agent_orm,tool_name=tool_orm.name,schema_name=schema_name)
 
-    args_schema = _build_pydantic_model(tool_orm.name, tool_orm.schema or {})
+    args_schema = _build_pydantic_model(tool_orm.name, tool_orm.tool_schema or {})
     is_async: bool = config.get("is_async", inspect.iscoroutinefunction(fn))
 
     return StructuredTool(
@@ -238,7 +240,7 @@ def _build_api_tool(tool_orm, config: Dict[str, Any]) -> BaseTool:
     headers: Dict[str, str] = config.get("headers", {})
     timeout: int = config.get("timeout", 30)
 
-    args_schema = _build_pydantic_model(tool_orm.name, tool_orm.schema or {})
+    args_schema = _build_pydantic_model(tool_orm.name, tool_orm.tool_schema or {})
 
     async def _call_api(**kwargs: Any) -> str:
         # Replace URL path placeholders, send remainder as body/params.
@@ -272,7 +274,7 @@ def _build_api_tool(tool_orm, config: Dict[str, Any]) -> BaseTool:
 
 
 def _build_smart_router_tool(
-    tool_orm,
+    tool_orm:ToolORM,
     config: Dict[str, Any],
     smart_router,           # kb.smart_router.SmartRouter instance
 ) -> BaseTool:
@@ -284,11 +286,11 @@ def _build_smart_router_tool(
     max_chunks: int = config.get("max_chunks", 5)
     include_confidence: bool = config.get("include_confidence", True)
 
-    # Dynamically generate args_schema from tool_orm.schema
-    args_schema = _build_pydantic_model(tool_orm.name, tool_orm.schema or {})
+    # Dynamically generate args_schema from tool_orm.tool_schema
+    args_schema = _build_pydantic_model(tool_orm.name, tool_orm.tool_schema or {})
 
     # Extract the actual parameter names defined in the schema to correctly route parameters in the coroutine.
-    parameters = _extract_parameters(tool_orm.schema or {})
+    parameters = _extract_parameters(tool_orm.tool_schema or {})
     schema_properties: Dict[str, Any] = parameters.get("properties", {})
 
     # Identify which field is the main query field (the string type field in the required list).
@@ -373,8 +375,8 @@ def _build_smart_router_tool(
 
 async def build_tool(
     container,
-    agent_orm,
-    tool_orm,
+    agent_orm:AgentORM,
+    tool_orm:ToolORM,
     config_override: Optional[Dict[str, Any]],
     router_factory,         # service_container.SmartRouterFactory
 ) -> Optional[BaseTool]:
@@ -446,7 +448,7 @@ async def build_tool(
 
 async def build_tools_for_agent(
     container       ,
-    agent_orm           :Agent,
+    agent_orm           : AgentORM,
     agent_tool_relations: List,     # List[AgentToolRelation ORM rows]
     tool_orm_map        : Dict[str, Any],   # {tool_name: Tool ORM}
     router_factory,
@@ -466,13 +468,6 @@ async def build_tools_for_agent(
     tools: List[BaseTool] = []
 
     for relation in agent_tool_relations:
-        if not relation.enabled:
-            logger.debug(
-                f"[ToolBuilder] Tool '{relation.tool_name}' disabled "
-                "for this agent — skipping."
-            )
-            continue
-
         tool_orm = tool_orm_map.get(relation.tool_name)
         if tool_orm is None:
             logger.warning(

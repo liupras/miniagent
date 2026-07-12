@@ -16,8 +16,6 @@ from __future__ import annotations
 import json
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
-from langchain_openai import ChatOpenAI
-from langchain.agents import create_agent
 from langchain_core.runnables import Runnable
 from loguru import logger
 
@@ -27,6 +25,7 @@ from app.runtime.conversation.service_conversation import ConversationService
 from app.runtime.types import MessageRole, LangChainMessageRole
 from app.runtime.llm.client import LLMClient
 from app.runtime.llm.agent_client import AgentLLM
+from app.infra.db.database import Agent as AgentORM
 
 def _extract_content(msg: Any) -> str:
     """Adaptive message text extraction: Supports both pure dict and LangChain BaseMessage objects."""
@@ -282,7 +281,7 @@ class AgentRunner:
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def build_agent_runner(
-    agent_orm,              # Agent ORM row (with .llm eagerly loaded)
+    agent_orm:AgentORM,              # Agent ORM row (with .llm eagerly loaded)
     tools: List[Any],       # List[BaseTool] from tool_builder   
     chat_service: ConversationService,
 ) -> AgentRunner:
