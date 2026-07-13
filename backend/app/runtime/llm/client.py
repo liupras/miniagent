@@ -26,7 +26,7 @@ class LLMClient:
             self, 
             base_url:str, 
             api_key:Optional[str] = None, 
-            temperature: float = 0.7,
+            temperature: float = 0.5,
             hide_thinking: bool = True,
         ):
         """
@@ -45,7 +45,7 @@ class LLMClient:
         self.temperature = (
             temperature
             if temperature is not None
-            else 0.7
+            else 0.5
         )
         self.hide_thinking = hide_thinking
 
