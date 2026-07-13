@@ -191,9 +191,11 @@ async def update_agent_tools(
     agent_id: int,
     data: AgentToolUpdate,
     svc: AgentService = Depends(get_service),
+    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int = Depends(_edit),
 ):
     await svc.update_agent_tools(agent_id, data.tool_ids)
+    cache.invalidate(CacheType.AGENT_RUNNER,agent_id)
     return ApiResponse()
 
 
@@ -212,7 +214,9 @@ async def update_agent_llm(
     agent_id: int,
     llm_id: int,
     svc: AgentService = Depends(get_service),
+    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int = Depends(_edit),
 ):
     await svc.update_agent_llm(agent_id, llm_id)
-    return ApiResponse(message="LLM updated successfully")
+    cache.invalidate(CacheType.AGENT_RUNNER,agent_id)
+    return ApiResponse()

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding:utf-8 -*-
+# *- coding:utf-8 -*-
 # @author  : Liu Lijun
 # @date    : 2026-05-29
 # @description: Agent Service – business logic layer (no HTTP / FastAPI imports)
@@ -38,7 +38,6 @@ class AgentService:
         self._user_agent_relation_db = container.user_agent_relation_db
         self._agent_tool_relation_db = container.agent_tool_relation_db
         self._tool_db = container.tool_db
-        self._agent_factory = container.agent_factory
 
     # ──────────────────────────────────────────────
     # Read
@@ -88,9 +87,7 @@ class AgentService:
         if agent is None:
             raise AgentNotFoundError(agent_id)
 
-        updated = await self._agent_db.get_agent(agent_id)
-        if self._agent_factory:
-            self._agent_factory.invalidate(agent_id)
+        updated = await self._agent_db.get_agent(agent_id)        
         return AgentOut.model_validate(updated)
 
     async def toggle_active(self, agent_id: int) -> None:
@@ -99,9 +96,7 @@ class AgentService:
         Returns the new is_active value.
         Raises AgentNotFoundError if the agent does not exist.
         """
-        await self._agent_db.toggle_active(agent_id)
-        if self._agent_factory:
-            self._agent_factory.invalidate(agent_id)
+        await self._agent_db.toggle_active(agent_id)        
 
     # ──────────────────────────────────────────────
     # Delete
@@ -112,9 +107,7 @@ class AgentService:
         Delete a single agent by primary key.
         Raises AgentNotFoundError if the record does not exist.
         """
-        await self._agent_db.delete_agent(agent_id)        
-        if self._agent_factory:
-            self._agent_factory.invalidate(agent_id)      
+        await self._agent_db.delete_agent(agent_id)            
     
     async def batch_delete_agents(self, ids: List[int]) -> int:
         """
@@ -123,9 +116,7 @@ class AgentService:
         """
         result = await self._agent_db.batch_delete_agents(ids)
         if result == 0:
-            raise AgentNotFoundError(ids)
-        if self._agent_factory:
-            self._agent_factory.invalidate()
+            raise AgentNotFoundError(ids)        
         return result
     
     async def get_users_by_agent(self, agent_id: int) -> List[UserOptionItem]:
@@ -186,8 +177,6 @@ class AgentService:
             agent_id,
             unique_tool_ids,
         )
-        if self._agent_factory:
-            self._agent_factory.invalidate(agent_id)
         return True
 
     async def get_agent_llm(self, agent_id: int) -> Optional[LLMOptionItem]:
@@ -200,6 +189,4 @@ class AgentService:
         agent = await self._agent_db.update_agent_llm(agent_id, llm_id)
         if agent is None:
             raise AgentNotFoundError(agent_id)
-        if self._agent_factory:
-            self._agent_factory.invalidate(agent_id)
         return agent is not None

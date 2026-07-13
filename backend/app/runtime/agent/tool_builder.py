@@ -167,8 +167,8 @@ def _build_function_tool(
 
     # Factory pattern: If the function accepts an agent parameter, 
     # then the actual coroutine to be generated is passed in.
-    if agent_orm is not None and "agent" in inspect.signature(fn).parameters:
-        fn = fn(container = container,agent=agent_orm,tool_name=tool_orm.name)
+    if agent_orm is not None and "tool_name" in inspect.signature(fn).parameters:
+        fn = fn(container = container,tool_name=tool_orm.name)
 
     args_schema = _build_pydantic_model(tool_orm.name, tool_orm.tool_schema or {})
     is_async: bool = config.get("is_async", inspect.iscoroutinefunction(fn))

@@ -17,7 +17,7 @@ from app.core.i18n.i18n import t
 from app.runtime.types import MessageRole
 
 
-class GenericReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
+class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
     """
     Inheriting from Runnable, it explicitly declares both input and output types as Dict[str, Any].
     """

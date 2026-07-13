@@ -20,7 +20,7 @@ from langchain_core.runnables import Runnable
 from loguru import logger
 
 from app.infra.db.database import LLM
-from app.runtime.agent.react_agent import GenericReActAgent
+from app.runtime.agent.react_agent import ToolReActAgent
 from app.runtime.conversation.service_conversation import ConversationService
 from app.runtime.types import MessageRole, LangChainMessageRole
 from app.runtime.llm.client import LLMClient
@@ -336,7 +336,7 @@ async def build_agent_runner(
     agent_llm_client = AgentLLM(client=llm_client, model=llm_config.model_name)
 
     # ── 3. Compile LangChain agent ──────────────────────────────────
-    agent = GenericReActAgent(
+    agent = ToolReActAgent(
         agent_llm=agent_llm_client,
         tools=tools,
         system_instruction=system_prompt
