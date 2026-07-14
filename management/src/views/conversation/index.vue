@@ -89,10 +89,20 @@ function openMessages(row: (typeof dataList.value)[number]) {
         fixed="right"
       >
         <template #default="{ row }">
-          <el-button type="primary" link @click="openMessages(row)">
+          <el-button
+            v-auth="'conversation:list'"
+            type="primary"
+            link
+            @click="openMessages(row)"
+          >
             {{ t("chatSession.viewMessages") }}
           </el-button>
-          <el-button type="danger" link @click="handleDelete(row)">
+          <el-button
+            v-auth="'conversation:delete'"
+            type="danger"
+            link
+            @click="handleDelete(row)"
+          >
             {{ t("buttons.delete") }}
           </el-button>
         </template>

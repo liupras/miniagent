@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useMessages } from "../utils/message-hook";
 import { formatDateTime } from "../utils/format";
+import { hasAuth } from "@/router/utils";
 
 const { t } = useI18n();
 
@@ -71,7 +72,12 @@ defineExpose({ open });
         fixed="right"
       >
         <template #default="{ row }">
-          <el-button type="danger" link @click="handleDeleteMessage(row)">
+          <el-button
+            v-auth="'conversation:delete'"
+            type="danger"
+            link
+            @click="handleDeleteMessage(row)"
+          >
             {{ t("buttons.delete") }}
           </el-button>
         </template>
