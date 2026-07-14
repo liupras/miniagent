@@ -41,6 +41,7 @@ buttons:
   toggle: 切换状态
   stats: 统计
   close: 关闭
+  warning: 提示
 
 panel:
   pureSystemSet: 系统配置
@@ -104,7 +105,7 @@ menus:
     kownledgeBase: 基本信息
     document: 文档
     table: 表格
-    conversation: 会话
+  conversation: 会话
   setting:
     default: 系统设置
     objectCache: 对象缓存
@@ -512,3 +513,29 @@ tableManagement:
   forceCast: 强制类型转换
   allowNewColumns: 允许新增列
 
+chatSession:
+  userId: 用户ID
+  userIdPlaceholder: 请输入用户ID
+  title: 会话标题
+  sessionId: 会话ID
+  agentId: 智能体ID
+  messageCount: 消息数
+  totalTokens: 总Token数
+  createdAt: 创建时间
+  updatedAt: 更新时间
+  operation: 操作
+  viewMessages: 查看消息
+  deleteConfirm: 确定要删除会话「{name}」吗？该操作将同时删除会话下的全部消息，且不可恢复。
+  deleteSuccess: 会话删除成功
+
+chatMessage:
+  dialogTitle: 会话消息 - {name}
+  role: 角色
+  content: 内容
+  createdAt: 发送时间
+  deleteConfirm: 确定要删除这条消息吗？该操作不可恢复。
+  deleteSuccess: 消息删除成功
+  roles:
+    user: 用户
+    assistant: 助手
+    system: 系统

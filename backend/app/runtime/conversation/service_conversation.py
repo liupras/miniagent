@@ -42,13 +42,15 @@ class ConversationService:
     async def save_message(
         self,
         user_id: str,
-        session_id: str,
+        agent_id: int,
+        session_id: Optional[int],
         role: str,
         content: str,        
     ) -> int:
         
         res = await self._chat_db.save_message(
             user_id=user_id,
+            agent_id=agent_id,
             session_id=session_id,
             role=role,
             content=content,
@@ -58,7 +60,7 @@ class ConversationService:
     async def _load_db_history(
         self,
         user_id: str,
-        session_id: str,
+        session_id: int,
     ) -> List[Dict[str, str]]:
         """
         Fetch recent conversation turns from the database.
@@ -88,7 +90,7 @@ class ConversationService:
         max_tokens:int,
         history: Optional[List[Dict[str, str]]],
         user_id: Optional[str],
-        session_id: Optional[str],
+        session_id: Optional[int],
     ) -> List[BaseMessage]:
         """
         Build the LangChain message list for a single turn.
@@ -170,14 +172,14 @@ class ConversationService:
 
     async def list_messages(
         self,
-        session_id: str,
+        session_id: int,
         page: int = 1,
         page_size: int = 20
     ) -> Tuple[int, List[ChatMessage]]:
         """List chat messages for a session."""
         return await self._chat_db.list_messages(session_id, page, page_size)
 
-    async def delete_session(self, session_id: str) -> bool:
+    async def delete_session(self, session_id: int) -> bool:
         """Delete a specific chat session."""
         res = await self._chat_db.delete_session(session_id)
         if not res:

@@ -280,11 +280,12 @@
     },    
     {
         "id": 11,
-        "parent_id": 4,
+        "parent_id": null,
         "name": "conversation:list", 
-        "title_key": "menus.kb.conversation",
-        "path": "/kbManagement/conversation",        
-        "component": "kbManagement/conversation/index",  
+        "title_key": "menus.conversation",
+        "path": "/conversation",        
+        "component": "conversation/index",
+        "icon":"ep:chat-dot-round",
         "sort_order": 10
     },
     {

@@ -17,20 +17,22 @@ from app.runtime.conversation.title_generator import title_generator
 
 class AsyncChatDatabase(AsyncBaseDatabase):
 
-    async def _get_or_create_session(self, session: AsyncSession, user_id: str, session_id: str) -> ChatSession:
+    async def _get_or_create_session(self, session: AsyncSession, user_id: str, agent_id:int,session_id: Optional[int]) -> ChatSession:
         """Internal asynchronous method: Get or create a chat session"""
 
-        stmt = select(ChatSession).filter_by(user_id=user_id, session_id=session_id)
-        result = await session.execute(stmt)
-        chat_session = result.scalars().first()
+        if session_id:
+            stmt = select(ChatSession).filter_by(id=session_id)
+            result = await session.execute(stmt)
+            chat_session = result.scalars().first()
 
-        if chat_session:
-            chat_session.updated_at = datetime.now()
-            return chat_session
+            if chat_session:
+                chat_session.updated_at = datetime.now()
+                return chat_session
 
         chat_session = ChatSession(
             user_id=user_id,
-            session_id=session_id,
+            agent_id = agent_id,
+            id=session_id,
             created_at=datetime.now(),
             updated_at=datetime.now()
         )
@@ -43,15 +45,16 @@ class AsyncChatDatabase(AsyncBaseDatabase):
     async def save_message(
         self,
         user_id: str,
-        session_id: str,
+        agent_id: int,
+        session_id: Optional[int],
         role: str,
         content: str,        
     ) -> int:
 
         async with self.get_session() as session:
-            chat_session = await self._get_or_create_session(session, user_id, session_id)
+            chat_session = await self._get_or_create_session(session, user_id, agent_id,session_id)
 
-            # A title will only be generated using the current content if the role is "user" and the current session does not yet have a title.
+            # 1. A title will only be generated using the current content if the role is "user" and the current session does not yet have a title.
             if role == "user" and not chat_session.title:
                 try:
                     generated_title = title_generator.generate(content)
@@ -61,6 +64,7 @@ class AsyncChatDatabase(AsyncBaseDatabase):
                     logger.error(f"Failed to generate title for session {session_id}: {e}")
                     chat_session.title="..."
 
+            # 2. Create and save new messages
             message = ChatMessage(
                 session_id=chat_session.id,
                 role=role,
@@ -71,12 +75,21 @@ class AsyncChatDatabase(AsyncBaseDatabase):
             session.add(message)
             await session.flush()
 
+            # 3. Count the total number of real messages in this session.
+            count_stmt = select(func.count(ChatMessage.id)).filter_by(session_id=chat_session.id)
+            count_result = await session.execute(count_stmt)
+            total_messages = count_result.scalar() or 0
+
+            # 4. Synchronize updates to the session table
+            chat_session.message_count = total_messages
+            chat_session.updated_at = datetime.now()
+
             return message.id
 
     async def get_chat_history_latest(
         self,
         user_id: str,
-        session_id: str,
+        session_id: int,
         limit: Optional[int] = None
     ) -> List[Dict]:
 
@@ -86,7 +99,7 @@ class AsyncChatDatabase(AsyncBaseDatabase):
                 .join(ChatSession)
                 .filter(
                     ChatSession.user_id == user_id,
-                    ChatSession.session_id == session_id
+                    ChatSession.id == session_id
                 )
                 .order_by(ChatMessage.created_at.desc())
             )
@@ -111,7 +124,7 @@ class AsyncChatDatabase(AsyncBaseDatabase):
         async with self.get_session() as session:
             stmt = (
                 select(
-                    ChatSession.session_id,
+                    ChatSession.id,
                     ChatSession.created_at,
                     ChatSession.updated_at,
                     func.count(ChatMessage.id).label("message_count")
@@ -127,7 +140,7 @@ class AsyncChatDatabase(AsyncBaseDatabase):
 
             return [
                 {
-                    "session_id": s.session_id,
+                    "session_id": s.id,
                     "created_at": s.created_at,
                     "updated_at": s.updated_at,
                     "message_count": s.message_count
@@ -135,10 +148,10 @@ class AsyncChatDatabase(AsyncBaseDatabase):
                 for s in sessions
             ]
         
-    async def get_session_by_id(self, session_id: str) -> Optional[ChatSession]:
+    async def get_session_by_id(self, session_id: int) -> Optional[ChatSession]:
         """Get a chat session by session ID."""
         async with self.get_session() as session:
-            stmt = select(ChatSession).where(ChatSession.session_id == session_id)
+            stmt = select(ChatSession).where(ChatSession.id == session_id)
             result = await session.execute(stmt)
             return result.scalar_one_or_none()
 
@@ -164,7 +177,7 @@ class AsyncChatDatabase(AsyncBaseDatabase):
 
     async def list_messages(
         self,
-        session_id: str,
+        session_id: int,
         page: int = 1,
         page_size: int = 20
     ) -> Tuple[int, List[ChatMessage]]:
@@ -182,7 +195,7 @@ class AsyncChatDatabase(AsyncBaseDatabase):
 
             return total, list(messages)
 
-    async def delete_session(self, session_id: str) -> bool:
+    async def delete_session(self, session_id: int) -> bool:
         """Delete a chat session and all related messages."""
         async with self.get_session() as session:
             # First delete all messages in the session
@@ -192,7 +205,7 @@ class AsyncChatDatabase(AsyncBaseDatabase):
             
             # Then delete the session itself
             result = await session.execute(
-                delete(ChatSession).where(ChatSession.session_id == session_id)
+                delete(ChatSession).where(ChatSession.id == session_id)
             )
             
             return result.rowcount > 0

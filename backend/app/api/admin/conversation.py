@@ -58,13 +58,11 @@ async def get_chat_session(
         raise HTTPException(404, detail="Chat session not found")
     
     response = ChatSessionResponse(
-        id=session.id,
-        session_id=session.session_id,
+        session_id=session.id,
         title=session.title,
         user_id=session.user_id,
         agent_id=session.agent_id,
         message_count=session.message_count,
-        total_tokens=session.total_tokens,
         created_at=session.created_at.isoformat() if session.created_at else None,
         updated_at=session.updated_at.isoformat() if session.updated_at else None
     )
@@ -94,13 +92,11 @@ async def list_chat_sessions(
     session_items = []
     for item in items:
         session_items.append(ChatSessionListResponse(
-            id=item.id,
-            session_id=item.session_id,
+            session_id=item.id,
             title=item.title,
             user_id=item.user_id,
             agent_id=item.agent_id,
             message_count=item.message_count,
-            total_tokens=item.total_tokens,
             created_at=item.created_at.isoformat() if item.created_at else None,
             updated_at=item.updated_at.isoformat() if item.updated_at else None
         ))
@@ -120,7 +116,7 @@ async def list_chat_sessions(
     summary="Delete a chat session"
 )
 async def delete_chat_session(
-    session_id: str,
+    session_id: int,
     service: ConversationService = Depends(_get_service),
     caller_id: int = Depends(_delete),
 ):
@@ -152,7 +148,7 @@ async def delete_chat_message(
     summary="Get chat messages for a session"
 )
 async def get_chat_messages(
-    session_id: str,
+    session_id: int,
     page: int = 1,
     page_size: int = 20,
     service: ConversationService = Depends(_get_service),

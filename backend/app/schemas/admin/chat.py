@@ -9,25 +9,21 @@ from pydantic import BaseModel
 
 class ChatSessionResponse(BaseModel):
     """Response model for chat session."""
-    id: int
-    session_id: str
+    session_id: int
     title: Optional[str]
     user_id: int
     agent_id: Optional[int]
     message_count: int
-    total_tokens: int
     created_at: str
     updated_at: str
 
 class ChatSessionListResponse(BaseModel):
     """Response model for list of chat sessions."""
-    id: int
-    session_id: str
+    session_id: int
     title: Optional[str]
     user_id: int
     agent_id: Optional[int]
     message_count: int
-    total_tokens: int
     created_at: str
     updated_at: str
 
@@ -40,7 +36,7 @@ class ChatSessionListOut(BaseModel):
 
 class ChatMessageResponse(BaseModel):
     """Response model for chat message."""
-    id: int
+    id:int
     session_id: int
     role: str
     content: str

@@ -118,7 +118,7 @@ class AgentRunner:
         history: Optional[List[Dict[str, str]]] = None,
         *,
         user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
+        session_id: Optional[int] = None,
     ) -> str:
         """
         Run the agent to completion and return the final answer as a string.
@@ -136,12 +136,13 @@ class AgentRunner:
         Returns:
             The agent's final text response.
         """
-        use_db = bool(user_id and session_id)
+        use_db = bool(user_id)
 
         # ── Persist user message ───────────────────────────────────────────
         if use_db:
             await self._conversation_service.save_message(
                 user_id=user_id,
+                agent_id = self.agent_id,
                 session_id=session_id,
                 role="user",
                 content=query,
@@ -173,6 +174,7 @@ class AgentRunner:
         if use_db:
             await self._conversation_service.save_message(
                 user_id=user_id,
+                agent_id=self.agent_id,
                 session_id=session_id,
                 role="assistant",
                 content=answer,
@@ -213,6 +215,7 @@ class AgentRunner:
         if use_db:
             await self._conversation_service.save_message(
                 user_id=user_id,
+                agent_id = self.agent_id,
                 session_id=session_id,
                 role="user",
                 content=query,
@@ -271,6 +274,7 @@ class AgentRunner:
             full_reply = "".join(collected_chunks)
             await self._conversation_service.save_message(
                 user_id=user_id,
+                agent_id=self.agent_id,
                 session_id=session_id,
                 role="assistant",
                 content=full_reply,

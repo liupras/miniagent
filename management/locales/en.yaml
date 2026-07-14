@@ -41,6 +41,7 @@ buttons:
   toggle: Toggle Status
   stats: Stats
   close: Close
+  warning: Notice
 
 panel:
   pureSystemSet: System Configs
@@ -103,7 +104,7 @@ menus:
     kownledgeBase: knowledge Base
     document: Document
     table: Table
-    conversation: Conversation
+  conversation: Conversation
   setting:
     default: Settings
     objectCache: Object Cache
@@ -509,3 +510,30 @@ tableManagement:
   primaryKeyPlaceholder: "Comma-separated for composite keys, e.g. id,order_no"
   forceCast: Force Type Cast
   allowNewColumns: Allow New Columns
+
+chatSession:
+  userId: User ID
+  userIdPlaceholder: Enter a user ID
+  title: Title
+  sessionId: Session ID
+  agentId: Agent ID
+  messageCount: Messages
+  totalTokens: Total Tokens
+  createdAt: Created At
+  updatedAt: Updated At
+  operation: Operation
+  viewMessages: View Messages
+  deleteConfirm: Delete session "{name}"? This will also delete all its messages and cannot be undone.
+  deleteSuccess: Session deleted successfully
+
+chatMessage:
+  dialogTitle: Messages - {name}
+  role: Role
+  content: Content
+  createdAt: Sent At
+  deleteConfirm: Delete this message? This cannot be undone.
+  deleteSuccess: Message deleted successfully
+  roles:
+    user: User
+    assistant: Assistant
+    system: System

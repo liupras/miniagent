@@ -142,7 +142,6 @@ export interface ChunkRead {
   chunk_index: number;
   text: string;
   char_count: number;
-  token_count: number;
   hash_value: string;
   created_at: string;
 }
@@ -153,7 +152,6 @@ export interface ParentChunkRead {
   chunk_index: number;
   text: string;
   char_count: number;
-  token_count: number;
   hash_value: string;
   created_at: string;
   chunks: ChunkRead[];

@@ -16,4 +16,4 @@ class AgentRequest(BaseModel):
         description="Explicitly passed historical dialogue context, in the format: [{'role': 'user', 'content': 'hi'}]"
     )
     user_id: Optional[str] = Field(default=2, description="User ID used for persistent memory (optional)")
-    session_id: Optional[str] = Field(default="6c617423-fb94-f028-af1a-f043bab8bcbb", description="Session ID used for persistent memory (optional)")
+    session_id: Optional[int] = Field(default=1, description="Session ID used for persistent memory (optional)")

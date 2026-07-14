@@ -167,20 +167,17 @@ class ChatSession(Base):
     __tablename__ = "chat_sessions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(String(100), nullable=False, comment="Session ID")
     title = Column(String(200), comment="title")
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     agent_id = Column(Integer, ForeignKey("agents.id", ondelete="SET NULL"), nullable=True)
 
     # Statistical information
     message_count = Column(Integer, default=0, comment="Message Count")
-    total_tokens = Column(Integer, default=0, comment="Total number of tokens")
 
     created_at = Column(DateTime, default=lambda: datetime.now())
     updated_at = Column(DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now())
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "session_id", name="uq_user_session"),
+    __table_args__ = (        
         Index("idx_user_id", "user_id"),
     )
 
@@ -189,7 +186,7 @@ class ChatSession(Base):
     messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan", passive_deletes=True) 
 
     def __repr__(self):
-        return f"<ChatSession(user_id='{self.user_id}', session_id='{self.session_id}')>"
+        return f"<ChatSession(user_id='{self.user_id}', session_id='{self.id}')>"
 
 
 class ChatMessage(Base):
