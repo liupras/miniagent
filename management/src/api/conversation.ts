@@ -61,7 +61,7 @@ export const getChatSessionList = (userId: number, params: PageParams) => {
 };
 
 /** Delete a chat session and all its messages (cascade). */
-export const deleteChatSession = (sessionId: string) => {
+export const deleteChatSession = (sessionId: number) => {
   return http.request<null>(
     "delete",
     baseUrlApi(`${BASE_URL}/sessions/${sessionId}`)

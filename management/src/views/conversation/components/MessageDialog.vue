@@ -60,14 +60,15 @@ defineExpose({ open });
       </el-table-column>
 
       <el-table-column
-        :label="t('chatMessage.createdAt')"
+        :label="t('form.createdAt')"
         prop="created_at"
         width="150"
         :formatter="(_row, _col, val) => formatDateTime(val)"
       />
 
       <el-table-column
-        :label="t('chatSession.operation')"
+        v-if="hasAuth('conversation:delete')"
+        :label="t('labels.operation')"
         width="90"
         fixed="right"
       >

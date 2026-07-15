@@ -56,13 +56,13 @@ export function useSession(initialUserId?: number) {
 
   function handleDelete(row: ChatSessionResponse) {
     ElMessageBox.confirm(
-      t("chatSession.deleteConfirm", { name: row.title || row.session_id }),
+      t("messages.deleteConfirm", { name: row.title || row.session_id }),
       t("buttons.warning"),
       { type: "warning" }
     )
       .then(async () => {
         await deleteChatSession(row.session_id);
-        ElMessage.success(t("chatSession.deleteSuccess"));
+        ElMessage.success(t("messages.deleteSuccess"));
         // if we deleted the last row on this page, step back a page
         if (dataList.value.length === 1 && pagination.page > 1) {
           pagination.page -= 1;

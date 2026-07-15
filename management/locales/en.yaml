@@ -518,21 +518,12 @@ chatSession:
   sessionId: Session ID
   agentId: Agent ID
   messageCount: Messages
-  totalTokens: Total Tokens
-  createdAt: Created At
-  updatedAt: Updated At
-  operation: Operation
   viewMessages: View Messages
-  deleteConfirm: Delete session "{name}"? This will also delete all its messages and cannot be undone.
-  deleteSuccess: Session deleted successfully
 
 chatMessage:
   dialogTitle: Messages - {name}
   role: Role
   content: Content
-  createdAt: Sent At
-  deleteConfirm: Delete this message? This cannot be undone.
-  deleteSuccess: Message deleted successfully
   roles:
     user: User
     assistant: Assistant

@@ -72,22 +72,18 @@ function openMessages(row: (typeof dataList.value)[number]) {
       />
       />
       <el-table-column
-        :label="t('chatSession.createdAt')"
+        :label="t('form.createdAt')"
         prop="created_at"
         width="150"
         :formatter="(_row, _col, val) => formatDateTime(val)"
       />
       <el-table-column
-        :label="t('chatSession.updatedAt')"
+        :label="t('form.updatedAt')"
         prop="updated_at"
         width="150"
         :formatter="(_row, _col, val) => formatDateTime(val)"
       />
-      <el-table-column
-        :label="t('chatSession.operation')"
-        width="200"
-        fixed="right"
-      >
+      <el-table-column :label="t('labels.operation')" width="200" fixed="right">
         <template #default="{ row }">
           <el-button
             v-auth="'conversation:list'"

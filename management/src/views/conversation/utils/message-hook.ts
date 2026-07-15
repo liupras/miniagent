@@ -55,12 +55,16 @@ export function useMessages() {
   }
 
   function handleDeleteMessage(row: ChatMessageResponse) {
-    ElMessageBox.confirm(t("chatMessage.deleteConfirm"), t("buttons.warning"), {
-      type: "warning"
-    })
+    ElMessageBox.confirm(
+      t("messages.deleteConfirm", { name: row.session_id }),
+      t("buttons.warning"),
+      {
+        type: "warning"
+      }
+    )
       .then(async () => {
         await deleteChatMessage(row.id);
-        ElMessage.success(t("chatMessage.deleteSuccess"));
+        ElMessage.success(t("messages.deleteSuccess"));
         if (messageList.value.length === 1 && pagination.page > 1) {
           pagination.page -= 1;
         }
