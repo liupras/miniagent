@@ -110,7 +110,7 @@ class SQLAgent:
 
                 if role == MessageRole.ASSISTANT:
                     # A. Determine to invoke tool events
-                    if "tool_calls":
+                    if tool_calls:
                         parsed_tools = []
                         for tc in tool_calls:
                             # Compatible with LangChain tool format and OpenAI API classic format
@@ -140,7 +140,8 @@ class SQLAgent:
                 elif role == MessageRole.TOOL:
                     # C. Once the tool has finished executing, it returns the observation results.   
                     try:
-                        observation = json.loads(content) if isinstance(content, str) else content
+                        json_str = json.dumps(content) if isinstance(content, str) else content
+                        observation = json.loads(json_str) if isinstance(json_str, str) else json_str
                     except Exception:
                         observation = content
 

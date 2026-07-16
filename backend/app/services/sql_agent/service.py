@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional
 from loguru import logger
 
 from app.runtime.cache.lazy_cache import AsyncLazyCache
-from .agent import SQLAgent,SQLAgentConfig
+from .engine import SQLAgent,SQLAgentConfig
 from .sql_tools import SQLTools
 from .manager import DBManager
 

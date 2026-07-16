@@ -12,7 +12,7 @@ if root_path not in sys.path:
     sys.path.insert(0, root_path)
 
 from app.services.sql_agent.sql_tools import SQLTools
-from app.services.sql_agent.agent import SQLAgent
+from app.services.sql_agent.engine import SQLAgent
 from app.infra.db.duckdb_manager import DuckDBManager
 from app.services.sql_agent.manager import DBManager
 from app.runtime.llm.client import LLMClient

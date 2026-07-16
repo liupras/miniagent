@@ -153,6 +153,7 @@ class SQLTools:
     def run_python(self, code: str) -> Dict[str, Any]:
         """
         Execute Python code in a sandboxed environment.
+        **This will only be executed when using a local ollama.**
 
         The sandbox provides:
         - ``conn``        : read-only DuckDB proxy (SELECT / WITH only)

@@ -5,7 +5,7 @@
 # @description: test case
 
 from app.services.sql_agent.sql_tools import SQLTools
-from app.services.sql_agent.agent import SQLAgent
+from app.services.sql_agent.engine import SQLAgent
 from app.infra.db.duckdb_manager import DuckDBManager
 from app.services.sql_agent.manager import DBManager
 from app.runtime.llm.client import LLMClient
