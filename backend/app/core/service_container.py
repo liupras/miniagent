@@ -40,8 +40,8 @@ from app.services.kb.domain_registry import DomainRegistry
 from app.services.kb.service_smart_router import KBSmartRouterService
 from app.services.auth.route_service import RouteService
 from app.runtime.agent.agent_factory import AgentFactory
-from app.services.skill.service_web_search import WebSearchService
-from app.services.sql_agent.service_sql_agent import SQLAgentService
+from app.services.skill.web_search.service import WebSearchService
+from app.services.sql_agent.service import SQLAgentService
 
 from app.services.admin.agent import AgentService
 from app.services.admin.llm import LLMService

@@ -68,8 +68,8 @@ from app.infra.db.database import LLM,Tool
 default_rewrite_prompt_template = "Please rewrite the following query into a concise, search-engine-optimised "
 "keyword string (no explanation, output the query only):\n{query}"
 
-from app.services.skill.web_search_models import WebSearchResult,WebSearchState
-from app.services.skill.web_search_cache import SearchResultCache
+from app.services.skill.web_search.models import WebSearchResult,WebSearchState
+from app.services.skill.web_search.cache import SearchResultCache
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Base Stage

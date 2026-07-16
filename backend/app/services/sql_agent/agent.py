@@ -5,60 +5,34 @@
 # @description: sql agent
 
 import json
-from dataclasses import dataclass
-from typing import Optional
+from typing import AsyncGenerator, Dict, Any
 
-from .schema_context import SchemaContextBuilder
+from app.runtime.types import MessageRole
 from app.runtime.llm.agent_client import AgentLLM
 
-@dataclass
-class SQLAgentConfig:
-    schema_name: str = "main"
-
-    # prompts
-    system_prompt_template: Optional[str] = None
-    schema_context_prompt_template_1: Optional[str] = None
-    schema_context_prompt_2: Optional[str] = None
-    schema_context_prompt_3: Optional[str] = None
-
-    # tool    
-    get_schema_desc: Optional[str] = None
-    sample_data_desc: Optional[str] = None
-    execute_sql_desc: Optional[str] = None
-    run_python_desc: Optional[str] = None
-    para_table_name_desc: Optional[str] = None
-    para_limit_desc: Optional[str] = None
-    para_sql_desc: Optional[str] = None
-    para_code_desc: Optional[str] = None
+from .sql_tools import SQLTools
+from .schema_context import SchemaContextBuilder
+from .sql_tool_bridge import LocalizedSQLToolFactory
+from app.runtime.agent.react_agent import ToolReActAgent
+from .models import SQLAgentConfig
 
 class SQLAgent:
-    def __init__(self, llm:AgentLLM, tools, config:SQLAgentConfig):
+    def __init__(self, 
+        llm:AgentLLM, 
+        tools:SQLTools, 
+        config:SQLAgentConfig
+    ):
+        """
+        SQLAgent is the core driver class.
+        It dynamically assembles localized tools at runtime and parses the underlying state stream, exposing clean, semantic event traces downstream.
+        """
         self.llm = llm
-        self.tools = tools
+        self._tools = tools
         self._config = config
         self._schema_name = config.schema_name or "main"
-        self._get_schema_desc = config.get_schema_desc or self._default_get_schema_desc()
-        self._sample_data_desc = config.sample_data_desc or self._default_sample_data_desc()
-        self._execute_sql_desc = config.execute_sql_desc or self._default_execute_sql_desc()
-        self._run_python_desc = config.run_python_desc or self._default_run_python_desc()
-        self._para_table_name_desc = config.para_table_name_desc or self._default_para_table_name_desc()
-        self._para_limit_desc = config.para_limit_desc or self._default_para_limit_desc()
-        self._para_sql_desc = config.para_sql_desc or self._default_para_sql_desc()
-        self._para_code_desc = config.para_code_desc or self._default_para_code_desc()
 
         _system_prompt_template = config.system_prompt_template or self._default_system_prompt_template()
-        self._system_prompt =  _system_prompt_template.format(schema_name=self._schema_name) 
-     
-        self._tool_schema = self._build_tool_schema(
-            get_schema_desc=self._get_schema_desc, 
-            sample_data_desc=self._sample_data_desc,
-            execute_sql_desc=self._execute_sql_desc,
-            run_python_desc=self._run_python_desc,
-            para_table_name_desc=self._para_table_name_desc,
-            para_limit_desc=self._para_limit_desc,
-            para_sql_desc=self._para_sql_desc,
-            para_code_desc=self._para_code_desc
-        )
+        self._base_system_prompt =  _system_prompt_template.format(schema_name=self._schema_name)
 
         self._ctx_builder = SchemaContextBuilder(
             sql_tools=tools,
@@ -68,207 +42,127 @@ class SQLAgent:
             prompt_3=config.schema_context_prompt_3
         )
 
-    async def run(self, user_query: str):
-        # 1. Build the table-context block (cached; cheap on repeated calls).
-        #    This replaces the first 1-2 tool-call round trips in the old flow.
+    async def astream(self, user_query: str) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        Asynchronous generator: Captures the ReAct state loop, incrementally parses it, and pushes the structured execution trajectory to the front end in real time.
+        """
+        tool_factory = LocalizedSQLToolFactory(
+            sql_tools=self._tools,
+            schema_name=self._schema_name,
+            config=self._config
+          )
+        localized_tools = tool_factory.build()
+
+        # Build the schema context in advance and assemble the complete System Prompt.
         context_block = self._ctx_builder.build_context_block(user_query)
+        full_system_prompt = self._base_system_prompt + "\n\n" + context_block if context_block else self._base_system_prompt
 
-        # 2. Compose the system prompt: base prompt + injected table context.
-        if context_block:
-            full_system_prompt = self._system_prompt + "\n\n" + context_block
-        else:
-            # Context builder failed or returned nothing; use base prompt so
-            # the agent can still fall back to get_schema / sample_data tools.
-            full_system_prompt = self._system_prompt
-
-        messages = [
-            {"role": "system", "content": full_system_prompt},
-            {"role": "user",   "content": user_query},
-        ]
-
-        for step in range(10):  # Up to 10 rounds of tool calls
-            response = await self.llm.achat(messages=messages,tool_schema=self._tool_schema)
-
-            # =========================
-            # 1. If it's a tool call
-            # =========================
-            if response.get("tool_calls"):
-
-                # Add the assistant's response (including the tool_calls intent).
-                messages.append({
-                    "role": "assistant",
-                    #"tool_calls": response["tool_calls"], # Includes complete call ID and parameters
-                    "content": response.get("content", "") # Ensure it is not None
-                })
-
-                for tool_call in response["tool_calls"]:
-                    t_name = tool_call["function"]["name"]
-                    t_args = tool_call["function"]["arguments"]
-                    t_id = tool_call["id"]
-
-                    # Automatic injection of private variable schema_name
-                    if t_name in ["get_schema", "sample_data"]:
-                        t_args["schema_name"] = self._schema_name 
-
-                    result = self.tools.call_tool(t_name, t_args)
-
-                    # Add a corresponding tool role message for each tool call.
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": t_id,
-                        "content": json.dumps(result, ensure_ascii=False)
-                    })
-
-            # =========================
-            # 2. If this is the final answer
-            # =========================
-            else:
-                return response["content"]
-
-        return "Unable to complete the query within the limit number of steps"
-    
-    def _default_get_schema_desc(self):
-        return "Retrieves the structure information (column names, data types) of a specified table in a database. This tool must be called before writing any SQL if the table structure is not explicitly known."
-    
-    def _default_sample_data_desc(self):
-        return "Retrieves sample data from the table. Use this when you need to understand the specific range of values, enumeration value format, or data characteristics of a field."
-    
-    def _default_execute_sql_desc(self):
-        return "Execute SQL queries in DuckDB. Only SELECT statements are allowed. Please ensure that you have verified the table and column names using get_schema before calling this tool."
-    
-    def _default_run_python_desc(self):
-        return """
-Execute Python code in a secure sandbox for data analysis and visualisation tasks that are hard to express in SQL alone.
-Use cases: statistical summaries, pivot tables, correlation matrices, data cleaning, chart generation (matplotlib/seaborn), or any pandas/numpy transformation.
-
-The sandbox provides:
-- `conn`        : read-only DuckDB connection (SELECT/WITH only)
-- `schema_name` : current schema name string
-- Allowed imports: math, statistics, random, json, re, datetime, decimal, collections, itertools, functools, pandas, numpy, numpy, io, string, matplotlib, matplotlib.pyplot, plt, seaborn, sns, base64
-
-Example – fetch data then analyse:
-```python
-
-import pandas as pd
-df = conn.execute(f'SELECT * FROM {schema_name}.sales LIMIT 10000').fetchdf()
-print(df.describe())
-df.groupby('region')['revenue'].sum()
-```
-
-Rules:
-- No file I/O, no os/sys/subprocess, no network calls.
-- Only SELECT queries allowed through `conn`.
-- Execution is time-limited to 10 seconds.
-- For charts: Use `import matplotlib; matplotlib.use('Agg')` first.
-- DO NOT call `plt.show()`. Instead, end your code with `plt.gcf()` to return the image.
-- The value of the last expression is returned as `result`.
-
-""" 
-
-    def _default_para_table_name_desc(self):
-        return "Table name."
-    
-    def _default_para_limit_desc(self):
-        return "The number of rows returned defaults to 3."
-    
-    def _default_para_sql_desc(self):
-        return "A complete SQL SELECT statement that conforms to DuckDB syntax."
-
-    def _default_para_code_desc(self):
-        return (
-            "Python source code to execute. "
-            "Use `conn` to query DuckDB. "
-            "Use `print()` for text output. "
-            "The last expression's value is captured automatically."
+        # Inject the complete full_system_prompt directly as a system instruction into the Agent executor.
+        react_executor = ToolReActAgent(
+            agent_llm=self.llm,
+            tools=localized_tools,
+            system_instruction=full_system_prompt
         )
-    
-    def _build_tool_schema(self,
-        get_schema_desc:str,
-        sample_data_desc:str,
-        execute_sql_desc:str,
-        run_python_desc:str,
-        para_table_name_desc:str,
-        para_limit_desc:str,
-        para_sql_desc:str,
-        para_code_desc:str
-    ):
-        return  [
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_schema",
-                    "description": get_schema_desc,
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "table_name": {
-                                "type": "string", 
-                                "description": para_table_name_desc
+
+        inputs = {
+            "messages": [
+                {"role": MessageRole.USER, "content": user_query}
+            ]
+        }
+
+        # Track the number of messages sent to calculate the delta.
+        sent_message_count = len(inputs["messages"])
+
+        # Drives the underlying ReAct step flow, parsing and generating semantic events.
+        async for state in react_executor.astream(inputs):
+            messages = state.get("messages", [])
+            if len(messages) <= sent_message_count:
+                continue
+
+            # Filter and extract newly added messages
+            new_messages = messages[sent_message_count:]
+            sent_message_count = len(messages)
+
+            for msg in new_messages:
+
+                role = None
+                content = ""
+                tool_calls = []
+                tool_call_id = None
+                name = None
+
+                if hasattr(msg, "type"):  # LangChain BaseMessage instances (AIMessage, ToolMessage, etc.)
+                    msg_type = msg.type
+                    content = msg.content
+                    if msg_type == "ai":
+                        role = MessageRole.ASSISTANT
+                        tool_calls = getattr(msg, "tool_calls", [])
+                    elif msg_type == "tool":
+                        role = MessageRole.TOOL
+                        tool_call_id = getattr(msg, "tool_call_id", None)
+                        name = getattr(msg, "name", None)
+                elif isinstance(msg, dict):  # Classic Dict Structure
+                    role = msg.get("role")
+                    content = msg.get("content", "")
+                    tool_calls = msg.get("tool_calls", [])
+                    tool_call_id = msg.get("tool_call_id")
+                    name = msg.get("name")
+
+                if role == MessageRole.ASSISTANT:
+                    # A. Determine to invoke tool events
+                    if "tool_calls":
+                        parsed_tools = []
+                        for tc in tool_calls:
+                            # Compatible with LangChain tool format and OpenAI API classic format
+                            tc_id = tc.get("id")
+                            tc_name = tc.get("name") or tc.get("function", {}).get("name")
+                            tc_args = tc.get("args") or tc.get("function", {}).get("arguments")
+                            
+                            parsed_tools.append({
+                                "id": tc_id,
+                                "name": tc_name,
+                                "arguments": tc_args
+                            })
+
+                        yield {
+                            "event": "tool_start",
+                            "data": {
+                                "tools": parsed_tools
                             }
-                        },
-                        "required": ["table_name"]
+                        }
+                    # B. Final text response event
+                    else:
+                        yield {
+                            "event": "final_answer",
+                            "data": {"content": content}
+                        }
+
+                elif role == MessageRole.TOOL:
+                    # C. Once the tool has finished executing, it returns the observation results.   
+                    try:
+                        observation = json.loads(content) if isinstance(content, str) else content
+                    except Exception:
+                        observation = content
+
+                    yield {
+                        "event": "tool_end",
+                        "data": {
+                            "tool_call_id": tool_call_id,
+                            "name": name,
+                            "output": observation
+                        }
                     }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "sample_data",
-                    "description": sample_data_desc,
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "table_name": {
-                                "type": "string",
-                                "description": para_table_name_desc
-                            },
-                            "limit": {
-                                "type": "integer",
-                                "description": para_limit_desc,
-                                "default": 3
-                            }
-                        },
-                        "required": ["table_name"]
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "execute_sql",
-                    "description": execute_sql_desc,
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "sql": {
-                                "type": "string",
-                                "description": para_sql_desc
-                            }
-                        },
-                        "required": ["sql"]
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "run_python",
-                    "description": run_python_desc,
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "code": {
-                                "type": "string",
-                                "description": para_code_desc
-                            }
-                        },
-                        "required": ["code"]
-                    }
-                }
-            }
-        ]
-       
-    
+
+    async def run(self, user_query: str):
+        """
+        Synchronous compatible execution interface: directly consumes the astream and extracts the final final_answer.
+        """
+        final_content = ""
+        async for event in self.astream(user_query):
+            if event["event"] == "final_answer":
+                final_content = event["data"]["content"]
+        return final_content    
+   
     def _default_system_prompt_template(self):
         return """
 You are a data analysis agent using DuckDB to query data,The current database schema is: `{schema_name}`

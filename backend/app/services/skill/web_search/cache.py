@@ -9,7 +9,7 @@ import json
 from typing import List, Optional
 
 from app.infra.cache.factory import create_cache_backend
-from app.services.skill.web_search_models import WebSearchResult
+from app.services.skill.web_search.models import WebSearchResult
 
 
 class SearchResultCache:

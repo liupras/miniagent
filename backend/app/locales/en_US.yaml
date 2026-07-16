@@ -159,3 +159,4 @@ agent_runner:
   tool_not_found: "Error: Tool '{tool_name}' is not registered."
   tool_exec_error: "Error executing tool {tool_name}: {error}"
   tool_arg_error: "Tool argument JSON parsing failed: {e}, raw value: {tool_args}"
+  tool_arg_error_short:  "Error: Failed to parse arguments for tool '{tool_name}'"

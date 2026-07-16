@@ -26,7 +26,7 @@ from sqlalchemy import select
 
 from app.infra.db.database import LLM, Tool
 from app.runtime.cache.lazy_cache import AsyncLazyCache
-from .web_search import WebSearchPipeline, WebSearchState
+from . import WebSearchPipeline, WebSearchState
 
 if TYPE_CHECKING:
     from app.core.service_container import ServiceContainer

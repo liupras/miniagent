@@ -9,13 +9,13 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional
 
 from loguru import logger
 
 from app.runtime.cache.lazy_cache import AsyncLazyCache
 from .agent import SQLAgent,SQLAgentConfig
-from .tool import SQLTools
+from .sql_tools import SQLTools
 from .manager import DBManager
 
 from app.infra.db.database import Tool
@@ -95,6 +95,21 @@ class SQLAgentService:
         # run() is synchronous in the original SQLAgent implementation;
         # wrap it in asyncio.to_thread so we don't block the event loop.
         return await agent.run(user_query)
+    
+    async def astream(
+        self,
+        user_query: str,
+        tool_name: str = "sql_agent",
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        Streaming user data queries
+        Real-time output of the Agent's internal thought processes and tool call logs (tool_start, tool_end, final_answer) to the outside world.
+        """
+        agent = await self._agent_cache.get_or_build(tool_name)
+        
+        # Indirectly forwarding the asynchronous state stream of SQLAgent
+        async for event in agent.astream(user_query):
+            yield event
 
     async def import_csv(
         self,
@@ -195,6 +210,7 @@ class SQLAgentService:
         schema_context_prompt_template_1 = prompt_loader.get("sql_agent.schema_context_prompt_template_1") or None
         schema_context_prompt_2 = prompt_loader.get("sql_agent.schema_context_prompt_2") or None
         schema_context_prompt_3 = prompt_loader.get("sql_agent.schema_context_prompt_3") or None
+
         get_schema_desc = prompt_loader.get("sql_agent.get_schema.desc") or None
         sample_data_desc = prompt_loader.get("sql_agent.sample_data.desc") or None
         execute_sql_desc = prompt_loader.get("sql_agent.execute_sql.desc") or None
@@ -225,7 +241,8 @@ class SQLAgentService:
             f"[SQLAgentService] building agent  "
             f"llm_provider_id={llm_id}  schema={schema_name!r} "
         )
-        llm = AgentLLM(client=client, 
+        llm = AgentLLM(
+            client=client, 
             model=llm_config.model_name,
             tool_prompt_template=agent_llm_tool_schema_template
         )

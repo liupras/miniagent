@@ -4,6 +4,8 @@
 # @date    : 2026-07-10
 # @description: React Agent
 
+import asyncio
+import concurrent.futures
 import json
 from typing import AsyncGenerator, List, Dict, Any, Optional, Tuple
 from langchain_core.runnables import Runnable, RunnableConfig
@@ -29,7 +31,7 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
         self.agent_llm = agent_llm
         self.system_instruction = system_instruction
         self.tools_map = {tool.name: tool for tool in tools}
-        self.tool_schemas = [convert_to_openai_tool(t) for t in tools] if tools else None
+        self.tool_schemas = [convert_to_openai_tool(tool) for tool in tools] if tools else None
 
     async def ainvoke(self, input: Dict[str, Any], config: Optional[RunnableConfig] = None) -> Dict[str, Any]:
         """Implement the asynchronous call interface of Runnable, and internally reuse the final state of astream."""
@@ -66,17 +68,24 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
             for tool_call in response_dict["tool_calls"]:
                 func_info = tool_call.get("function", {})
                 tool_name = func_info.get("name")
-                tool_args = func_info.get("arguments", {})
-
+                tool_call_id = tool_call.get("id", "call_idx")
+  
                 success, tool_args = self._parse_tool_arguments(func_info.get("arguments", {}))
                 if not success:
+                    error_observation = t("agent_runner.tool_arg_error",tool_name=tool_name)
+                    messages.append({
+                        "role": MessageRole.TOOL,
+                        "tool_call_id": tool_call_id,
+                        "name": tool_name,
+                        "content": error_observation
+                    })
                     continue
 
                 observation = await self._execute_tool_async(tool_name, tool_args)
 
                 messages.append({
                     "role": MessageRole.TOOL,
-                    "tool_call_id": tool_call.get("id", "call_idx"),
+                    "tool_call_id": tool_call_id,
                     "name": tool_name,
                     "content": str(observation)
                 })                
@@ -104,16 +113,24 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
             for tool_call in response_dict["tool_calls"]:
                 func_info = tool_call.get("function", {})
                 tool_name = func_info.get("name")
+                tool_call_id = tool_call.get("id", "call_idx")
                 
                 success, tool_args = self._parse_tool_arguments(func_info.get("arguments", {}))
                 if not success:
+                    error_observation = t("agent_runner.tool_arg_error",tool_name=tool_name)
+                    messages.append({
+                        "role": MessageRole.TOOL,
+                        "tool_call_id": tool_call_id,
+                        "name": tool_name,
+                        "content": error_observation
+                    })
                     continue
 
                 observation = self._execute_tool_sync(tool_name, tool_args)
 
                 messages.append({
                     "role": MessageRole.TOOL,
-                    "tool_call_id": tool_call.get("id", "call_idx"),
+                    "tool_call_id": tool_call_id,
                     "name": tool_name,
                     "content": observation
                 })
@@ -137,9 +154,61 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
                     
         return response_dict
 
+    def _to_dict_message(self, msg: Any) -> Dict[str, Any]:
+        """
+        Securely converts any message type (Dict or LangChain BaseMessage instance)
+        Prevents AttributeError from being thrown during subsequent code execution.
+        """
+        if isinstance(msg, dict):
+            return msg
+
+        # Feature extraction of LangChain BaseMessage instance objects
+        role = MessageRole.USER
+        if hasattr(msg, "type"):
+            m_type = msg.type
+            if m_type == "human":
+                role = MessageRole.USER
+            elif m_type == "ai":
+                role = MessageRole.ASSISTANT
+            elif m_type == "system":
+                role = MessageRole.SYSTEM
+            elif m_type == "tool":
+                role = MessageRole.TOOL
+            else:
+                role = m_type
+
+        content = getattr(msg, "content", "")
+        res = {"role": role, "content": content}
+
+        # Extract tool_calls from Assistant messages.
+        if role == MessageRole.ASSISTANT:
+            tool_calls = getattr(msg, "tool_calls", [])
+            if tool_calls:
+                res["tool_calls"] = []
+                for tc in tool_calls:
+                    res["tool_calls"].append({
+                        "id": tc.get("id"),
+                        "type": "function",
+                        "function": {
+                            "name": tc.get("name"),
+                            "arguments": tc.get("args")  # LangChain typically stores the parsed dictionary in args.
+                        }
+                    })
+
+        # For Tool messages, extract tool_call_id
+        if role == MessageRole.TOOL:
+            if hasattr(msg, "tool_call_id"):
+                res["tool_call_id"] = msg.tool_call_id
+            if hasattr(msg, "name"):
+                res["name"] = msg.name
+
+        return res
+    
     def _prepare_context(self, input: Dict[str, Any], config: Optional[RunnableConfig]) -> Tuple[List[Dict[str, Any]], int]:
         """Initialize historical messages, inject system prompts, and parse the maximum step limit."""
-        messages = list(input.get("messages", []))
+        raw_messages = list(input.get("messages", []))
+        messages = [self._to_dict_message(m) for m in raw_messages]
+
         if self.system_instruction and not any(m.get("role") == MessageRole.SYSTEM for m in messages):
             messages.insert(0, {"role": MessageRole.SYSTEM, "content": self.system_instruction})
 
@@ -182,14 +251,26 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
 
         tool = self.tools_map[tool_name]
         try:
+            # If StructuredTool itself has a synchronous execution function (func), call it directly to avoid the heavy event loop bridging.
+            if hasattr(tool, "func") and tool.func is not None:
+                observation = tool.invoke(tool_args)
+                return str(observation)
+            
+            # If the tool only has an async implementation and is currently in a running loop,
+            # Use a dedicated thread pool to run the coroutine in a separate asynchronous event loop, completely eliminating the "This event loop is already running" crash.
             if tool.is_async:
-                import asyncio
+                coro = tool.ainvoke(tool_args)
                 try:
-                    loop = asyncio.get_event_loop()
+                    running_loop = asyncio.get_running_loop()
                 except RuntimeError:
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                observation = loop.run_until_complete(tool.ainvoke(tool_args))
+                    running_loop = None
+
+                if running_loop and running_loop.is_running():
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                        future = executor.submit(asyncio.run, coro)
+                        observation = future.result()
+                else:
+                    observation = asyncio.run(coro)
             else:
                 observation = tool.invoke(tool_args)
             return str(observation)

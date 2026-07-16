@@ -9,7 +9,7 @@ from typing import Callable
 
 def web_search(container,tool_name) -> Callable:
     """
-    The factory function, callable_path = "skill.web_search_tool:web_search", 
+    The factory function, callable_path = "app.services.skill.web_search.tool:web_search", 
     is called by tool_builder when the signature contains the agent parameter.
     """
     async def _search(query: str) -> str:
