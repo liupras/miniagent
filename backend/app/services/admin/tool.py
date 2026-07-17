@@ -6,7 +6,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
 
 from app.infra.db.database import Tool
 from app.schemas.admin.tool import ToolCreate, ToolRead, ToolUpdate
@@ -22,13 +25,10 @@ class ToolAlreadyExistsError(AlreadyExistsError):
 
 class ToolService:
 
-    def __init__(self, container) -> None:
-        from app.core.service_container import ServiceContainer
-        if not isinstance(container, ServiceContainer):
-            raise TypeError(f"Expected ServiceContainer, got {type(container)}")
+    def __init__(self, container:ServiceContainer) -> None:
         
         self._db = container.tool_db
-        self._agent_factory = container.agent_factory
+        self._cache = container.object_cache_invalidator
 
     async def get(self, tool_id: int) -> Tool | None:
         tool = await self._db.get_by_id(tool_id)
@@ -77,25 +77,21 @@ class ToolService:
         db_tool = await self._db.update_fields(tool_id, data)
         if db_tool is None:
             raise ToolNotFoundError(tool_id)
-        if self._agent_factory:
-            self._agent_factory.invalidate()
+        self._cache.on_tool_changed()
         return ToolRead.model_validate(db_tool)
 
     async def toggle_active(self, tool_id: int) -> None:        
         await self._db.toggle_active(tool_id)
-        if self._agent_factory:
-            self._agent_factory.invalidate()
+        self._cache.on_tool_changed()
 
     async def delete(self, tool_id: int) -> int:
         deleted = await self._db.delete_tool(tool_id)
         if not deleted:
             raise ToolNotFoundError(tool_id)
-        if self._agent_factory:
-            self._agent_factory.invalidate()
+        self._cache.on_tool_changed()
         return deleted
 
     async def bulk_delete(self, tool_ids: list[int]) -> int:
         count = await self._db.bulk_delete_tools(tool_ids)
-        if self._agent_factory:
-            self._agent_factory.invalidate()
+        self._cache.on_tool_changed()
         return count

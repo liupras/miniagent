@@ -4,9 +4,14 @@
 # @date    : 2026-06-08
 # @description: Router Config Service
 
-from typing import Any
+from __future__ import annotations
 
-from app.schemas.common import NotFoundError,AlreadyExistsError
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
+
+from app.schemas.common import NotFoundError
 from app.schemas.admin.router_config import RouterConfigResponse, RouterConfigUpdate
 
 class RouterConfigNotFoundError(NotFoundError):
@@ -15,13 +20,11 @@ class RouterConfigNotFoundError(NotFoundError):
 
 class RouterConfigService:
 
-    def __init__(self, container):
-        from app.core.service_container import ServiceContainer
-        if not isinstance(container, ServiceContainer):
-            raise TypeError(f"Expected ServiceContainer, got {type(container)}")
+    def __init__(self, container:ServiceContainer):
         
         self._db = container.router_config_db
         self._smart_router_service = container.smart_router_service
+        self._cache = container.object_cache_invalidator
 
     async def get(self, config_id: str) -> RouterConfigResponse:
         record = await self._db.get_by_id(config_id)
@@ -49,5 +52,5 @@ class RouterConfigService:
         
         if self._smart_router_service:
             self._smart_router_service.invalidate(router_config_id=config_id)
-
+        self._cache.on_router_changed()
         return RouterConfigResponse.model_validate(record)

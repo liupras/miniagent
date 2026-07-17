@@ -28,12 +28,6 @@ router = APIRouter()
 def get_service(request: Request) -> EmbeddingService:
     return request.app.state.container.embedding_service
 
-from app.runtime.cache.models import CacheType
-from app.runtime.cache.registry import CacheRegistry
-
-def get_cache(request: Request)->CacheRegistry:
-    return request.app.state.container.cache_registry
-
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -111,12 +105,9 @@ async def update_embedding(
     embedding_id: int,
     payload: EmbeddingUpdate,
     svc:       EmbeddingService   = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_edit),
 ) -> ApiResponse:
-    embedding = await svc.update(embedding_id, payload)
-    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
-    cache.invalidate_all(CacheType.KB_EMBEDDING)
+    embedding = await svc.update(embedding_id, payload)    
     return ApiResponse(data= embedding)
 
 @router.delete(
@@ -126,11 +117,8 @@ async def update_embedding(
 )
 async def delete_embedding(
     embedding_id: int,
-    svc:       EmbeddingService   = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
+    svc:       EmbeddingService   = Depends(get_service),   
     caller_id: int            = Depends(_delete),
 ) -> ApiResponse:
     row_count = await svc.delete(embedding_id)
-    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
-    cache.invalidate_all(CacheType.KB_EMBEDDING)
     return ApiResponse(data=row_count)

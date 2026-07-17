@@ -22,12 +22,6 @@ router = APIRouter()
 def get_service(request: Request) -> AgentService:
     return request.app.state.container.agent_service
 
-from app.runtime.cache.models import CacheType
-from app.runtime.cache.registry import CacheRegistry
-
-def get_cache(request: Request)->CacheRegistry:
-    return request.app.state.container.cache_registry
-
 # ──────────────────────────────────────────────
 # Permission dependencies — built once at module level.
 # AuthPermission.Permission is self-contained: it resolves
@@ -91,12 +85,10 @@ async def update_agent(
     agent_id:  int,
     payload:   AgentUpdate,
     svc:       AgentService = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int          = Depends(_edit),
 ):
    
     agent_out = await svc.update_agent(agent_id, payload)
-    cache.invalidate(CacheType.AGENT_RUNNER,agent_id)
     return ApiResponse(data=agent_out)
 
 
@@ -105,12 +97,10 @@ async def update_agent(
 async def toggle_agent_active(
     agent_id:  int,
     svc:       AgentService = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int          = Depends(_edit),
 ):
 
     await svc.toggle_active(agent_id)
-    cache.invalidate(CacheType.AGENT_RUNNER,agent_id)
     return ApiResponse()
 
 
@@ -118,24 +108,20 @@ async def toggle_agent_active(
 async def delete_agent(
     agent_id:  int,
     svc:       AgentService = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int          = Depends(_delete),
 ):
 
     await svc.delete_agent(agent_id)
-    cache.invalidate(CacheType.AGENT_RUNNER,agent_id)
-    return ApiResponse(message="Agent deleted successfully")
+    return ApiResponse()
 
 
 @router.delete("", response_model=ApiResponse, summary="Batch delete agents  [agent:delete]")
 async def batch_delete_agents(
     ids:       List[int],
     svc:       AgentService = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int          = Depends(_delete),
 ):
     deleted_count = await svc.batch_delete_agents(ids)
-    cache.invalidate_all(CacheType.AGENT_RUNNER)
     return ApiResponse(message=f"Deleted {deleted_count} agents")
 
 @router.get("/{agent_id}/users", response_model=ApiResponse, summary="Get users bound to agent [agent:list]")
@@ -191,11 +177,9 @@ async def update_agent_tools(
     agent_id: int,
     data: AgentToolUpdate,
     svc: AgentService = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int = Depends(_edit),
 ):
     await svc.update_agent_tools(agent_id, data.tool_ids)
-    cache.invalidate(CacheType.AGENT_RUNNER,agent_id)
     return ApiResponse()
 
 
@@ -214,9 +198,7 @@ async def update_agent_llm(
     agent_id: int,
     llm_id: int,
     svc: AgentService = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int = Depends(_edit),
 ):
     await svc.update_agent_llm(agent_id, llm_id)
-    cache.invalidate(CacheType.AGENT_RUNNER,agent_id)
     return ApiResponse()

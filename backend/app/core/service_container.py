@@ -9,7 +9,8 @@ from app.core.config import settings
 from app.runtime.smart_router_factory import SmartRouterFactory
 from app.runtime.vector_registry import VectorStoreRegistry
 from app.core.security.auth_permission import AuthPermission
-from app.runtime.cache.registry import CacheRegistry
+from app.runtime.cache.registry import CacheRegistry as ObjectCacheRegistry
+from app.runtime.cache.invalidation import CacheInvalidationService as ObjectCacheInvalidator
 
 from app.repositories.async_chunk import AsyncChunkDatabase
 from app.repositories.async_document import AsyncDocumentDatabase
@@ -121,7 +122,8 @@ class ServiceContainer:
             # cache_ttl_seconds=600.0,
         )
 
-        self.cache_registry = CacheRegistry()
+        self.cache_registry = ObjectCacheRegistry()
+        self.object_cache_invalidator = ObjectCacheInvalidator(self.cache_registry)
 
         from app.infra.cache.store_registry import cache_registry as value_cache_registry
         self.value_cache_registry = value_cache_registry
@@ -143,16 +145,16 @@ class ServiceContainer:
         self.route_service = RouteService(self)
 
         self.agent_service = AgentService(self)
-        self.llm_service = LLMService(db=self.llm_db)
+        self.llm_service = LLMService(self)
         self.user_service = UserService(user_db=self.user_db, menu_db=self.menu_db, auth=self.auth)
         self.role_service = RoleService(self)
         self.menu_service = MenuService(self)
         self.tool_service = ToolService(self)
-        self.domain_service = DomainService(self.domain_db)
+        self.domain_service = DomainService(self)
         self.router_config_service = RouterConfigService(self)
         self.strategy_config_service = StrategyConfigService(self)
         self.kb_service = KnowledgeBaseService(self)
-        self.embedding_service = EmbeddingService(db=self.embed_db)
+        self.embedding_service = EmbeddingService(self)
         self.setting_service = SystemSettingService(db=self.setting_db)
         self.prompt_service = PromptService(db=self.prompt_db)
         

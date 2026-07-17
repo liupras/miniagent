@@ -34,12 +34,6 @@ def get_service(
 ) -> LLMService:
     return container.llm_service
 
-from app.runtime.cache.models import CacheType
-from app.runtime.cache.registry import CacheRegistry
-
-def get_cache(request: Request)->CacheRegistry:
-    return request.app.state.container.cache_registry
-
 # ──────────────────────────────────────────────
 # Routes
 # ──────────────────────────────────────────────
@@ -130,13 +124,8 @@ async def create_llm(
 async def upsert_llm(
     payload: LLMUpsert,
     svc: LLMService = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
 ):
     llm_out = await svc.upsert_llm(payload)
-    cache.invalidate_all(CacheType.WEB_SEARCH_PIPELINE)
-    cache.invalidate_all(CacheType.SQL_AGENT)
-    cache.invalidate_all(CacheType.AGENT_RUNNER)
-    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
     return ApiResponse(data=llm_out)
 
 
@@ -144,14 +133,9 @@ async def upsert_llm(
 async def update_llm(
     llm_id: int,
     payload: LLMUpdate,
-    svc: LLMService = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
+    svc: LLMService = Depends(get_service),   
 ):
     llm_out = await svc.update_llm(llm_id, payload)
-    cache.invalidate_all(CacheType.WEB_SEARCH_PIPELINE)
-    cache.invalidate_all(CacheType.SQL_AGENT)
-    cache.invalidate_all(CacheType.AGENT_RUNNER)
-    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
     return ApiResponse(data=llm_out)
 
 
@@ -159,12 +143,7 @@ async def update_llm(
 async def delete_llm(
     llm_id: int,
     svc: LLMService = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
 ):
 
     await svc.delete_llm(llm_id)
-    cache.invalidate_all(CacheType.WEB_SEARCH_PIPELINE)
-    cache.invalidate_all(CacheType.SQL_AGENT)
-    cache.invalidate_all(CacheType.AGENT_RUNNER)
-    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
     return ApiResponse()

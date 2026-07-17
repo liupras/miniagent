@@ -22,12 +22,6 @@ router = APIRouter()
 def get_service(request: Request) -> ToolService:
     return request.app.state.container.tool_service
 
-from app.runtime.cache.models import CacheType
-from app.runtime.cache.registry import CacheRegistry
-
-def get_cache(request: Request)->CacheRegistry:
-    return request.app.state.container.cache_registry
-
 _list   = AuthPermission.Permission("tool:list")
 _add    = AuthPermission.Permission("tool:add")
 _edit   = AuthPermission.Permission("tool:edit")
@@ -76,7 +70,6 @@ async def get_tool(
     tool = await svc.get(tool_id)
     return ApiResponse(data=tool)
 
-
 @router.post("", response_model=ApiResponse, summary="Create tool")
 async def create_tool(
     payload: ToolCreate,
@@ -92,14 +85,10 @@ async def update_tool(
     tool_id: int, 
     payload: ToolUpdate,
     svc:       ToolService   = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_edit),
 ):
 
     tool = await svc.update(tool_id, payload)
-    cache.invalidate_all(CacheType.WEB_SEARCH_PIPELINE)
-    cache.invalidate_all(CacheType.SQL_AGENT)
-    cache.invalidate_all(CacheType.AGENT_RUNNER)
     return ApiResponse(data=tool)
 
 
@@ -107,13 +96,9 @@ async def update_tool(
 async def toggle_tool(
     tool_id: int,    
     svc:       ToolService   = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_edit),
 ):
     await svc.toggle_active(tool_id)
-    cache.invalidate_all(CacheType.WEB_SEARCH_PIPELINE)
-    cache.invalidate_all(CacheType.SQL_AGENT)
-    cache.invalidate_all(CacheType.AGENT_RUNNER)
     return ApiResponse()
 
 
@@ -121,25 +106,17 @@ async def toggle_tool(
 async def delete_tool(
     tool_id: int,
     svc:       ToolService   = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_delete),
 ):
 
     deleted = await svc.delete(tool_id)
-    cache.invalidate_all(CacheType.WEB_SEARCH_PIPELINE)
-    cache.invalidate_all(CacheType.SQL_AGENT)
-    cache.invalidate_all(CacheType.AGENT_RUNNER)
     return ApiResponse(data={"deleted": deleted})
 
 @router.post("/bulk-delete", response_model=ApiResponse, summary="Bulk delete tools")
 async def bulk_delete_tools(
     tool_ids: list[int],
     svc:       ToolService   = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_delete),
 ):
     deleted = await svc.bulk_delete(tool_ids)
-    cache.invalidate_all(CacheType.WEB_SEARCH_PIPELINE)
-    cache.invalidate_all(CacheType.SQL_AGENT)
-    cache.invalidate_all(CacheType.AGENT_RUNNER)
     return ApiResponse(data= {"deleted": deleted})

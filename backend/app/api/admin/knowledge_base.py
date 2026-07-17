@@ -28,12 +28,6 @@ router = APIRouter()
 def get_service(request: Request) -> KnowledgeBaseService:
     return request.app.state.container.kb_service
 
-from app.runtime.cache.models import CacheType
-from app.runtime.cache.registry import CacheRegistry
-
-def get_cache(request: Request)->CacheRegistry:
-    return request.app.state.container.cache_registry
-
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -114,14 +108,9 @@ async def update_kb(
     kb_id: int,
     payload: KnowledgeBaseUpdate,
     svc:       KnowledgeBaseService   = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_edit),
 ) -> ApiResponse:
     kb = await svc.update_kb(kb_id, payload)
-    cache.invalidate(CacheType.KB_RETRIEVAL_PIPELINE,kb_id)
-    cache.invalidate(CacheType.KB_INFO,kb_id)
-    cache.invalidate(CacheType.KB_EMBEDDING,kb_id)
-    cache.invalidate(CacheType.VECTOR_STORE_MANAGER,kb_id)
     return ApiResponse(data= kb)
 
 
@@ -133,14 +122,9 @@ async def update_kb(
 async def delete_kb(
     kb_id: int,
     svc:       KnowledgeBaseService   = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_delete),
 ) -> ApiResponse:
     success = await svc.delete_kb(kb_id)
-    cache.invalidate(CacheType.KB_RETRIEVAL_PIPELINE,kb_id)
-    cache.invalidate(CacheType.KB_INFO,kb_id)
-    cache.invalidate(CacheType.KB_EMBEDDING,kb_id)
-    cache.invalidate(CacheType.VECTOR_STORE_MANAGER,kb_id)
     return ApiResponse(data=success)
 
 @router.patch(
@@ -151,14 +135,9 @@ async def delete_kb(
 async def toggle_kb_active(
     kb_id: int,
     svc:       KnowledgeBaseService   = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_edit),
 ) -> ApiResponse:
     await svc.toggle_kb_active(kb_id)
-    cache.invalidate(CacheType.KB_RETRIEVAL_PIPELINE,kb_id)
-    cache.invalidate(CacheType.KB_INFO,kb_id)
-    cache.invalidate(CacheType.KB_EMBEDDING,kb_id)
-    cache.invalidate(CacheType.VECTOR_STORE_MANAGER,kb_id)
     return ApiResponse()
 
 @router.get(

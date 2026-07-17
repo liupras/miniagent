@@ -30,12 +30,6 @@ router = APIRouter()
 def get_service(request: Request) -> StrategyConfigService:
     return request.app.state.container.strategy_config_service
 
-from app.runtime.cache.models import CacheType
-from app.runtime.cache.registry import CacheRegistry
-
-def get_cache(request: Request)->CacheRegistry:
-    return request.app.state.container.cache_registry
-
 _list   = AuthPermission.Permission("strategy_config:list")
 _add    = AuthPermission.Permission("strategy_config:add")
 _edit   = AuthPermission.Permission("strategy_config:edit")
@@ -133,11 +127,9 @@ async def update_strategy_config(
     config_id: str,
     payload: StrategyConfigUpdate,
     svc: StrategyConfigService = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_edit),
 ) -> ApiResponse[StrategyConfigOut]:
     data = await svc.update(config_id, payload)
-    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
     return ApiResponse(data=data)
 
 
@@ -149,11 +141,9 @@ async def update_strategy_config(
 async def delete_strategy_config(
     config_id: str,
     svc: StrategyConfigService = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_delete),
 ) -> ApiResponse[int]:
     kb_id = await svc.delete(config_id)
-    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
     return ApiResponse(data=kb_id)
 
 
@@ -165,9 +155,7 @@ async def delete_strategy_config(
 async def activate_strategy_config(
     config_id: str,
     svc: StrategyConfigService = Depends(get_service),
-    cache:     CacheRegistry = Depends(get_cache),
     caller_id: int            = Depends(_edit),
 ) -> ApiResponse[StrategyConfigOut]:
     data = await svc.activate(config_id)
-    cache.invalidate_all(CacheType.KB_RETRIEVAL_PIPELINE)
     return ApiResponse(data=data)

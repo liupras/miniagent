@@ -20,12 +20,6 @@ router = APIRouter()
 def get_service(request: Request) -> RouterConfigService:
     return request.app.state.container.router_config_service
 
-from app.runtime.cache.models import CacheType
-from app.runtime.cache.registry import CacheRegistry
-
-def get_cache(request: Request)->CacheRegistry:
-    return request.app.state.container.cache_registry
-
 _list_router_config   = AuthPermission.Permission("router_config:list")
 _edit_router_config   = AuthPermission.Permission("router_config:edit")
 
@@ -64,12 +58,10 @@ async def get_router_config(
 async def update_router_config(
     config_id:          str, 
     payload:            RouterConfigUpdate,
-    _svc:               RouterConfigService     = Depends(get_service),    
-    cache:     CacheRegistry = Depends(get_cache),
+    _svc:               RouterConfigService     = Depends(get_service), 
     caller_id:          int                     = Depends(_edit_router_config)
 ):
   
     await _svc.update(config_id, payload)
-    cache.invalidate(CacheType.SMART_ROUTER,config_id)
     return ApiResponse()
    

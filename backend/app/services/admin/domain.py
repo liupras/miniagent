@@ -7,9 +7,11 @@
 from __future__ import annotations
 
 from loguru import logger
-from typing import  Any, List, Optional
+from typing import  Any, List, Optional, TYPE_CHECKING
 
-from app.repositories.async_domain import AsyncDomainDatabase
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
+
 from app.schemas.admin.domain import (
     DomainCreate,
     DomainListResponse,
@@ -30,8 +32,9 @@ class DomainAlreadyExistsError(AlreadyExistsError):
 
 class DomainService:
 
-    def __init__(self, repo: AsyncDomainDatabase) -> None:
-        self._repo = repo
+    def __init__(self, container:ServiceContainer) -> None:
+        self._repo = container.domain_db
+        self._cache = container.object_cache_invalidator
 
     # ------------------------------------------------------------------
     # Read
@@ -96,14 +99,17 @@ class DomainService:
         if domain is None:
             raise DomainNotFoundError(domain_id)
         logger.info("Updated domain id={}", domain_id)
+        self._cache.on_domain_changed()
         return DomainRead.model_validate(domain)
 
     async def delete_domain(self, domain_id: int) -> None:
         deleted = await self._repo.delete(domain_id)
         if not deleted:
             raise DomainNotFoundError(domain_id)
+        self._cache.on_domain_changed()
         logger.info("Deleted domain id={}", domain_id)
 
     async def bulk_delete(self, ids: list[int]) -> int:
         count = await self._repo.bulk_delete(ids)
+        self._cache.on_domain_changed()
         return count

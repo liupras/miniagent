@@ -5,7 +5,11 @@
 # @description: Strategy Config Service
 
 from __future__ import annotations
-from typing import Any
+
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
 
 from app.schemas.admin.strategy_config import (
     StrategyConfigCreate,
@@ -26,13 +30,10 @@ class StrategyConfigBadRequestError(BadRequestError):
 class StrategyConfigService:
     """Business logic for StrategyConfig."""
 
-    def __init__(self, container):
-        from app.core.service_container import ServiceContainer
-        if not isinstance(container, ServiceContainer):
-            raise TypeError(f"Expected ServiceContainer, got {type(container)}")
+    def __init__(self, container:ServiceContainer):
         
         self._db = container.strategy_config_db
-        self._retrieval_service = container.retrieval_service
+        self._cache = container.object_cache_invalidator
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -95,15 +96,13 @@ class StrategyConfigService:
         obj = await self._get_or_404(config_id)
         if not obj:
             raise StrategyConfigNotFoundError(config_id)
-        if self._retrieval_service:
-            self._retrieval_service.invalidate(kb_id=obj.kb_id)
         await self._db.update(config_id,data)
+        self._cache.on_strategy_changed()
         return await self._get_or_404(config_id)
 
     async def delete(self, config_id: str) -> int:
         kb_id = await self._db.delete(config_id)
-        if self._retrieval_service:
-            self._retrieval_service.invalidate(kb_id=kb_id)
+        self._cache.on_strategy_changed()
         return kb_id
 
     # ------------------------------------------------------------------
@@ -115,6 +114,5 @@ class StrategyConfigService:
         rows = await self._db.activate(config_id, obj.kb_id)
         if rows == 0:
             raise StrategyConfigNotFoundError(config_id)
-        if self._retrieval_service:
-            self._retrieval_service.invalidate(kb_id=obj.kb_id)
+        self._cache.on_strategy_changed()
         return await self._get_or_404(config_id)

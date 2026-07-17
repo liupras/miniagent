@@ -4,15 +4,19 @@
 # @date    : 2026-05-30
 # @description: LLM Service – business logic layer
 
-from typing import Any, List, Optional
+from __future__ import annotations
+
+from typing import Any, List, Optional, TYPE_CHECKING
 
 from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 
 from loguru import logger
 
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
+
 from app.infra.db.database import LLM
-from app.repositories.async_llm import AsyncLLMDatabase
 from app.schemas.admin.llm import (
     LLMCreate,
     LLMUpdate,
@@ -39,14 +43,11 @@ class LLMAlreadyExistsError(AlreadyExistsError):
 class LLMService:
     """
     All business logic for the LLM resource.
-
-    Delegates raw DB access to AsyncLLMDatabase and owns the queries that
-    require pagination or extra filtering beyond what the DB layer exposes.
-    Raises domain exceptions; the router maps them to HTTP responses.
     """
 
-    def __init__(self, db: AsyncLLMDatabase) -> None:
-        self._db = db
+    def __init__(self, container: ServiceContainer) -> None:
+        self._db = container.llm_db
+        self._cache = container.object_cache_invalidator
 
     # ── Read ──────────────────────────────────────────────────────────────
 
@@ -147,6 +148,7 @@ class LLMService:
             capabilities=payload.capabilities,
         )
         updated = await self._db.update(row.id, name=payload.name)
+        self._cache.on_llm_changed()
         return LLMOut.model_validate(updated or row)
 
     # ── Update ────────────────────────────────────────────────────────────
@@ -167,6 +169,7 @@ class LLMService:
         if row is None:
             raise LLMNotFoundError(llm_id)
 
+        self._cache.on_llm_changed()
         return LLMOut.model_validate(row)
 
     # ── Delete ────────────────────────────────────────────────────────────
@@ -176,3 +179,4 @@ class LLMService:
         deleted = await self._db.delete(llm_id)
         if not deleted:
             raise LLMNotFoundError(llm_id)
+        self._cache.on_llm_changed()

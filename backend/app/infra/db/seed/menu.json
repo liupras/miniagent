@@ -259,7 +259,7 @@
     "title_key": "menus.kb.table",
     "path": "/kbManagement/table",
     "component": "kbManagement/table/index",
-    "sort_order": 10
+    "sort_order": 26
   },
   {
     "id": 261,

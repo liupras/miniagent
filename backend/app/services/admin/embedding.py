@@ -4,7 +4,12 @@
 # @date    : 2026-04-14
 # @description: Embedding Service Layer – Business logic
 
-from typing import Any, List, Tuple, Optional
+from __future__ import annotations
+
+from typing import Any, List, Tuple, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
 
 from app.schemas.admin.embedding import (
     EmbeddingCreate,
@@ -12,15 +17,16 @@ from app.schemas.admin.embedding import (
     EmbeddingUpdate,
     EmbeddingOption
 )
-from app.repositories.async_embedding import AsyncEmbeddingDatabase
+
 from app.schemas.common import NotFoundError
 
 class EmbeddingNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("Embedding", entity_id)
 class EmbeddingService:
-    def __init__(self, db:AsyncEmbeddingDatabase):
-        self._db = db
+    def __init__(self, container:ServiceContainer):
+        self._db = container.embed_db
+        self._cache = container.object_cache_invalidator
 
     async def list_embeddings(
         self,
@@ -58,11 +64,13 @@ class EmbeddingService:
         embedding = await self._db.update(embedding_id, data)
         if embedding is None:
             raise EmbeddingNotFoundError(embedding_id)
+        self._cache.on_embedding_changed()
         return EmbeddingRead.model_validate(embedding)
 
     async def delete(self, embedding_id: int) -> int:
         """Delete an embedding."""
         rowcount = await self._db.delete(embedding_id)
+        self._cache.on_embedding_changed()
         return rowcount
 
     async def get_embedding_options(self) -> List[EmbeddingOption]:

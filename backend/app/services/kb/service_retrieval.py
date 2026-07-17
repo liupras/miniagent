@@ -118,29 +118,6 @@ class KBRetrievalService:
             #key_codec=lambda raw: raw,
         )
         
-
-    def invalidate(self, kb_id: Optional[int] = None) -> None:
-        """
-        Evict pipeline(s) from the cache.       
-        """
-        if kb_id is None:
-            p_count = self._pipeline_cache.invalidate_all()
-            k_count = self._kb_info_cache.invalidate_all()
-            self._pipeline_config_id.clear()
-            logger.info(
-                f"[KBRetrievalService] Full cache clear: "
-                f"pipelines={p_count} kb_info={k_count}"
-            )
-            return
-
-        p_removed = self._pipeline_cache.invalidate(kb_id)
-        k_removed = self._kb_info_cache.invalidate(kb_id)
-        self._pipeline_config_id.pop(kb_id, None)
-        logger.info(
-            f"[KBRetrievalService] Invalidated kb={kb_id}: "
-            f"pipeline_removed={p_removed} kb_info_removed={k_removed}"
-        )
-
     async def _build_pipeline(self, kb_id: int):
         """
         Build a RetrievalPipeline from the given StrategyConfig and LLM config.

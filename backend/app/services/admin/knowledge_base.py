@@ -4,7 +4,12 @@
 # @date    : 2026-06-13
 # @description: KnowledgeBase Service Layer – Business logic
 
-from typing import Any, List, Tuple, Optional
+from __future__ import annotations
+
+from typing import Any, List, Tuple, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
 
 from app.schemas.admin.knowledge_base import (
     KnowledgeBaseCreate,
@@ -20,13 +25,11 @@ class KBNotFoundError(NotFoundError):
         super().__init__("KB", entity_id)
         
 class KnowledgeBaseService:
-    def __init__(self, container):
-        from app.core.service_container import ServiceContainer
-        if not isinstance(container, ServiceContainer):
-            raise TypeError(f"Expected ServiceContainer, got {type(container)}")
+    def __init__(self, container:ServiceContainer):
         
         self.db = container.kb_db
         self._retrieval_service = container.retrieval_service
+        self._cache = container.object_cache_invalidator 
 
     async def list_kbs(
         self,
@@ -74,6 +77,7 @@ class KnowledgeBaseService:
             raise KBNotFoundError(kb_id)
         if not self._retrieval_service:
             self._retrieval_service.invalidate(kb_id=kb_id)
+        self._cache.on_kb_changed(kb_id)
         return KnowledgeBaseRead.model_validate(kb)
 
     async def delete_kb(self, kb_id: int) -> bool:
@@ -83,6 +87,7 @@ class KnowledgeBaseService:
             raise KBNotFoundError(kb_id)
         if not self._retrieval_service:
             self._retrieval_service.invalidate(kb_id=kb_id)
+        self._cache.on_kb_changed(kb_id)
         return res
 
     async def get_kb_options(self) -> List[KnowledgeBaseOption]:
@@ -97,6 +102,7 @@ class KnowledgeBaseService:
             raise KBNotFoundError(kb_id)
         if not self._retrieval_service:
             self._retrieval_service.invalidate(kb_id=kb_id)
+        self._cache.on_kb_changed(kb_id)
         return res
 
     async def get_kb_stats(self, kb_id: int) -> KnowledgeBaseStats:
