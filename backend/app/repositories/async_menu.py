@@ -13,6 +13,87 @@ from app.infra.db.database import Menu, Menu, Role, User
 from app.core.constants import SUPER_PERMISSION
 class AsyncMenuDatabase(AsyncBaseDatabase):
 
+    async def get_by_id(self, menu_id: int) -> Menu | None:
+        async with self.get_session() as session:
+            return await session.get(Menu, menu_id)
+
+    async def find_sibling(self, parent_id: int | None, name: str) -> Menu | None:
+        async with self.get_session() as session:
+            stmt = select(Menu).where(Menu.name == name)
+            stmt = stmt.where(Menu.parent_id.is_(None)) if parent_id is None else stmt.where(Menu.parent_id == parent_id)
+            return (await session.execute(stmt)).scalar_one_or_none()
+
+    async def list_menus(
+        self,
+        menu_type: str | None = None,
+        is_active: bool | None = None,
+    ) -> list[Menu]:
+        async with self.get_session() as session:
+            stmt = select(Menu)
+            if menu_type is not None:
+                stmt = stmt.where(Menu.menu_type == menu_type)
+            if is_active is not None:
+                stmt = stmt.where(Menu.is_active == is_active)
+            stmt = stmt.order_by(Menu.sort_order.asc(), Menu.id.asc())
+            return list((await session.execute(stmt)).scalars().all())
+
+    async def create_menu(self, data: dict) -> Menu:
+        async with self.get_session() as session:
+            menu = Menu(**data)
+            session.add(menu)
+            await session.flush()
+            return menu
+
+    async def update_fields(self, menu_id: int, data: dict) -> Menu | None:
+        async with self.get_session() as session:
+            menu = await session.get(Menu, menu_id)
+            if not menu:
+                return None
+            for field, value in data.items():
+                setattr(menu, field, value)
+            await session.flush()
+            return menu
+
+    async def descendant_ids(self, menu_id: int) -> set[int]:
+        menus = await self.list_menus()
+        children: dict[int, list[int]] = {}
+        for menu in menus:
+            if menu.parent_id is not None:
+                children.setdefault(menu.parent_id, []).append(menu.id)
+        found: set[int] = set()
+        pending = list(children.get(menu_id, []))
+        while pending:
+            child_id = pending.pop()
+            if child_id not in found:
+                found.add(child_id)
+                pending.extend(children.get(child_id, []))
+        return found
+
+    async def delete_menu(self, menu_id: int) -> bool:
+        async with self.get_session() as session:
+            menu = await session.get(
+                Menu,
+                menu_id,
+                options=[selectinload(Menu.children), selectinload(Menu.roles)],
+            )
+            if not menu:
+                return False
+            await session.delete(menu)
+            return True
+
+    async def affected_user_ids(self, menu_id: int) -> list[int]:
+        """Users whose cached permissions may contain this menu code."""
+        from app.infra.db.database import RoleMenuRelation, UserRoleRelation
+
+        async with self.get_session() as session:
+            stmt = (
+                select(UserRoleRelation.user_id)
+                .join(RoleMenuRelation, RoleMenuRelation.role_id == UserRoleRelation.role_id)
+                .where(RoleMenuRelation.menu_id == menu_id)
+                .distinct()
+            )
+            return list((await session.execute(stmt)).scalars())
+
     async def is_super_user(self,user_id: int) -> bool:
         async with self.get_session() as session:
             stmt = (

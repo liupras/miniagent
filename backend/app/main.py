@@ -168,6 +168,12 @@ app.include_router(admin_embdding_router,prefix="/api/v1/admin/embeddings", tags
 from app.api.admin.user import router as admin_user_router
 app.include_router(admin_user_router,prefix="/api/v1/admin/users", tags=["Admin - User"])
 
+from app.api.admin.role import router as admin_role_router
+app.include_router(admin_role_router,prefix="/api/v1/admin/roles", tags=["Admin - Role"])
+
+from app.api.admin.menu import router as admin_menu_router
+app.include_router(admin_menu_router,prefix="/api/v1/admin/menus", tags=["Admin - Menu"])
+
 from app.api.admin.tool import router as admin_tool_router
 app.include_router(admin_tool_router,prefix="/api/v1/admin/tools", tags=["Admin - Tool"])
 

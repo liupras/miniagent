@@ -64,6 +64,15 @@ llm:
 user:
   not_found: "User '{id}' does not exist"
   not_found_with_name: "User '{username}' does not exist"
+  already_exists: "User '{id}' already exists"
+
+role:
+  not_found: "Role '{id}' does not exist"
+  already_exists: "Role '{id}' already exists"
+
+menu:
+  not_found: "Menu '{id}' does not exist"
+  already_exists: "Menu '{id}' already exists"
 
 domain:
   not_found: Domain does not exist

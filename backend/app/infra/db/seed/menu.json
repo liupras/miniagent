@@ -1,345 +1,446 @@
 [
-    {
-        "id": 1,
-        "parent_id": null,
-        "name": "agent:default", 
-        "title_key": "menus.agentManagement.default",
-        "path": "/agentManagement",        
-        "icon": "ep:cpu",
-        "sort_order": 1
-    },
-    {
-        "id": 2,
-        "parent_id": 1,
-        "name": "agent:list", 
-        "title_key": "menus.agentManagement.agent",
-        "path": "/agentManagement/agent",
-        "component": "agentManagement/agent/index",
-        "sort_order": 2
-    },
-        {
-        "id":1000,
-        "parent_id": 2,
-        "name": "agent:add",
-        "title_key": "buttons.add", 
-        "icon": "ep:plus",       
-        "menu_type": "button",
-        "description": "智能体-新增"
-    },
-    {
-        "id":1001,
-        "parent_id": 2,
-        "name": "agent:edit",
-        "title_key": "buttons.edit",     
-        "icon": "ep:edit",       
-        "menu_type": "button",
-        "description": "智能体-编辑"
-    },
-    {
-        "id":1002,
-        "parent_id": 2,
-        "name": "agent:delete",
-        "title_key": "buttons.delete",   
-        "icon": "ep:delete",        
-        "menu_type": "button",
-        "description": "智能体-删除"
-    },
-    {
-        "id": 3,
-        "parent_id": 1,
-        "name": "tool:list", 
-        "title_key": "menus.agentManagement.skill",
-        "path": "/agentManagement/skill",
-        "component": "agentManagement/skill/index",
-        "sort_order": 3
-    },
-    {
-        "id":1003,
-        "parent_id": 3,
-        "name": "tool:add",
-        "title_key": "buttons.add",
-        "icon": "ep:plus",       
-        "menu_type": "button",
-        "description": "技能-新增"
-    },
-    {
-        "id":1004,
-        "parent_id": 3,
-        "name": "tool:edit",
-        "title_key": "buttons.edit",
-        "icon": "ep:edit",       
-        "menu_type": "button",
-        "description": "技能-编辑"
-    },
-    {
-        "id":1005,
-        "parent_id": 3,
-        "name": "tool:delete",
-        "title_key": "buttons.delete",
-        "icon": "ep:delete",        
-        "menu_type": "button",
-        "description": "技能-删除"
-    },
-    {
-        "id": 4,
-        "parent_id": null,
-        "name": "kb:default", 
-        "title_key": "menus.kb.default",
-        "path": "/kbManagement",        
-        "icon": "ep:document-copy",
-        "sort_order": 5
-    },
-    {
-        "id": 5,
-        "parent_id": 4,
-        "name": "domain:list", 
-        "title_key": "menus.kb.domain",
-        "path": "/kbManagement/domain",        
-        "component": "kbManagement/domain/index",  
-        "sort_order": 6
-    },
-    {
-        "id":1006,
-        "parent_id": 5,
-        "name": "domain:add",
-        "title_key": "buttons:add",
-        "icon": "ep:plus",       
-        "menu_type": "button",
-        "description": "领域-添加"
-    },
-    {
-        "id":1007,
-        "parent_id": 5,
-        "name": "domain:edit",
-        "title_key": "buttons.edit",
-        "icon": "ep:edit",       
-        "menu_type": "button",
-        "description": "领域-编辑"
-    },
-    {
-        "id":1008,
-        "parent_id": 5,
-        "name": "domain:delete",
-        "title_key": "buttons.delete",
-        "icon": "ep:delete",        
-        "menu_type": "button",
-        "description": "领域-删除"
-    },
-    {
-        "id": 6,
-        "parent_id": 4,
-        "name": "router_config:list", 
-        "title_key": "menus.kb.routerConfig",
-        "path": "/kbManagement/router_config",        
-        "component": "kbManagement/router_config/index",  
-        "sort_order": 6
-    },
-    {
-        "id":1009,
-        "parent_id": 6,
-        "name": "router_config:edit",
-        "title_key": "buttons.edit",
-        "icon": "ep:edit",        
-        "menu_type": "button",
-        "description": "路由策略-编辑"
-    },
-    {
-        "id": 7,
-        "parent_id": 4,
-        "name": "strategy_config:list", 
-        "title_key": "menus.kb.strategyConfig",
-        "path": "/kbManagement/strategy_config",        
-        "component": "kbManagement/strategy_config/index",  
-        "sort_order": 7
-    },
-    {
-        "id":1010,
-        "parent_id": 7,
-        "name": "strategy_config:add",
-        "title_key": "buttons:add",
-        "icon": "ep:plus",       
-        "menu_type": "button",
-        "description": "检索策略-添加"
-    },
-    {
-        "id":1011,
-        "parent_id": 7,
-        "name": "strategy_config:edit",
-        "title_key": "buttons.edit",
-        "icon": "ep:edit",        
-        "menu_type": "button",
-        "description": "检索策略-编辑"
-    },
-    {
-        "id":1012,
-        "parent_id": 7,
-        "name": "strategy_config:delete",
-        "title_key": "buttons.delete",
-        "icon": "ep:delete",        
-        "menu_type": "button",
-        "description": "检索策略-删除"
-    },
-    {
-        "id": 8,
-        "parent_id": 4,
-        "name": "knowledge_base:list", 
-        "title_key": "menus.kb.kownledgeBase",
-        "path": "/kbManagement/knowledge_base",        
-        "component": "kbManagement/knowledge_base/index",  
-        "sort_order": 8
-    },
-    {
-        "id":1013,
-        "parent_id": 8,
-        "name": "knowledge_base:add",
-        "title_key": "buttons:add",
-        "icon": "ep:plus",       
-        "menu_type": "button",
-        "description": "知识库-添加"
-    },
-    {
-        "id":1014,
-        "parent_id": 8,
-        "name": "knowledge_base:delete",
-        "title_key": "buttons.delete",
-        "icon": "ep:delete",        
-        "menu_type": "button",
-        "description": "知识库-删除"
-    },
-    {
-        "id":1015,
-        "parent_id": 8,
-        "name": "knowledge_base:edit",
-        "title_key": "buttons.edit",
-        "icon": "ep:edit",        
-        "menu_type": "button",
-        "description": "知识库-编辑"
-    },
-    {
-        "id": 9,
-        "parent_id": 4,
-        "name": "document:list", 
-        "title_key": "menus.kb.document",
-        "path": "/kbManagement/document",        
-        "component": "kbManagement/document/index",  
-        "sort_order": 9
-    },
-    {
-        "id":1016,
-        "parent_id": 9,
-        "name": "document:add",
-        "title_key": "buttons:add",
-        "icon": "ep:plus",       
-        "menu_type": "button",
-        "description": "文档库-添加"
-    },
-    {
-        "id":1017,
-        "parent_id": 9,
-        "name": "document:edit",
-        "title_key": "buttons.edit",
-        "icon": "ep:edit",        
-        "menu_type": "button",
-        "description": "文档库-编辑"
-    },
-    {
-        "id":1018,
-        "parent_id": 9,
-        "name": "document:delete",
-        "title_key": "buttons.delete",
-        "icon": "ep:delete",        
-        "menu_type": "button",
-        "description": "文档库-删除"
-    },    
-    {
-        "id": 10,
-        "parent_id": 4,
-        "name": "table:list", 
-        "title_key": "menus.kb.table",
-        "path": "/kbManagement/table",        
-        "component": "kbManagement/table/index",  
-        "sort_order": 10
-    },
-    {
-        "id":1019,
-        "parent_id": 10,
-        "name": "table:add",
-        "title_key": "buttons:add",
-        "icon": "ep:plus",       
-        "menu_type": "button",
-        "description": "表格库-添加"
-    },
-    {
-        "id":1020,
-        "parent_id": 10,
-        "name": "table:delete",
-        "title_key": "buttons.delete",
-        "icon": "ep:delete",        
-        "menu_type": "button",
-        "description": "表格库-删除"
-    },    
-    {
-        "id": 11,
-        "parent_id": null,
-        "name": "conversation:list", 
-        "title_key": "menus.conversation",
-        "path": "/conversation",        
-        "component": "conversation/index",
-        "icon":"ep:chat-dot-round",
-        "sort_order": 10
-    },
-    {
-        "id":1021,
-        "parent_id": 11,
-        "name": "conversation:delete",
-        "title_key": "buttons.delete",
-        "icon": "ep:delete",        
-        "menu_type": "button",
-        "description": "会话-删除"
-    },
-    {
-        "id": 100,
-        "parent_id": null,
-        "name": "setting:default", 
-        "title_key": "menus.setting.default",
-        "path": "/setting",
-        "icon":"ep:setting",
-        "sort_order": 100
-    },
-    {
-        "id": 101,
-        "parent_id": 100,
-        "name": "object_cache:list", 
-        "title_key": "menus.setting.objectCache",
-        "path": "/setting/object_cache",
-        "component": "setting/object_cache/index",  
-        "sort_order": 101
-    },    
-    {
-        "id":1101,
-        "parent_id": 101,
-        "name": "object_cache:edit",
-        "title_key": "buttons.edit",
-        "icon": "ep:edit",       
-        "menu_type": "button",
-        "description": "缓存-失效操作"
-    },
-    {
-        "id": 102,
-        "parent_id": 100,
-        "name": "value_cache:list", 
-        "title_key": "menus.setting.valueCache",
-        "path": "/setting/value_cache",
-        "component": "setting/value_cache/index",  
-        "sort_order": 102
-    },    
-    {
-        "id":1102,
-        "parent_id": 102,
-        "name": "value_cache:edit",
-        "title_key": "buttons.edit",
-        "icon": "ep:edit",       
-        "menu_type": "button",
-        "description": "缓存-失效操作"
-    }
+  {
+    "id": 1,
+    "parent_id": null,
+    "name": "agent:default",
+    "title_key": "menus.agentManagement.default",
+    "path": "/agentManagement",
+    "icon": "ep:cpu",
+    "sort_order": 1
+  },
+  {
+    "id": 11,
+    "parent_id": 1,
+    "name": "agent:list",
+    "title_key": "menus.agentManagement.agent",
+    "path": "/agentManagement/agent",
+    "component": "agentManagement/agent/index",
+    "sort_order": 11
+  },
+  {
+    "id": 111,
+    "parent_id": 11,
+    "name": "agent:add",
+    "title_key": "buttons.add",
+    "icon": "ep:plus",
+    "menu_type": "button",
+    "description": "智能体-新增"
+  },
+  {
+    "id": 112,
+    "parent_id": 11,
+    "name": "agent:edit",
+    "title_key": "buttons.edit",
+    "icon": "ep:edit",
+    "menu_type": "button",
+    "description": "智能体-编辑"
+  },
+  {
+    "id": 113,
+    "parent_id": 11,
+    "name": "agent:delete",
+    "title_key": "buttons.delete",
+    "icon": "ep:delete",
+    "menu_type": "button",
+    "description": "智能体-删除"
+  },
+  {
+    "id": 12,
+    "parent_id": 1,
+    "name": "tool:list",
+    "title_key": "menus.agentManagement.skill",
+    "path": "/agentManagement/skill",
+    "component": "agentManagement/skill/index",
+    "sort_order": 12
+  },
+  {
+    "id": 121,
+    "parent_id": 12,
+    "name": "tool:add",
+    "title_key": "buttons.add",
+    "icon": "ep:plus",
+    "menu_type": "button",
+    "description": "技能-新增"
+  },
+  {
+    "id": 122,
+    "parent_id": 12,
+    "name": "tool:edit",
+    "title_key": "buttons.edit",
+    "icon": "ep:edit",
+    "menu_type": "button",
+    "description": "技能-编辑"
+  },
+  {
+    "id": 123,
+    "parent_id": 12,
+    "name": "tool:delete",
+    "title_key": "buttons.delete",
+    "icon": "ep:delete",
+    "menu_type": "button",
+    "description": "技能-删除"
+  },
+
+  {
+    "id": 2,
+    "parent_id": null,
+    "name": "kb:default",
+    "title_key": "menus.kb.default",
+    "path": "/kbManagement",
+    "icon": "ep:document-copy",
+    "sort_order": 2
+  },
+  {
+    "id": 21,
+    "parent_id": 2,
+    "name": "domain:list",
+    "title_key": "menus.kb.domain",
+    "path": "/kbManagement/domain",
+    "component": "kbManagement/domain/index",
+    "sort_order": 21
+  },
+  {
+    "id": 211,
+    "parent_id": 21,
+    "name": "domain:add",
+    "title_key": "buttons:add",
+    "icon": "ep:plus",
+    "menu_type": "button",
+    "description": "领域-添加"
+  },
+  {
+    "id": 212,
+    "parent_id": 21,
+    "name": "domain:edit",
+    "title_key": "buttons.edit",
+    "icon": "ep:edit",
+    "menu_type": "button",
+    "description": "领域-编辑"
+  },
+  {
+    "id": 213,
+    "parent_id": 21,
+    "name": "domain:delete",
+    "title_key": "buttons.delete",
+    "icon": "ep:delete",
+    "menu_type": "button",
+    "description": "领域-删除"
+  },  
+  {
+    "id": 22,
+    "parent_id": 2,
+    "name": "router_config:list",
+    "title_key": "menus.kb.routerConfig",
+    "path": "/kbManagement/router_config",
+    "component": "kbManagement/router_config/index",
+    "sort_order": 22
+  },
+  {
+    "id": 221,
+    "parent_id": 6,
+    "name": "router_config:edit",
+    "title_key": "buttons.edit",
+    "icon": "ep:edit",
+    "menu_type": "button",
+    "description": "路由策略-编辑"
+  },
+  {
+    "id": 23,
+    "parent_id": 2,
+    "name": "strategy_config:list",
+    "title_key": "menus.kb.strategyConfig",
+    "path": "/kbManagement/strategy_config",
+    "component": "kbManagement/strategy_config/index",
+    "sort_order": 23
+  },
+  {
+    "id": 231,
+    "parent_id": 23,
+    "name": "strategy_config:add",
+    "title_key": "buttons:add",
+    "icon": "ep:plus",
+    "menu_type": "button",
+    "description": "检索策略-添加"
+  },
+  {
+    "id": 232,
+    "parent_id": 23,
+    "name": "strategy_config:edit",
+    "title_key": "buttons.edit",
+    "icon": "ep:edit",
+    "menu_type": "button",
+    "description": "检索策略-编辑"
+  },
+  {
+    "id": 233,
+    "parent_id": 23,
+    "name": "strategy_config:delete",
+    "title_key": "buttons.delete",
+    "icon": "ep:delete",
+    "menu_type": "button",
+    "description": "检索策略-删除"
+  },
+  {
+    "id": 24,
+    "parent_id": 2,
+    "name": "knowledge_base:list",
+    "title_key": "menus.kb.kownledgeBase",
+    "path": "/kbManagement/knowledge_base",
+    "component": "kbManagement/knowledge_base/index",
+    "sort_order": 24
+  },
+  {
+    "id": 241,
+    "parent_id": 24,
+    "name": "knowledge_base:add",
+    "title_key": "buttons:add",
+    "icon": "ep:plus",
+    "menu_type": "button",
+    "description": "知识库-添加"
+  },
+  {
+    "id": 242,
+    "parent_id": 24,
+    "name": "knowledge_base:delete",
+    "title_key": "buttons.delete",
+    "icon": "ep:delete",
+    "menu_type": "button",
+    "description": "知识库-删除"
+  },
+  {
+    "id": 243,
+    "parent_id": 24,
+    "name": "knowledge_base:edit",
+    "title_key": "buttons.edit",
+    "icon": "ep:edit",
+    "menu_type": "button",
+    "description": "知识库-编辑"
+  },
+  {
+    "id": 25,
+    "parent_id": 2,
+    "name": "document:list",
+    "title_key": "menus.kb.document",
+    "path": "/kbManagement/document",
+    "component": "kbManagement/document/index",
+    "sort_order": 25
+  },
+  {
+    "id": 251,
+    "parent_id": 25,
+    "name": "document:add",
+    "title_key": "buttons:add",
+    "icon": "ep:plus",
+    "menu_type": "button",
+    "description": "文档库-添加"
+  },
+  {
+    "id": 252,
+    "parent_id": 25,
+    "name": "document:edit",
+    "title_key": "buttons.edit",
+    "icon": "ep:edit",
+    "menu_type": "button",
+    "description": "文档库-编辑"
+  },
+  {
+    "id": 253,
+    "parent_id": 25,
+    "name": "document:delete",
+    "title_key": "buttons.delete",
+    "icon": "ep:delete",
+    "menu_type": "button",
+    "description": "文档库-删除"
+  },
+  {
+    "id": 26,
+    "parent_id": 2,
+    "name": "table:list",
+    "title_key": "menus.kb.table",
+    "path": "/kbManagement/table",
+    "component": "kbManagement/table/index",
+    "sort_order": 10
+  },
+  {
+    "id": 261,
+    "parent_id": 26,
+    "name": "table:add",
+    "title_key": "buttons:add",
+    "icon": "ep:plus",
+    "menu_type": "button",
+    "description": "表格库-添加"
+  },
+  {
+    "id": 262,
+    "parent_id": 26,
+    "name": "table:delete",
+    "title_key": "buttons.delete",
+    "icon": "ep:delete",
+    "menu_type": "button",
+    "description": "表格库-删除"
+  },
+  {
+    "id": 3,
+    "parent_id": null,
+    "name": "conversation:list",
+    "title_key": "menus.conversation",
+    "path": "/conversation",
+    "component": "conversation/index",
+    "icon": "ep:chat-dot-round",
+    "sort_order": 3
+  },
+  {
+    "id": 31,
+    "parent_id": 3,
+    "name": "conversation:delete",
+    "title_key": "buttons.delete",
+    "icon": "ep:delete",
+    "menu_type": "button",
+    "description": "会话-删除"
+  },
+  {
+    "id": 4,
+    "parent_id": null,
+    "name": "rbac:default",
+    "title_key": "menus.rbac.default",
+    "path": "/rbac",
+    "icon": "ep:lock",
+    "sort_order": 200
+  },
+  {
+    "id": 41,
+    "parent_id": 4,
+    "name": "user:list",
+    "title_key": "menus.rbac.user",
+    "path": "/rbac/user",
+    "component": "rbac/user/index",
+    "sort_order": 41
+  },
+  {
+    "id": 411,
+    "parent_id": 41,
+    "name": "user:add",
+    "title_key": "buttons.add",
+    "menu_type": "button"
+  },
+  {
+    "id": 412,
+    "parent_id": 41,
+    "name": "user:edit",
+    "title_key": "buttons.edit",
+    "menu_type": "button"
+  },
+  {
+    "id": 413,
+    "parent_id": 41,
+    "name": "user:delete",
+    "title_key": "buttons.delete",
+    "menu_type": "button"
+  },
+  {
+    "id": 42,
+    "parent_id": 4,
+    "name": "role:list",
+    "title_key": "menus.rbac.role",
+    "path": "/rbac/role",
+    "component": "rbac/role/index",
+    "sort_order": 42
+  },
+  {
+    "id": 421,
+    "parent_id": 202,
+    "name": "role:add",
+    "title_key": "buttons.add",
+    "menu_type": "button"
+  },
+  {
+    "id": 422,
+    "parent_id": 202,
+    "name": "role:edit",
+    "title_key": "buttons.edit",
+    "menu_type": "button"
+  },
+  {
+    "id": 423,
+    "parent_id": 202,
+    "name": "role:delete",
+    "title_key": "buttons.delete",
+    "menu_type": "button"
+  },
+  {
+    "id": 43,
+    "parent_id": 4,
+    "name": "menu:list",
+    "title_key": "menus.rbac.menu",
+    "path": "/rbac/menu",
+    "component": "rbac/menu/index",
+    "sort_order": 43
+  },
+  {
+    "id": 431,
+    "parent_id": 43,
+    "name": "menu:add",
+    "title_key": "buttons.add",
+    "menu_type": "button"
+  },
+  {
+    "id": 432,
+    "parent_id": 43,
+    "name": "menu:edit",
+    "title_key": "buttons.edit",
+    "menu_type": "button"
+  },
+  {
+    "id": 433,
+    "parent_id": 203,
+    "name": "menu:delete",
+    "title_key": "buttons.delete",
+    "menu_type": "button"
+  },
+
+  {
+    "id": 5,
+    "parent_id": null,
+    "name": "setting:default",
+    "title_key": "menus.setting.default",
+    "path": "/setting",
+    "icon": "ep:setting",
+    "sort_order": 5
+  },
+  {
+    "id": 51,
+    "parent_id": 5,
+    "name": "object_cache:list",
+    "title_key": "menus.setting.objectCache",
+    "path": "/setting/object_cache",
+    "component": "setting/object_cache/index",
+    "sort_order": 51
+  },
+  {
+    "id": 511,
+    "parent_id": 51,
+    "name": "object_cache:edit",
+    "title_key": "buttons.edit",
+    "icon": "ep:edit",
+    "menu_type": "button",
+    "description": "缓存-失效操作"
+  },
+  {
+    "id": 52,
+    "parent_id": 5,
+    "name": "value_cache:list",
+    "title_key": "menus.setting.valueCache",
+    "path": "/setting/value_cache",
+    "component": "setting/value_cache/index",
+    "sort_order": 52
+  },
+  {
+    "id": 521,
+    "parent_id": 52,
+    "name": "value_cache:edit",
+    "title_key": "buttons.edit",
+    "icon": "ep:edit",
+    "menu_type": "button",
+    "description": "缓存-失效操作"
+  }
 ]

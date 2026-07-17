@@ -64,6 +64,15 @@ llm:
 user:
   not_found: "用户 '{id}' 不存在"
   not_found_with_name: "用户 '{username}' 不存在"
+  already_exists: "用户 '{id}' 已存在"
+
+role:
+  not_found: "角色 '{id}' 不存在"
+  already_exists: "角色 '{id}' 已存在"
+
+menu:
+  not_found: "菜单 '{id}' 不存在"
+  already_exists: "菜单 '{id}' 已存在"
 
 domain:
   not_found: Domain不存在

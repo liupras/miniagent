@@ -2,22 +2,33 @@
 # -*- coding:utf-8 -*-
 # @author  : Liu Lijun
 # @date    : 2026-05-30
-# @description: User Service – business logic layer
+# @description: Business logic for administrative user management.
 
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from app.infra.db.database import User
-from app.repositories.async_user import AsyncUserDatabase
 from app.repositories.async_menu import AsyncMenuDatabase
-from app.schemas.common import NotFoundError, PageResult,AlreadyExistsError
-from app.schemas.admin.user import UserListParams, UserOptionItem, UserOut
+from app.repositories.async_user import AsyncUserDatabase
+from app.schemas.admin.user import UserCreate, UserListParams, UserOptionItem, UserOut, UserUpdate
+from app.schemas.common import AlreadyExistsError, NotFoundError, PageResult
 
 
 class UserNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("User", entity_id)
 
-def _to_user_out(user: User) -> UserOut:
+
+class UserAlreadyExistsError(AlreadyExistsError):
+    def __init__(self, entity_id: Any):
+        super().__init__("User", entity_id)
+
+
+class RoleNotFoundError(NotFoundError):
+    def __init__(self, entity_id: Any):
+        super().__init__("Role", entity_id)
+
+
+def _to_user_out(user: User, permissions: list[str] | None = None) -> UserOut:
     return UserOut(
         id=user.id,
         username=user.username,
@@ -26,71 +37,96 @@ def _to_user_out(user: User) -> UserOut:
         is_active=user.is_active,
         created_at=user.created_at,
         last_login=user.last_login,
-        roles=[r.code for r in user.roles] if user.roles else ["common"]       
+        roles=[role.code for role in user.roles],
+        permissions=permissions or [],
     )
 
 
-# ──────────────────────────────────────────────
-# Service
-# ──────────────────────────────────────────────
-
 class UserService:
-    """
-    Business logic for the User resource.
-
-    Delegates low-level DB operations (auth, password, deactivate …) to
-    AsyncUserDatabase and owns the queries that need pagination / extra joins.
-    """
-
-    def __init__(self, user_db: AsyncUserDatabase, menu_db: AsyncMenuDatabase) -> None:
+    def __init__(self, user_db: AsyncUserDatabase, menu_db: AsyncMenuDatabase, auth=None) -> None:
         self._user_db = user_db
         self._menu_db = menu_db
+        self._auth = auth
 
-    # ── Options endpoint ──────────────────────────────────────────────────
-
-    async def get_options(
-        self,
-        is_active: Optional[bool] = True,
-    ) -> List[UserOptionItem]:
-        """
-        Return lightweight id + username + nickname tuples for every user,
-        ordered by username.  Used by frontend dropdown selectors.
-
-        By default only active users are returned (is_active=True).
-        Pass is_active=None to return all users regardless of status.
-        """
-        users = await self._user_db.get_options(is_active)
-
-        return [
-            UserOptionItem.model_validate(u)
-            for u in users
-        ]
-
-    # ── Paginated list ────────────────────────────────────────────────────
+    async def get_options(self, is_active: Optional[bool] = True) -> list[UserOptionItem]:
+        return [UserOptionItem.model_validate(user) for user in await self._user_db.get_options(is_active)]
 
     async def list_users(self, params: UserListParams) -> PageResult[UserOut]:
-        """Paginated + filtered user list with roles."""
-
         rows, total = await self._user_db.list_users(params)
-
         return PageResult(
             total=total,
             page=params.page,
             page_size=params.page_size,
-            data=[_to_user_out(r) for r in rows]
+            data=[_to_user_out(row) for row in rows],
         )
 
-    # ── Single user ───────────────────────────────────────────────────────
+    async def get_user_by_id(self, user_id: int) -> UserOut:
+        user = await self._user_db.get_by_id(user_id)
+        if not user:
+            raise UserNotFoundError(user_id)
+        permissions = sorted(await self._menu_db.get_user_resource_codes(user.id))
+        return _to_user_out(user, permissions)
 
     async def get_user(self, username: str) -> UserOut:
-        """Return full user info or raise UserNotFoundError."""
-        info = await self._user_db.get_user_info(username)        
-        if info is None:
+        user = await self._user_db.get_by_username(username)
+        if not user:
             raise UserNotFoundError(username)
-        permissions = await self._menu_db.get_user_resource_codes(info["id"])
-        info["permissions"] = list(permissions)
-        return UserOut.model_validate(info)
-    
+        permissions = sorted(await self._menu_db.get_user_resource_codes(user.id))
+        return _to_user_out(user, permissions)
+
+    async def create(self, payload: UserCreate) -> UserOut:
+        await self._validate_roles(payload.role_ids)
+        if await self._user_db.get_by_username(payload.username):
+            raise UserAlreadyExistsError(payload.username)
+        user = await self._user_db.create_user(**payload.model_dump())
+        if user is None:
+            raise UserAlreadyExistsError(payload.username)
+        return _to_user_out(user)
+
+    async def update(self, user_id: int, payload: UserUpdate) -> UserOut:
+        current = await self._user_db.get_by_id(user_id)
+        if not current:
+            raise UserNotFoundError(user_id)
+        data = payload.model_dump(exclude_unset=True)
+        if data.get("username") and data["username"] != current.username:
+            if await self._user_db.get_by_username(data["username"]):
+                raise UserAlreadyExistsError(data["username"])
+        await self._user_db.update_fields(user_id, data)
+        self._invalidate(user_id)
+        return _to_user_out(await self._require(user_id))
+
+    async def assign_roles(self, user_id: int, role_ids: list[int]) -> UserOut:
+        await self._validate_roles(role_ids)
+        user = await self._user_db.set_roles(user_id, role_ids)
+        if not user:
+            raise UserNotFoundError(user_id)
+        self._invalidate(user_id)
+        return _to_user_out(user)
+
+    async def reset_password(self, user_id: int, password: str) -> None:
+        if not await self._user_db.set_password(user_id, password):
+            raise UserNotFoundError(user_id)
+
+    async def delete(self, user_id: int) -> None:
+        if not await self._user_db.delete_user(user_id):
+            raise UserNotFoundError(user_id)
+        self._invalidate(user_id)
+
     async def verify_user(self, username: str, password: str) -> bool:
-        """Verify username/password for login."""
         return await self._user_db.verify_user(username, password)
+
+    async def _validate_roles(self, role_ids: list[int]) -> None:
+        requested = set(role_ids)
+        missing = requested - await self._user_db.existing_role_ids(role_ids)
+        if missing:
+            raise RoleNotFoundError(min(missing))
+
+    async def _require(self, user_id: int) -> User:
+        user = await self._user_db.get_by_id(user_id)
+        if not user:
+            raise UserNotFoundError(user_id)
+        return user
+
+    def _invalidate(self, user_id: int) -> None:
+        if self._auth:
+            self._auth.invalidate(user_id)

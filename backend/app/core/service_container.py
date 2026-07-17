@@ -27,6 +27,7 @@ from app.repositories import (
     AsyncSystemSettingDatabase,
     AsyncLLMDatabase,
     AsyncMenuDatabase,
+    AsyncRoleDatabase,
     AsyncAgentUserRelationDatabase,
     AsyncAgentUserRelationDatabase,
     AsyncStrategyConfigDatabase,
@@ -46,6 +47,8 @@ from app.services.sql_agent.service import SQLAgentService
 from app.services.admin.agent import AgentService
 from app.services.admin.llm import LLMService
 from app.services.admin.user import UserService
+from app.services.admin.role import RoleService
+from app.services.admin.menu import MenuService
 from app.services.admin.tool import ToolService
 from app.services.admin.domain import DomainService
 from app.services.admin.router_config import RouterConfigService
@@ -110,6 +113,7 @@ class ServiceContainer:
         self.setting_db = AsyncSystemSettingDatabase(self.engine, self.session_factory)
         self.llm_db = AsyncLLMDatabase(self.engine, self.session_factory)
         self.menu_db = AsyncMenuDatabase(self.engine, self.session_factory)                
+        self.role_db = AsyncRoleDatabase(self.engine, self.session_factory)
         self.agent_user_relation_db = AsyncAgentUserRelationDatabase(self.engine, self.session_factory)
         self.user_agent_relation_db = AsyncAgentUserRelationDatabase(self.engine, self.session_factory)
         self.strategy_config_db = AsyncStrategyConfigDatabase(self.engine, self.session_factory)
@@ -144,7 +148,9 @@ class ServiceContainer:
 
         self.agent_service = AgentService(self)
         self.llm_service = LLMService(db=self.llm_db)
-        self.user_service = UserService(user_db=self.user_db, menu_db=self.menu_db)
+        self.user_service = UserService(user_db=self.user_db, menu_db=self.menu_db, auth=self.auth)
+        self.role_service = RoleService(self)
+        self.menu_service = MenuService(self)
         self.tool_service = ToolService(self)
         self.domain_service = DomainService(self.domain_db)
         self.router_config_service = RouterConfigService(self)

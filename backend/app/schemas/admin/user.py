@@ -46,3 +46,29 @@ class UserListParams(BaseModel):
     page_size: int = Field(20, ge=1, le=100)
     username: Optional[str] = None          # fuzzy
     is_active: Optional[bool] = None
+    keyword: Optional[str] = None
+    role_id: Optional[int] = None
+
+
+class UserCreate(BaseModel):
+    username: str = Field(..., min_length=3, max_length=100)
+    password: str = Field(..., min_length=6, max_length=128)
+    nickname: Optional[str] = Field(None, max_length=100)
+    avatar: Optional[str] = Field(None, max_length=500)
+    is_active: bool = True
+    role_ids: List[int] = Field(default_factory=list)
+
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=100)
+    nickname: Optional[str] = Field(None, max_length=100)
+    avatar: Optional[str] = Field(None, max_length=500)
+    is_active: Optional[bool] = None
+
+
+class UserRoleUpdate(BaseModel):
+    role_ids: List[int] = Field(default_factory=list)
+
+
+class UserPasswordReset(BaseModel):
+    password: str = Field(..., min_length=6, max_length=128)
