@@ -103,7 +103,7 @@
     "id": 211,
     "parent_id": 21,
     "name": "domain:add",
-    "title_key": "buttons:add",
+    "title_key": "buttons.add",
     "icon": "ep:plus",
     "menu_type": "button",
     "description": "领域-添加"
@@ -157,7 +157,7 @@
     "id": 231,
     "parent_id": 23,
     "name": "strategy_config:add",
-    "title_key": "buttons:add",
+    "title_key": "buttons.add",
     "icon": "ep:plus",
     "menu_type": "button",
     "description": "检索策略-添加"
@@ -193,7 +193,7 @@
     "id": 241,
     "parent_id": 24,
     "name": "knowledge_base:add",
-    "title_key": "buttons:add",
+    "title_key": "buttons.add",
     "icon": "ep:plus",
     "menu_type": "button",
     "description": "知识库-添加"
@@ -229,7 +229,7 @@
     "id": 251,
     "parent_id": 25,
     "name": "document:add",
-    "title_key": "buttons:add",
+    "title_key": "buttons.add",
     "icon": "ep:plus",
     "menu_type": "button",
     "description": "文档库-添加"
@@ -265,7 +265,7 @@
     "id": 261,
     "parent_id": 26,
     "name": "table:add",
-    "title_key": "buttons:add",
+    "title_key": "buttons.add",
     "icon": "ep:plus",
     "menu_type": "button",
     "description": "表格库-添加"
@@ -377,27 +377,12 @@
     "sort_order": 43
   },
   {
-    "id": 431,
-    "parent_id": 43,
-    "name": "menu:add",
-    "title_key": "buttons.add",
-    "menu_type": "button"
-  },
-  {
     "id": 432,
     "parent_id": 43,
     "name": "menu:edit",
     "title_key": "buttons.edit",
     "menu_type": "button"
   },
-  {
-    "id": 433,
-    "parent_id": 43,
-    "name": "menu:delete",
-    "title_key": "buttons.delete",
-    "menu_type": "button"
-  },
-
   {
     "id": 5,
     "parent_id": null,

@@ -535,3 +535,68 @@ chatMessage:
     user: 用户
     assistant: 助手
     system: 系统
+
+rbac:
+  common:
+    notSet: 未设置
+  user:
+    title: 用户管理
+    add: 新增用户
+    edit: 编辑用户
+    account: 用户账号
+    username: 用户名
+    usernameLength: 用户名长度应为 3 至 100 个字符
+    nickname: 昵称
+    avatar: 头像地址
+    avatarPlaceholder: 请输入头像图片地址
+    password: 密码
+    passwordLength: 密码长度应为 6 至 128 个字符
+    newPassword: 新密码
+    confirmPassword: 确认密码
+    passwordMismatch: 两次输入的密码不一致
+    resetPassword: 重置密码
+    resetPasswordFor: 重置密码 - {name}
+    passwordResetSuccess: 密码重置成功
+    keyword: 关键词
+    keywordPlaceholder: 搜索用户名或昵称
+    lastLogin: 最后登录时间
+  role:
+    title: 角色管理
+    label: 角色
+    all: 全部角色
+    add: 新增角色
+    edit: 编辑角色
+    keyword: 关键词
+    keywordPlaceholder: 搜索角色编码或名称
+    code: 角色编码
+    codePattern: 必须以字母开头，且只能包含字母、数字、下划线或连字符
+    type: 角色类型
+    superRole: 超级角色
+    normalRole: 普通角色
+    superHint: 超级角色拥有全部权限
+    userCount: 用户数
+    permissionCount: 权限数
+    permissions: 分配权限
+    permissionFor: 分配权限 - {name}
+    permissionHint: 请选择授予该角色的菜单和按钮权限
+  menu:
+    title: 菜单与权限管理
+    edit: 编辑菜单 / 权限
+    detail: 菜单详情
+    readonlyHint: 当前后端仅开放菜单查询接口，因此本页为只读管理；角色授权请在角色管理中操作。
+    editHint: 当前菜单定义支持查看和编辑；新增与删除由种子数据维护。
+    rootMenu: 根菜单（无上级）
+    allTypes: 全部类型
+    types:
+      menu: 菜单
+      button: 按钮
+    displayTitle: 显示标题
+    titleKey: 国际化键
+    permissionCode: 权限编码
+    route: 路由 / 组件
+    path: 路由路径
+    component: 组件
+    icon: 图标
+    parentId: 上级 ID
+    sortOrder: 排序
+    visible: 是否显示

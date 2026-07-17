@@ -533,3 +533,68 @@ chatMessage:
     user: User
     assistant: Assistant
     system: System
+
+rbac:
+  common:
+    notSet: Not set
+  user:
+    title: User Management
+    add: Add User
+    edit: Edit User
+    account: Account
+    username: Username
+    usernameLength: Username must be 3 to 100 characters
+    nickname: Nickname
+    avatar: Avatar URL
+    avatarPlaceholder: Enter an avatar image URL
+    password: Password
+    passwordLength: Password must be 6 to 128 characters
+    newPassword: New Password
+    confirmPassword: Confirm Password
+    passwordMismatch: The passwords do not match
+    resetPassword: Reset Password
+    resetPasswordFor: Reset Password - {name}
+    passwordResetSuccess: Password reset successfully
+    keyword: Keyword
+    keywordPlaceholder: Search username or nickname
+    lastLogin: Last Login
+  role:
+    title: Role Management
+    label: Role
+    all: All Roles
+    add: Add Role
+    edit: Edit Role
+    keyword: Keyword
+    keywordPlaceholder: Search role code or name
+    code: Role Code
+    codePattern: Must start with a letter and contain only letters, numbers, underscores or hyphens
+    type: Role Type
+    superRole: Super Role
+    normalRole: Normal Role
+    superHint: Super roles have all permissions
+    userCount: Users
+    permissionCount: Permissions
+    permissions: Permissions
+    permissionFor: Permissions - {name}
+    permissionHint: Select the menus and button permissions granted to this role
+  menu:
+    title: Menu and Permission Management
+    edit: Edit Menu / Permission
+    detail: Menu Details
+    readonlyHint: Menu definitions are read-only because the current backend only exposes query APIs. Role grants can be changed from Role Management.
+    editHint: Menu definitions currently support viewing and editing. Adding and deleting are maintained through seed data.
+    rootMenu: Root menu (no parent)
+    allTypes: All Types
+    types:
+      menu: Menu
+      button: Button
+    displayTitle: Display Title
+    titleKey: i18n Key
+    permissionCode: Permission Code
+    route: Route / Component
+    path: Route Path
+    component: Component
+    icon: Icon
+    parentId: Parent ID
+    sortOrder: Sort
+    visible: Visible
