@@ -4,11 +4,11 @@
 # @date    : 2026-05-23
 # @description: dependency injection for FastAPI routes, including JWT authentication and user retrieval.
 
-from fastapi import Request,HTTPException,Depends
+from fastapi import Request,Depends
 import re
 
 from app.core.i18n.i18n_http import raise_forbidden, raise_unauthorized
-from app.repositories import AsyncUserDatabase
+from app.repositories.async_user import AsyncUserDatabase
 from app.core.security.jwt_auth import jwt_auth
 
 def get_user_db(request: Request) -> AsyncUserDatabase:

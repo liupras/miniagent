@@ -28,7 +28,9 @@ from .retrieval_model import RetrievedChunk
 from .citation_merger import CitationMerger
 
 from app.infra.db.database import StrategyConfig,LLM
-from app.repositories import AsyncParentChunkDatabase, AsyncChunkDatabase, AsyncDocumentDatabase
+from app.repositories.async_parent_chunk import AsyncParentChunkDatabase
+from app.repositories.async_chunk import AsyncChunkDatabase
+from app.repositories.async_document import AsyncDocumentDatabase
 from app.runtime.llm.client import LLMClient
 from app.infra.cache.factory import create_cache_backend
 from app.retrieval.reranker.base import RerankMode

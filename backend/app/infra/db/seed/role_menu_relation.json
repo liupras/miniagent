@@ -5,11 +5,46 @@
     },
     {
         "_role_code": "common",
+        "menu_id": 11
+    },
+    {
+        "_role_code": "common",
+        "menu_id": 12
+    },
+    {
+        "_role_code": "common",
         "menu_id": 2
     },
     {
         "_role_code": "common",
+        "menu_id": 21
+    },
+    {
+        "_role_code": "common",
+        "menu_id": 22
+    },
+    {
+        "_role_code": "common",
+        "menu_id": 23
+    },
+    {
+        "_role_code": "common",
+        "menu_id": 24
+    },
+    {
+        "_role_code": "common",
+        "menu_id": 25
+    },
+    {
+        "_role_code": "common",
+        "menu_id": 26
+    },{
+        "_role_code": "common",
         "menu_id": 3
+    },
+    {
+        "_role_code": "common",
+        "menu_id": 31
     },
     {
         "_role_code": "common",
@@ -17,41 +52,26 @@
     },
     {
         "_role_code": "common",
+        "menu_id": 41
+    },
+    {
+        "_role_code": "common",
+        "menu_id": 42
+    },
+    {
+        "_role_code": "common",
+        "menu_id": 43
+    },
+    {
+        "_role_code": "common",
         "menu_id": 5
     },
     {
         "_role_code": "common",
-        "menu_id": 6
+        "menu_id": 51
     },
     {
         "_role_code": "common",
-        "menu_id": 7
-    },
-    {
-        "_role_code": "common",
-        "menu_id": 8
-    },
-    {
-        "_role_code": "common",
-        "menu_id": 9
-    },
-    {
-        "_role_code": "common",
-        "menu_id": 10
-    },{
-        "_role_code": "common",
-        "menu_id": 11
-    },
-    {
-        "_role_code": "common",
-        "menu_id": 100
-    },
-    {
-        "_role_code": "common",
-        "menu_id": 101
-    },
-    {
-        "_role_code": "common",
-        "menu_id": 102
+        "menu_id": 52
     }
 ]

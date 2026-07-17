@@ -137,7 +137,7 @@
   },
   {
     "id": 221,
-    "parent_id": 6,
+    "parent_id": 22,
     "name": "router_config:edit",
     "title_key": "buttons.edit",
     "icon": "ep:edit",
@@ -305,7 +305,7 @@
     "title_key": "menus.rbac.default",
     "path": "/rbac",
     "icon": "ep:lock",
-    "sort_order": 200
+    "sort_order": 4
   },
   {
     "id": 41,
@@ -348,21 +348,21 @@
   },
   {
     "id": 421,
-    "parent_id": 202,
+    "parent_id": 42,
     "name": "role:add",
     "title_key": "buttons.add",
     "menu_type": "button"
   },
   {
     "id": 422,
-    "parent_id": 202,
+    "parent_id": 42,
     "name": "role:edit",
     "title_key": "buttons.edit",
     "menu_type": "button"
   },
   {
     "id": 423,
-    "parent_id": 202,
+    "parent_id": 42,
     "name": "role:delete",
     "title_key": "buttons.delete",
     "menu_type": "button"
@@ -392,7 +392,7 @@
   },
   {
     "id": 433,
-    "parent_id": 203,
+    "parent_id": 43,
     "name": "menu:delete",
     "title_key": "buttons.delete",
     "menu_type": "button"

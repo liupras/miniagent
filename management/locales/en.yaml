@@ -105,6 +105,11 @@ menus:
     document: Document
     table: Table
   conversation: Conversation
+  rbac:
+    default: Users and permissions
+    user: User
+    role: Role
+    menu: Menu
   setting:
     default: Settings
     objectCache: Object Cache

@@ -8,42 +8,37 @@ from loguru import logger
 from app.core.config import settings
 from app.runtime.smart_router_factory import SmartRouterFactory
 from app.runtime.vector_registry import VectorStoreRegistry
-from app.services.kb.service_document import KBDocumentService
-from app.services.kb.service_retrieval import KBRetrievalService
-from app.repositories import (
-    AsyncChunkDatabase,
-    AsyncDocumentDatabase,
-    AsyncKnowledgeBaseDatabase,
-    AsyncParentChunkDatabase,
-    AsyncChatDatabase,
-    AsyncUserDatabase,
-    AsyncEmbeddingDatabase,
-    AsyncDomainDatabase,
-    AsyncRouterConfigDatabase,
-    AsyncAgentDatabase,
-    AsyncAgentToolRelationDatabase,
-    AsyncToolDatabase,
-    AsyncPromptDatabase,
-    AsyncSystemSettingDatabase,
-    AsyncLLMDatabase,
-    AsyncMenuDatabase,
-    AsyncRoleDatabase,
-    AsyncAgentUserRelationDatabase,
-    AsyncAgentUserRelationDatabase,
-    AsyncStrategyConfigDatabase,
-)
-
 from app.core.security.auth_permission import AuthPermission
-
 from app.runtime.cache.registry import CacheRegistry
 
+from app.repositories.async_chunk import AsyncChunkDatabase
+from app.repositories.async_document import AsyncDocumentDatabase
+from app.repositories.async_knowledge_base import AsyncKnowledgeBaseDatabase
+from app.repositories.async_parent_chunk import AsyncParentChunkDatabase
+from app.repositories.async_chat import AsyncChatDatabase
+from app.repositories.async_user import AsyncUserDatabase
+from app.repositories.async_embedding import AsyncEmbeddingDatabase
+from app.repositories.async_domain import AsyncDomainDatabase
+from app.repositories.async_router_config import AsyncRouterConfigDatabase
+from app.repositories.async_agent import AsyncAgentDatabase
+from app.repositories.async_agent_tool_relation import AsyncAgentToolRelationDatabase
+from app.repositories.async_tool import AsyncToolDatabase
+from app.repositories.async_prompt import AsyncPromptDatabase
+from app.repositories.async_system_setting import AsyncSystemSettingDatabase
+from app.repositories.async_llm import AsyncLLMDatabase
+from app.repositories.async_menu import AsyncMenuDatabase
+from app.repositories.async_role import AsyncRoleDatabase
+from app.repositories.async_user_agent_relation import AsyncAgentUserRelationDatabase
+from app.repositories.async_strategy_config import AsyncStrategyConfigDatabase
+
+from app.services.kb.service_document import KBDocumentService
+from app.services.kb.service_retrieval import KBRetrievalService
 from app.services.kb.domain_registry import DomainRegistry
 from app.services.kb.service_smart_router import KBSmartRouterService
 from app.services.auth.route_service import RouteService
 from app.runtime.agent.agent_factory import AgentFactory
 from app.services.skill.web_search.service import WebSearchService
 from app.services.sql_agent.service import SQLAgentService
-
 from app.services.admin.agent import AgentService
 from app.services.admin.llm import LLMService
 from app.services.admin.user import UserService
@@ -57,6 +52,7 @@ from app.services.admin.knowledge_base import KnowledgeBaseService
 from app.services.admin.embedding import EmbeddingService
 from app.services.admin.system_setting import SystemSettingService
 from app.services.admin.prompt import PromptService
+
 from app.runtime.conversation.service_conversation import ConversationService
 
 import importlib
