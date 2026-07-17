@@ -4,11 +4,14 @@
 # @date    : 2026-05-30
 # @description: Business logic for administrative user management.
 
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
 
 from app.infra.db.database import User
-from app.repositories.async_menu import AsyncMenuDatabase
-from app.repositories.async_user import AsyncUserDatabase
 from app.schemas.admin.user import UserCreate, UserListParams, UserOptionItem, UserOut, UserUpdate
 from app.schemas.common import AlreadyExistsError, NotFoundError, PageResult
 
@@ -43,10 +46,10 @@ def _to_user_out(user: User, permissions: list[str] | None = None) -> UserOut:
 
 
 class UserService:
-    def __init__(self, user_db: AsyncUserDatabase, menu_db: AsyncMenuDatabase, auth=None) -> None:
-        self._user_db = user_db
-        self._menu_db = menu_db
-        self._auth = auth
+    def __init__(self, container:ServiceContainer) -> None:
+        self._user_db = container.user_db
+        self._menu_db = container.menu_db
+        self._auth = container.auth
 
     async def get_options(self, is_active: Optional[bool] = True) -> list[UserOptionItem]:
         return [UserOptionItem.model_validate(user) for user in await self._user_db.get_options(is_active)]

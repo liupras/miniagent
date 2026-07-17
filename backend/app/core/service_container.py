@@ -146,7 +146,7 @@ class ServiceContainer:
 
         self.agent_service = AgentService(self)
         self.llm_service = LLMService(self)
-        self.user_service = UserService(user_db=self.user_db, menu_db=self.menu_db, auth=self.auth)
+        self.user_service = UserService(self)
         self.role_service = RoleService(self)
         self.menu_service = MenuService(self)
         self.tool_service = ToolService(self)

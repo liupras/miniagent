@@ -6,7 +6,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
 
 from app.infra.db.database import Menu
 from app.schemas.admin.permission import MenuCreate, MenuOut, MenuUpdate
@@ -33,7 +36,7 @@ def _to_out(menu: Menu, children: list[MenuOut] | None = None) -> MenuOut:
 
 
 class MenuService:
-    def __init__(self, container) -> None:
+    def __init__(self, container:ServiceContainer) -> None:
         self._db = container.menu_db
         self._auth = container.auth
 

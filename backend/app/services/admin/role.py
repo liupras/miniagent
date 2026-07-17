@@ -6,7 +6,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
 
 from app.infra.db.database import Role
 from app.schemas.admin.permission import RoleCreate, RoleMenuUpdate, RoleOut, RoleUpdate
@@ -41,7 +44,7 @@ def _to_out(role: Role, user_count: int = 0) -> RoleOut:
 
 
 class RoleService:
-    def __init__(self, container) -> None:
+    def __init__(self, container:ServiceContainer) -> None:
         self._db = container.role_db
         self._auth = container.auth
 
