@@ -115,6 +115,7 @@ menus:
     objectCache: Object Cache
     valueCache: Value Cache
     llm: LLM
+    embedding: Embedding
 
 status:
   pureLoad: Loading...
@@ -630,3 +631,27 @@ llmManagement:
   capabilitiesPlaceholder: "Optional JSON object"
   capabilitiesJsonError: Enter valid JSON
   capabilitiesObjectError: Capabilities must be a JSON object
+
+embeddingManagement:
+  title: Embedding Management
+  add: Add Embedding
+  edit: Edit Embedding
+  name: Configuration Name
+  allNames: All Configurations
+  namePlaceholder: Enter a recognizable configuration name
+  provider: Provider
+  providerPlaceholder: Enter a provider, e.g. openai or local
+  providerSearchPlaceholder: Search provider by exact name
+  model: Model Name
+  modelAndName: Model / Configuration
+  modelPlaceholder: Enter a model identifier, e.g. text-embedding-3-small
+  baseUrl: API Base URL
+  apiKey: API Key
+  apiKeyStatus: Key Status
+  apiKeyPlaceholder: Optional for local models
+  apiKeyEditPlaceholder: Leave blank to keep the current API key
+  apiKeyEditHint: Saved keys are not displayed for security
+  clearApiKey: Clear saved key
+  configured: Configured
+  notConfigured: Not configured
+  maxTokens: Max Tokens

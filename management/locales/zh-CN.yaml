@@ -116,6 +116,7 @@ menus:
     objectCache: 对象缓存
     valueCache: 数值缓存
     llm: 大模型
+    embedding: 嵌入模型
 
 status:
   pureLoad: 加载中...
@@ -632,3 +633,27 @@ llmManagement:
   capabilitiesPlaceholder: "可选 JSON 对象"
   capabilitiesJsonError: 请输入合法的 JSON
   capabilitiesObjectError: 能力配置必须是 JSON 对象
+
+embeddingManagement:
+  title: 嵌入模型管理
+  add: 新增嵌入模型
+  edit: 编辑嵌入模型
+  name: 配置名称
+  allNames: 全部配置
+  namePlaceholder: 请输入便于识别的配置名称
+  provider: 提供商
+  providerPlaceholder: 请输入提供商，例如 openai 或 local
+  providerSearchPlaceholder: 精确搜索提供商
+  model: 模型名称
+  modelAndName: 模型 / 配置名称
+  modelPlaceholder: 请输入模型标识，例如 text-embedding-3-small
+  baseUrl: API 基础地址
+  apiKey: API Key
+  apiKeyStatus: 密钥状态
+  apiKeyPlaceholder: 本地模型可留空
+  apiKeyEditPlaceholder: 留空则保留当前 API Key
+  apiKeyEditHint: 为安全起见，不回显已保存的密钥
+  clearApiKey: 清除已保存密钥
+  configured: 已配置
+  notConfigured: 未配置
+  maxTokens: 最大 Token 数

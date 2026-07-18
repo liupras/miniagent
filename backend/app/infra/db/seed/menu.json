@@ -457,5 +457,35 @@
     "name": "llm:delete",
     "title_key": "buttons.delete",
     "menu_type": "button"
+  },
+  {
+    "id": 54,
+    "parent_id": 5,
+    "name": "embedding:list",
+    "title_key": "menus.setting.embedding",
+    "path": "/setting/embedding",
+    "component": "setting/embedding/index",
+    "sort_order": 54
+  },
+  {
+    "id": 541,
+    "parent_id": 54,
+    "name": "embedding:add",
+    "title_key": "buttons.add",
+    "menu_type": "button"
+  },
+  {
+    "id": 542,
+    "parent_id": 54,
+    "name": "embedding:edit",
+    "title_key": "buttons.edit",
+    "menu_type": "button"
+  },
+  {
+    "id": 543,
+    "parent_id": 54,
+    "name": "embedding:delete",
+    "title_key": "buttons.delete",
+    "menu_type": "button"
   }
 ]
