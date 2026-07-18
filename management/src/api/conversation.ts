@@ -7,7 +7,6 @@ export interface ChatSessionResponse {
   user_id: number;
   agent_id: number | null;
   message_count: number;
-  total_tokens: number;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -44,7 +43,7 @@ export interface PageParams {
 const BASE_URL = "admin/conversation";
 
 /** Get a single chat session by its business session_id. */
-export const getChatSession = (sessionId: string) => {
+export const getChatSession = (sessionId: number) => {
   return http.request<ChatSessionResponse>(
     "get",
     baseUrlApi(`${BASE_URL}/sessions/${sessionId}`)
@@ -77,7 +76,7 @@ export const deleteChatMessage = (messageId: number) => {
 };
 
 /** Get chat messages for a session, paginated. */
-export const getChatMessageList = (sessionId: string, params: PageParams) => {
+export const getChatMessageList = (sessionId: number, params: PageParams) => {
   return http.request<ChatMessageListOut>(
     "get",
     baseUrlApi(`${BASE_URL}/sessions/${sessionId}/messages`),

@@ -16,7 +16,7 @@ export interface UserBrief {
 export interface UserOptionItem {
   id: number;
   username: string;
-  nickname: string;
+  nickname: string | null;
 }
 
 export interface ToolOptionItem {
@@ -110,9 +110,9 @@ export const batchDeleteAgents = (ids: number[]) =>
 export const getLLMOptions = () =>
   http.request<LLMBrief[]>("get", baseUrlApi("admin/llms/options"));
 
-/** Fetch all users as id+username pairs for select dropdown */
+/** Fetch users for select dropdowns. */
 export const getUserOptions = () =>
-  http.request<UserBrief[]>("get", baseUrlApi("admin/users/options"));
+  http.request<UserOptionItem[]>("get", baseUrlApi("admin/users/options"));
 
 export const getAgentUsers = (agentId: number) =>
   http.request<UserOptionItem[]>(

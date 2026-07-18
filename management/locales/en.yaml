@@ -517,8 +517,11 @@ tableManagement:
   allowNewColumns: Allow New Columns
 
 chatSession:
-  userId: User ID
-  userIdPlaceholder: Enter a user ID
+  user: User
+  userPlaceholder: Select a user (search by name, account, or ID)
+  tableTitle: Sessions
+  selectUserHint: Select a user to view their sessions
+  noData: This user has no sessions
   title: Title
   sessionId: Session ID
   agentId: Agent ID
@@ -529,6 +532,8 @@ chatMessage:
   dialogTitle: Messages - {name}
   role: Role
   content: Content
+  noData: This session has no messages
+  deleteConfirm: Delete message #{id}?
   roles:
     user: User
     assistant: Assistant

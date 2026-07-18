@@ -302,7 +302,7 @@ class KBDocumentService:
             sc._extra_metadata.get("parent_index", 0) for sc in small_chunks
         }
         parent_chunks = [pc for pc in parent_chunks if pc.chunk_index in surviving_indexes]
-        await E(t("progress.stage.dedup"), t("progress.message.deduplicated",parent_chunks=len(parent_chunks)), 42)
+        await E(t("progress.stage.dedup"), t("progress.message.after_pruning",parent_chunks=len(parent_chunks)), 42)
 
         # 5. Parent-chunk dedup ───────────────────────────────────────────
         await E(t("progress.stage.dedup"), t("progress.message.deduplicating_parent"), 44)

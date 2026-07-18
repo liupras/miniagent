@@ -17,7 +17,7 @@ def web_search(container,tool_name) -> Callable:
             tool_name=tool_name,
             query=query,           
         )
-        from app.services.skill.web_search import WebSearchPipeline
+        from app.services.skill.web_search.engine import WebSearchPipeline
         return WebSearchPipeline.format_for_llm(state)
 
     return _search

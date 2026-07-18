@@ -1,5 +1,5 @@
 import { ref, reactive } from "vue";
-import { ElMessageBox, ElMessage } from "element-plus";
+import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 import {
   getChatMessageList,
@@ -12,8 +12,9 @@ export function useMessages() {
 
   const loading = ref(false);
   const messageList = ref<ChatMessageResponse[]>([]);
-  const currentSessionId = ref<string>("");
+  const currentSessionId = ref<number>();
   const currentSessionTitle = ref<string>("");
+  let requestVersion = 0;
 
   const pagination = reactive({
     total: 0,
@@ -23,23 +24,26 @@ export function useMessages() {
 
   async function fetchMessages() {
     if (!currentSessionId.value) return;
+    const version = ++requestVersion;
     loading.value = true;
     try {
       const data = await getChatMessageList(currentSessionId.value, {
         page: pagination.page,
         page_size: pagination.pageSize
       });
-      messageList.value = data.items;
-      pagination.total = data.total;
+      if (version === requestVersion) {
+        messageList.value = data.items;
+        pagination.total = data.total;
+      }
     } finally {
-      loading.value = false;
+      if (version === requestVersion) loading.value = false;
     }
   }
 
   /** Open the dialog for a given session. */
-  function loadMessages(sessionId: string, title?: string) {
+  function loadMessages(sessionId: number, title?: string) {
     currentSessionId.value = sessionId;
-    currentSessionTitle.value = title ?? sessionId;
+    currentSessionTitle.value = title ?? String(sessionId);
     pagination.page = 1;
     fetchMessages();
   }
@@ -54,23 +58,13 @@ export function useMessages() {
     fetchMessages();
   }
 
-  function handleDeleteMessage(row: ChatMessageResponse) {
-    ElMessageBox.confirm(
-      t("messages.deleteConfirm", { name: row.session_id }),
-      t("buttons.warning"),
-      {
-        type: "warning"
-      }
-    )
-      .then(async () => {
-        await deleteChatMessage(row.id);
-        ElMessage.success(t("messages.deleteSuccess"));
-        if (messageList.value.length === 1 && pagination.page > 1) {
-          pagination.page -= 1;
-        }
-        fetchMessages();
-      })
-      .catch(() => {});
+  async function handleDeleteMessage(row: ChatMessageResponse) {
+    await deleteChatMessage(row.id);
+    ElMessage.success(t("messages.deleteSuccess"));
+    if (messageList.value.length === 1 && pagination.page > 1) {
+      pagination.page -= 1;
+    }
+    fetchMessages();
   }
 
   return {

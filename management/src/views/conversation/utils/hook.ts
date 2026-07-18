@@ -6,12 +6,15 @@ import {
   deleteChatSession,
   type ChatSessionResponse
 } from "@/api/conversation";
+import { getUserOptions, type UserOptionItem } from "@/api/agent";
 
 export function useSession(initialUserId?: number) {
   const { t } = useI18n();
 
   const loading = ref(false);
+  const userLoading = ref(false);
   const dataList = ref<ChatSessionResponse[]>([]);
+  const userOptions = ref<UserOptionItem[]>([]);
   const userId = ref<number | undefined>(initialUserId);
 
   const pagination = reactive({
@@ -39,9 +42,25 @@ export function useSession(initialUserId?: number) {
     }
   }
 
-  function resetSearch() {
+  async function loadUserOptions() {
+    userLoading.value = true;
+    try {
+      userOptions.value = await getUserOptions();
+    } finally {
+      userLoading.value = false;
+    }
+  }
+
+  function search() {
     pagination.page = 1;
     onSearch();
+  }
+
+  function resetSearch() {
+    userId.value = undefined;
+    pagination.page = 1;
+    dataList.value = [];
+    pagination.total = 0;
   }
 
   function handleSizeChange(val: number) {
@@ -72,16 +91,20 @@ export function useSession(initialUserId?: number) {
       .catch(() => {});
   }
 
-  onMounted(() => {
+  onMounted(async () => {
+    await loadUserOptions();
     if (userId.value) onSearch();
   });
 
   return {
     loading,
+    userLoading,
     dataList,
+    userOptions,
     userId,
     pagination,
     onSearch,
+    search,
     resetSearch,
     handleSizeChange,
     handleCurrentChange,

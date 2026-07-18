@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { useMessages } from "../utils/message-hook";
 import { formatDateTime } from "../utils/format";
 import { hasAuth } from "@/router/utils";
+import Delete from "~icons/ep/delete";
 
 const { t } = useI18n();
 
@@ -21,7 +22,7 @@ const {
 } = useMessages();
 
 /** Called by the parent (session list) to open this dialog. */
-function open(sessionId: string, title?: string) {
+function open(sessionId: number, title?: string) {
   visible.value = true;
   loadMessages(sessionId, title);
 }
@@ -41,14 +42,27 @@ defineExpose({ open });
   <el-dialog
     v-model="visible"
     :title="t('chatMessage.dialogTitle', { name: currentSessionTitle })"
-    width="720px"
+    width="90%"
+    top="5vh"
+    class="message-dialog"
     destroy-on-close
   >
-    <el-table v-loading="loading" :data="messageList" max-height="500" border>
+    <el-table
+      v-loading="loading"
+      :data="messageList"
+      :empty-text="t('chatMessage.noData')"
+      row-key="id"
+      max-height="65vh"
+      border
+    >
       <el-table-column :label="t('chatMessage.role')" prop="role" width="110">
         <template #default="{ row }">
           <el-tag :type="roleTagType[row.role] || 'info'" size="small">
-            {{ t(`chatMessage.roles.${row.role}`) }}
+            {{
+              roleTagType[row.role]
+                ? t(`chatMessage.roles.${row.role}`)
+                : row.role
+            }}
           </el-tag>
         </template>
       </el-table-column>
@@ -73,14 +87,21 @@ defineExpose({ open });
         fixed="right"
       >
         <template #default="{ row }">
-          <el-button
-            v-auth="'conversation:delete'"
-            type="danger"
-            link
-            @click="handleDeleteMessage(row)"
+          <el-popconfirm
+            :title="t('chatMessage.deleteConfirm', { id: row.id })"
+            @confirm="handleDeleteMessage(row)"
           >
-            {{ t("buttons.delete") }}
-          </el-button>
+            <template #reference>
+              <el-button
+                v-auth="'conversation:delete'"
+                type="danger"
+                link
+                :icon="Delete"
+              >
+                {{ t("buttons.delete") }}
+              </el-button>
+            </template>
+          </el-popconfirm>
         </template>
       </el-table-column>
     </el-table>
@@ -105,9 +126,16 @@ defineExpose({ open });
 
 <style scoped>
 .message-content {
+  max-height: 160px;
+  padding-right: 4px;
+  overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
   line-height: 1.5;
+}
+
+:global(.message-dialog) {
+  max-width: 1100px;
 }
 
 .pagination-bar {

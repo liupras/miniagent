@@ -519,8 +519,11 @@ tableManagement:
   allowNewColumns: 允许新增列
 
 chatSession:
-  userId: 用户ID
-  userIdPlaceholder: 请输入用户ID
+  user: 用户
+  userPlaceholder: 请选择用户（可搜索用户名、昵称或 ID）
+  tableTitle: 会话列表
+  selectUserHint: 请先选择用户以查询会话
+  noData: 该用户暂无会话
   title: 会话标题
   sessionId: 会话ID
   agentId: 智能体ID
@@ -531,6 +534,8 @@ chatMessage:
   dialogTitle: 会话消息 - {name}
   role: 角色
   content: 内容
+  noData: 该会话暂无消息
+  deleteConfirm: 确定删除消息 #{id} 吗？
   roles:
     user: 用户
     assistant: 助手
