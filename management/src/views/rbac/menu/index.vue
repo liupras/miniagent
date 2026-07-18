@@ -79,9 +79,7 @@
             </div>
           </template>
           <template #name="{ row }">
-            <code
-              class="rounded bg-[var(--el-fill-color-light)] px-2 py-1 text-xs"
-            >
+            <code class="rounded bg-(--el-fill-color-light) px-2 py-1 text-xs">
               {{ row.name }}
             </code>
           </template>

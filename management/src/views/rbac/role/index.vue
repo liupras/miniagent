@@ -168,7 +168,7 @@
         </div>
       </div>
       <div
-        class="permission-tree rounded border border-[var(--el-border-color)] p-3"
+        class="permission-tree rounded border border-(--el-border-color) p-3"
       >
         <el-tree
           ref="menuTreeRef"
