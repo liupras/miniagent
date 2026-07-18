@@ -114,6 +114,7 @@ menus:
     default: Settings
     objectCache: Object Cache
     valueCache: Value Cache
+    llm: LLM
 
 status:
   pureLoad: Loading...
@@ -603,3 +604,29 @@ rbac:
     parentId: Parent ID
     sortOrder: Sort
     visible: Visible
+
+llmManagement:
+  title: LLM Management
+  add: Add LLM
+  edit: Edit LLM
+  displayName: Display Name
+  displayNamePlaceholder: Enter a recognizable configuration name
+  provider: Provider
+  allProviders: All Providers
+  providerPlaceholder: Select or enter a provider
+  model: Model Name
+  modelAndName: Model / Configuration
+  modelPlaceholder: Enter a model identifier, e.g. gpt-4.1-mini
+  modelSearchPlaceholder: Search model names
+  baseUrl: API Base URL
+  apiKey: API Key
+  apiKeyPlaceholder: Optional for local models
+  apiKeyEditPlaceholder: Leave blank to keep the current API key
+  apiKeyEditHint: Saved keys are not displayed for security
+  clearApiKey: Clear saved key
+  temperature: Temperature
+  maxTokens: Max Tokens
+  capabilities: Capabilities
+  capabilitiesPlaceholder: "Optional JSON object"
+  capabilitiesJsonError: Enter valid JSON
+  capabilitiesObjectError: Capabilities must be a JSON object

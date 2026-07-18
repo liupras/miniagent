@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Query, Request, status
 
+from app.core.security.auth_permission import AuthPermission
 from app.schemas.admin.llm import (
     LLMCreate,
     LLMUpdate,
@@ -18,7 +19,11 @@ from app.schemas.admin.llm import (
 )
 from app.schemas.common import PageResult, ApiResponse
 from app.services.admin.llm import LLMService
-from app.core.service_container import ServiceContainer
+
+_list   = AuthPermission.Permission("llm:list")
+_add    = AuthPermission.Permission("llm:add")
+_edit   = AuthPermission.Permission("llm:edit")
+_delete = AuthPermission.Permission("llm:delete")
 
 router = APIRouter()
 
@@ -26,13 +31,8 @@ router = APIRouter()
 # Dependencies
 # ──────────────────────────────────────────────
 
-def get_container(request: Request) -> ServiceContainer:
-    return request.app.state.container
-
-def get_service(
-    container: ServiceContainer = Depends(get_container),
-) -> LLMService:
-    return container.llm_service
+def get_service(request: Request) -> LLMService:
+    return request.app.state.container.llm_service
 
 # ──────────────────────────────────────────────
 # Routes
@@ -46,6 +46,7 @@ def get_service(
 async def get_llm_options(
     provider_name: Optional[str] = Query(None, description="Filter by provider"),
     svc: LLMService = Depends(get_service),
+    caller_id: int            = Depends(_list),
 ):
 
     options: List[LLMOptionItem] = await svc.get_options(provider_name)
@@ -57,7 +58,10 @@ async def get_llm_options(
     response_model=ApiResponse,
     summary="List all distinct provider names",
 )
-async def list_providers(svc: LLMService = Depends(get_service)):
+async def list_providers(
+    svc: LLMService = Depends(get_service),
+    caller_id: int            = Depends(_list),
+):
     providers = await svc.list_providers()
     return ApiResponse(data=providers)
 
@@ -70,6 +74,7 @@ async def list_providers(svc: LLMService = Depends(get_service)):
 async def list_models(
     provider_name: Optional[str] = Query(None),
     svc: LLMService = Depends(get_service),
+    caller_id: int            = Depends(_list),
 ):
     models = await svc.list_models(provider_name)
     return ApiResponse(data=models)
@@ -82,6 +87,7 @@ async def list_llms(
     provider_name: Optional[str] = Query(None, description="Exact provider filter"),
     model_name: Optional[str] = Query(None, description="Fuzzy model name filter"),
     svc: LLMService = Depends(get_service),
+    caller_id: int            = Depends(_list),
 ):
     params = LLMListParams(
         page=page,
@@ -97,6 +103,7 @@ async def list_llms(
 async def get_llm(
     llm_id: int,
     svc: LLMService = Depends(get_service),
+    caller_id: int            = Depends(_list),
 ):
     row = await svc.get_llm(llm_id)
     return ApiResponse(data=LLMOut.model_validate(row))
@@ -111,6 +118,7 @@ async def get_llm(
 async def create_llm(
     payload: LLMCreate,
     svc: LLMService = Depends(get_service),
+    caller_id: int            = Depends(_add),
 ):
     llm_out = await svc.create_llm(payload)
     return ApiResponse(data=llm_out)
@@ -124,6 +132,7 @@ async def create_llm(
 async def upsert_llm(
     payload: LLMUpsert,
     svc: LLMService = Depends(get_service),
+    caller_id: int            = Depends(_edit),
 ):
     llm_out = await svc.upsert_llm(payload)
     return ApiResponse(data=llm_out)
@@ -133,7 +142,8 @@ async def upsert_llm(
 async def update_llm(
     llm_id: int,
     payload: LLMUpdate,
-    svc: LLMService = Depends(get_service),   
+    svc: LLMService = Depends(get_service),  
+    caller_id: int            = Depends(_edit), 
 ):
     llm_out = await svc.update_llm(llm_id, payload)
     return ApiResponse(data=llm_out)
@@ -143,6 +153,7 @@ async def update_llm(
 async def delete_llm(
     llm_id: int,
     svc: LLMService = Depends(get_service),
+    caller_id: int            = Depends(_delete),
 ):
 
     await svc.delete_llm(llm_id)

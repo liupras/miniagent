@@ -427,5 +427,35 @@
     "icon": "ep:edit",
     "menu_type": "button",
     "description": "缓存-失效操作"
+  },
+  {
+    "id": 53,
+    "parent_id": 5,
+    "name": "llm:list",
+    "title_key": "menus.setting.llm",
+    "path": "/setting/llm",
+    "component": "setting/llm/index",
+    "sort_order": 53
+  },
+  {
+    "id": 531,
+    "parent_id": 53,
+    "name": "llm:add",
+    "title_key": "buttons.add",
+    "menu_type": "button"
+  },
+  {
+    "id": 532,
+    "parent_id": 53,
+    "name": "llm:edit",
+    "title_key": "buttons.edit",
+    "menu_type": "button"
+  },
+  {
+    "id": 533,
+    "parent_id": 53,
+    "name": "llm:delete",
+    "title_key": "buttons.delete",
+    "menu_type": "button"
   }
 ]
