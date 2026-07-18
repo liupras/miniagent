@@ -117,6 +117,7 @@ menus:
     valueCache: 数值缓存
     llm: 大模型
     embedding: 嵌入模型
+    prompt: 提示词
 
 status:
   pureLoad: 加载中...
@@ -657,3 +658,27 @@ embeddingManagement:
   configured: 已配置
   notConfigured: 未配置
   maxTokens: 最大 Token 数
+
+promptManagement:
+  title: Prompt 管理
+  add: 新增 Prompt
+  edit: 编辑 Prompt
+  keyword: 关键词
+  keywordPlaceholder: 搜索 Key 或说明
+  key: Prompt Key
+  keyPlaceholder: 例如 kb.query_rewrite
+  language: 语言
+  allLanguages: 全部语言
+  languagePlaceholder: 请选择或输入语言，例如 zh_CN
+  languageInvalid: 语言格式不正确，例如 zh_CN 或 en_US
+  value: Prompt 内容
+  valuePlaceholder: 请输入 Prompt 模板，变量使用 {variable} 格式
+  emptyValue: （空内容）
+  description: 管理说明
+  descriptionPlaceholder: 仅供开发和管理员查看
+  variables: 模板变量
+  detectedVariables: 已识别变量：
+  identityHint: 编辑时 Prompt Key 和语言不可修改；如需变更，请新增对应记录后删除旧记录。
+  copy: 复制内容
+  copySuccess: Prompt 内容已复制
+  copyFailed: 复制失败，请手动选择内容复制

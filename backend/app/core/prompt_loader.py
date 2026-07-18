@@ -9,6 +9,7 @@ from loguru import logger
 
 from app.services.admin.system_setting import SystemSettingService
 from app.services.admin.prompt import PromptService
+from app.repositories.async_prompt import normalize_prompt_lang
 
 class PromptLoader:
 
@@ -31,7 +32,9 @@ class PromptLoader:
         Bulk-load all prompt templates for self.lang from the Prompt table.
         """
         try:
-            self._language = await self._setting_service.get_system_language()
+            self._language = normalize_prompt_lang(
+                await self._setting_service.get_system_language()
+            )
             logger.debug(f"prompt loader's language is {self._language}.")
 
             self._templates = await self._prompt_service.get_all_as_dict()            

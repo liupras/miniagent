@@ -116,6 +116,7 @@ menus:
     valueCache: Value Cache
     llm: LLM
     embedding: Embedding
+    prompt: Prompt
 
 status:
   pureLoad: Loading...
@@ -655,3 +656,27 @@ embeddingManagement:
   configured: Configured
   notConfigured: Not configured
   maxTokens: Max Tokens
+
+promptManagement:
+  title: Prompt Management
+  add: Add Prompt
+  edit: Edit Prompt
+  keyword: Keyword
+  keywordPlaceholder: Search key or description
+  key: Prompt Key
+  keyPlaceholder: For example, kb.query_rewrite
+  language: Language
+  allLanguages: All Languages
+  languagePlaceholder: Select or enter a language, e.g. en_US
+  languageInvalid: Invalid language format; use zh_CN or en_US
+  value: Prompt Content
+  valuePlaceholder: Enter a prompt template; use {variable} for variables
+  emptyValue: (empty)
+  description: Admin Note
+  descriptionPlaceholder: Only shown to developers and administrators
+  variables: Variables
+  detectedVariables: "Detected variables:"
+  identityHint: Prompt Key and language cannot be changed while editing. Create a new record and then delete the old one to change them.
+  copy: Copy Content
+  copySuccess: Prompt content copied
+  copyFailed: Copy failed; select and copy the content manually

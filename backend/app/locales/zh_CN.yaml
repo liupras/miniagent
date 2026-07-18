@@ -169,3 +169,7 @@ agent_runner:
   tool_exec_error: "错误： 执行工具 {tool_name} 时出错: {error}"
   tool_arg_error: "错误：工具参数 JSON 解析失败：{e}，原始值：{tool_args}"
   tool_arg_error_short:  "错误：解析工具 '{tool_name}' 的参数失败"
+
+prompt:
+  not_found: "{entity} '{id}' 不存在"
+  already_exists: "{entity} '{id}' 已存在"

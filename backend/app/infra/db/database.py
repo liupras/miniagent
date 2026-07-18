@@ -368,7 +368,7 @@ class Prompt(Base):
     )
 
     def __repr__(self):
-        return f"<prompt(group='{self.group}', key='{self.key}', lang='{self.lang}')>"
+        return f"<Prompt(key='{self.key}', lang='{self.lang}')>"
 
 
 class StrategyConfig(Base):

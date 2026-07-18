@@ -169,3 +169,7 @@ agent_runner:
   tool_exec_error: "Error executing tool {tool_name}: {error}"
   tool_arg_error: "Tool argument JSON parsing failed: {e}, raw value: {tool_args}"
   tool_arg_error_short:  "Error: Failed to parse arguments for tool '{tool_name}'"
+
+prompt:
+  not_found: "{entity} '{id}' does not exist"
+  already_exists: "{entity} '{id}' already exists"

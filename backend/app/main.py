@@ -210,6 +210,9 @@ app.include_router(admin_value_cache_router,prefix="/api/v1/admin/value-cache", 
 from app.api.admin.conversation import router as admin_conversation_router
 app.include_router(admin_conversation_router,prefix="/api/v1/admin/conversation", tags=["Admin - Conversation"])
 
+from app.api.admin.prompt import router as admin_prompt_router
+app.include_router(admin_prompt_router,prefix="/api/v1/admin/prompts", tags=["Admin - Prompt"])
+
 from app.api.user.agent import router as agent_router
 app.include_router(agent_router,prefix="/api/v1/agent", tags=["Agent"])
 

@@ -77,5 +77,9 @@
     {
         "_role_code": "common",
         "menu_id": 54
+    },
+    {
+        "_role_code": "common",
+        "menu_id": 55
     }
 ]

@@ -7,10 +7,18 @@
 from typing import Dict, List, Optional, Tuple
 
 from loguru import logger
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from ..infra.db.async_base import AsyncBaseDatabase
 from ..infra.db.database import Prompt
+
+
+def normalize_prompt_lang(lang: str) -> str:
+    """Normalize language tags to the project's ``zh_CN`` / ``en_US`` form."""
+    parts = lang.strip().replace("-", "_").split("_", 1)
+    if len(parts) == 1:
+        return parts[0].lower()
+    return f"{parts[0].lower()}_{parts[1].upper()}"
 
 
 class AsyncPromptDatabase(AsyncBaseDatabase):
@@ -28,7 +36,7 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
             result = await session.execute(
                 select(Prompt).where(         
                     Prompt.key   == key,
-                    Prompt.lang  == lang.lower().strip(),
+                    func.lower(Prompt.lang) == normalize_prompt_lang(lang).lower(),
                 )
             )
             row = result.scalar_one_or_none()
@@ -58,7 +66,7 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
             result = await session.execute(
                 select(Prompt)
                 .where(  
-                    Prompt.lang  == lang.lower().strip(),
+                    func.lower(Prompt.lang) == normalize_prompt_lang(lang).lower(),
                 )
                 .order_by(Prompt.key)
             )
@@ -124,13 +132,13 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
         """
         Insert or update the row for *(key, lang)* asynchronously.
         """
-        lang = lang.lower().strip()
+        lang = normalize_prompt_lang(lang)
 
         async with self.get_session() as session:
             result = await session.execute(
                 select(Prompt).where(                    
                     Prompt.key   == key,
-                    Prompt.lang  == lang,
+                    func.lower(Prompt.lang) == lang.lower(),
                 )
             )
             row = result.scalar_one_or_none()
@@ -162,11 +170,11 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
 
         async with self.get_session() as session:
             for item in rows:
-                lang = item["lang"].lower().strip()
+                lang = normalize_prompt_lang(item["lang"])
                 result = await session.execute(
                     select(Prompt).where(   
                         Prompt.key   == item["key"],
-                        Prompt.lang  == lang,
+                        func.lower(Prompt.lang) == lang.lower(),
                     )
                 )
                 existing = result.scalar_one_or_none()
@@ -194,13 +202,13 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
         """
         Delete the row for *(key, lang)* asynchronously.
         """
-        lang = lang.lower().strip()
+        lang = normalize_prompt_lang(lang)
 
         async with self.get_session() as session:
             result = await session.execute(
                 select(Prompt).where(    
                     Prompt.key   == key,
-                    Prompt.lang  == lang,
+                    func.lower(Prompt.lang) == lang.lower(),
                 )
             )
             row = result.scalar_one_or_none()
@@ -220,10 +228,10 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
         """
         Delete every row for *lang* asynchronously.
         """
-        lang = lang.lower().strip()
+        lang = normalize_prompt_lang(lang)
 
         async with self.get_session() as session:
-            stmt = select(Prompt).where(Prompt.lang == lang)            
+            stmt = select(Prompt).where(func.lower(Prompt.lang) == lang.lower())
             result = await session.execute(stmt)
             rows = result.scalars().all()
 
