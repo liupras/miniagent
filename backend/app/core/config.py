@@ -43,9 +43,19 @@ class Settings(BaseSettings):
     jwt_secret_key: str = Field(default=..., description="JWT Secret Key")
     jwt_access_token_expire_days: int = Field(default=90)
     jwt_algorithm: str = Field(default="HS256")
+
     access_token_expire_days: int = Field(default=1, description="Access token expiration time (days)")
-    refresh_token_expire_days: int = Field(default=7, description="Refresh token expiration time (days)")   
-    
+    refresh_token_expire_days: int = Field(default=7, description="Refresh token expiration time (days)")
+
+    password_min_length: int = Field(default=8, description="Shortest password length")
+    password_require_upper: bool = Field(default=True, description="Do passwords need to contain uppercase letters?")
+    password_require_lower: bool = Field(default=True, description="Do passwords need to contain lowercase letters?") 
+    password_require_digit: bool = Field(default=True, description="Do passwords need to contain digits?") 
+    password_require_special: bool = Field(default=False, description="Do passwords need special characters?") 
+
+    login_max_failed_attempts: int = Field(default=5, description="The maximum number of failed login attempts will result in your account being locked.")
+    login_lock_duration_minutes: int = Field(default=10, description="The account will be locked for a specified period of time; it will be automatically unlocked after this period.")
+
     # ==================== Log configuration ====================
     log_level: str = Field(default="DEBUG", description="Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL")
     log_dir: str = Field(default="logs", description="Log directory")    

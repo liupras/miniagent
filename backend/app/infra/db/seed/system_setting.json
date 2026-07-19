@@ -6,21 +6,5 @@
     "group": "general",
     "description": "Global default language for the UI and pipeline prompts. e.g. zh_CN / en_US.",
     "is_readonly": false
-  },
-  {
-    "key": "system_name",
-    "value": "MiniAgent",
-    "value_type": "string",
-    "group": "general",
-    "description": "Current system name.",
-    "is_readonly": false
-  },
-  {
-    "key": "system_version",
-    "value": "0.1.0",
-    "value_type": "string",
-    "group": "general",
-    "description": "Current system version. Managed by the application; do not edit manually.",
-    "is_readonly": true
   }
 ]
