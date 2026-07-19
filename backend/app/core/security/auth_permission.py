@@ -20,6 +20,7 @@ from app.infra.cache.factory import create_cache_backend
 # ── Module-level constants ─────────────────────────────────────────────────────
 
 from app.core.constants import SUPER_PERMISSION
+from app.core.audit_context import set_audit_user
 
 CACHE_TTL_SECONDS = 3600.0         # Permission TTL: 60 min
 CACHE_KEY_PREFIX  = "user_perms:" # "user_perms:<user_id>"
@@ -116,6 +117,7 @@ class AuthPermission:
             logger.warning("Blocked login for deactivated user '{}'.", username)
             raise self._unauthorized(t("auth.user_disabled"))
 
+        set_audit_user(user.id, user.username)
         logger.debug("Token resolved: '{}' → user_id={}", username, user.id)
         return user.id
 

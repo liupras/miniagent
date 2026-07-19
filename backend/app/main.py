@@ -23,6 +23,12 @@ from app.core.service_container import ServiceContainer
 from app.schemas.common import ApiResponse, BaseDomainError, NotFoundError, AlreadyExistsError
 
 from app.core.i18n.i18n import t
+from app.core.audit_context import (
+    begin_audit_context,
+    get_audit_context,
+    reset_audit_context,
+)
+from app.infra.db.audit import record_request_outcome
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
@@ -93,19 +99,42 @@ app.add_middleware(
 async def log_requests(request: Request, call_next):
     """Record all HTTP requests"""
     start_time = time.time()
+    audit_token = begin_audit_context(
+        request.method,
+        request.url.path,
+        request.client.host if request.client else None,
+    )
     logger.info(f"📥 {request.method} {request.url.path}")
-    
+
     try:
         response = await call_next(request)
         process_time = time.time() - start_time
         logger.info(f"📤 {request.method} {request.url.path} - {response.status_code}")
         response.headers["X-Process-Time"] = str(process_time)
-        return response
     except Exception as exc:
-        # Re-eject after logging
         process_time = time.time() - start_time
         logger.error(f"📤 {request.method} {request.url.path} - ERROR ({process_time:.3f}s)")
-        return handle_exception(exc)
+        response = handle_exception(exc)
+
+    audit_context = get_audit_context()
+    if audit_context is not None:
+        response.headers["X-Request-ID"] = audit_context.request_id
+
+    try:
+        route = request.scope.get("route")
+        await record_request_outcome(
+            request.app.state.container.audit_log_db,
+            status_code=response.status_code,
+            route_name=getattr(route, "name", None),
+            path_params=dict(request.path_params),
+        )
+    except Exception as audit_exc:
+        # Audit failures must never change the business response.
+        logger.exception(f"Audit log write failed: {audit_exc}")
+    finally:
+        reset_audit_context(audit_token)
+
+    return response
     
 # ==================== Exception handling ====================
 

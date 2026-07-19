@@ -31,6 +31,8 @@ from app.repositories.async_menu import AsyncMenuDatabase
 from app.repositories.async_role import AsyncRoleDatabase
 from app.repositories.async_user_agent_relation import AsyncAgentUserRelationDatabase
 from app.repositories.async_strategy_config import AsyncStrategyConfigDatabase
+from app.repositories.async_audit_log import AsyncAuditLogDatabase
+from app.infra.db.audit import install_audit_listeners
 
 from app.services.kb.service_document import KBDocumentService
 from app.services.kb.service_retrieval import KBRetrievalService
@@ -74,6 +76,8 @@ class ServiceContainer:
 
     def __init__(self):
 
+        install_audit_listeners()
+
         # Create globally unique Engine and SessionFactory.
         from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
@@ -114,6 +118,7 @@ class ServiceContainer:
         self.agent_user_relation_db = AsyncAgentUserRelationDatabase(self.engine, self.session_factory)
         self.user_agent_relation_db = AsyncAgentUserRelationDatabase(self.engine, self.session_factory)
         self.strategy_config_db = AsyncStrategyConfigDatabase(self.engine, self.session_factory)
+        self.audit_log_db = AsyncAuditLogDatabase(self.engine, self.session_factory)
 
         self.auth: AuthPermission = AuthPermission(
             self,

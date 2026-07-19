@@ -606,6 +606,7 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    request_id = Column(String(36), nullable=False, comment="Request correlation ID (UUID)")
     
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     username = Column(String(100), nullable=True)
@@ -624,6 +625,7 @@ class AuditLog(Base):
     created_at = Column(DateTime, default=lambda: datetime.now())
 
     __table_args__ = (
+        Index("idx_audit_request", "request_id"),
         Index("idx_audit_target", "target_type", "target_id"),
         Index("idx_audit_user", "user_id"),
         Index("idx_audit_created", "created_at"),
