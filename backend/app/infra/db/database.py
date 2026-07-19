@@ -630,3 +630,35 @@ class AuditLog(Base):
         Index("idx_audit_user", "user_id"),
         Index("idx_audit_created", "created_at"),
     )
+
+
+class LoginLog(Base):
+    __tablename__ = "login_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    request_id = Column(String(36), nullable=False, comment="Request correlation ID (UUID)")
+
+    event_type = Column(
+        String(20),
+        nullable=False,
+        comment="Authentication event: LOGIN | REFRESH_TOKEN",
+    )
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    username = Column(String(100), nullable=True)
+    ip_address = Column(String(50), nullable=True)
+    user_agent = Column(Text, nullable=True)
+
+    success = Column(Boolean, nullable=False, default=False)
+    failure_reason = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now())
+
+    __table_args__ = (
+        Index("idx_login_request", "request_id"),
+        Index("idx_login_user", "user_id"),
+        Index("idx_login_event", "event_type", "success"),
+        Index("idx_login_created", "created_at"),
+    )

@@ -32,6 +32,7 @@ from app.repositories.async_role import AsyncRoleDatabase
 from app.repositories.async_user_agent_relation import AsyncAgentUserRelationDatabase
 from app.repositories.async_strategy_config import AsyncStrategyConfigDatabase
 from app.repositories.async_audit_log import AsyncAuditLogDatabase
+from app.repositories.async_login_log import AsyncLoginLogDatabase
 from app.infra.db.audit import install_audit_listeners
 
 from app.services.kb.service_document import KBDocumentService
@@ -56,6 +57,7 @@ from app.services.admin.embedding import EmbeddingService
 from app.services.admin.system_setting import SystemSettingService
 from app.services.admin.prompt import PromptService
 from app.services.admin.audit_log import AuditLogService
+from app.services.auth.login_log import LoginLogService
 
 from app.runtime.conversation.service_conversation import ConversationService
 
@@ -120,6 +122,7 @@ class ServiceContainer:
         self.user_agent_relation_db = AsyncAgentUserRelationDatabase(self.engine, self.session_factory)
         self.strategy_config_db = AsyncStrategyConfigDatabase(self.engine, self.session_factory)
         self.audit_log_db = AsyncAuditLogDatabase(self.engine, self.session_factory)
+        self.login_log_db = AsyncLoginLogDatabase(self.engine, self.session_factory)
 
         self.auth: AuthPermission = AuthPermission(
             self,
@@ -164,6 +167,7 @@ class ServiceContainer:
         self.setting_service = SystemSettingService(db=self.setting_db)
         self.prompt_service = PromptService(db=self.prompt_db)
         self.audit_log_service = AuditLogService(db=self.audit_log_db)
+        self.login_log_service = LoginLogService(db=self.login_log_db)
         
 
     async def start(self):       

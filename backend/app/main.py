@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from loguru import logger
 import time
 from typing import AsyncGenerator
+from uuid import uuid4
 
 # Important: logger_config must be imported before other imports.
 # This ensures that the logging system is configured before the entire application starts.
@@ -95,6 +96,41 @@ app.add_middleware(
 )
 
 # Request Log Middleware
+_AUTH_LOG_EVENTS = {
+    "/api/v1/login": "LOGIN",
+    "/api/v1/refresh-token": "REFRESH_TOKEN",
+}
+
+
+async def record_unhandled_auth_attempt(request: Request, response) -> None:
+    """Record auth calls rejected before their endpoint body can run."""
+    if request.method != "POST":
+        return
+
+    event_type = _AUTH_LOG_EVENTS.get(request.url.path)
+    if not event_type:
+        return
+
+    request_id = getattr(request.state, "login_request_id", None) or str(uuid4())
+    response.headers["X-Request-ID"] = request_id
+    if getattr(request.state, "login_log_recorded", False):
+        return
+
+    try:
+        values = getattr(request.state, "login_log_payload", None) or {
+            "request_id": request_id,
+            "event_type": event_type,
+            "success": False,
+            "ip_address": request.client.host if request.client else None,
+            "user_agent": request.headers.get("user-agent"),
+            "failure_reason": "request_validation_error",
+        }
+        await request.app.state.container.login_log_service.record(**values)
+        request.state.login_log_recorded = True
+    except Exception as exc:
+        logger.exception(f"Login log fallback write failed: {exc}")
+
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     """Record all HTTP requests"""
@@ -115,6 +151,8 @@ async def log_requests(request: Request, call_next):
         process_time = time.time() - start_time
         logger.error(f"📤 {request.method} {request.url.path} - ERROR ({process_time:.3f}s)")
         response = handle_exception(exc)
+
+    await record_unhandled_auth_attempt(request, response)
 
     audit_context = get_audit_context()
     if audit_context is not None:

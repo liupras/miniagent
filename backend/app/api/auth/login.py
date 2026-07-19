@@ -4,103 +4,212 @@
 # @date    : 2026-02-28
 # @description: User authentication
 
-from fastapi import Request,Depends,APIRouter,Body
 from datetime import datetime, timedelta
+from typing import Optional
+from uuid import uuid4
 
-from app.core.security.jwt_auth import jwt_auth
-from app.schemas.auth.login import LoginRequest, LoginResponse,RefreshTokenRequest
+from fastapi import APIRouter, Body, Depends, Request, Response
+from loguru import logger
+
 from app.core.config import settings
-from app.services.admin.user import UserService
+from app.core.security.jwt_auth import jwt_auth
+from app.schemas.auth.login import LoginRequest, LoginResponse, RefreshTokenRequest
+from app.services.admin.user import UserNotFoundError, UserService
+from app.services.auth.login_log import LoginLogService
 
 ACCESS_TOKEN_EXPIRE_DAYS = settings.access_token_expire_days
 REFRESH_TOKEN_EXPIRE_DAYS = settings.refresh_token_expire_days
 
 router = APIRouter()
 
+
 def get_user_service(request: Request) -> UserService:
     return request.app.state.container.user_service
 
+
+def get_login_log_service(request: Request) -> LoginLogService:
+    return request.app.state.container.login_log_service
+
+
+def _client_ip(request: Request) -> Optional[str]:
+    return request.client.host if request.client else None
+
+
+async def _record_login_log_safely(
+    service: LoginLogService,
+    *,
+    request_id: str,
+    event_type: str,
+    success: bool,
+    request: Request,
+    user_id: Optional[int] = None,
+    username: Optional[str] = None,
+    failure_reason: Optional[str] = None,
+) -> None:
+    values = {
+        "request_id": request_id,
+        "event_type": event_type,
+        "success": success,
+        "user_id": user_id,
+        "username": username,
+        "ip_address": _client_ip(request),
+        "user_agent": request.headers.get("user-agent"),
+        "failure_reason": failure_reason,
+    }
+    request.state.login_log_payload = values
+    request.state.login_request_id = request_id
+    recorded = False
+    try:
+        await service.record(**values)
+        recorded = True
+    except Exception as exc:
+        logger.exception(f"Login log write failed: {exc}")
+    finally:
+        request.state.login_log_recorded = recorded
+
+
 @router.post("/login", response_model=LoginResponse)
 async def login(
-    request: LoginRequest = Body(...),
-    user_service: UserService = Depends(get_user_service)
+    http_request: Request,
+    response: Response,
+    payload: LoginRequest = Body(...),
+    user_service: UserService = Depends(get_user_service),
+    login_log_service: LoginLogService = Depends(get_login_log_service),
 ):
+    request_id = str(uuid4())
+    http_request.state.login_request_id = request_id
+    response.headers["X-Request-ID"] = request_id
+    success = False
+    failure_reason: Optional[str] = "invalid_credentials"
+    user_id: Optional[int] = None
 
-    if not await user_service.verify_user(request.username, request.password):
-        res = LoginResponse(
-            success=False,
-            data=None
+    try:
+        if not await user_service.verify_user(payload.username, payload.password):
+            return LoginResponse(success=False, data=None)
+
+        user_info = await user_service.get_user(payload.username)
+        user_id = user_info.id
+
+        access_token = jwt_auth.create_token(
+            username=payload.username,
+            token_type="access",
+            expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS),
         )
-        return res
+        refresh_token = jwt_auth.create_token(
+            username=payload.username,
+            token_type="refresh",
+            expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+        )
+        expires = (datetime.now() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)).strftime(
+            "%Y/%m/%d %H:%M:%S"
+        )
 
-    user_info = await user_service.get_user(request.username)
+        success = True
+        failure_reason = None
+        return LoginResponse(
+            success=True,
+            data={
+                "avatar": user_info.avatar,
+                "username": user_info.username,
+                "nickname": user_info.nickname,
+                "roles": user_info.roles,
+                "permissions": user_info.permissions,
+                "accessToken": access_token,
+                "refreshToken": refresh_token,
+                "expires": expires,
+            },
+        )
+    except Exception:
+        failure_reason = "internal_error"
+        raise
+    finally:
+        await _record_login_log_safely(
+            login_log_service,
+            request_id=request_id,
+            event_type="LOGIN",
+            success=success,
+            request=http_request,
+            user_id=user_id,
+            username=payload.username,
+            failure_reason=failure_reason,
+        )
 
-    # Generate access token and refresh token
-    access_token = jwt_auth.create_token(
-        username=request.username,
-        token_type="access",
-        expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
-    )
-    refresh_token = jwt_auth.create_token(
-        username=request.username,
-        token_type="refresh",
-        expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    )
-    expires = (datetime.now() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)).strftime(
-        "%Y/%m/%d %H:%M:%S"
-    )
-
-    res = LoginResponse(
-        success=True,
-        data={
-            "avatar": user_info.avatar,
-            "username": user_info.username, 
-            "nickname": user_info.nickname,
-            "roles": user_info.roles,
-            "permissions": user_info.permissions,
-            "accessToken": access_token,
-            "refreshToken": refresh_token,
-            "expires": expires,
-        }
-    )
-
-    return res
 
 @router.post("/refresh-token", response_model=LoginResponse)
 async def refresh_token(
-    request: RefreshTokenRequest = Body(...)
+    http_request: Request,
+    response: Response,
+    payload: RefreshTokenRequest = Body(...),
+    user_service: UserService = Depends(get_user_service),
+    login_log_service: LoginLogService = Depends(get_login_log_service),
 ):
+    request_id = str(uuid4())
+    http_request.state.login_request_id = request_id
+    response.headers["X-Request-ID"] = request_id
+    success = False
+    failure_reason: Optional[str] = "missing_refresh_token"
+    username: Optional[str] = None
+    user_id: Optional[int] = None
 
-    if not request.refreshToken:
-        return LoginResponse(success=False, data={})
+    try:
+        if not payload.refreshToken:
+            return LoginResponse(success=False, data=None)
 
-    token_data = jwt_auth.decode_token(request.refreshToken)
-    if not token_data or token_data.get("token_type") != "refresh":
-        return LoginResponse(success=False, data={})
+        token_data = jwt_auth.decode_token(payload.refreshToken, verify=True)
+        if not token_data or token_data.get("type") != "refresh":
+            failure_reason = "invalid_refresh_token"
+            return LoginResponse(success=False, data=None)
 
-    username = token_data.get("username")
+        username = token_data.get("sub")
+        if not username:
+            failure_reason = "invalid_refresh_token"
+            return LoginResponse(success=False, data=None)
 
-    new_access_token = jwt_auth.create_token(
-        username=username,
-        token_type="access",
-        expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
-    )
-    new_refresh_token = jwt_auth.create_token(
-        username=username,
-        token_type="refresh",
-        expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    )
+        try:
+            user_info = await user_service.get_user(username)
+        except UserNotFoundError:
+            failure_reason = "user_not_found"
+            return LoginResponse(success=False, data=None)
+        if not user_info.is_active:
+            failure_reason = "user_disabled"
+            return LoginResponse(success=False, data=None)
+        user_id = user_info.id
 
-    expires = (datetime.now() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)).strftime(
-        "%Y/%m/%d %H:%M:%S"
-    )
+        new_access_token = jwt_auth.create_token(
+            username=username,
+            token_type="access",
+            expires_delta=timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS),
+        )
+        new_refresh_token = jwt_auth.create_token(
+            username=username,
+            token_type="refresh",
+            expires_delta=timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+        )
+        expires = (datetime.now() + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)).strftime(
+            "%Y/%m/%d %H:%M:%S"
+        )
 
-    # 4. 返回符合 ApiResponse 包装的结果
-    return LoginResponse(
-        success=True,
-        data={
-            "accessToken": new_access_token,
-            "refreshToken": new_refresh_token,
-            "expires": expires,
-        }
-    )
+        success = True
+        failure_reason = None
+        return LoginResponse(
+            success=True,
+            data={
+                "accessToken": new_access_token,
+                "refreshToken": new_refresh_token,
+                "expires": expires,
+            },
+        )
+    except Exception:
+        failure_reason = "internal_error"
+        raise
+    finally:
+        await _record_login_log_safely(
+            login_log_service,
+            request_id=request_id,
+            event_type="REFRESH_TOKEN",
+            success=success,
+            request=http_request,
+            user_id=user_id,
+            username=username,
+            failure_reason=failure_reason,
+        )
