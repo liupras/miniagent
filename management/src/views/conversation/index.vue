@@ -4,9 +4,12 @@ import { useI18n } from "vue-i18n";
 import { useSession } from "./utils/hook";
 import { formatDateTime } from "./utils/format";
 import MessageDialog from "./components/MessageDialog.vue";
+import { PureTableBar } from "@/components/RePureTableBar";
 import { hasAuth } from "@/router/utils";
 import Search from "~icons/ep/search";
 import Refresh from "~icons/ep/refresh";
+import View from "~icons/ep/view";
+import Delete from "~icons/ep/delete";
 
 defineOptions({ name: "ChatSessionManagement" });
 
@@ -31,6 +34,60 @@ const messageDialogRef = ref();
 const emptyText = computed(() =>
   userId.value ? t("chatSession.noData") : t("chatSession.selectUserHint")
 );
+const tablePagination = computed(() => ({
+  total: pagination.total,
+  pageSize: pagination.pageSize,
+  currentPage: pagination.page,
+  background: true,
+  layout: "total, sizes, prev, pager, next, jumper",
+  pageSizes: [10, 20, 50, 100]
+}));
+
+const columns: TableColumnList = [
+  {
+    label: t("chatSession.title"),
+    prop: "title",
+    minWidth: 220,
+    slot: "title"
+  },
+  {
+    label: t("chatSession.sessionId"),
+    prop: "session_id",
+    minWidth: 130,
+    slot: "sessionId"
+  },
+  {
+    label: t("chatSession.agentId"),
+    prop: "agent_id",
+    width: 110,
+    formatter: ({ agent_id }) => agent_id ?? "-"
+  },
+  {
+    label: t("chatSession.messageCount"),
+    prop: "message_count",
+    width: 120
+  },
+  {
+    label: t("form.createdAt"),
+    prop: "created_at",
+    width: 165,
+    formatter: ({ created_at }) => formatDateTime(created_at)
+  },
+  {
+    label: t("form.updatedAt"),
+    prop: "updated_at",
+    width: 165,
+    formatter: ({ updated_at }) => formatDateTime(updated_at)
+  },
+  {
+    label: t("labels.operation"),
+    prop: "operation",
+    width: 190,
+    fixed: "right",
+    slot: "operation",
+    hide: !hasAuth("conversation:list") && !hasAuth("conversation:delete")
+  }
+];
 
 function formatUserLabel(user: (typeof userOptions.value)[number]) {
   const displayName = user.nickname?.trim() || user.username;
@@ -48,7 +105,10 @@ function openMessages(row: (typeof dataList.value)[number]) {
 
 <template>
   <div class="main">
-    <el-form :inline="true" class="search-form">
+    <el-form
+      :inline="true"
+      class="search-form bg-bg_color w-[99/100] overflow-auto pl-8 pt-3"
+    >
       <el-form-item :label="t('chatSession.user')">
         <el-select
           v-model="userId"
@@ -88,116 +148,63 @@ function openMessages(row: (typeof dataList.value)[number]) {
       </el-form-item>
     </el-form>
 
-    <div class="table-header">
-      <span class="table-title">{{ t("chatSession.tableTitle") }}</span>
-      <el-button
-        :icon="Refresh"
-        circle
-        :title="t('buttons.refresh')"
-        :disabled="!userId"
-        :loading="loading"
-        @click="onSearch"
-      />
-    </div>
-
-    <el-table
-      v-loading="loading"
-      :data="dataList"
-      :empty-text="emptyText"
-      border
-      row-key="session_id"
+    <PureTableBar
+      :title="t('chatSession.tableTitle')"
+      :columns="columns"
+      @refresh="onSearch"
     >
-      <el-table-column
-        :label="t('chatSession.title')"
-        prop="title"
-        min-width="180"
-        show-overflow-tooltip
-      >
-        <template #default="{ row }">{{ row.title || "-" }}</template>
-      </el-table-column>
-      <el-table-column
-        :label="t('chatSession.sessionId')"
-        prop="session_id"
-        width="110"
-        show-overflow-tooltip
-      />
-      <el-table-column
-        :label="t('chatSession.agentId')"
-        prop="agent_id"
-        width="100"
-      >
-        <template #default="{ row }">{{ row.agent_id ?? "-" }}</template>
-      </el-table-column>
-      <el-table-column
-        :label="t('chatSession.messageCount')"
-        prop="message_count"
-        width="110"
-      />
-      <el-table-column
-        :label="t('form.createdAt')"
-        prop="created_at"
-        width="150"
-        :formatter="(_row, _col, val) => formatDateTime(val)"
-      />
-      <el-table-column
-        :label="t('form.updatedAt')"
-        prop="updated_at"
-        width="150"
-        :formatter="(_row, _col, val) => formatDateTime(val)"
-      />
-      <el-table-column
-        v-if="hasAuth('conversation:list') || hasAuth('conversation:delete')"
-        :label="t('labels.operation')"
-        width="180"
-        fixed="right"
-      >
-        <template #default="{ row }">
-          <el-button
-            v-auth="'conversation:list'"
-            type="primary"
-            link
-            @click="openMessages(row)"
-          >
-            {{ t("chatSession.viewMessages") }}
-          </el-button>
-          <el-button
-            v-auth="'conversation:delete'"
-            type="danger"
-            link
-            @click="handleDelete(row)"
-          >
-            {{ t("buttons.delete") }}
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <div class="pagination-bar">
-      <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.pageSize"
-        :total="pagination.total"
-        :page-sizes="[10, 20, 50, 100]"
-        background
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
-    </div>
+      <template #default="{ size, dynamicColumns }">
+        <pure-table
+          row-key="session_id"
+          :data="dataList"
+          :columns="dynamicColumns"
+          :size="size"
+          :loading="loading"
+          :empty-text="emptyText"
+          :pagination="tablePagination"
+          :paginationSmall="true"
+          adaptive
+          align-whole="center"
+          @page-size-change="handleSizeChange"
+          @page-current-change="handleCurrentChange"
+        >
+          <template #title="{ row }">
+            <div class="session-title">
+              <span class="font-medium">{{ row.title || "-" }}</span>
+            </div>
+          </template>
+          <template #sessionId="{ row }">
+            <code class="text-sm">{{ row.session_id }}</code>
+          </template>
+          <template #operation="{ row }">
+            <el-button
+              v-auth="'conversation:list'"
+              type="primary"
+              link
+              :icon="View"
+              @click="openMessages(row)"
+            >
+              {{ t("chatSession.viewMessages") }}
+            </el-button>
+            <el-button
+              v-auth="'conversation:delete'"
+              type="danger"
+              link
+              :icon="Delete"
+              @click="handleDelete(row)"
+            >
+              {{ t("buttons.delete") }}
+            </el-button>
+          </template>
+        </pure-table>
+      </template>
+    </PureTableBar>
 
     <MessageDialog ref="messageDialogRef" />
   </div>
 </template>
 
 <style scoped>
-.main {
-  padding: 16px;
-}
-
-.search-form {
-  margin-bottom: 12px;
-}
-
 .search-form :deep(.el-form-item) {
   margin-bottom: 12px;
 }
@@ -213,22 +220,11 @@ function openMessages(row: (typeof dataList.value)[number]) {
   font-size: 12px;
 }
 
-.table-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.table-title {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.pagination-bar {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
+.session-title {
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (width <= 640px) {
@@ -239,11 +235,6 @@ function openMessages(row: (typeof dataList.value)[number]) {
   .search-form :deep(.el-form-item:first-child),
   .search-form :deep(.el-form-item:first-child .el-form-item__content) {
     width: 100%;
-  }
-
-  .pagination-bar {
-    justify-content: flex-start;
-    overflow-x: auto;
   }
 }
 </style>
