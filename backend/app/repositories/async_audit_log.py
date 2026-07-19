@@ -6,9 +6,10 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 
 from app.infra.db.async_base import AsyncBaseDatabase
 from app.infra.db.database import AuditLog
@@ -60,23 +61,47 @@ class AsyncAuditLogDatabase(AsyncBaseDatabase):
         *,
         page: int = 1,
         page_size: int = 20,
+        keyword: Optional[str] = None,
         request_id: Optional[str] = None,
         user_id: Optional[int] = None,
+        username: Optional[str] = None,
         target_type: Optional[str] = None,
+        target_id: Optional[str] = None,
         action: Optional[str] = None,
         status: Optional[str] = None,
+        created_from: Optional[datetime] = None,
+        created_to: Optional[datetime] = None,
     ) -> tuple[list[AuditLog], int]:
         filters = []
+        if keyword:
+            pattern = f"%{keyword.strip()}%"
+            filters.append(
+                or_(
+                    AuditLog.request_id.ilike(pattern),
+                    AuditLog.username.ilike(pattern),
+                    AuditLog.target_type.ilike(pattern),
+                    AuditLog.target_id.ilike(pattern),
+                    AuditLog.description.ilike(pattern),
+                )
+            )
         if request_id:
             filters.append(AuditLog.request_id == request_id)
         if user_id is not None:
             filters.append(AuditLog.user_id == user_id)
+        if username:
+            filters.append(AuditLog.username.ilike(f"%{username.strip()}%"))
         if target_type:
             filters.append(AuditLog.target_type == target_type)
+        if target_id:
+            filters.append(AuditLog.target_id == target_id)
         if action:
             filters.append(AuditLog.action == action)
         if status:
             filters.append(AuditLog.status == status)
+        if created_from:
+            filters.append(AuditLog.created_at >= created_from)
+        if created_to:
+            filters.append(AuditLog.created_at <= created_to)
 
         async with self.get_session() as session:
             total = await session.scalar(

@@ -119,6 +119,9 @@ menus:
     embedding: 嵌入模型
     prompt: 提示词
     system_setting: 基础设置
+  security:
+    default: 系统安全
+    auditLog: 审计日志
 
 status:
   pureLoad: 加载中...
@@ -700,3 +703,29 @@ systemSetting:
   invalidInt: 请输入有效的整数
   invalidFloat: 请输入有效的数字
   invalidJson: 请输入合法的 JSON
+
+auditLog:
+  title: 审计日志
+  detailTitle: 审计日志详情
+  keyword: 关键词
+  keywordPlaceholder: 搜索请求 ID、用户、目标或说明
+  requestId: 请求 ID
+  user: 操作用户
+  anonymous: 未知用户
+  ipAddress: IP 地址
+  target: 操作目标
+  targetType: 目标类型
+  targetId: 目标 ID
+  action: 操作类型
+  allActions: 全部操作
+  status: 执行状态
+  allStatuses: 全部状态
+  success: 成功
+  failure: 失败
+  timeRange: 时间范围
+  startTime: 开始时间
+  endTime: 结束时间
+  description: 操作说明
+  beforeValue: 修改前数据
+  afterValue: 修改后数据
+  noSnapshot: 无快照

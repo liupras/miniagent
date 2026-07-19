@@ -178,3 +178,6 @@ systemsetting:
   not_found: "System setting '{id}' does not exist"
   readonly: "System setting '{id}' is read-only"
   invalid_value: "System setting '{id}' has an invalid value"
+
+auditlog:
+  not_found: "Audit log '{id}' does not exist"

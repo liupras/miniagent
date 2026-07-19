@@ -245,6 +245,9 @@ app.include_router(admin_prompt_router,prefix="/api/v1/admin/prompts", tags=["Ad
 from app.api.admin.system_setting import router as admin_system_setting_router
 app.include_router(admin_system_setting_router,prefix="/api/v1/admin/system-settings", tags=["Admin - System Setting"])
 
+from app.api.admin.audit_log import router as admin_audit_log_router
+app.include_router(admin_audit_log_router,prefix="/api/v1/admin/audit-logs", tags=["Admin - Audit Log"])
+
 from app.api.user.agent import router as agent_router
 app.include_router(agent_router,prefix="/api/v1/agent", tags=["Agent"])
 

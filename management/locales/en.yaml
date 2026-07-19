@@ -698,3 +698,29 @@ systemSetting:
   invalidInt: Enter a valid integer
   invalidFloat: Enter a valid number
   invalidJson: Enter valid JSON
+
+auditLog:
+  title: Audit Logs
+  detailTitle: Audit Log Details
+  keyword: Keyword
+  keywordPlaceholder: Search request ID, user, target, or description
+  requestId: Request ID
+  user: User
+  anonymous: Unknown user
+  ipAddress: IP Address
+  target: Target
+  targetType: Target Type
+  targetId: Target ID
+  action: Action
+  allActions: All actions
+  status: Status
+  allStatuses: All statuses
+  success: Success
+  failure: Failure
+  timeRange: Time Range
+  startTime: Start time
+  endTime: End time
+  description: Description
+  beforeValue: Before
+  afterValue: After
+  noSnapshot: No snapshot

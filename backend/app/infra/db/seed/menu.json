@@ -533,5 +533,23 @@
     "name": "system_setting:edit",
     "title_key": "buttons.edit",
     "menu_type": "button"
+  },
+  {
+    "id": 6,
+    "parent_id": null,
+    "name": "security:default",
+    "title_key": "menus.security.default",
+    "path": "/security",
+    "icon": "ep:coffee-cup",
+    "sort_order": 5
+  },
+  {
+    "id": 61,
+    "parent_id": 6,
+    "name": "audit_log:list",
+    "title_key": "menus.security.auditLog",
+    "path": "/security/audit_log",
+    "component": "security/audit_log/index",
+    "sort_order": 61
   }
 ]

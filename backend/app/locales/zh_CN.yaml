@@ -178,3 +178,6 @@ systemsetting:
   not_found: "系统设置 '{id}' 不存在"
   readonly: "系统设置 '{id}' 为只读配置"
   invalid_value: "系统设置 '{id}' 的值格式不正确"
+
+auditlog:
+  not_found: "审计日志 '{id}' 不存在"

@@ -55,6 +55,7 @@ from app.services.admin.knowledge_base import KnowledgeBaseService
 from app.services.admin.embedding import EmbeddingService
 from app.services.admin.system_setting import SystemSettingService
 from app.services.admin.prompt import PromptService
+from app.services.admin.audit_log import AuditLogService
 
 from app.runtime.conversation.service_conversation import ConversationService
 
@@ -162,6 +163,7 @@ class ServiceContainer:
         self.embedding_service = EmbeddingService(self)
         self.setting_service = SystemSettingService(db=self.setting_db)
         self.prompt_service = PromptService(db=self.prompt_db)
+        self.audit_log_service = AuditLogService(db=self.audit_log_db)
         
 
     async def start(self):       
