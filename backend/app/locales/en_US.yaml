@@ -173,3 +173,8 @@ agent_runner:
 prompt:
   not_found: "{entity} '{id}' does not exist"
   already_exists: "{entity} '{id}' already exists"
+
+systemsetting:
+  not_found: "System setting '{id}' does not exist"
+  readonly: "System setting '{id}' is read-only"
+  invalid_value: "System setting '{id}' has an invalid value"

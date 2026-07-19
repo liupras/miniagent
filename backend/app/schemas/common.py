@@ -6,7 +6,13 @@
 
 from typing import Any, Generic, List, Optional, TypeVar
 from pydantic import BaseModel, Field
-from app.core.i18n.i18n import t
+
+
+def _translate(key: str, **kwargs: Any) -> str:
+    """Import i18n lazily so shared schemas do not create an import cycle."""
+    from app.core.i18n.i18n import t
+
+    return t(key, **kwargs)
 
 # T can be any Pydantic output model (LLMOut, AgentOut, etc.).
 T = TypeVar("T")
@@ -32,7 +38,7 @@ class ApiResponse(BaseModel, Generic[T]):
 
     def model_post_init(self, __context: Any) -> None:
         if self.message == "success":
-            object.__setattr__(self, "message", t("common.success"))
+            object.__setattr__(self, "message", _translate("common.success"))
     
 
 class BaseDomainError(Exception):
@@ -50,7 +56,11 @@ class BaseDomainError(Exception):
         return f"{prefix}.{kind}"
     
     def to_detail(self) -> str:
-        return t(self.i18n_key(self.error_key), id=self.entity_id, entity=self.entity_name)
+        return _translate(
+            self.i18n_key(self.error_key),
+            id=self.entity_id,
+            entity=self.entity_name,
+        )
 
 class NotFoundError(BaseDomainError):
     error_key = "not_found"
@@ -73,3 +83,15 @@ class BadRequestError(BaseDomainError):
     
     def __init__(self, entity_name: str, entity_id: Any):
         super().__init__(entity_name, entity_id)
+
+class ReadOnlyError(BaseDomainError):
+    error_key = "readonly"
+
+    def __init__(self, entity_name: str, entity_id: Any):
+        super().__init__(entity_name, entity_id, "is read-only")
+
+class InvalidValueError(BaseDomainError):
+    error_key = "invalid_value"
+
+    def __init__(self, entity_name: str, entity_id: Any):
+        super().__init__(entity_name, entity_id, "has an invalid value")

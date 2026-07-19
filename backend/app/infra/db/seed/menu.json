@@ -517,5 +517,21 @@
     "name": "prompt:delete",
     "title_key": "buttons.delete",
     "menu_type": "button"
+  },
+  {
+    "id": 56,
+    "parent_id": 5,
+    "name": "system_setting:list",
+    "title_key": "menus.setting.system_setting",
+    "path": "/setting/system_setting",
+    "component": "setting/system_setting/index",
+    "sort_order": 56
+  },
+  {
+    "id": 562,
+    "parent_id": 56,
+    "name": "system_setting:edit",
+    "title_key": "buttons.edit",
+    "menu_type": "button"
   }
 ]

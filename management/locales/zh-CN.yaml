@@ -118,6 +118,7 @@ menus:
     llm: 大模型
     embedding: 嵌入模型
     prompt: 提示词
+    system_setting: 基础设置
 
 status:
   pureLoad: 加载中...
@@ -682,3 +683,20 @@ promptManagement:
   copy: 复制内容
   copySuccess: Prompt 内容已复制
   copyFailed: 复制失败，请手动选择内容复制
+
+systemSetting:
+  title: 系统设置
+  editTitle: 编辑系统设置
+  key: 配置键
+  value: 配置值
+  valuePlaceholder: 请输入配置值
+  type: 值类型
+  group: 分组
+  allGroups: 全部分组
+  description: 配置说明
+  access: 编辑权限
+  readonly: 只读
+  editable: 可编辑
+  invalidInt: 请输入有效的整数
+  invalidFloat: 请输入有效的数字
+  invalidJson: 请输入合法的 JSON

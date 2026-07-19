@@ -319,8 +319,7 @@ class KnowledgeBase(Base):
 
     domain = relationship("Domain", back_populates="knowledge_bases")    
     documents = relationship("Document", back_populates="knowledge_base", cascade="all, delete-orphan", passive_deletes=True)
-    embedding = relationship("Embedding", back_populates="knowledge_bases")
-    tasks = relationship("Task", back_populates="knowledge_base", cascade="all, delete-orphan", passive_deletes=True)
+    embedding = relationship("Embedding", back_populates="knowledge_bases")    
     strategy_configs = relationship("StrategyConfig", back_populates="knowledge_base", cascade="all, delete", passive_deletes=True)
     llm = relationship("LLM", back_populates="knowledge_bases")
 
@@ -602,34 +601,6 @@ class AgentToolRelation(Base):
     __table_args__ = (
         UniqueConstraint("agent_id", "tool_id", name="uq_agent_tool"),
     )
-
-class Task(Base):
-    __tablename__ = 'tasks'
-
-    task_id = Column(String(100), primary_key=True)
-
-    kb_id = Column(Integer, ForeignKey('knowledge_bases.id', ondelete='CASCADE'), nullable=False)
-
-    task_type = Column(String(50), nullable=False)
-    status = Column(String(50), default='pending', comment="Task status: pending, processing, completed, failed")
-    total_items = Column(Integer, default=0)
-    processed_items = Column(Integer, default=0)
-    progress = Column(Float, default=0.0)
-
-    error_message = Column(Text)
-
-    created_at = Column(DateTime, default=lambda: datetime.now())
-    updated_at = Column(DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now())
-
-    __table_args__ = (
-        Index('idx_task_status', 'status'),
-        Index('idx_task_kb_id', 'kb_id'),
-    )
-
-    knowledge_base = relationship("KnowledgeBase", back_populates="tasks")
-
-    def __repr__(self):
-        return f"<Task(task_id='{self.task_id}', status='{self.status}')>"
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

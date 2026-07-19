@@ -173,3 +173,8 @@ agent_runner:
 prompt:
   not_found: "{entity} '{id}' 不存在"
   already_exists: "{entity} '{id}' 已存在"
+
+systemsetting:
+  not_found: "系统设置 '{id}' 不存在"
+  readonly: "系统设置 '{id}' 为只读配置"
+  invalid_value: "系统设置 '{id}' 的值格式不正确"

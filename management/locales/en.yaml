@@ -111,12 +111,13 @@ menus:
     role: Role
     menu: Menu
   setting:
-    default: Settings
+    default: Settings    
     objectCache: Object Cache
     valueCache: Value Cache
     llm: LLM
     embedding: Embedding
     prompt: Prompt
+    system_setting: System
 
 status:
   pureLoad: Loading...
@@ -680,3 +681,20 @@ promptManagement:
   copy: Copy Content
   copySuccess: Prompt content copied
   copyFailed: Copy failed; select and copy the content manually
+
+systemSetting:
+  title: System Settings
+  editTitle: Edit System Setting
+  key: Setting Key
+  value: Setting Value
+  valuePlaceholder: Enter a setting value
+  type: Value Type
+  group: Group
+  allGroups: All groups
+  description: Description
+  access: Edit Access
+  readonly: Read-only
+  editable: Editable
+  invalidInt: Enter a valid integer
+  invalidFloat: Enter a valid number
+  invalidJson: Enter valid JSON

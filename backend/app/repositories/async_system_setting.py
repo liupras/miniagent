@@ -122,7 +122,7 @@ class AsyncSystemSettingDatabase(AsyncBaseDatabase):
         """
         Convenience wrapper to update system_language.
         """
-        return await self.set("system_language", lang.strip().lower())
+        return await self.set("system_language", lang.strip())
 
     async def set_many(self, updates: Dict[str, str]) -> Dict[str, bool]:
         """

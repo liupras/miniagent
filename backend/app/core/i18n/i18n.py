@@ -5,21 +5,25 @@
 # @description: I18n
 
 from pathlib import Path
+from typing import TYPE_CHECKING
+
 import yaml
 
 from loguru import logger
-from app.services.admin.system_setting import SystemSettingService
+
+if TYPE_CHECKING:
+    from app.services.admin.system_setting import SystemSettingService
 
 translations = {}
 
 class I18n:
-    def __init__(self, setting_service:SystemSettingService):
+    def __init__(self, setting_service: "SystemSettingService"):
 
         self._setting_service = setting_service
         self._language = "zh_CN"
 
     @classmethod
-    async def create(cls, setting_service:SystemSettingService):
+    async def create(cls, setting_service: "SystemSettingService"):
         instance = cls(setting_service)
         await instance.initialize()
         return instance

@@ -213,6 +213,9 @@ app.include_router(admin_conversation_router,prefix="/api/v1/admin/conversation"
 from app.api.admin.prompt import router as admin_prompt_router
 app.include_router(admin_prompt_router,prefix="/api/v1/admin/prompts", tags=["Admin - Prompt"])
 
+from app.api.admin.system_setting import router as admin_system_setting_router
+app.include_router(admin_system_setting_router,prefix="/api/v1/admin/system-settings", tags=["Admin - System Setting"])
+
 from app.api.user.agent import router as agent_router
 app.include_router(agent_router,prefix="/api/v1/agent", tags=["Agent"])
 
