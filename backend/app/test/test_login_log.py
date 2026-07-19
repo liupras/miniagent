@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.infra.db.database import LoginLog
 from app.repositories.async_login_log import AsyncLoginLogDatabase
+from app.services.admin.login_log import LoginLogAdminService
 from app.services.auth.login_log import LoginLogService
 
 
@@ -19,8 +20,10 @@ async def _exercise_login_log():
     async with engine.begin() as connection:
         await connection.run_sync(LoginLog.__table__.create)
 
-    service = LoginLogService(AsyncLoginLogDatabase(engine, session_factory))
-    await service.record(
+    repository = AsyncLoginLogDatabase(engine, session_factory)
+    recorder = LoginLogService(repository)
+    admin_service = LoginLogAdminService(repository)
+    login_row = await recorder.record(
         request_id=str(uuid4()),
         event_type="LOGIN",
         success=True,
@@ -28,7 +31,7 @@ async def _exercise_login_log():
         ip_address="127.0.0.1",
         user_agent="pytest",
     )
-    await service.record(
+    await recorder.record(
         request_id=str(uuid4()),
         event_type="REFRESH_TOKEN",
         success=False,
@@ -47,5 +50,16 @@ async def _exercise_login_log():
     assert rows[1].event_type == "REFRESH_TOKEN"
     assert rows[1].success is False
     assert rows[1].failure_reason == "invalid_refresh_token"
+
+    failed_refreshes = await admin_service.list_logs(
+        event_type="REFRESH_TOKEN",
+        success=False,
+    )
+    assert failed_refreshes.total == 1
+    assert failed_refreshes.data[0].failure_reason == "invalid_refresh_token"
+
+    detail = await admin_service.get(login_row.id)
+    assert detail.event_type == "LOGIN"
+    assert detail.username == "admin"
 
     await engine.dispose()

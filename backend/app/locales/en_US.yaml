@@ -181,3 +181,6 @@ systemsetting:
 
 auditlog:
   not_found: "Audit log '{id}' does not exist"
+
+loginlog:
+  not_found: "Login log '{id}' does not exist"

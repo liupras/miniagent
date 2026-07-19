@@ -286,6 +286,9 @@ app.include_router(admin_system_setting_router,prefix="/api/v1/admin/system-sett
 from app.api.admin.audit_log import router as admin_audit_log_router
 app.include_router(admin_audit_log_router,prefix="/api/v1/admin/audit-logs", tags=["Admin - Audit Log"])
 
+from app.api.admin.login_log import router as admin_login_log_router
+app.include_router(admin_login_log_router,prefix="/api/v1/admin/login-logs", tags=["Admin - Login Log"])
+
 from app.api.user.agent import router as agent_router
 app.include_router(agent_router,prefix="/api/v1/agent", tags=["Agent"])
 

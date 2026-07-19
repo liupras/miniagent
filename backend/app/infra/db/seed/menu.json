@@ -546,10 +546,19 @@
   {
     "id": 61,
     "parent_id": 6,
+    "name": "login_log:list",
+    "title_key": "menus.security.loginLog",
+    "path": "/security/login_log",
+    "component": "security/login_log/index",
+    "sort_order": 61
+  },
+  {
+    "id": 62,
+    "parent_id": 6,
     "name": "audit_log:list",
     "title_key": "menus.security.auditLog",
     "path": "/security/audit_log",
     "component": "security/audit_log/index",
-    "sort_order": 61
+    "sort_order": 62
   }
 ]

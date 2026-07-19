@@ -181,3 +181,6 @@ systemsetting:
 
 auditlog:
   not_found: "审计日志 '{id}' 不存在"
+
+loginlog:
+  not_found: "登录日志 '{id}' 不存在"

@@ -118,6 +118,10 @@ menus:
     embedding: Embedding
     prompt: Prompt
     system_setting: System
+  security:
+    default: Security
+    auditLog: Audit Logs
+    loginLog: Login Logs
 
 status:
   pureLoad: Loading...
@@ -724,3 +728,26 @@ auditLog:
   beforeValue: Before
   afterValue: After
   noSnapshot: No snapshot
+
+loginLog:
+  title: Login Logs
+  detailTitle: Login Log Details
+  keyword: Keyword
+  keywordPlaceholder: Search request ID, user, IP, client, or failure reason
+  requestId: Request ID
+  user: User
+  anonymous: Unknown user
+  ipAddress: IP Address
+  userAgent: User Agent
+  eventType: Event Type
+  allEvents: All events
+  login: Login
+  refreshToken: Refresh Token
+  status: Login Status
+  allStatuses: All statuses
+  success: Success
+  failure: Failure
+  failureReason: Failure Reason
+  timeRange: Time Range
+  startTime: Start time
+  endTime: End time

@@ -122,6 +122,7 @@ menus:
   security:
     default: 系统安全
     auditLog: 审计日志
+    loginLog: 登录日志
 
 status:
   pureLoad: 加载中...
@@ -729,3 +730,26 @@ auditLog:
   beforeValue: 修改前数据
   afterValue: 修改后数据
   noSnapshot: 无快照
+
+loginLog:
+  title: 登录日志
+  detailTitle: 登录日志详情
+  keyword: 关键词
+  keywordPlaceholder: 搜索请求 ID、用户、IP、客户端或失败原因
+  requestId: 请求 ID
+  user: 用户
+  anonymous: 未知用户
+  ipAddress: IP 地址
+  userAgent: 客户端信息
+  eventType: 事件类型
+  allEvents: 全部事件
+  login: 登录
+  refreshToken: 刷新 Token
+  status: 登录状态
+  allStatuses: 全部状态
+  success: 成功
+  failure: 失败
+  failureReason: 失败原因
+  timeRange: 时间范围
+  startTime: 开始时间
+  endTime: 结束时间
