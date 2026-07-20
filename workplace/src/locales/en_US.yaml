@@ -3,6 +3,9 @@ common:
   theme: Theme
   logout: Log out
   user: User
+  confirm: Confirm
+  cancel: Cancel
+  delete: Delete
 languages:
   zh_CN: 简体中文
   en_US: English
@@ -35,3 +38,40 @@ login:
 home:
   logoLabel: MiniAgent Workplace home
   contentLabel: Workplace content
+agents:
+  select: Current agent
+  empty: No agents available
+  emptyTip: Ask an administrator to assign an agent to your account before starting a chat.
+sessions:
+  eyebrow: HISTORY
+  title: Conversations
+  new: New chat
+  search: Search conversation titles
+  empty: No conversations yet
+  untitled: New conversation
+  unknownAgent: Unknown agent
+  rename: Rename conversation
+  renameMessage: Enter a new conversation title
+  titleRequired: A conversation title is required
+  renamed: Title updated
+  renameFailed: Failed to update the title
+  delete: Delete conversation
+  deleteMessage: Delete “{title}”? Its messages will also be deleted.
+  deleted: Conversation deleted
+  deleteFailed: Failed to delete the conversation
+chat:
+  welcome: Hello, {name}
+  welcomeTip: Select an agent and enter a question to start a new conversation.
+  placeholder: Message your agent…
+  send: Send
+  stop: Stop generating
+  keyboardTip: Enter to send, Shift + Enter for a new line
+  loading: Loading conversation…
+  usingTools: "Using tools: {tools}"
+  emptyResponse: The agent returned no content.
+  stopped: Generation stopped.
+  errors:
+    loadAgents: Failed to load available agents
+    loadSessions: Failed to load conversations
+    loadMessages: Failed to load conversation messages
+    send: Failed to send the message. Please try again.

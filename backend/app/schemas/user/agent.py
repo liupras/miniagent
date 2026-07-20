@@ -8,12 +8,16 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 class AgentRequest(BaseModel):
-    agent_id: Optional[int] = Field(default=1, description="The Agent's unique ID (either the agent_name or the agent's unique ID)")
-    agent_name: Optional[str] = Field(default="general_assistant", description="The name of the agent (either the agent_id or the agent name)")
+    agent_id: Optional[int] = Field(default=None, description="The Agent's unique ID")
+    agent_name: Optional[str] = Field(default=None, description="The Agent's name")
     query: str = Field(..., description="User-input test questions", examples=["你好，请问你能帮我做什么？"])
     history: Optional[List[Dict[str, str]]] = Field(
-        default=[], 
+        default_factory=list,
         description="Explicitly passed historical dialogue context, in the format: [{'role': 'user', 'content': 'hi'}]"
     )
-    user_id: Optional[str] = Field(default=2, description="User ID used for persistent memory (optional)")
-    session_id: Optional[int] = Field(default=1, description="Session ID used for persistent memory (optional)")
+    user_id: Optional[str] = Field(default=None, description="Ignored for authenticated user calls")
+    session_id: Optional[int] = Field(default=None, description="Existing chat session ID")
+
+
+class RenameSessionRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)

@@ -3,6 +3,9 @@ common:
   theme: 主题色
   logout: 退出登录
   user: 用户
+  confirm: 确定
+  cancel: 取消
+  delete: 删除
 languages:
   zh_CN: 简体中文
   en_US: English
@@ -35,3 +38,40 @@ login:
 home:
   logoLabel: MiniAgent Workplace 首页
   contentLabel: 工作台内容
+agents:
+  select: 当前智能体
+  empty: 暂无可用智能体
+  emptyTip: 请联系管理员为你授权智能体后再开始对话。
+sessions:
+  eyebrow: HISTORY
+  title: 会话记录
+  new: 新建会话
+  search: 搜索会话标题
+  empty: 暂无会话
+  untitled: 新会话
+  unknownAgent: 未知智能体
+  rename: 修改标题
+  renameMessage: 请输入新的会话标题
+  titleRequired: 会话标题不能为空
+  renamed: 标题已更新
+  renameFailed: 修改标题失败
+  delete: 删除会话
+  deleteMessage: 确定删除“{title}”吗？该会话中的消息也会被删除。
+  deleted: 会话已删除
+  deleteFailed: 删除会话失败
+chat:
+  welcome: 你好，{name}
+  welcomeTip: 选择智能体后，输入问题开始一段新对话。
+  placeholder: 给智能体发送消息…
+  send: 发送
+  stop: 停止生成
+  keyboardTip: Enter 发送，Shift + Enter 换行
+  loading: 正在加载会话…
+  usingTools: 正在使用工具：{tools}
+  emptyResponse: 智能体没有返回内容。
+  stopped: 已停止生成。
+  errors:
+    loadAgents: 加载可用智能体失败
+    loadSessions: 加载会话列表失败
+    loadMessages: 加载会话消息失败
+    send: 消息发送失败，请稍后重试

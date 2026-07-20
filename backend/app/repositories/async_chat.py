@@ -7,7 +7,8 @@
 from datetime import datetime
 from typing import List, Dict, Optional,Tuple
 
-from sqlalchemy import delete, select, func
+from sqlalchemy import delete, select, func, update
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infra.db.async_base import AsyncBaseDatabase
@@ -16,6 +17,135 @@ from app.infra.db.database import ChatSession, ChatMessage
 from app.runtime.conversation.title_generator import title_generator
 
 class AsyncChatDatabase(AsyncBaseDatabase):
+
+    async def create_user_session(self, user_id: int, agent_id: int) -> ChatSession:
+        async with self.get_session() as session:
+            chat_session = ChatSession(
+                user_id=user_id,
+                agent_id=agent_id,
+                created_at=datetime.now(),
+                updated_at=datetime.now(),
+            )
+            session.add(chat_session)
+            await session.flush()
+            await session.refresh(chat_session)
+            return chat_session
+
+    async def get_user_session(
+        self,
+        session_id: int,
+        user_id: int,
+    ) -> Optional[ChatSession]:
+        async with self.get_session() as session:
+            stmt = (
+                select(ChatSession)
+                .options(selectinload(ChatSession.agent))
+                .where(
+                    ChatSession.id == session_id,
+                    ChatSession.user_id == user_id,
+                )
+            )
+            return (await session.execute(stmt)).scalar_one_or_none()
+
+    async def list_user_sessions(
+        self,
+        user_id: int,
+        page: int = 1,
+        page_size: int = 20,
+        query: Optional[str] = None,
+    ) -> Tuple[int, List[ChatSession]]:
+        filters = [ChatSession.user_id == user_id]
+        if query:
+            filters.append(ChatSession.title.ilike(f"%{query.strip()}%"))
+
+        async with self.get_session() as session:
+            count_stmt = select(func.count(ChatSession.id)).where(*filters)
+            total = (await session.execute(count_stmt)).scalar_one()
+            offset = (page - 1) * page_size
+            stmt = (
+                select(ChatSession)
+                .options(selectinload(ChatSession.agent))
+                .where(*filters)
+                .order_by(ChatSession.updated_at.desc(), ChatSession.id.desc())
+                .offset(offset)
+                .limit(page_size)
+            )
+            items = (await session.execute(stmt)).scalars().all()
+            return total, list(items)
+
+    async def list_user_messages(
+        self,
+        session_id: int,
+        user_id: int,
+        page: int = 1,
+        page_size: int = 200,
+    ) -> Tuple[int, List[ChatMessage]]:
+        ownership = (
+            select(ChatSession.id)
+            .where(
+                ChatSession.id == session_id,
+                ChatSession.user_id == user_id,
+            )
+            .exists()
+        )
+        async with self.get_session() as session:
+            filters = [ChatMessage.session_id == session_id, ownership]
+            total = (
+                await session.execute(
+                    select(func.count(ChatMessage.id)).where(*filters)
+                )
+            ).scalar_one()
+            offset = (page - 1) * page_size
+            stmt = (
+                select(ChatMessage)
+                .where(*filters)
+                .order_by(ChatMessage.created_at.asc(), ChatMessage.id.asc())
+                .offset(offset)
+                .limit(page_size)
+            )
+            items = (await session.execute(stmt)).scalars().all()
+            return total, list(items)
+
+    async def rename_user_session(
+        self,
+        session_id: int,
+        user_id: int,
+        title: str,
+    ) -> bool:
+        async with self.get_session() as session:
+            result = await session.execute(
+                update(ChatSession)
+                .where(
+                    ChatSession.id == session_id,
+                    ChatSession.user_id == user_id,
+                )
+                .values(title=title, updated_at=datetime.now())
+            )
+            return result.rowcount > 0
+
+    async def delete_user_session(self, session_id: int, user_id: int) -> bool:
+        async with self.get_session() as session:
+            owned_session = (
+                select(ChatSession.id)
+                .where(
+                    ChatSession.id == session_id,
+                    ChatSession.user_id == user_id,
+                )
+                .exists()
+            )
+            await session.execute(
+                delete(ChatMessage).where(
+                    ChatMessage.session_id == session_id,
+                    owned_session,
+                )
+            )
+            result = await session.execute(
+                delete(ChatSession).where(
+                    ChatSession.id == session_id,
+                    ChatSession.user_id == user_id,
+                )
+            )
+            return result.rowcount > 0
 
     async def _get_or_create_session(self, session: AsyncSession, user_id: str, agent_id:int,session_id: Optional[int]) -> ChatSession:
         """Internal asynchronous method: Get or create a chat session"""

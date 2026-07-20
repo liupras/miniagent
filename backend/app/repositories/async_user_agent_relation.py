@@ -7,9 +7,41 @@
 from sqlalchemy import delete, select
 
 from ..infra.db.async_base import AsyncBaseDatabase
-from ..infra.db.database import User, UserAgentRelation
+from ..infra.db.database import Agent, User, UserAgentRelation
 
 class AsyncAgentUserRelationDatabase(AsyncBaseDatabase):
+
+    async def get_user_agents(self, user_id: int) -> list[Agent]:
+        """Return active agents explicitly assigned to a user."""
+        async with self.get_session() as session:
+            stmt = (
+                select(Agent)
+                .join(
+                    UserAgentRelation,
+                    Agent.id == UserAgentRelation.agent_id,
+                )
+                .where(
+                    UserAgentRelation.user_id == user_id,
+                    Agent.is_active.is_(True),
+                )
+                .order_by(Agent.name.asc())
+            )
+            result = await session.execute(stmt)
+            return list(result.scalars().all())
+
+    async def user_has_agent(self, user_id: int, agent_id: int) -> bool:
+        """Check whether a user is allowed to use an active agent."""
+        async with self.get_session() as session:
+            stmt = (
+                select(UserAgentRelation.id)
+                .join(Agent, Agent.id == UserAgentRelation.agent_id)
+                .where(
+                    UserAgentRelation.user_id == user_id,
+                    UserAgentRelation.agent_id == agent_id,
+                    Agent.is_active.is_(True),
+                )
+            )
+            return (await session.execute(stmt)).scalar_one_or_none() is not None
 
     async def get_agent_users(
         self,
@@ -53,4 +85,3 @@ class AsyncAgentUserRelationDatabase(AsyncBaseDatabase):
                     )
                 )
 
-            

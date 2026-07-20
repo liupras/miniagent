@@ -45,7 +45,11 @@ agent:
   not_found_with_id: "Agent {id} 不存在"
   not_found_with_name: "Agent '{name}' 不存在"
   inactive: "Agent '{name}' (id={id}) 已停用"
-  input_invalid: "必须提供“agent_id”或“agent_name”之一。"
+  input_invalid: "必须提供“agent_id”或“agent_name”之一"
+  unauthorized: 您没有权限使用此智能体
+  session_not_found: 未找到会话
+  session_not_belong: 聊天会话属于另一个智能体
+  title_not_empty: 标题不能为空
 
 tool:
   not_found: 技能不存在

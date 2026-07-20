@@ -161,6 +161,51 @@ class ConversationService:
         """Get a chat session by session ID."""
         return await self._chat_db.get_session_by_id(session_id)
 
+    async def create_user_session(self, user_id: int, agent_id: int) -> ChatSession:
+        return await self._chat_db.create_user_session(user_id, agent_id)
+
+    async def get_user_session(
+        self,
+        session_id: int,
+        user_id: int,
+    ) -> Optional[ChatSession]:
+        return await self._chat_db.get_user_session(session_id, user_id)
+
+    async def list_user_sessions(
+        self,
+        user_id: int,
+        page: int = 1,
+        page_size: int = 20,
+        query: Optional[str] = None,
+    ) -> Tuple[int, List[ChatSession]]:
+        return await self._chat_db.list_user_sessions(
+            user_id, page, page_size, query
+        )
+
+    async def list_user_messages(
+        self,
+        session_id: int,
+        user_id: int,
+        page: int = 1,
+        page_size: int = 200,
+    ) -> Tuple[int, List[ChatMessage]]:
+        return await self._chat_db.list_user_messages(
+            session_id, user_id, page, page_size
+        )
+
+    async def rename_user_session(
+        self,
+        session_id: int,
+        user_id: int,
+        title: str,
+    ) -> bool:
+        return await self._chat_db.rename_user_session(
+            session_id, user_id, title
+        )
+
+    async def delete_user_session(self, session_id: int, user_id: int) -> bool:
+        return await self._chat_db.delete_user_session(session_id, user_id)
+
     async def list_sessions(
         self,
         user_id: int,

@@ -17,6 +17,10 @@
 			"*.tsv": "duckdb.dataFileViewer",
 			"*.xlsx": "duckdb.dataFileViewer"
 		},
-		"i18n-ally.keystyle": "nested"
+		"i18n-ally.keystyle": "nested",
+		"i18n-ally.localesPaths": [
+			"app/locales",
+			"app/core/i18n"
+		]
 	}
 }
