@@ -25,6 +25,8 @@ class User(Base):
     created_at = Column(DateTime, default=lambda: datetime.now())
     last_login = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
+    failed_login_attempts = Column(Integer, nullable=False, default=0)
+    locked_until = Column(DateTime, nullable=True)
 
     chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan", passive_deletes=True)    
     roles = relationship("Role", secondary="user_role_relations", back_populates="users")

@@ -114,6 +114,13 @@
               @change="changeStatus(row)"
             />
           </template>
+          <template #lock_status="{ row }">
+            <el-tag :type="row.is_locked ? 'danger' : 'success'" size="small">
+              {{
+                row.is_locked ? t("rbac.user.locked") : t("rbac.user.unlocked")
+              }}
+            </el-tag>
+          </template>
           <template #operation="{ row }">
             <el-button
               v-auth="'user:edit'"
@@ -123,6 +130,17 @@
               @click="openDialog('edit', row)"
             >
               {{ t("buttons.edit") }}
+            </el-button>
+            <el-button
+              v-if="row.is_locked"
+              v-auth="'user:edit'"
+              type="success"
+              link
+              :icon="Unlock"
+              :loading="row._unlockLoading"
+              @click="unlock(row)"
+            >
+              {{ t("rbac.user.unlock") }}
             </el-button>
             <el-button
               v-auth="'user:edit'"
@@ -241,6 +259,7 @@
             v-model="passwordForm.password"
             type="password"
             show-password
+            maxlength="128"
           />
         </el-form-item>
         <el-form-item
@@ -251,6 +270,7 @@
             v-model="passwordForm.confirmPassword"
             type="password"
             show-password
+            maxlength="128"
           />
         </el-form-item>
       </el-form>
@@ -281,22 +301,50 @@ import Plus from "~icons/ep/plus";
 import EditPen from "~icons/ep/edit-pen";
 import Delete from "~icons/ep/delete";
 import Key from "~icons/ep/key";
+import Unlock from "~icons/ep/unlock";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { hasAuth } from "@/router/utils";
 import {
   createUser,
   deleteUser,
   getRoleOptions,
+  getPasswordPolicy,
   getUserList,
   resetUserPassword,
+  unlockUser,
   updateUser,
   updateUserRoles,
   type RoleOption,
+  type PasswordPolicy,
   type UserItem
 } from "@/api/rbac";
 
 defineOptions({ name: "RbacUserManagement" });
 const { t } = useI18n();
+
+const passwordPolicy = reactive<PasswordPolicy>({
+  min_length: 8,
+  require_upper: true,
+  require_lower: true,
+  require_digit: true,
+  require_special: false
+});
+
+const validatePassword = (
+  _rule: unknown,
+  value: string,
+  callback: (error?: Error) => void
+) => {
+  const valid =
+    typeof value === "string" &&
+    value.length >= passwordPolicy.min_length &&
+    value.length <= 128 &&
+    (!passwordPolicy.require_upper || /[A-Z]/.test(value)) &&
+    (!passwordPolicy.require_lower || /[a-z]/.test(value)) &&
+    (!passwordPolicy.require_digit || /\d/.test(value)) &&
+    (!passwordPolicy.require_special || /[^A-Za-z0-9]/.test(value));
+  valid ? callback() : callback(new Error(t("rbac.user.passwordComplexity")));
+};
 
 const loading = ref(false);
 const tableData = ref<UserItem[]>([]);
@@ -333,6 +381,12 @@ const columns: TableColumnList = [
     slot: "is_active"
   },
   {
+    label: t("rbac.user.lockStatus"),
+    prop: "lock_status",
+    width: 105,
+    slot: "lock_status"
+  },
+  {
     label: t("rbac.user.lastLogin"),
     prop: "last_login",
     width: 165,
@@ -347,7 +401,7 @@ const columns: TableColumnList = [
   {
     label: t("labels.operation"),
     prop: "operation",
-    width: 290,
+    width: 360,
     fixed: "right",
     slot: "operation",
     hide: !hasAuth("user:edit") && !hasAuth("user:delete")
@@ -388,9 +442,7 @@ const dialogRules: FormRules = {
       trigger: "blur"
     },
     {
-      min: 6,
-      max: 128,
-      message: () => t("rbac.user.passwordLength"),
+      validator: validatePassword,
       trigger: "blur"
     }
   ]
@@ -409,9 +461,7 @@ const passwordRules: FormRules = {
       trigger: "blur"
     },
     {
-      min: 6,
-      max: 128,
-      message: () => t("rbac.user.passwordLength"),
+      validator: validatePassword,
       trigger: "blur"
     }
   ],
@@ -550,6 +600,17 @@ async function removeUser(row: UserItem) {
   fetchData();
 }
 
+async function unlock(row: UserItem & { _unlockLoading?: boolean }) {
+  row._unlockLoading = true;
+  try {
+    await unlockUser(row.id);
+    ElMessage.success(t("rbac.user.unlockSuccess"));
+    await fetchData();
+  } finally {
+    row._unlockLoading = false;
+  }
+}
+
 function openPasswordDialog(row: UserItem) {
   currentUser.value = row;
   Object.assign(passwordForm, { password: "", confirmPassword: "" });
@@ -568,7 +629,12 @@ async function submitPassword() {
 }
 
 onMounted(async () => {
-  roleOptions.value = await getRoleOptions();
+  const [roles, policy] = await Promise.all([
+    getRoleOptions(),
+    getPasswordPolicy()
+  ]);
+  roleOptions.value = roles;
+  Object.assign(passwordPolicy, policy);
   await fetchData();
 });
 </script>

@@ -140,7 +140,7 @@ login:
   pureLoginFail: Login Fail
   pureUsernameReg: Please enter username
   purePassWordReg: Please enter password
-  purePassWordRuleReg: The password format should be any combination of 8-18 digits
+  purePassWordRuleReg: Password must be at least 8 characters and contain an uppercase letter, a lowercase letter, and a digit
 
 messages:
   deleteConfirm: Delete \"{name}\"?
@@ -561,7 +561,8 @@ rbac:
     avatar: Avatar URL
     avatarPlaceholder: Enter an avatar image URL
     password: Password
-    passwordLength: Password must be 6 to 128 characters
+    passwordLength: Password must be 8 to 128 characters
+    passwordComplexity: Password must be at least 8 characters and contain an uppercase letter, a lowercase letter, and a digit
     newPassword: New Password
     confirmPassword: Confirm Password
     passwordMismatch: The passwords do not match
@@ -571,6 +572,11 @@ rbac:
     keyword: Keyword
     keywordPlaceholder: Search username or nickname
     lastLogin: Last Login
+    lockStatus: Lock Status
+    locked: Locked
+    unlocked: Normal
+    unlock: Unlock
+    unlockSuccess: Account unlocked successfully
   role:
     title: Role Management
     label: Role

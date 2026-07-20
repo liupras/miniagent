@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -40,6 +41,9 @@ def _to_user_out(user: User, permissions: list[str] | None = None) -> UserOut:
         is_active=user.is_active,
         created_at=user.created_at,
         last_login=user.last_login,
+        failed_login_attempts=user.failed_login_attempts or 0,
+        locked_until=user.locked_until,
+        is_locked=bool(user.locked_until and user.locked_until > datetime.now()),
         roles=[role.code for role in user.roles],
         permissions=permissions or [],
     )
@@ -110,6 +114,10 @@ class UserService:
         if not await self._user_db.set_password(user_id, password):
             raise UserNotFoundError(user_id)
 
+    async def unlock(self, user_id: int) -> None:
+        if not await self._user_db.unlock_user(user_id):
+            raise UserNotFoundError(user_id)
+
     async def delete(self, user_id: int) -> None:
         if not await self._user_db.delete_user(user_id):
             raise UserNotFoundError(user_id)
@@ -117,6 +125,16 @@ class UserService:
 
     async def verify_user(self, username: str, password: str) -> bool:
         return await self._user_db.verify_user(username, password)
+
+    async def authenticate(self, username: str, password: str):
+        from app.core.config import settings
+
+        return await self._user_db.authenticate(
+            username,
+            password,
+            max_failed_attempts=settings.login_max_failed_attempts,
+            lock_duration_minutes=settings.login_lock_duration_minutes,
+        )
 
     async def _validate_roles(self, role_ids: list[int]) -> None:
         requested = set(role_ids)

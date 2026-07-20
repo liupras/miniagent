@@ -4,7 +4,8 @@
 # @date    : 2026-04-15
 # @description: Asynchronous persistence operations for users and their role bindings.
 
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import Dict, Optional
 
 from sqlalchemy import func, or_, select
@@ -13,6 +14,13 @@ from app.core.security.hash import bcrypt_hash, verify_bcrypt
 from app.infra.db.async_base import AsyncBaseDatabase
 from app.infra.db.database import Role, User, UserRoleRelation
 from app.schemas.admin.user import UserListParams
+
+
+@dataclass(frozen=True)
+class AuthenticationResult:
+    status: str
+    user_id: int | None = None
+    locked_until: datetime | None = None
 
 
 class AsyncUserDatabase(AsyncBaseDatabase):
@@ -84,6 +92,45 @@ class AsyncUserDatabase(AsyncBaseDatabase):
             user.last_login = datetime.now()
             return True
 
+    async def authenticate(
+        self,
+        username: str,
+        password: str,
+        *,
+        max_failed_attempts: int,
+        lock_duration_minutes: int,
+    ) -> AuthenticationResult:
+        """Verify credentials while persisting failure and lock state."""
+        async with self.get_session() as session:
+            user = await self._get_user_by_username(session, username)
+            if not user or not user.is_active:
+                return AuthenticationResult(status="invalid_credentials")
+
+            now = datetime.now()
+            if user.locked_until and user.locked_until > now:
+                return AuthenticationResult(
+                    status="locked", user_id=user.id, locked_until=user.locked_until
+                )
+
+            # An expired lock is automatically cleared before authentication.
+            if user.locked_until:
+                user.locked_until = None
+                user.failed_login_attempts = 0
+
+            if not verify_bcrypt(password, user.password_hash):
+                user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+                if user.failed_login_attempts >= max_failed_attempts:
+                    user.locked_until = now + timedelta(minutes=lock_duration_minutes)
+                    return AuthenticationResult(
+                        status="locked", user_id=user.id, locked_until=user.locked_until
+                    )
+                return AuthenticationResult(status="invalid_credentials", user_id=user.id)
+
+            user.failed_login_attempts = 0
+            user.locked_until = None
+            user.last_login = now
+            return AuthenticationResult(status="success", user_id=user.id)
+
     async def get_user_info(self, username: str) -> Optional[Dict]:
         user = await self.get_by_username(username)
         if not user:
@@ -111,6 +158,15 @@ class AsyncUserDatabase(AsyncBaseDatabase):
             if not user:
                 return False
             user.password_hash = self._hash_password(password)
+            return True
+
+    async def unlock_user(self, user_id: int) -> bool:
+        async with self.get_session() as session:
+            user = await session.get(User, user_id)
+            if not user:
+                return False
+            user.failed_login_attempts = 0
+            user.locked_until = None
             return True
 
     async def deactivate_user(self, username: str) -> bool:

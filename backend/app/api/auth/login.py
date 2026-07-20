@@ -5,6 +5,7 @@
 # @description: User authentication
 
 from datetime import datetime, timedelta
+from math import ceil
 from typing import Optional
 from uuid import uuid4
 
@@ -13,7 +14,11 @@ from loguru import logger
 
 from app.core.config import settings
 from app.core.security.jwt_auth import jwt_auth
-from app.schemas.auth.login import LoginRequest, LoginResponse, RefreshTokenRequest
+from app.core.i18n.i18n import t
+from app.schemas.common import ApiResponse
+from app.schemas.auth.login import (
+    LoginRequest, LoginResponse, PasswordPolicyResponse, RefreshTokenRequest,
+)
 from app.services.admin.user import UserNotFoundError, UserService
 from app.services.auth.login_log import LoginLogService
 
@@ -21,6 +26,19 @@ ACCESS_TOKEN_EXPIRE_DAYS = settings.access_token_expire_days
 REFRESH_TOKEN_EXPIRE_DAYS = settings.refresh_token_expire_days
 
 router = APIRouter()
+
+
+@router.get("/password-policy", response_model=ApiResponse)
+async def password_policy():
+    return ApiResponse(
+        data=PasswordPolicyResponse(
+            min_length=settings.password_min_length,
+            require_upper=settings.password_require_upper,
+            require_lower=settings.password_require_lower,
+            require_digit=settings.password_require_digit,
+            require_special=settings.password_require_special,
+        )
+    )
 
 
 def get_user_service(request: Request) -> UserService:
@@ -84,8 +102,28 @@ async def login(
     user_id: Optional[int] = None
 
     try:
-        if not await user_service.verify_user(payload.username, payload.password):
-            return LoginResponse(success=False, data=None)
+        auth_result = await user_service.authenticate(payload.username, payload.password)
+        user_id = auth_result.user_id
+        if auth_result.status == "locked":
+            failure_reason = "account_locked"
+            remaining_minutes = max(
+                1,
+                ceil((auth_result.locked_until - datetime.now()).total_seconds() / 60),
+            )
+            return LoginResponse(
+                success=False,
+                data=None,
+                error_code="account_locked",
+                message=t("auth.account_locked", minutes=remaining_minutes),
+                locked_until=auth_result.locked_until,
+            )
+        if auth_result.status != "success":
+            return LoginResponse(
+                success=False,
+                data=None,
+                error_code="invalid_credentials",
+                message=t("auth.login_failed"),
+            )
 
         user_info = await user_service.get_user(payload.username)
         user_id = user_info.id

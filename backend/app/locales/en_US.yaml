@@ -8,6 +8,7 @@ common:
 
 auth:
   login_failed: Incorrect username or password
+  account_locked: "Account locked due to repeated failed logins. Try again in {minutes} minute(s), or contact an administrator."
   unauthorized: Unauthorized, please log in first
 
   missing_auth_header: Missing Authorization request header

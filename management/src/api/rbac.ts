@@ -16,6 +16,9 @@ export interface UserItem {
   is_active: boolean;
   created_at: string;
   last_login?: string | null;
+  failed_login_attempts: number;
+  locked_until?: string | null;
+  is_locked: boolean;
   roles: string[];
   permissions: string[];
 }
@@ -27,6 +30,14 @@ export interface UserListParams {
   username?: string;
   is_active?: boolean;
   role_id?: number;
+}
+
+export interface PasswordPolicy {
+  min_length: number;
+  require_upper: boolean;
+  require_lower: boolean;
+  require_digit: boolean;
+  require_special: boolean;
 }
 
 export interface UserCreatePayload {
@@ -106,6 +117,9 @@ export const getUserList = (params: UserListParams) =>
     params
   });
 
+export const getPasswordPolicy = () =>
+  http.request<PasswordPolicy>("get", baseUrlApi("password-policy"));
+
 export const createUser = (data: UserCreatePayload) =>
   http.request<UserItem>("post", baseUrlApi("admin/users"), { data });
 
@@ -123,6 +137,9 @@ export const resetUserPassword = (id: number, password: string) =>
   http.request<void>("put", baseUrlApi(`admin/users/${id}/password`), {
     data: { password }
   });
+
+export const unlockUser = (id: number) =>
+  http.request<void>("put", baseUrlApi(`admin/users/${id}/unlock`));
 
 export const deleteUser = (id: number) =>
   http.request<void>("delete", baseUrlApi(`admin/users/${id}`));

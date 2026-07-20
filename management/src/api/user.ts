@@ -3,6 +3,9 @@ import { baseUrlApi } from "./utils";
 
 export type UserResult = {
   success: boolean;
+  error_code?: string;
+  message?: string;
+  locked_until?: string;
   data: {
     /** 头像 */
     avatar: string;

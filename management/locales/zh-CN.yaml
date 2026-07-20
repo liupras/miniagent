@@ -141,7 +141,7 @@ login:
   pureLoginFail: 登录失败
   pureUsernameReg: 请输入账号
   purePassWordReg: 请输入密码
-  purePassWordRuleReg: 密码格式应为8-18位数字、字母、符号的任意两种组合
+  purePassWordRuleReg: 密码至少 8 位，且必须包含大写字母、小写字母和数字
 
 messages:
   deleteConfirm: 确认删除「{name}」吗？
@@ -563,7 +563,8 @@ rbac:
     avatar: 头像地址
     avatarPlaceholder: 请输入头像图片地址
     password: 密码
-    passwordLength: 密码长度应为 6 至 128 个字符
+    passwordLength: 密码长度应为 8 至 128 个字符
+    passwordComplexity: 密码至少 8 位，且必须包含大写字母、小写字母和数字
     newPassword: 新密码
     confirmPassword: 确认密码
     passwordMismatch: 两次输入的密码不一致
@@ -573,6 +574,11 @@ rbac:
     keyword: 关键词
     keywordPlaceholder: 搜索用户名或昵称
     lastLogin: 最后登录时间
+    lockStatus: 锁定状态
+    locked: 已锁定
+    unlocked: 正常
+    unlock: 解除锁定
+    unlockSuccess: 账户已解除锁定
   role:
     title: 角色管理
     label: 角色

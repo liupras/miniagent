@@ -4,9 +4,13 @@
 # @date    : 2026-05-30
 # @description: User Pydantic Schemas
 
-from typing import List, Optional
+from typing import Annotated, List, Optional
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field
+
+from app.core.security.password import validate_password
+
+PasswordValue = Annotated[str, Field(max_length=128), AfterValidator(validate_password)]
 
 # ── Output models ──────────────────────────────────────────────────────────
 
@@ -33,6 +37,9 @@ class UserOut(BaseModel):
     is_active: bool
     created_at: datetime
     last_login: Optional[datetime] = None
+    failed_login_attempts: int = 0
+    locked_until: Optional[datetime] = None
+    is_locked: bool = False
     roles: List[str] = Field(default_factory=list, description="Role codes")
     permissions: List[str] = Field(default_factory=list)
 
@@ -52,7 +59,7 @@ class UserListParams(BaseModel):
 
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=100)
-    password: str = Field(..., min_length=6, max_length=128)
+    password: PasswordValue
     nickname: Optional[str] = Field(None, max_length=100)
     avatar: Optional[str] = Field(None, max_length=500)
     is_active: bool = True
@@ -71,4 +78,4 @@ class UserRoleUpdate(BaseModel):
 
 
 class UserPasswordReset(BaseModel):
-    password: str = Field(..., min_length=6, max_length=128)
+    password: PasswordValue

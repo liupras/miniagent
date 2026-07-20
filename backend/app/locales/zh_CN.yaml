@@ -8,6 +8,7 @@ common:
 
 auth:
   login_failed: 用户名或密码错误
+  account_locked: "账户因连续登录失败已锁定，请在 {minutes} 分钟后重试，或联系管理员解锁。"
   unauthorized: 未授权，请先登录
 
   missing_auth_header: 缺少 Authorization 请求头

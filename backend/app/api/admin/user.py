@@ -111,6 +111,16 @@ async def reset_user_password(
     return ApiResponse()
 
 
+@router.put("/{user_id}/unlock", response_model=ApiResponse, summary="Unlock user account")
+async def unlock_user(
+    user_id: int,
+    svc: UserService = Depends(get_service),
+    caller_id: int = Depends(_edit),
+):
+    await svc.unlock(user_id)
+    return ApiResponse()
+
+
 @router.delete("/{user_id}", response_model=ApiResponse, summary="Delete user")
 async def delete_user(
     user_id: int,
