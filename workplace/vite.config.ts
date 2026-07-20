@@ -11,13 +11,21 @@ export default defineConfig({
     vue(),
 
     AutoImport({
-      resolvers: [ElementPlusResolver()]
+      resolvers: [ElementPlusResolver()],
     }),
 
     Components({
-      resolvers: [ElementPlusResolver()]
+      resolvers: [ElementPlusResolver()],
     }),
 
-    ElementPlus()
-  ]
+    ElementPlus({}),
+  ],
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:10088",
+        changeOrigin: true,
+      },
+    },
+  },
 });
