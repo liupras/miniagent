@@ -165,6 +165,7 @@ export function useDocument(initialKbId?: number | null) {
   // ── upload / re-upload dialog ───────────────────────────────────────
   const uploadVisible = ref(false);
   const uploadForm = reactive<UploadFormState>({
+    kb_id: null,
     file: null,
     metadataText: ""
   });
@@ -176,6 +177,7 @@ export function useDocument(initialKbId?: number | null) {
     uploadMode.value = "add";
     activeDocId.value = null;
     activeKbId.value = null;
+    uploadForm.kb_id = form.kb_id;
     uploadForm.file = null;
     uploadForm.metadataText = "";
     uploadVisible.value = true;
@@ -185,6 +187,7 @@ export function useDocument(initialKbId?: number | null) {
     uploadMode.value = "update";
     activeDocId.value = row.id;
     activeKbId.value = row.kb_id;
+    uploadForm.kb_id = row.kb_id;
     uploadForm.file = null;
     uploadForm.metadataText = row.meta_data_json
       ? JSON.stringify(row.meta_data_json, null, 2)
@@ -275,11 +278,15 @@ export function useDocument(initialKbId?: number | null) {
     }
 
     if (uploadMode.value === "add") {
-      if (!form.kb_id) {
+      if (!uploadForm.kb_id) {
         ElMessage.warning(t("document.message.kbRequired"));
         return;
       }
-      const data = await addDocument(form.kb_id, uploadForm.file, metadata);
+      const data = await addDocument(
+        uploadForm.kb_id,
+        uploadForm.file,
+        metadata
+      );
       uploadVisible.value = false;
       startProgress(data.task_id, "upload");
     } else if (activeDocId.value != null && activeKbId.value != null) {

@@ -114,7 +114,6 @@ function onFileChange(uploadFile: UploadFile) {
         <el-button
           v-auth="'document:add'"
           type="primary"
-          :disabled="!form.kb_id"
           @click="openAddDialog"
         >
           {{ t("document.action.add") }}
@@ -185,6 +184,25 @@ function onFileChange(uploadFile: UploadFile) {
       destroy-on-close
     >
       <el-form label-width="100px">
+        <el-form-item
+          v-if="uploadMode === 'add'"
+          :label="t('form.kbName.label')"
+          required
+        >
+          <el-select
+            v-model="uploadForm.kb_id"
+            :placeholder="t('form.kbName.placeholder')"
+            filterable
+            style="width: 100%"
+          >
+            <el-option
+              v-for="kb in kbOptions"
+              :key="kb.id"
+              :label="kb.name"
+              :value="kb.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item :label="t('document.field.file')" required>
           <el-upload
             drag

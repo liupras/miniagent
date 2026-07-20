@@ -7,6 +7,7 @@ export interface SearchFormState {
 }
 
 export interface UploadFormState {
+  kb_id: number | null;
   file: File | null;
   /** Raw JSON text the user edits in the dialog; parsed before submit. */
   metadataText: string;
