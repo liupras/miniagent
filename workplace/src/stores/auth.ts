@@ -12,6 +12,16 @@ import {
 
 const REFRESH_AHEAD_MS = 60_000;
 
+export class AuthenticationError extends Error {
+  readonly code?: string | null;
+
+  constructor(message: string, code?: string | null) {
+    super(message);
+    this.name = "AuthenticationError";
+    this.code = code;
+  }
+}
+
 export const useAuthStore = defineStore("auth", () => {
   const session = ref<AuthSession | null>(getSession());
   const isAuthenticated = computed(() => Boolean(session.value?.accessToken));
@@ -51,7 +61,10 @@ export const useAuthStore = defineStore("auth", () => {
   async function login(username: string, password: string) {
     const result = await loginApi(username, password);
     if (!result.success || !result.data) {
-      throw new Error(result.message || "用户名或密码错误");
+      throw new AuthenticationError(
+        result.message || "Authentication failed",
+        result.error_code,
+      );
     }
     session.value = result.data;
     saveSession(result.data);

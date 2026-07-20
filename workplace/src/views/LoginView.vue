@@ -1,22 +1,49 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
-import { useAuthStore } from "../stores/auth";
+import { AuthenticationError, useAuthStore } from "../stores/auth";
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const formRef = ref<FormInstance>();
 const loading = ref(false);
 const form = reactive({ username: "", password: "" });
-const rules: FormRules = {
+const rules = computed<FormRules>(() => ({
   username: [
-    { required: true, message: "请输入账号", trigger: "blur" },
-    { min: 3, max: 50, message: "账号长度为 3–50 个字符", trigger: "blur" },
+    {
+      required: true,
+      message: t("login.validation.usernameRequired"),
+      trigger: "blur",
+    },
+    {
+      min: 3,
+      max: 50,
+      message: t("login.validation.usernameLength"),
+      trigger: "blur",
+    },
   ],
-  password: [{ required: true, message: "请输入密码", trigger: "blur" }],
-};
+  password: [
+    {
+      required: true,
+      message: t("login.validation.passwordRequired"),
+      trigger: "blur",
+    },
+  ],
+}));
+
+function getLoginError(error: unknown) {
+  if (error instanceof AuthenticationError) {
+    if (error.code === "invalid_credentials") {
+      return t("login.errors.invalidCredentials");
+    }
+    if (error.code === "account_locked") return t("login.errors.accountLocked");
+  }
+  return t("login.errors.generic");
+}
 
 async function submit() {
   const valid = await formRef.value?.validate().catch(() => false);
@@ -24,14 +51,12 @@ async function submit() {
   loading.value = true;
   try {
     await auth.login(form.username.trim(), form.password);
-    ElMessage.success("登录成功");
+    ElMessage.success(t("login.success"));
     const redirect =
       typeof route.query.redirect === "string" ? route.query.redirect : "/";
     await router.replace(redirect);
   } catch (error) {
-    ElMessage.error(
-      error instanceof Error ? error.message : "登录失败，请稍后重试",
-    );
+    ElMessage.error(getLoginError(error));
   } finally {
     loading.value = false;
   }
@@ -44,9 +69,9 @@ async function submit() {
       <div class="brand-mark">
         <img src="/logo.svg" alt="MiniAgent" />
       </div>
-      <p class="eyebrow">MINIAGENT WORKPLACE</p>
-      <h1>让智能体成为你的<br />日常工作伙伴</h1>
-      <p class="brand-copy">登录后即可使用为你配置的智能体能力。</p>
+      <p class="eyebrow">{{ t("login.brandEyebrow") }}</p>
+      <h1 v-html="t('login.brandTitle')" />
+      <p class="brand-copy">{{ t("login.brandCopy") }}</p>
       <div class="brand-orbit orbit-one" />
       <div class="brand-orbit orbit-two" />
     </section>
@@ -57,9 +82,9 @@ async function submit() {
           <img src="/logo.svg" alt="MiniAgent" />
           <span>MiniAgent</span>
         </div>
-        <p class="eyebrow">WELCOME BACK</p>
-        <h2>登录工作台</h2>
-        <p class="login-tip">请输入你的账号和密码继续</p>
+        <p class="eyebrow">{{ t("login.eyebrow") }}</p>
+        <h2>{{ t("login.title") }}</h2>
+        <p class="login-tip">{{ t("login.tip") }}</p>
 
         <el-form
           ref="formRef"
@@ -69,20 +94,20 @@ async function submit() {
           size="large"
           @keyup.enter="submit"
         >
-          <el-form-item label="账号" prop="username">
+          <el-form-item :label="t('login.username')" prop="username">
             <el-input
               v-model="form.username"
               autocomplete="username"
-              placeholder="请输入账号"
+              :placeholder="t('login.usernamePlaceholder')"
               clearable
             />
           </el-form-item>
-          <el-form-item label="密码" prop="password">
+          <el-form-item :label="t('login.password')" prop="password">
             <el-input
               v-model="form.password"
               type="password"
               autocomplete="current-password"
-              placeholder="请输入密码"
+              :placeholder="t('login.passwordPlaceholder')"
               show-password
             />
           </el-form-item>
@@ -92,7 +117,7 @@ async function submit() {
             :loading="loading"
             @click="submit"
           >
-            登录
+            {{ t("login.submit") }}
           </el-button>
         </el-form>
       </div>

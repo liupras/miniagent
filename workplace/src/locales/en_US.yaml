@@ -1,0 +1,37 @@
+common:
+  language: Language
+  theme: Theme
+  logout: Log out
+  user: User
+languages:
+  zh_CN: 简体中文
+  en_US: English
+themes:
+  ocean: Ocean
+  violet: Violet
+  emerald: Emerald
+  sunset: Sunset
+login:
+  brandEyebrow: MINIAGENT WORKPLACE
+  brandTitle: Make AI agents your<br>everyday work partners
+  brandCopy: Sign in to use the agent capabilities configured for you.
+  eyebrow: WELCOME BACK
+  title: Sign in to Workplace
+  tip: Enter your username and password to continue
+  username: Username
+  usernamePlaceholder: Enter your username
+  password: Password
+  passwordPlaceholder: Enter your password
+  submit: Sign in
+  success: Signed in successfully
+  validation:
+    usernameRequired: Enter your username
+    usernameLength: Username must be 3–50 characters
+    passwordRequired: Enter your password
+  errors:
+    invalidCredentials: Incorrect username or password
+    accountLocked: Your account is temporarily locked. Please try again later.
+    generic: Sign-in failed. Please try again later.
+home:
+  logoLabel: MiniAgent Workplace home
+  contentLabel: Workplace content
