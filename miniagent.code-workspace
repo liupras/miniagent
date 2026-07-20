@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "management"
+		},
+		{
+			"path": "workplace"
 		}
 	],
 	"settings": {
