@@ -7,13 +7,16 @@
 from __future__ import annotations
 
 import asyncio
+import csv
 from datetime import datetime, timezone
+import io
+import os
+import subprocess
 from time import perf_counter
-from typing import Any, Awaitable, Callable, Iterable
+from typing import Any
 
-import chromadb
 import duckdb
-import httpx
+import psutil
 from sqlalchemy import text
 
 from app.core.config import settings
@@ -29,41 +32,25 @@ def _error_message(exc: Exception) -> str:
     return f"{type(exc).__name__}: {exc}"[:500]
 
 
-def _component_status(items: list[dict[str, Any]]) -> str:
-    if not items:
-        return "not_configured"
-    healthy = sum(item["status"] == "healthy" for item in items)
-    if healthy == len(items):
-        return "healthy"
-    if healthy:
-        return "degraded"
-    return "unhealthy"
-
-
 class SystemStatusService:
     """Perform lightweight, read-only checks against application dependencies."""
 
-    def __init__(self, container) -> None:
-        self._embedding_db = container.embed_db
-        self._llm_db = container.llm_db
+    def __init__(self, _container) -> None:
+        # Keep the application container argument for the existing DI factory.
+        pass
 
     async def get_status(self) -> dict[str, Any]:
         started = perf_counter()
-        sqlite, duckdb, vector_db, embedding, llm = await asyncio.gather(
+        sqlite, duckdb, resources = await asyncio.gather(
             asyncio.to_thread(self._check_sqlite),
             asyncio.to_thread(self._check_duckdb),
-            asyncio.to_thread(self._check_vector_db),
-            self._check_configured_services(self._embedding_db.get_all_embeddings),
-            self._check_configured_services(self._llm_db.get_all),
+            asyncio.to_thread(self._collect_resources),
         )
 
         components = {
             "api": {"status": "healthy", "message": "API is running"},
             "sqlite": sqlite,
             "duckdb": duckdb,
-            "vector_db": vector_db,
-            "embedding": embedding,
-            "llm": llm,
         }
         statuses = {component["status"] for component in components.values()}
         overall = (
@@ -81,7 +68,92 @@ class SystemStatusService:
             "checked_at": datetime.now(timezone.utc).isoformat(),
             "duration_ms": _elapsed_ms(started),
             "components": components,
+            "resources": resources,
         }
+
+    @staticmethod
+    def _collect_resources() -> dict[str, Any]:
+        """Collect host utilization. GPU metrics are optional and NVIDIA-specific."""
+        cpu_started = perf_counter()
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        frequency = psutil.cpu_freq()
+        memory = psutil.virtual_memory()
+        swap = psutil.swap_memory()
+        disk = psutil.disk_usage(str(settings.get_sqlite_path()))
+        return {
+            "collected_at": datetime.now(timezone.utc).isoformat(),
+            "collection_ms": _elapsed_ms(cpu_started),
+            "cpu": {
+                "usage_percent": cpu_percent,
+                "physical_cores": psutil.cpu_count(logical=False),
+                "logical_cores": psutil.cpu_count(logical=True),
+                "frequency_mhz": round(frequency.current, 2) if frequency else None,
+                "max_frequency_mhz": round(frequency.max, 2) if frequency else None,
+            },
+            "memory": {
+                "total_bytes": memory.total,
+                "used_bytes": memory.used,
+                "available_bytes": memory.available,
+                "usage_percent": memory.percent,
+            },
+            "swap": {
+                "total_bytes": swap.total,
+                "used_bytes": swap.used,
+                "usage_percent": swap.percent,
+            },
+            "disk": {
+                "total_bytes": disk.total,
+                "used_bytes": disk.used,
+                "free_bytes": disk.free,
+                "usage_percent": disk.percent,
+            },
+            "gpu": SystemStatusService._collect_nvidia_gpu(),
+        }
+
+    @staticmethod
+    def _collect_nvidia_gpu() -> dict[str, Any]:
+        fields = [
+            "name",
+            "utilization.gpu",
+            "memory.total",
+            "memory.used",
+            "temperature.gpu",
+            "driver_version",
+        ]
+        creation_flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+        try:
+            result = subprocess.run(
+                [
+                    "nvidia-smi",
+                    f"--query-gpu={','.join(fields)}",
+                    "--format=csv,noheader,nounits",
+                ],
+                capture_output=True,
+                check=True,
+                text=True,
+                timeout=2,
+                creationflags=creation_flags,
+            )
+            devices = []
+            for row in csv.reader(io.StringIO(result.stdout)):
+                if len(row) != len(fields):
+                    continue
+                values = [value.strip() for value in row]
+                devices.append({
+                    "name": values[0],
+                    "usage_percent": float(values[1]),
+                    "memory_total_bytes": int(float(values[2]) * 1024 * 1024),
+                    "memory_used_bytes": int(float(values[3]) * 1024 * 1024),
+                    "temperature_celsius": float(values[4]),
+                    "driver_version": values[5],
+                })
+            return {"available": bool(devices), "devices": devices}
+        except (FileNotFoundError, subprocess.SubprocessError, ValueError) as exc:
+            return {
+                "available": False,
+                "devices": [],
+                "message": _error_message(exc),
+            }
 
     @staticmethod
     def _check_sqlite() -> dict[str, Any]:
@@ -124,115 +196,3 @@ class SystemStatusService:
         finally:
             if connection is not None:
                 connection.close()
-
-    @staticmethod
-    def _check_vector_db() -> dict[str, Any]:
-        started = perf_counter()
-        try:
-            client = chromadb.PersistentClient(path=str(settings.get_vector_db_path()))
-            heartbeat = client.heartbeat()
-            collections = client.list_collections()
-            return {
-                "status": "healthy",
-                "latency_ms": _elapsed_ms(started),
-                "path": str(settings.get_vector_db_path()),
-                "heartbeat": heartbeat,
-                "collection_count": len(collections),
-            }
-        except Exception as exc:
-            return {
-                "status": "unhealthy",
-                "latency_ms": _elapsed_ms(started),
-                "message": _error_message(exc),
-            }
-
-    async def _check_configured_services(
-        self,
-        loader: Callable[[], Awaitable[Iterable[Any]]],
-    ) -> dict[str, Any]:
-        started = perf_counter()
-        try:
-            configs = list(await loader())
-        except Exception as exc:
-            return {
-                "status": "unhealthy",
-                "latency_ms": _elapsed_ms(started),
-                "configured_count": 0,
-                "message": _error_message(exc),
-                "items": [],
-            }
-
-        items = await asyncio.gather(*(self._probe_model(config) for config in configs))
-        return {
-            "status": _component_status(items),
-            "latency_ms": _elapsed_ms(started),
-            "configured_count": len(items),
-            "healthy_count": sum(item["status"] == "healthy" for item in items),
-            "items": items,
-        }
-
-    @staticmethod
-    async def _probe_model(config: Any) -> dict[str, Any]:
-        started = perf_counter()
-        provider = (config.provider_name or "").lower()
-        base_url = (config.base_url or "").rstrip("/")
-        model_name = config.model_name
-        item = {
-            "id": config.id,
-            "name": config.name,
-            "provider": config.provider_name,
-            "model": model_name,
-        }
-        if not base_url:
-            return {
-                **item,
-                "status": "unhealthy",
-                "latency_ms": _elapsed_ms(started),
-                "message": "Missing base URL",
-            }
-
-        is_ollama = provider == "ollama" or model_name.startswith("ollama/")
-        ollama_base_url = base_url.removesuffix("/v1")
-        url = (
-            f"{ollama_base_url}/api/tags" if is_ollama else f"{base_url}/models"
-        )
-        headers = {}
-        if config.api_key:
-            headers["Authorization"] = f"Bearer {config.api_key}"
-
-        try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(3.0)) as client:
-                response = await client.get(url, headers=headers)
-                response.raise_for_status()
-                payload = response.json()
-
-            if is_ollama:
-                available = {
-                    value
-                    for model in payload.get("models", [])
-                    for value in (model.get("name"), model.get("model"))
-                    if value
-                }
-                expected = model_name.removeprefix("ollama/")
-            else:
-                available = {
-                    model.get("id") for model in payload.get("data", []) if model.get("id")
-                }
-                expected = model_name.split("/", 1)[-1]
-
-            model_available = expected in available
-            return {
-                **item,
-                "status": "healthy" if model_available else "unhealthy",
-                "latency_ms": _elapsed_ms(started),
-                "model_available": model_available,
-                **({} if model_available else {"message": "Configured model was not found"}),
-            }
-        except Exception as exc:
-            return {
-                **item,
-                "status": "unhealthy",
-                "latency_ms": _elapsed_ms(started),
-                "model_available": False,
-                "message": _error_message(exc),
-            }

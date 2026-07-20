@@ -9,6 +9,7 @@ import { ElMessage } from "element-plus";
 import { PureTableBar } from "@/components/RePureTableBar";
 import type { TableColumns } from "@pureadmin/table";
 import ImportDialog from "./ImportDialog.vue";
+import { useQuickAction } from "@/utils/quickAction";
 import PreviewDialog from "./PreviewDialog.vue";
 import {
   getSchemas,
@@ -93,6 +94,8 @@ const importVisible = ref(false);
 function openImportDialog() {
   importVisible.value = true;
 }
+
+useQuickAction("upload", openImportDialog);
 
 async function handleImportSuccess(result: { schemaName: string }) {
   currentSchema.value = result.schemaName || result.schema_name || "main";

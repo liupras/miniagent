@@ -265,6 +265,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
+import { useQuickAction } from "@/utils/quickAction";
 import { useI18n } from "vue-i18n";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
 import dayjs from "dayjs";
@@ -549,6 +550,7 @@ async function removeLLM(row: LLMItem) {
 }
 
 onMounted(() => Promise.all([fetchData(), loadProviders()]));
+useQuickAction("create", () => openDialog("add"));
 </script>
 
 <style scoped>

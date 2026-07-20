@@ -434,6 +434,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from "vue";
+import { useQuickAction } from "@/utils/quickAction";
 import { useI18n } from "vue-i18n";
 import { message } from "@/utils/message";
 import { PureTableBar } from "@/components/RePureTableBar";
@@ -772,6 +773,7 @@ onMounted(() => {
   fetchLlmOptions();
   fetchList();
 });
+useQuickAction("create", openCreate);
 </script>
 
 <style scoped lang="scss">

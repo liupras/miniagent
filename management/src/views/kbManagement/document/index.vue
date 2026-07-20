@@ -6,6 +6,7 @@ import { PureTableBar } from "@/components/RePureTableBar";
 import ProgressDialog from "./utils/ProgressDialog.vue";
 import { useDocument } from "./utils/hook";
 import ChunkViewDialog from "./utils/ChunkViewDialog.vue";
+import { useQuickAction } from "@/utils/quickAction";
 
 defineOptions({ name: "KbDocument" });
 
@@ -46,6 +47,7 @@ const {
   openChunkView
 } = useDocument(initialKbId);
 
+useQuickAction("upload", openAddDialog);
 fetchKbOptions();
 fetchList();
 

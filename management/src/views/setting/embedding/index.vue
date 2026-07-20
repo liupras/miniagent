@@ -225,6 +225,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
+import { useQuickAction } from "@/utils/quickAction";
 import { useI18n } from "vue-i18n";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
 import Search from "~icons/ep/search";
@@ -442,6 +443,7 @@ async function removeEmbedding(row: EmbeddingItem) {
 }
 
 onMounted(() => Promise.all([fetchData(), loadOptions()]));
+useQuickAction("create", () => openDialog("add"));
 </script>
 
 <style scoped>

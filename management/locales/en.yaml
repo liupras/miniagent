@@ -757,3 +757,50 @@ loginLog:
   timeRange: Time Range
   startTime: Start time
   endTime: End time
+welcome:
+  title: Mini Agent Console
+  subtitle: Manage agents, knowledge bases, and model services in one place
+  quickActions:
+    title: Quick Actions
+    subtitle: Create or import commonly used resources
+    noPermission: You do not have permission to perform this action
+    items:
+      agent: Add Agent
+      knowledgeBase: Add Knowledge Base
+      document: Upload Document
+      table: Upload Table
+      llm: Add LLM
+      embedding: Add Embedding
+    descriptions:
+      agent: Configure a new AI agent
+      knowledgeBase: Create a knowledge and retrieval space
+      document: Import a knowledge-base document
+      table: Import a CSV or Excel file
+      llm: Configure a language model
+      embedding: Configure an embedding model
+  status:
+    title: System Status
+    subtitle: Live availability of core services
+    checkedAt: "Checked at: {time}"
+    loadFailed: Failed to load system status
+    noPermission: You do not have permission to view system status
+    operational: Operational
+    components:
+      api: API Service
+      sqlite: SQLite
+      duckdb: DuckDB
+    values:
+      healthy: Healthy
+      degraded: Degraded
+      unhealthy: Unhealthy
+      not_configured: Not configured
+  resources:
+    title: Resource Usage
+    subtitle: Current host resource utilization
+    noData: Resource metrics are unavailable
+    cpu: CPU
+    memory: Memory
+    disk: Disk
+    gpu: GPU
+    cores: physical/logical cores
+    gpuUnavailable: No NVIDIA GPU detected or nvidia-smi is unavailable

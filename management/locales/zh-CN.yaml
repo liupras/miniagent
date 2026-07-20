@@ -759,3 +759,50 @@ loginLog:
   timeRange: 时间范围
   startTime: 开始时间
   endTime: 结束时间
+welcome:
+  title: Mini Agent 管理中心
+  subtitle: 统一管理智能体、知识库与模型服务
+  quickActions:
+    title: 快捷操作
+    subtitle: 快速创建或导入常用资源
+    noPermission: 您没有执行此操作的权限
+    items:
+      agent: 添加智能体
+      knowledgeBase: 添加知识库
+      document: 上传文档
+      table: 上传表格
+      llm: 添加 LLM
+      embedding: 添加 Embedding
+    descriptions:
+      agent: 配置新的 AI 智能体
+      knowledgeBase: 创建知识与检索空间
+      document: 导入知识库文档
+      table: 导入 CSV 或 Excel
+      llm: 配置大语言模型
+      embedding: 配置向量化模型
+  status:
+    title: 系统状态
+    subtitle: 实时检查核心服务可用性
+    checkedAt: 检查时间：{time}
+    loadFailed: 系统状态加载失败
+    noPermission: 无系统状态查看权限
+    operational: 运行正常
+    components:
+      api: API 服务
+      sqlite: SQLite
+      duckdb: DuckDB
+    values:
+      healthy: 正常
+      degraded: 部分异常
+      unhealthy: 异常
+      not_configured: 未配置
+  resources:
+    title: 资源占用
+    subtitle: 当前主机资源使用情况
+    noData: 暂无资源监控数据
+    cpu: CPU
+    memory: 内存
+    disk: 磁盘
+    gpu: GPU
+    cores: 物理/逻辑核心
+    gpuUnavailable: 未检测到 NVIDIA GPU 或 nvidia-smi 不可用

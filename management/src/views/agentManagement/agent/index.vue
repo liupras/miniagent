@@ -426,6 +426,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from "vue";
+import { useQuickAction } from "@/utils/quickAction";
 import { useI18n } from "vue-i18n";
 import {
   ElMessage,
@@ -816,6 +817,7 @@ onMounted(async () => {
     ElMessage.error(t("messages.loadingError"));
   }
 });
+useQuickAction("create", () => openDialog("add"));
 </script>
 
 <style scoped>
