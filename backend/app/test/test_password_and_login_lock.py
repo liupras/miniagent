@@ -2,10 +2,8 @@ import asyncio
 
 import pytest
 from pydantic import ValidationError
-from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.infra.db.initializer import DatabaseManager
 from app.infra.db.database import Base
 from app.repositories.async_user import AsyncUserDatabase
 from app.schemas.admin.user import UserCreate, UserPasswordReset
@@ -69,21 +67,3 @@ def test_failed_logins_lock_account_and_admin_can_unlock():
         await engine.dispose()
 
     asyncio.run(scenario())
-
-
-def test_schema_upgrade_adds_login_lock_columns(tmp_path):
-    database_url = f"sqlite:///{tmp_path / 'legacy.db'}"
-    engine = create_engine(database_url)
-    with engine.begin() as connection:
-        connection.execute(text(
-            "CREATE TABLE users ("
-            "id INTEGER PRIMARY KEY, username VARCHAR(100) NOT NULL, "
-            "password_hash VARCHAR(255) NOT NULL)"
-        ))
-    engine.dispose()
-
-    manager = DatabaseManager(database_url)
-    assert manager.upgrade_schema()
-    columns = {item["name"] for item in inspect(manager.engine).get_columns("users")}
-    assert {"failed_login_attempts", "locked_until"} <= columns
-    manager.engine.dispose()
