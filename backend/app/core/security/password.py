@@ -1,4 +1,8 @@
-"""Configuration-driven password policy validation."""
+#!/usr/bin/python
+# -*- coding:utf-8 -*-
+# @author  : Liu Lijun
+# @date    : 2026-01-26
+# @description: Configuration-driven password policy validation.
 
 import re
 
