@@ -1,24 +1,28 @@
-version: '3.8'
+name: miniagent
 
 services:
-  # MiniAgent 后端服务
-  miniagent-backend:
+  backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: miniagent-backend:latest
     container_name: miniagent-backend
     ports:
-      - "8000:8000"
-    volumes:
-      # 挂载代码（开发模式）
-      - ./backend:/app
-      # 挂载数据目录
-      - ./data:/app/data
-    environment:
-      - ENVIRONMENT=production
-      - DEBUG=False
+      - "10088:8000"
     env_file:
-      - ./backend/.env
+      - path: ./backend/.env.example
+      - path: ./backend/.env
+        required: false
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+      API_HOST: 0.0.0.0
+      API_PORT: "8000"
+    volumes:
+      - backend-db:/app/db
+      - backend-files:/app/files
+      - backend-logs:/app/logs
+      - backend-models:/app/models
     restart: unless-stopped
     networks:
       - miniagent-network
@@ -26,9 +30,50 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
+      start_period: 20s
+      retries: 5
+
+  management:
+    build:
+      context: ./management
+      dockerfile: Dockerfile
+    image: miniagent-management:latest
+    container_name: miniagent-management
+    ports:
+      - "8848:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - miniagent-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
       retries: 3
 
-  # Ollama服务（可选，如果使用本地LLM）
+  workplace:
+    build:
+      context: ./workplace
+      dockerfile: Dockerfile
+    image: miniagent-workplace:latest
+    container_name: miniagent-workplace
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - miniagent-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Optional local LLM runtime. The backend can also use an external model API.
   ollama:
     image: ollama/ollama:latest
     container_name: miniagent-ollama
@@ -39,19 +84,14 @@ services:
     restart: unless-stopped
     networks:
       - miniagent-network
-    # GPU支持（需要NVIDIA Docker）
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
 
 networks:
   miniagent-network:
     driver: bridge
 
 volumes:
+  backend-db:
+  backend-files:
+  backend-logs:
+  backend-models:
   ollama-data:
-    driver: local

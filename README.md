@@ -3,79 +3,83 @@
 
 # MiniAgent
 
-面向个人与小团队的轻量级智能体平台
+A lightweight intelligent agent platform for individuals and small teams.
 
-**简单架构 · 显式代码 · 易于部署 · 方便扩展**
+**Simple architecture · Explicit code · Easy deployment · Easy to extend**
 
 ![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.128-009688?logo=fastapi&logoColor=white)
 ![Vue](https://img.shields.io/badge/Vue-3.5-42B883?logo=vuedotjs&logoColor=white)
 ![License](https://img.shields.io/badge/License-Apache--2.0-blue)
 
-[License](LICENSE) · [API 文档（本地启动后）](http://localhost:10088/docs)
+[License](LICENSE) · [API Documentation (after local startup)](http://localhost:10088/docs)
 
 </div>
 
 > [!IMPORTANT]
-> MiniAgent 当前处于开发阶段，数据库结构和接口仍可能调整。升级前请备份 `backend/db` 与 `backend/files`。
+> MiniAgent is currently under development, and its database structure and interface are subject to change. Please back up `backend/db` and `backend/files` before upgrading.
 
-## 项目简介
+## Project Introduction
 
-MiniAgent 提供从模型配置、知识库构建、智能体编排到最终用户对话的完整工作流。项目包含 FastAPI 后端、PureAdmin 管理后台和独立的 Workplace 用户工作台，适合用于搭建企业知识助手、内部数据助手、法律顾问以及其他垂直领域智能体。
+MiniAgent provides a complete workflow from model configuration, knowledge base building, agent orchestration to end-user dialogue. The project includes a FastAPI backend, a PureAdmin management backend, and a separate Workplace user workbench, suitable for building enterprise knowledge assistants, internal data assistants, legal advisors, and other vertical domain agents.
 
-## 核心功能
+![Management Backend](assert/management_en.gif)
 
-### 智能体与模型
+![User Workplace](assert/workplace_en.gif)
 
-- 创建和管理多个智能体，配置系统提示词、LLM 与工具
-- 支持 OpenAI 兼容接口、Ollama 等模型服务
-- 管理 LLM、Embedding、工具、领域插件与路由策略
-- 基于用户—智能体授权关系控制智能体使用范围
-- 支持同步调用与 SSE 流式响应
+## Core Functions
 
-### RAG 知识库
+### Agents and Models
 
-- 管理多个知识库、文档与切片
-- 支持 PDF、Word、文本、表格等常见文档格式
-- ChromaDB 向量检索与 BM25 关键词检索
-- 支持 RRF 融合、阈值过滤、可选重排与 Small-to-Big 检索
-- 支持多知识库智能路由及领域处理插件
+- Create and manage multiple agents, configure system prompts, LLM, and tools
+- Support OpenAI compatible interfaces, Ollama and other model services
+- Manage LLM, Embeddings, tools, domain plugins, and routing policies
+- Control the scope of agent usage based on user-agent authorization relationships
+- Support synchronous calls and SSE streaming responses
 
-### SQL 与工具能力
+### RAG Knowledge Base
 
-- 使用 DuckDB 分析 CSV、Excel 等结构化数据
-- SQL Agent 支持数据查询、统计分析与图表数据生成
-- 可扩展工具系统与 Web Search 能力
-- 智能体运行时工具缓存及配置失效机制
+- Manage multiple knowledge bases, documents, and slices
+- Support common document formats such as PDF, Word, text, and tables
+- ChromaDB vector retrieval and BM25 keyword retrieval
+- Support RRF fusion, threshold filtering, optional reordering, and Small-to-Big retrieval
+- Support multi-knowledge base intelligent routing and domain processing plugins
 
-### 权限与运维
+### SQL and Tool Capabilities
 
-- JWT 登录、Access Token 自动刷新与 RBAC 权限控制
-- 密码复杂度校验和登录失败锁定
-- 管理员可解除用户锁定并维护用户智能体授权
-- 登录日志、审计日志与系统配置管理
-- API、SQLite、DuckDB 和硬件资源状态监控
+- Use DuckDB Analyze structured data such as CSV and Excel
+- SQL Agent supports data querying, statistical analysis, and chart generation
+- Extensible tool system and Web Search capabilities
+- Agent runtime tool caching and configuration invalidation mechanism
 
-### 双前端
+### Permissions and Maintenance
 
-- **Management**：基于 PureAdmin 的系统管理后台
-- **Workplace**：面向最终用户的智能体工作台
-  - 登录、自动刷新 Token、退出登录
-  - 中文 `zh_CN` 与英文 `en_US`
-  - 多套主题色调
-  - 选择授权智能体
-  - 查询、查看、重命名和删除会话
-  - Markdown 消息及 SSE 流式对话
+- JWT login, automatic Access Token refresh, and RBAC permission control
+- Password complexity verification and login failure lockout
+- Administrators can unlock users and maintain user agent authorizations
+- Login logs, audit logs, and system configuration management
+- API, SQLite, DuckDB, and hardware resource status monitoring
 
-## 系统架构
+### Dual Frontends
+
+- **Management**: System management backend based on PureAdmin
+- **Workplace**: Agent workbench for end users
+- Login, automatic Token refresh, and logout
+- Chinese `zh_CN` and English `en_US`
+- Multiple theme colors
+- Select authorized agents
+- Query, view, rename, and delete sessions
+- Markdown messages and SSE streaming conversations
+
+## System Architecture
 
 ```mermaid
 flowchart TB
-    Admin["Management 管理后台"]
-    User["Workplace 用户工作台"]
+    Admin["Management Backend"]
+    User["Workplace"]
     API["FastAPI API"]
 
-    subgraph Core["应用核心"]
+    subgraph Core["Application Core"]
         Auth["JWT / RBAC"]
         Container["ServiceContainer"]
         Agent["AgentFactory / AgentRunner"]
@@ -84,7 +88,7 @@ flowchart TB
         SQL["SQL Agent"]
     end
 
-    subgraph Data["数据层"]
+    subgraph Data["Data Layer"]
         SQLite[(SQLite)]
         DuckDB[(DuckDB)]
         Chroma[(ChromaDB)]
@@ -107,73 +111,85 @@ flowchart TB
     KB --> Files
 ```
 
-后端采用清晰的分层结构：
+The backend adopts a clear layered structure:
 
-- `app/api/`：HTTP 路由、依赖注入与请求响应转换
-- `app/services/`：业务逻辑
-- `app/runtime/`：智能体、会话、LLM、检索等运行时组件
-- `app/repositories/`：异步数据库访问
-- `app/schemas/`：Pydantic 数据模型
-- `app/infra/`：数据库模型、缓存、初始化与基础设施
+- `app/api/`: HTTP routing, dependency injection, and request/response transformation
 
-## 技术栈
+- `app/services/`: Business logic
+- `app/runtime/`: Runtime components such as agents, sessions, LLM, and retrieval
+- `app/repositories/`: Asynchronous database access
+- `app/schemas/`: Pydantic data model
+- `app/infra/`: Database model, caching, initialization, and infrastructure
 
-| 模块       | 技术                                                |
+Startup process:
+
+- DB init — app/infra/db/initializer.py creates SQLite tables and loads seed JSON from app/infra/db/seed/
+- ServiceContainer — Builds the asynchronous SQLAlchemy engine, all repositories, and long-running services
+- Domain plugins — Load domain rows from the database and register knowledge base processors via dynamic import.
+
+All shared resources reside in `request.app.state.container`. Routes retrieve it via `Depends(get_container)`.
+
+## Technology Stack
+
+| Modules | Technologies |
 | ---------- | --------------------------------------------------- |
-| 后端       | Python、FastAPI、Pydantic、SQLAlchemy Async、Loguru |
-| 智能体     | LangChain、LangGraph、自定义 Agent Runtime          |
-| 管理后台   | Vue 3、TypeScript、PureAdmin、Element Plus、Pinia   |
-| 用户工作台 | Vue 3、TypeScript、Vite、Element Plus、Vue I18n     |
-| 业务数据库 | SQLite                                              |
-| 分析数据库 | DuckDB                                              |
-| 向量数据库 | ChromaDB                                            |
-| 检索       | Vector Search、BM25、RRF、Reranker                  |
+| Backend | Python, FastAPI, Pydantic, SQLAlchemy Async, Loguru |
+| Agents | LangChain, Custom Agent Runtime |
+| Admin Backend | Vue 3, TypeScript, PureAdmin, Element Plus, Pinia |
+| User Workbench | Vue 3, TypeScript, Vite, Element Plus, Vue I18n |
+| Business Database | SQLite |
+| Analytics Database | DuckDB |
+| Vector Database | ChromaDB |
+| Search | Vector Search, BM25, RRF, Reranker |
 
-## 目录结构
+## Directory Structure
 
 ```text
+
 miniagent/
-├── backend/                  # FastAPI 后端
-│   ├── app/
-│   │   ├── api/              # Admin、User、Auth、运维接口
-│   │   ├── core/             # 配置、安全、依赖注入、i18n
-│   │   ├── infra/            # ORM、数据库初始化、缓存
-│   │   ├── repositories/     # 异步数据访问层
-│   │   ├── runtime/          # Agent、LLM、会话与运行时组件
-│   │   ├── schemas/          # Pydantic DTO
-│   │   └── services/         # 业务服务
-│   ├── db/                   # 本地数据库与索引（运行时生成）
-│   ├── files/                # 上传文件（运行时生成）
-│   ├── .env.example          # 环境变量模板
-│   └── requirements.txt
-├── management/               # PureAdmin 管理后台
-├── workplace/                # 最终用户工作台
+├── backend/ # FastAPI Backend
+│ ├── app/
+│ │ ├── api/ # Admin, User, Auth, Operations Interface
+│ │ ├── core/ # Configuration, Security, Dependency Injection, i18n
+│ │ ├── infra/ # ORM, Database Initialization, Caching
+│ │ ├── repositories/ # Asynchronous Data Access Layer
+│ │ ├── runtime/ # Agent, LLM, Session and Runtime Components
+│ │ ├── schemas/ # Pydantic DTO
+│ │ └── services/ # Business Services
+│ ├── db/ # Local Database and Indexes (Generated at Runtime)
+│ ├── files/ # Upload Files (Generated at Runtime)
+│ ├── .env.example # Environment Variable Template
+│ └── requirements.txt
+├── management/ # PureAdmin Management Backend
+├── workplace/ # End-User Workbench
 ├── docker-compose.yml
 ├── setup.bat
 ├── setup.sh
 └── README.md
+
 ```
 
-## 环境要求
+## Environment Requirements
 
-- Python 3.12 或更高版本
-- Node.js 20.19+ 或 22.13+
-- pnpm 9 或更高版本
-- 可用的 LLM 服务，例如 Ollama 或 OpenAI 兼容接口
-- 可选：NVIDIA GPU 与对应驱动
+- Python 3.12 or later
+- Node.js 20.19+ or 22.13+
+- pnpm 9 or later
+- Available LLM service, such as Ollama or OpenAI compatible interface
+- Optional: NVIDIA GPU and corresponding driver
 
-## 快速开始
+## Quick Start
 
-### 1. 获取代码
+### 1. Get the Code
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/liupras/miniagent.git
 cd miniagent
+
 ```
 
-### 2. 配置并启动后端
+### 2. Configure and Start the Backend
 
-Windows PowerShell：
+Windows PowerShell:
 
 ```powershell
 Set-Location backend
@@ -182,9 +198,10 @@ py -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env
+
 ```
 
-Linux/macOS：
+Linux/macOS:
 
 ```bash
 cd backend
@@ -193,19 +210,22 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 cp .env.example .env
+
 ```
 
-打开 `backend/.env`，至少修改 JWT 密钥，并配置实际使用的模型服务。然后启动 API：
+Open `backend/.env`, at least modify the JWT key, and configure the actual model service to be used. Then start the API:
 
 ```bash
+
 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 10088
+
 ```
 
-应用首次启动时会自动创建数据库并载入种子数据。
+The application will automatically create the database and load seed data on its first startup.
 
-### 3. 启动管理后台
+### 3. Start the Management Backend
 
-打开一个新终端：
+Open a new terminal:
 
 ```bash
 cd management
@@ -213,11 +233,11 @@ pnpm install
 pnpm dev
 ```
 
-默认地址：<http://localhost:8848>
+Default address: <http://localhost:8848>
 
-### 4. 启动 Workplace
+### 4. Start Workplace
 
-再打开一个新终端：
+Open another new terminal:
 
 ```bash
 cd workplace
@@ -225,124 +245,126 @@ pnpm install
 pnpm dev
 ```
 
-Workplace 使用 Vite 开发服务器，访问地址以终端输出为准。
+Workplace uses the Vite development server; the access address is as shown in the terminal output.
 
 > [!TIP]
-> `pnpm` 必须在 `management` 或 `workplace` 目录中运行。`backend` 是 Python 项目，其中没有 `package.json`。
 
-## 默认开发账号
+`pnpm` must be run in the `management` or `workplace` directory. `backend` is a Python project and does not contain a `package.json`.
 
-| 用途               | 用户名  | 密码       |
+## Default Development Account
+
+| Purpose | Username | Password |
 | ------------------ | ------- | ---------- |
-| 管理员             | `admin` | `1FaFkWt9` |
-| Workplace 演示用户 | `demo`  | `fIzF7JHK` |
+| Administrator | `admin` | `1FaFkWt9` |
+| Workplace Demo User | `demo` | `fIzF7JHK` |
 
-演示用户默认被授权使用 `law_assistant`。
+The demo user is authorized to use `law_assistant` by default.
 
 > [!WARNING]
-> 默认账号仅用于本地开发。部署到共享环境或生产环境前，必须修改密码、替换 `JWT_SECRET_KEY` 并检查用户授权。
+> The default account is for local development only. Before deploying to a shared or production environment, you must change the password, replace `JWT_SECRET_KEY`, and check user authorization.
 
-## 常用地址
+## Commonly Used Addresses
 
-启动默认开发环境后：
+After starting the default development environment:
 
-| 服务       | 地址                            |
+| Service | Address |
 | ---------- | ------------------------------- |
-| FastAPI    | <http://localhost:10088>        |
-| Swagger UI | <http://localhost:10088/docs>   |
-| ReDoc      | <http://localhost:10088/redoc>  |
-| 健康检查   | <http://localhost:10088/health> |
-| Management | <http://localhost:8848>         |
-| Workplace  | 以 Vite 终端输出为准            |
+| FastAPI | <http://localhost:10088> |
+| Swagger UI | <http://localhost:10088/docs> |
+| ReDoc | <http://localhost:10088/redoc> |
+| Health Check | <http://localhost:10088/health> |
+| Management | <http://localhost:8848> |
+| Workplace | Refer to Vite terminal output |
 
-## 关键配置
+## Key Configurations
 
-后端配置位于 `backend/.env`，完整字段参见 `backend/.env.example`。
+Backend configuration is located in `backend/.env`. See `backend/.env.example` for complete fields.
 
-```dotenv
-APP_NAME=MiniAgent
-APP_VERSION=0.1.0
-DEBUG=True
-ENVIRONMENT=development
+The frontend development proxy points to `http://127.0.0.1:10088` by default. Workplace can temporarily switch backend addresses by setting `VITE_PROXY_TARGET` before startup.
 
-API_HOST=0.0.0.0
-API_PORT=10088
-
-SQLITE_DB_PATH=db/sqlite
-DUCK_DB_PATH=db/duckdb
-VECTOR_DB_PATH=db/vector
-STORAGE_DIR=files
-
-JWT_SECRET_KEY=replace-with-a-long-random-secret
-ACCESS_TOKEN_EXPIRE_DAYS=1
-REFRESH_TOKEN_EXPIRE_DAYS=7
-
-PASSWORD_MIN_LENGTH=8
-PASSWORD_REQUIRE_UPPER=true
-PASSWORD_REQUIRE_LOWER=true
-PASSWORD_REQUIRE_DIGIT=true
-PASSWORD_REQUIRE_SPECIAL=false
-
-LOGIN_MAX_FAILED_ATTEMPTS=5
-LOGIN_LOCK_DURATION_MINUTES=10
-```
-
-前端开发代理默认指向 `http://127.0.0.1:10088`。Workplace 可通过启动前设置 `VITE_PROXY_TARGET` 临时切换后端地址。
-
-PowerShell 示例：
+PowerShell Example:
 
 ```powershell
+
 $env:VITE_PROXY_TARGET="http://127.0.0.1:10089"
 pnpm dev
 ```
 
-## 构建与测试
+## Build and Test
 
-后端测试：
-
-```bash
-cd backend
-python -m pytest app/test
-```
-
-构建管理后台：
+Build Management Backend:
 
 ```bash
 cd management
 pnpm build
 ```
 
-检查并构建 Workplace：
+Check and Build Workplace:
 
 ```bash
 cd workplace
 pnpm build
 ```
 
-部分检索、LLM 和 SQL Agent 测试需要模型服务及测试数据，请根据测试文件中的说明准备环境。
+Some search, LLM, and SQL Agent tests require model services and test data. Please prepare the environment according to the instructions in the test files.
 
-## 数据与缓存
+## Data and Caching
 
-- SQLite、DuckDB、ChromaDB、BM25 索引和上传文件默认保存在 `backend` 下的本地目录中。
-- 修改智能体、知识库、工具或模型配置后，应通过对应服务执行缓存失效，避免继续使用旧配置。
-- 不要把 `.env`、模型密钥、本地数据库、日志或用户上传文件提交到公开仓库。
+- SQLite, DuckDB, ChromaDB, BM25 indexes, and uploaded files are stored by default in the local directory under `backend`.
 
-## 生产部署建议
+- When you modify the agent, knowledge base, tool, or model configuration, the backend will automatically refresh the cache. If the caching system continues to use the old configuration, you can manually refresh the cache in `management`.
 
-- 设置 `DEBUG=False` 和 `ENVIRONMENT=production`
-- 使用高强度随机 `JWT_SECRET_KEY`
-- 限制 `CORS_ORIGINS`，不要在生产环境使用通配来源
-- 修改或移除默认账号
-- 为 API 配置 HTTPS、反向代理、访问日志和备份策略
-- 将模型密钥交给 Secret Manager 或部署平台的安全变量管理
-- 持久化 `backend/db`、`backend/files` 与必要的索引目录
-- 根据模型与文档处理负载配置 CPU、内存和 GPU 限额
+- Do not commit `.env` files, model keys, local databases, logs, or user-uploaded files to public repositories.
 
-## 常见问题
+### Singleton Objects
 
-### `No package.json found in D:\miniagent\backend`
+| Name | Location |
+| --- | --- |
+| prompt_loader | app.core.prompt_loader.py |
+| t,translations | app.core.I18n.I18n.py |
+| cache_registry | app.infra.store_registry.py |
+| title_generator | app.runtime.conversation.title_generator.py |
 
-当前终端位于后端目录。请切换到目标前端目录：
+### Caching
+
+#### Object Caching
+
+| Cache Name | Class | Key-Value Description |
+| --- | --- | --- |
+| web_search_pipeline | WebSearchService | tool_name → WebSearchPipeline |
+| sql_agent | SQLAgentService | tool_name → SQLAgent |
+| agent_runner | AgentFactory | agent_id → AgentRunner |
+| smart_router | SmartRouterFactory | router_config_id → SmartRouter |
+| kb_retrieval_pipeline | KBRetrievalService | kb_id → RetrievalPipeline |
+| kb_info | KBRetrievalService | kb_id → KBInfo |
+| kb_embedding | SmartRouter | kb_id → Embedding |
+| vector_store_manager | VectorStoreRegistry | kb_id → VectorStoreManager |
+
+#### Value Caching
+
+| Class | Cached Key |
+| --- | --- |
+| AuthPermission | auth, user_perms: |
+| BM25Manager | bm25 |
+| RetrievalPipeline | retrieval |
+| SearchResultCache | web_search |
+| SchemaContextBuilder | schema_context |
+
+## Production Deployment Recommendations
+
+- Set `DEBUG=False` and `ENVIRONMENT=production`
+- Use high-strength random `JWT_SECRET_KEY`
+- Limit `CORS_ORIGINS` to avoid using wildcard origins in production.
+- Modify or remove the default account.
+- Configure HTTPS, reverse proxy, access logs, and backup policies for the API.
+- Persist `backend/db`, `backend/files`, and necessary index directories.
+- Configure CPU, memory, and GPU quotas based on model and document processing load.
+
+## Frequently Asked Questions
+
+### No package.json found in D:\miniagent\backend`
+
+The current terminal is in the backend directory. Please switch to the target frontend directory:
 
 ```powershell
 Set-Location D:\miniagent\workplace
@@ -350,34 +372,36 @@ pnpm install
 pnpm dev
 ```
 
-### Workplace 中没有可选择的智能体
+### No selectable agents in Workplace
 
-登录管理后台，为用户配置智能体授权。Workplace 只展示 `UserAgentRelation` 中已授权且处于启用状态的智能体。
+Log in to the admin panel and configure agent authorization for the user. Workplace only displays authorized and enabled agents in `UserAgentRelation`.
 
-### 修改模型或智能体配置后没有立即生效
+### Modifications to model or agent configurations do not take effect immediately
 
-运行时组件使用对象缓存与值缓存。请通过管理后台保存配置，并确认对应服务已执行缓存失效；必要时重启后端。
+Runtime components use object caching and value caching. Please save the configuration through the management backend and confirm that the corresponding service has performed cache invalidation; restart the backend if necessary.
 
-### 本地模型无法响应
+### Local Model Unresponsive
 
-确认 Ollama 或其他模型服务已经启动，模型已下载，并且后台中的 Base URL、模型名称及 API Key 配置正确。
+Confirm that Ollama or other model services are running, the model has been downloaded, and the Base URL, model name, and API Key configuration in the backend are correct.
 
-## 参与贡献
+## Contributing
 
-欢迎提交 Issue 和 Pull Request。建议在提交前完成：
+Submitting Issues and Pull Requests is welcome. It is recommended to complete the following before submitting:
 
-1. 保持 API、Service、Repository 和 Schema 分层清晰。
-2. 为新接口补充权限与资源归属校验。
-3. 为新功能增加测试或提供可复现的验证步骤。
-4. 确保前端类型检查和生产构建通过。
-5. 不提交密钥、数据库、日志、模型文件或用户数据。
+1. Maintain a clear layering of API, Service, Repository, and Schema.
+2. Add permission and resource ownership checks for new interfaces.
+3. Add tests or provide reproducible verification steps for new features.
+4. Ensure frontend type checking and production build pass.
+5. Do not submit keys, databases, logs, model files, or user data.
 
 ## License
 
-本项目基于 [Apache License 2.0](LICENSE) 开源。
+This project is open source under the [Apache License 2.0](LICENSE).
 
 ---
 
 <div align="center">
-  Make the simple things simple, and the complex things possible.
+
+Make the simple things simple, and the complex things possible.
+
 </div>

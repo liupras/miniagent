@@ -1,74 +1,164 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# MiniAgent 快速启动脚本
+set -Eeuo pipefail
 
-set -e
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_DIR="${SCRIPT_DIR}/backend"
+MANAGEMENT_DIR="${SCRIPT_DIR}/management"
+WORKPLACE_DIR="${SCRIPT_DIR}/workplace"
+VENV_DIR="${BACKEND_DIR}/.venv"
+VENV_PYTHON="${VENV_DIR}/bin/python"
+LOG_DIR="${BACKEND_DIR}/logs"
 
-echo "=================================="
-echo "  MiniAgent 快速启动工具"
-echo "=================================="
+cd "${SCRIPT_DIR}"
 
-# 检查Python版本
-if ! command -v python3 &> /dev/null; then
-    echo "❌ 错误: 未找到Python3，请先安装Python 3.9或更高版本"
+echo "=========================================="
+echo "  MiniAgent Linux One-click Launcher"
+echo "=========================================="
+echo
+
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "[ERROR] Python was not found. Install Python 3.12 or later."
     exit 1
 fi
 
-PYTHON_VERSION=$(python3 --version | cut -d' ' -f2 | cut -d'.' -f1,2)
-echo "✅ Python版本: $PYTHON_VERSION"
+if ! python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)'; then
+    echo "[ERROR] MiniAgent requires Python 3.12 or later."
+    exit 1
+fi
+echo "[OK] Python $(python3 -c 'import platform; print(platform.python_version())') is available."
 
-# 创建虚拟环境
-if [ ! -d "venv" ]; then
-    echo "📦 创建虚拟环境..."
-    python3 -m venv venv
-    echo "✅ 虚拟环境创建成功"
+if ! command -v node >/dev/null 2>&1; then
+    echo "[ERROR] Node.js was not found. Install Node.js 20.19+ or 22.13+."
+    exit 1
+fi
+
+if ! node -e "const [a,b]=process.versions.node.split('.').map(Number);process.exit(a===20?b>=19?0:1:a===22?b>=13?0:1:a>22?0:1)"; then
+    echo "[ERROR] MiniAgent requires Node.js 20.19+ or 22.13+."
+    exit 1
+fi
+echo "[OK] Node.js $(node --version) is available."
+
+if command -v pnpm >/dev/null 2>&1; then
+    PNPM_CMD=(pnpm)
+elif command -v corepack >/dev/null 2>&1; then
+    PNPM_CMD=(corepack pnpm)
 else
-    echo "✅ 虚拟环境已存在"
+    echo "[ERROR] pnpm was not found. Run: npm install -g pnpm"
+    exit 1
 fi
 
-# 激活虚拟环境
-echo "🔧 激活虚拟环境..."
-source venv/bin/activate
+if ! "${PNPM_CMD[@]}" --version >/dev/null 2>&1; then
+    echo "[ERROR] pnpm could not be started. Check your Node.js/Corepack installation."
+    exit 1
+fi
+echo "[OK] pnpm $("${PNPM_CMD[@]}" --version) is available."
+echo
 
-# 安装依赖
-echo "📥 安装依赖包..."
-pip install --upgrade pip
-pip install -r backend/requirements.txt
+if [[ ! -x "${VENV_PYTHON}" ]]; then
+    echo "[1/5] Creating Python virtual environment..."
+    python3 -m venv "${VENV_DIR}"
+else
+    echo "[1/5] Python virtual environment already exists."
+fi
 
-# 检查.env文件
-if [ ! -f "backend/.env" ]; then
-    echo "⚠️ 未找到.env文件，正在从模板创建..."
-    cp backend/.env.example backend/.env
-    echo "✅ .env文件已创建，请编辑backend/.env文件配置你的API密钥"
-    echo ""
-    echo "重要配置项："
-    echo "  - OPENAI_API_KEY: 如果使用OpenAI，请填入你的API密钥"
-    echo "  - OLLAMA_API_BASE: 如果使用Ollama，确保地址正确"
-    echo ""
-    read -p "是否现在编辑.env文件？(y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        ${EDITOR:-nano} backend/.env
+echo "[2/5] Installing backend dependencies..."
+"${VENV_PYTHON}" -m pip install -r "${BACKEND_DIR}/requirements.txt"
+
+if [[ ! -f "${BACKEND_DIR}/.env" ]]; then
+    echo "[INFO] Creating backend/.env from backend/.env.example..."
+    cp "${BACKEND_DIR}/.env.example" "${BACKEND_DIR}/.env"
+    echo "[WARN] Review backend/.env and replace JWT_SECRET_KEY before a public deployment."
+fi
+
+echo "[3/5] Initializing the database..."
+(
+    cd "${BACKEND_DIR}"
+    "${VENV_PYTHON}" -m app.infra.db.initializer init
+)
+
+echo "[4/5] Installing Management dependencies..."
+(
+    cd "${MANAGEMENT_DIR}"
+    "${PNPM_CMD[@]}" install --frozen-lockfile
+)
+
+echo "[5/5] Installing Workplace dependencies..."
+(
+    cd "${WORKPLACE_DIR}"
+    "${PNPM_CMD[@]}" install --frozen-lockfile
+)
+
+mkdir -p "${LOG_DIR}"
+PIDS=()
+
+cleanup() {
+    local status=$?
+    trap - EXIT INT TERM
+
+    if ((${#PIDS[@]} > 0)); then
+        echo
+        echo "Stopping MiniAgent services..."
+        kill "${PIDS[@]}" 2>/dev/null || true
+        wait "${PIDS[@]}" 2>/dev/null || true
     fi
-fi
 
-# 初始化数据库
-echo "🗄️ 初始化数据库..."
-cd backend
-python app/init_db.py init
-cd ..
+    exit "${status}"
+}
 
-echo ""
-echo "=================================="
-echo "✅ 环境准备完成！"
-echo "=================================="
-echo ""
-echo "🚀 启动服务："
-echo "   cd backend"
-echo "   python -m uvicorn app.main:app --reload"
-echo ""
-echo "或者使用："
-echo "   cd backend && python app/main.py"
-echo ""
-echo "📚 访问API文档: http://localhost:8000/docs"
-echo ""
+trap cleanup EXIT
+trap 'exit 130' INT TERM
+
+echo
+echo "Starting Backend, Management, and Workplace..."
+(
+    cd "${BACKEND_DIR}"
+    exec "${VENV_PYTHON}" -m uvicorn app.main:app \
+        --reload --host 0.0.0.0 --port 10088
+) >"${LOG_DIR}/backend-console.log" 2>&1 &
+PIDS+=("$!")
+
+(
+    cd "${MANAGEMENT_DIR}"
+    exec "${PNPM_CMD[@]}" dev --host 0.0.0.0 --port 8848
+) >"${LOG_DIR}/management-console.log" 2>&1 &
+PIDS+=("$!")
+
+(
+    cd "${WORKPLACE_DIR}"
+    exec "${PNPM_CMD[@]}" dev --host 0.0.0.0 --port 5173
+) >"${LOG_DIR}/workplace-console.log" 2>&1 &
+PIDS+=("$!")
+
+sleep 2
+for pid in "${PIDS[@]}"; do
+    if ! kill -0 "${pid}" 2>/dev/null; then
+        echo "[ERROR] A MiniAgent service failed during startup."
+        tail -n 50 \
+            "${LOG_DIR}/backend-console.log" \
+            "${LOG_DIR}/management-console.log" \
+            "${LOG_DIR}/workplace-console.log" || true
+        exit 1
+    fi
+done
+
+echo
+echo "=========================================="
+echo "  MiniAgent has been started"
+echo "=========================================="
+echo "  Backend API: http://localhost:10088"
+echo "  API docs:    http://localhost:10088/docs"
+echo "  Management:  http://localhost:8848"
+echo "  Workplace:   http://localhost:5173"
+echo
+echo "Press Ctrl+C to stop all services."
+echo "Console logs are stored in: ${LOG_DIR}"
+echo
+
+tail -n 0 -F \
+    "${LOG_DIR}/backend-console.log" \
+    "${LOG_DIR}/management-console.log" \
+    "${LOG_DIR}/workplace-console.log" &
+PIDS+=("$!")
+
+wait -n "${PIDS[@]}"
