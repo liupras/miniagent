@@ -133,7 +133,7 @@ flowchart TB
 | 模块       | 技术                                                |
 | ---------- | --------------------------------------------------- |
 | 后端       | Python、FastAPI、Pydantic、SQLAlchemy Async、Loguru |
-| 智能体     | LangChain、LangGraph、自定义 Agent Runtime          |
+| 智能体     | LangChain、自定义 Agent Runtime          |
 | 管理后台   | Vue 3、TypeScript、PureAdmin、Element Plus、Pinia   |
 | 用户工作台 | Vue 3、TypeScript、Vite、Element Plus、Vue I18n     |
 | 业务数据库 | SQLite                                              |
