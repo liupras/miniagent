@@ -20,7 +20,7 @@ class I18n:
     def __init__(self, setting_service: "SystemSettingService"):
 
         self._setting_service = setting_service
-        self._language = "zh_CN"
+        self._language = "zh"
 
     @classmethod
     async def create(cls, setting_service: "SystemSettingService"):

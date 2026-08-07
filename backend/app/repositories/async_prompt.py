@@ -14,7 +14,7 @@ from ..infra.db.database import Prompt
 
 
 def normalize_prompt_lang(lang: str) -> str:
-    """Normalize language tags to the project's ``zh_CN`` / ``en_US`` form."""
+    """Normalize language tags to the project's ``zh`` / ``en`` form."""
     parts = lang.strip().replace("-", "_").split("_", 1)
     if len(parts) == 1:
         return parts[0].lower()

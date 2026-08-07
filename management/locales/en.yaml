@@ -678,8 +678,8 @@ promptManagement:
   keyPlaceholder: For example, kb.query_rewrite
   language: Language
   allLanguages: All Languages
-  languagePlaceholder: Select or enter a language, e.g. en_US
-  languageInvalid: Invalid language format; use zh_CN or en_US
+  languagePlaceholder: Select or enter a language, e.g. en
+  languageInvalid: Invalid language format; use zh or en
   value: Prompt Content
   valuePlaceholder: Enter a prompt template; use {variable} for variables
   emptyValue: (empty)

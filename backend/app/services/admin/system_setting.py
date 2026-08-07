@@ -32,7 +32,7 @@ class SystemSettingValueError(InvalidValueError):
 
 class SystemSettingService:
 
-    _language = "zh_CN"
+    _language = "zh"
 
     def __init__(self, db: AsyncSystemSettingDatabase) -> None:
         self._db = db

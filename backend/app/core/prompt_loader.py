@@ -19,7 +19,7 @@ class PromptLoader:
         self._prompt_service = prompt_service
 
         self._templates: Dict[str, Dict[str, str]] = {}
-        self._language = "zh_CN"
+        self._language = "zh"
 
     @classmethod
     async def create(cls, setting_service:SystemSettingService,prompt_service:PromptService):

@@ -33,28 +33,28 @@ async def _exercise_prompt_crud():
         )
     )
     assert created.key == "demo.prompt"
-    assert created.lang == "zh_CN"
+    assert created.lang == "zh"
 
     with pytest.raises(PromptAlreadyExistsError):
         await service.create(
-            PromptCreate(key="demo.prompt", lang="ZH_cn", value="duplicate")
+            PromptCreate(key="demo.prompt", lang="ZH", value="duplicate")
         )
 
-    page = await service.list_prompts(keyword="demo", lang="zh_CN")
+    page = await service.list_prompts(keyword="demo", lang="zh")
     assert page.total == 1
     assert page.data[0].value == "Hello {name}"
 
     updated = await service.update(
         "demo.prompt",
-        "zh_cn",
+        "zh",
         PromptUpdate(value="Updated", description=None),
     )
     assert updated.value == "Updated"
     assert updated.description is None
-    assert await service.list_languages() == ["zh_CN"]
+    assert await service.list_languages() == ["zh"]
 
     await service.delete("demo.prompt", "ZH-CN")
     with pytest.raises(PromptNotFoundError):
-        await service.get_prompt("demo.prompt", "zh_CN")
+        await service.get_prompt("demo.prompt", "zh")
 
     await engine.dispose()

@@ -42,7 +42,7 @@ bad_titles:
 
 languages:
 
-  zh_CN:
+  zh:
 
     prefixes:
       - 请问
@@ -59,7 +59,7 @@ languages:
       - 能不能
       - 可以帮我
 
-  en_US:
+  en:
 
     prefixes:
       - please

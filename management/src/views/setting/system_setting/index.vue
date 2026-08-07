@@ -162,8 +162,8 @@ const allGroups = ref<string[]>([]);
 const selectedGroup = ref("");
 const groupOptions = computed(() => allGroups.value);
 const languageOptions = [
-  { label: "简体中文 (zh_CN)", value: "zh_CN" },
-  { label: "English (en_US)", value: "en_US" }
+  { label: "简体中文 (zh)", value: "zh" },
+  { label: "English (en)", value: "en" }
 ];
 
 const columns: TableColumnList = [

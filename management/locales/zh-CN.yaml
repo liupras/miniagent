@@ -680,8 +680,8 @@ promptManagement:
   keyPlaceholder: 例如 kb.query_rewrite
   language: 语言
   allLanguages: 全部语言
-  languagePlaceholder: 请选择或输入语言，例如 zh_CN
-  languageInvalid: 语言格式不正确，例如 zh_CN 或 en_US
+  languagePlaceholder: 请选择或输入语言，例如 zh
+  languageInvalid: 语言格式不正确，例如 zh 或 en
   value: Prompt 内容
   valuePlaceholder: 请输入 Prompt 模板，变量使用 {variable} 格式
   emptyValue: （空内容）

@@ -46,7 +46,7 @@ class AsyncSystemSettingDatabase(AsyncBaseDatabase):
         row = await self.get(key)
         return row.value if row is not None else default
 
-    async def get_language(self, fallback: str = "zh_CN") -> str:
+    async def get_language(self, fallback: str = "zh") -> str:
         """
         Return the current system language tag (lower-cased).
         """

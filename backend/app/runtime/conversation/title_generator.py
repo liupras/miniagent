@@ -54,9 +54,9 @@ class ConversationTitleGenerator:
         text: str,
     ) -> str:
 
-        zh = self.config.languages.get("zh_CN")
+        zh = self.config.languages.get("zh")
 
-        en = self.config.languages.get("en_US")
+        en = self.config.languages.get("en")
 
         return TitleCleaner.clean(
             text=text,

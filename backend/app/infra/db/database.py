@@ -356,7 +356,7 @@ class Prompt(Base):
 
     id          = Column(Integer,     primary_key=True, autoincrement=True)    
     key         = Column(String(200), nullable=False, comment="Identifier within the group, e.g. 'query_rewrite'.")
-    lang        = Column(String(10),  nullable=False, comment="language tag, lower-cased, e.g. zh_CN / en_US")
+    lang        = Column(String(10),  nullable=False, comment="language tag, lower-cased, e.g. zh / en")
     value       = Column(Text,        nullable=False, comment="Translated string; prompt group supports {placeholder} variables")
     description = Column(String(255), nullable=True,  comment="Developer / admin note, not shown to end users")
 

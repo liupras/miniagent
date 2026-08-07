@@ -437,7 +437,7 @@ const editorType = ref<"add" | "edit">("add");
 const editorFormRef = ref<FormInstance>();
 const editorForm = reactive({
   key: "",
-  lang: "zh_CN",
+  lang: "zh",
   value: "",
   description: ""
 });
@@ -478,7 +478,7 @@ function openEditor(type: "add" | "edit", row?: PromptItem) {
           value: row.value,
           description: row.description || ""
         }
-      : { key: "", lang: "zh_CN", value: "", description: "" }
+      : { key: "", lang: "zh", value: "", description: "" }
   );
   editorVisible.value = true;
 }
