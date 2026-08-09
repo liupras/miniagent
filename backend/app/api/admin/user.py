@@ -128,4 +128,4 @@ async def delete_user(
     caller_id: int = Depends(_delete),
 ):
     await svc.delete(user_id)
-    return ApiResponse(data={"deleted": 1})
+    return ApiResponse()

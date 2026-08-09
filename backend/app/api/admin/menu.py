@@ -51,5 +51,5 @@ async def create_menu(payload: MenuCreate, svc: MenuService = Depends(get_servic
 @router.delete("/{menu_id}", response_model=ApiResponse, summary="Delete menu/button and descendants")
 async def delete_menu(menu_id: int, svc: MenuService = Depends(get_service), caller_id: int = Depends(_delete)):
     await svc.delete(menu_id)
-    return ApiResponse(data={"deleted": 1})
+    return ApiResponse()
 '''

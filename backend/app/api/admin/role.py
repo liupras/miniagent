@@ -67,4 +67,4 @@ async def set_role_menus(role_id: int, payload: RoleMenuUpdate, svc: RoleService
 @router.delete("/{role_id}", response_model=ApiResponse, summary="Delete role")
 async def delete_role(role_id: int, svc: RoleService = Depends(get_service), caller_id: int = Depends(_delete)):
     await svc.delete(role_id)
-    return ApiResponse(data={"deleted": 1})
+    return ApiResponse()
