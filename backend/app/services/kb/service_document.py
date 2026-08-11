@@ -8,8 +8,9 @@ import asyncio
 from typing import  Any, Optional
 from langchain_core.documents import Document as LC_Document
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.schemas.admin.chunk import DocumentChunksOut, ParentChunkRead
 from app.schemas.common import EmptyDataError, NotFoundError
 from app.utils.hash import calculate_file_sha256

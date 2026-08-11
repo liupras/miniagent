@@ -19,7 +19,8 @@ from langchain_text_splitters import (
 )
 
 from bs4 import BeautifulSoup
-from loguru import logger
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from pygments.lexers import guess_lexer
 from pygments.util import ClassNotFound
 

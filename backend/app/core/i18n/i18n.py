@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING
 
 import yaml
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 if TYPE_CHECKING:
     from app.services.admin.system_setting import SystemSettingService
 

@@ -8,7 +8,9 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from loguru import logger
+from app.core.logger_config import get_logger
+
+logger = get_logger(__name__)
 from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.orm import sessionmaker, Session
 

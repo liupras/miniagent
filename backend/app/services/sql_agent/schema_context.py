@@ -15,8 +15,8 @@
 import json
 import re
 from typing import List, Dict, Any, Optional
-from loguru import logger
-
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from app.infra.cache.memory import MemoryCacheStore
 from app.infra.cache.factory import create_cache_backend
 

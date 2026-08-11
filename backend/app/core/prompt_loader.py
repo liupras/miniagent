@@ -5,8 +5,8 @@
 # @description: Prompt-aware prompt resolution
 
 from typing import Dict
-from loguru import logger
-
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from app.services.admin.system_setting import SystemSettingService
 from app.services.admin.prompt import PromptService
 from app.repositories.async_prompt import normalize_prompt_lang

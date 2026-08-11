@@ -10,8 +10,8 @@ from typing import Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Body, Depends, Request, Response
-from loguru import logger
-
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from app.core.config import settings
 from app.core.security.jwt_auth import jwt_auth
 from app.core.i18n.i18n import t

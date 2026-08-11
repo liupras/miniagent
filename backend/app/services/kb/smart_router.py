@@ -9,8 +9,8 @@ from typing import List, Dict, Optional
 from dataclasses import dataclass
 from langchain_ollama import OllamaEmbeddings
 from langchain_community.utils.math import cosine_similarity
-from loguru import logger
-
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from app.runtime.cache.lazy_cache import AsyncLazyCache
 
 from .retrieval_model import ChunkResult

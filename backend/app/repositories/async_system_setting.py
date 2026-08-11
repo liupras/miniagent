@@ -5,7 +5,8 @@
 # @description: SystemSetting Database Management (Asynchronous)
 
 from typing import Dict, List, Optional
-from loguru import logger
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from sqlalchemy import select
 
 from ..infra.db.async_base import AsyncBaseDatabase

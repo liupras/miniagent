@@ -17,8 +17,9 @@ from __future__ import annotations
 import statistics
 from typing import List, TypeVar
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 # T represents any object that has a `final_score: float` attribute.
 T = TypeVar("T")
 

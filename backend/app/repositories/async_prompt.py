@@ -6,7 +6,9 @@
 
 from typing import Dict, List, Optional, Tuple
 
-from loguru import logger
+from app.core.logger_config import get_logger
+
+logger = get_logger(__name__)
 from sqlalchemy import func, select
 
 from ..infra.db.async_base import AsyncBaseDatabase

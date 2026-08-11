@@ -7,8 +7,9 @@
 from litellm import completion, acompletion, embedding,aembedding
 from typing import Any, AsyncGenerator, Optional,Dict,List,Generator,Union
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from .stream_parser import StreamParser
 from .models import LLMClientError,LLMResponse
 

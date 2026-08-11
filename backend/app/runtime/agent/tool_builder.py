@@ -51,7 +51,8 @@ from typing import Any, Dict, List, Optional, Type
 import httpx
 from langchain_core.tools import StructuredTool, BaseTool
 from pydantic import BaseModel, Field, create_model
-from loguru import logger
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 import inspect
 
 from app.infra.db.database import Agent as AgentORM

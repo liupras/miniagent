@@ -62,8 +62,9 @@ import math
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.retrieval.reranker.base import BaseReranker, Scorable
 from app.runtime.llm.client import LLMClient
 

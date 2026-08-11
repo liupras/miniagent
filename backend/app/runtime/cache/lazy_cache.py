@@ -9,8 +9,9 @@ from __future__ import annotations
 import asyncio
 from typing import Awaitable, Callable, Dict, Generic, Hashable, Optional, TypeVar
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 K = TypeVar("K", bound=Hashable)
 V = TypeVar("V")
 

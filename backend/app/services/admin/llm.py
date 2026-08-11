@@ -11,8 +11,9 @@ from typing import Any, List, Optional, TYPE_CHECKING
 from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 if TYPE_CHECKING:
     from app.core.service_container import ServiceContainer
 

@@ -15,8 +15,8 @@ import concurrent.futures
 from typing import Any, Dict, Optional
 
 import duckdb
-from loguru import logger
-
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from app.core.i18n.i18n import t
 
 # ─────────────────────────────────────────────

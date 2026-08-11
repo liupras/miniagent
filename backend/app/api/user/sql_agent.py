@@ -11,8 +11,9 @@ from fastapi.responses import StreamingResponse
 import json
 import asyncio
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.schemas.user.sql_agent import QueryRequest
 from app.schemas.common import ApiResponse
 

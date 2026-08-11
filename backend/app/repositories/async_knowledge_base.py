@@ -6,7 +6,9 @@
 
 from typing import List, Optional
 
-from loguru import logger
+from app.core.logger_config import get_logger
+
+logger = get_logger(__name__)
 from sqlalchemy import delete, func, select, update
 
 from ..infra.db.async_base import AsyncBaseDatabase

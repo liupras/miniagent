@@ -24,7 +24,8 @@ from pydantic import Field, ConfigDict
 from langchain_core.documents import Document
 from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
-from loguru import logger
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 import threading
 import chromadb
 from chromadb.config import Settings

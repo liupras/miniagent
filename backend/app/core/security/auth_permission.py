@@ -12,8 +12,9 @@ from typing import Callable, Optional, Set
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.core.i18n.i18n_http import raise_forbidden
 from app.infra.cache.factory import create_cache_backend
 

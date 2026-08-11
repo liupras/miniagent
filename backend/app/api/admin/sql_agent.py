@@ -13,8 +13,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.schemas.common import ApiResponse
 from app.core.i18n.i18n import t
 

@@ -4,8 +4,9 @@
 # @date    : 2026-04-26
 # @description: reranker main class
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.retrieval.reranker.base import RerankMode,Scorable
 from typing import Optional,List
 from app.infra.db.database import LLM

@@ -5,7 +5,8 @@
 # @description: JWT authentication
 
 import jwt  # pip install PyJWT
-from loguru import logger
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from datetime import datetime, timedelta,timezone
 from typing import Optional, Dict
 

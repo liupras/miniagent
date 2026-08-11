@@ -11,8 +11,9 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.runtime.cache.lazy_cache import AsyncLazyCache
 from .engine import SQLAgent,SQLAgentConfig
 from .sql_tools import SQLTools

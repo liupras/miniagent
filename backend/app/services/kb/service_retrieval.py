@@ -7,8 +7,9 @@
 from typing import Optional, Any, Dict, List
 from dataclasses import dataclass
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.runtime.cache.lazy_cache import AsyncLazyCache
 from app.services.kb.retrieval import RetrievalPipeline
 

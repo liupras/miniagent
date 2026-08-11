@@ -17,8 +17,8 @@ import json
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
 from langchain_core.runnables import Runnable
-from loguru import logger
-
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from app.infra.db.database import LLM
 from app.runtime.agent.react_agent import ToolReActAgent
 from app.runtime.conversation.service_conversation import ConversationService

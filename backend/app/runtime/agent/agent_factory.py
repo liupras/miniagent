@@ -8,8 +8,9 @@
 from __future__ import annotations
 from typing import Any, TYPE_CHECKING
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.runtime.cache.lazy_cache import AsyncLazyCache
 from app.runtime.agent.tool_builder import build_tools_for_agent
 from app.runtime.agent.agent_runner import AgentRunner, build_agent_runner

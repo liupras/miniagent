@@ -15,8 +15,9 @@ CONTEXT_TOKEN_RESERVE: int = 500
 from typing import Dict, List, Optional, Tuple
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.infra.db.database import ChatMessage, ChatSession
 from app.repositories.async_chat import AsyncChatDatabase
 from app.runtime.llm.func import truncate_messages, estimate_messages_tokens

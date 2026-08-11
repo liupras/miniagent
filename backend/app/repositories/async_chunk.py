@@ -6,7 +6,9 @@
 
 from typing import Dict, List, Optional
 
-from loguru import logger
+from app.core.logger_config import get_logger
+
+logger = get_logger(__name__)
 from sqlalchemy import select, insert
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import SQLAlchemyError

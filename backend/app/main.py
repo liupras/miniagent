@@ -8,15 +8,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from loguru import logger
 import time
 from typing import AsyncGenerator
 from uuid import uuid4
 
 # Important: logger_config must be imported and configured before other imports.
 # This ensures that the logging system is ready before the entire application starts.
-from app.core.logger_config import logger, setup_logger
+from app.core.logger_config import get_logger, setup_logger
 setup_logger()
+logger = get_logger(__name__)
 
 from app.core.config import settings
 from app.infra.db.initializer import db_manager, init_database_on_startup
@@ -143,7 +143,7 @@ async def log_requests(request: Request, call_next):
     request.state.request_id = request_id
     start_time = time.time()
 
-    # contextualize() sets a ContextVar that every `from loguru import logger`
+    # contextualize() sets a ContextVar that every `get_logger(__name__)` call
     # call inside the request scope will pick up automatically.
     with logger.contextualize(request_id=request_id):
         audit_token = begin_audit_context(

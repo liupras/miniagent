@@ -6,7 +6,9 @@
 
 from typing import Dict, List, Tuple
 
-from loguru import logger
+from app.core.logger_config import get_logger
+
+logger = get_logger(__name__)
 from sqlalchemy import func, select, delete
 from sqlalchemy.orm import selectinload
 

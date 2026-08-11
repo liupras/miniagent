@@ -4,7 +4,9 @@
 # @date    : 2026-03-01
 # @description: Application-level service container, Implement Dependency Injection.
 
-from loguru import logger
+from app.core.logger_config import get_logger
+
+logger = get_logger(__name__)
 from app.core.config import settings
 from app.runtime.smart_router_factory import SmartRouterFactory
 from app.runtime.vector_registry import VectorStoreRegistry

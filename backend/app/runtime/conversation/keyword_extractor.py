@@ -5,8 +5,8 @@
 # @description: KeywordExtractor for title
 
 import jieba.analyse
-from loguru import logger
-
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 class KeywordExtractor:
 
     @staticmethod

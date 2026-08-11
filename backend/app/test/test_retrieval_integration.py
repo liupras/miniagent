@@ -57,8 +57,9 @@ if _here not in sys.path:
     sys.path.insert(0, _here)
 # ─────────────────────────────────────────────────────────────────────────────
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from ..retrieval.vector_store import VectorStoreManager
 from ..infra.search.bm25_manager import BM25Manager
 from ..services.kb.retrieval    import RetrievalPipeline

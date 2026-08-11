@@ -13,7 +13,9 @@ import math
 from typing import TYPE_CHECKING, Any, Optional
 from uuid import UUID
 
-from loguru import logger
+from app.core.logger_config import get_logger
+
+logger = get_logger(__name__)
 from sqlalchemy import event, inspect
 from sqlalchemy.orm import Session
 

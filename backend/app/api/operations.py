@@ -8,7 +8,8 @@ import time
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
-from loguru import logger
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from sqlalchemy import inspect
 
 from app.core.config import settings

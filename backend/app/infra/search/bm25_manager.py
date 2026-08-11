@@ -17,7 +17,9 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from pydantic import Field, ConfigDict
 
-from loguru import logger
+from app.core.logger_config import get_logger
+
+logger = get_logger(__name__)
 from rank_bm25 import BM25Okapi
 from langchain_core.stores import BaseStore
 from app.infra.cache.factory import create_cache_backend

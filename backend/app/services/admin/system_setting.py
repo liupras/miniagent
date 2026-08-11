@@ -8,8 +8,9 @@ import json
 import math
 from typing import Optional
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.repositories.async_system_setting import AsyncSystemSettingDatabase
 from app.schemas.admin.system_setting import SystemSettingOut, SystemSettingUpdate
 from app.schemas.common import InvalidValueError, NotFoundError, ReadOnlyError

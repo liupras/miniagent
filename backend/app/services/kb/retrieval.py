@@ -19,7 +19,8 @@ from langchain_core.stores import BaseStore
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
-from loguru import logger
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from pydantic import ConfigDict, Field
 
 from ...retrieval.vector_store import VectorStoreManager

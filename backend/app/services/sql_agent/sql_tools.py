@@ -6,7 +6,8 @@
 
 from typing import List, Dict, Any
 import re
-from loguru import logger
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from .sandbox import run_python_sandbox
 
 from ...infra.db.duckdb_manager import DuckDBManager

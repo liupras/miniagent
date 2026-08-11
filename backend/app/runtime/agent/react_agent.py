@@ -12,8 +12,9 @@ from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.runtime.llm.agent_client import AgentLLM
 from app.core.i18n.i18n import t
 from app.runtime.types import MessageRole

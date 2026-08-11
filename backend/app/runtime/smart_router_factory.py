@@ -6,8 +6,9 @@
 
 from typing import Dict
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.infra.db.database import RouterConfig
 from app.runtime.cache.lazy_cache import AsyncLazyCache
 from app.services.kb.smart_router import SmartRouter

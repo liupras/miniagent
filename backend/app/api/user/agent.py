@@ -9,7 +9,8 @@ from __future__ import annotations
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from loguru import logger
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from sse_starlette.sse import EventSourceResponse
 
 from app.core.config import settings

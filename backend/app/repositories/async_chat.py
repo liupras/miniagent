@@ -190,7 +190,8 @@ class AsyncChatDatabase(AsyncBaseDatabase):
                     generated_title = title_generator.generate(content)
                     chat_session.title = generated_title
                 except Exception as e:                    
-                    from loguru import logger
+                    from app.core.logger_config import get_logger
+                    logger = get_logger(__name__)
                     logger.error(f"Failed to generate title for session {session_id}: {e}")
                     chat_session.title="..."
 

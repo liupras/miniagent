@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
-from loguru import logger
+from app.core.logger_config import get_logger
+
+logger = get_logger(__name__)
 from typing import  Any, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:

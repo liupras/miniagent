@@ -37,8 +37,9 @@ import json
 import re
 from typing import List, Optional
 
-from loguru import logger
+from app.core.logger_config import get_logger
 
+logger = get_logger(__name__)
 from app.retrieval.reranker.base import BaseLLMReranker, Scorable
 from app.runtime.llm.models import LLMClientError
 from app.runtime.llm.client import LLMClient

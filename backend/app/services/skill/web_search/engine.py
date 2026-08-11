@@ -57,8 +57,8 @@ from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
-from loguru import logger
-
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
 from app.retrieval.reranker.factory import RerankerFactory
 from app.retrieval.reranker.base import RerankMode
 from app.runtime.llm.client import LLMClient
