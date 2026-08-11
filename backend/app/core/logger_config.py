@@ -159,18 +159,22 @@ def setup_logger():
         _logger.handlers = [InterceptHandler()]
         _logger.propagate = False
 
-    # ==================== 6. JSON format logs (optional, for log analysis)====================
-    # Uncomment to enable
-    # logger.add(
-    #     log_dir / "structured_{time:YYYY-MM-DD}.json",
-    #     format="{message}",
-    #     level="INFO",
-    #     rotation="00:00",
-    #     retention="30 days",
-    #     compression="zip",
-    #     serialize=True,  # JSON format
-    #     encoding="utf-8"
-    # )
+    # ==================== JSON structured logs (for log aggregation) ====================
+    # Enabled when settings.json_log_enabled is True (set JSON_LOG_ENABLED=true in .env).
+    # Outputs each log record as a JSON object, ideal for ELK / Loki / Grafana ingestion.
+    if settings.json_log_enabled:
+        logger.add(
+            log_dir / "structured_{time:YYYY-MM-DD}.json",
+            format="{message}",
+            level="INFO",
+            rotation="00:00",
+            retention="30 days",
+            compression="zip",
+            serialize=True,  # Loguru serializes the full record (including extra fields) as JSON
+            encoding="utf-8",
+            backtrace=True,
+            diagnose=settings.debug
+        )
     
     # Record configuration complete
     logger.info("=" * 60)
@@ -178,6 +182,7 @@ def setup_logger():
     logger.info(f"📂 Log directory: {log_dir}")
     logger.info(f"📊 Log levels: {settings.log_level}")
     logger.info(f"🐛 Debug mode: {settings.debug}")
+    logger.info(f"📄 JSON structured log: {'enabled' if settings.json_log_enabled else 'disabled'}")
     logger.info("=" * 60)
 
 

@@ -58,7 +58,8 @@ class Settings(BaseSettings):
 
     # ==================== Log configuration ====================
     log_level: str = Field(default="DEBUG", description="Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL")
-    log_dir: str = Field(default="logs", description="Log directory")    
+    log_dir: str = Field(default="logs", description="Log directory")
+    json_log_enabled: bool = Field(default=False, description="Enable JSON structured logging for log aggregation systems (ELK/Loki/Grafana)")
     
     # ==================== Performance Configuration ====================
     max_concurrent_requests: int = Field(default=10, description="Maximum concurrency")
