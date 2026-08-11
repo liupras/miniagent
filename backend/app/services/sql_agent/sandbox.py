@@ -329,7 +329,7 @@ def _serialise(value: Any) -> Any:
     import pandas as pd
     import numpy as np
 
-    print(f"value's type:{type(value)}")
+    logger.debug(f"value's type:{type(value)}")
     
     try:        
         # If the return value is a Figure object

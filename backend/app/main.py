@@ -13,9 +13,10 @@ import time
 from typing import AsyncGenerator
 from uuid import uuid4
 
-# Important: logger_config must be imported before other imports.
-# This ensures that the logging system is configured before the entire application starts.
-from app.core.logger_config import logger
+# Important: logger_config must be imported and configured before other imports.
+# This ensures that the logging system is ready before the entire application starts.
+from app.core.logger_config import logger, setup_logger
+setup_logger()
 
 from app.core.config import settings
 from app.infra.db.initializer import db_manager, init_database_on_startup

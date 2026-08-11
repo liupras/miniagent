@@ -201,12 +201,11 @@ def get_logger(name: str = None):
     return logger
 
 
-# Automatic configuration on application startup
-setup_logger()
-
-
 # ==================== Usage Example ====================
 if __name__ == "__main__":
+    # Explicitly configure logging when running this module directly.
+    setup_logger()
+
     # Basic Log
     logger.debug("This is a DEBUG level log.")
     logger.info("This is a INFO level log.日志")
@@ -234,4 +233,4 @@ if __name__ == "__main__":
     ).info("User creates Agent", agent_name="test_agent")
     
     logger.success("✅ Log test complete!")
-    logger.info(f"📂 Log file location: {settings.get_log_path().parent}")
+    logger.info(f"📂 Log file location: {settings.get_log_dir()}")

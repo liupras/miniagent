@@ -19,6 +19,7 @@ from langchain_text_splitters import (
 )
 
 from bs4 import BeautifulSoup
+from loguru import logger
 from pygments.lexers import guess_lexer
 from pygments.util import ClassNotFound
 
@@ -152,7 +153,7 @@ class SmartDocumentSplitter:
             
         except Exception as e:
             # Backup solution: If special JSON splitting fails (e.g., formatting errors or index overflow), it degenerates into regular text splitting.
-            print(f"⚠️ JSON splitting failed, falling back to text split: {e}")
+            logger.warning(f"⚠️ JSON splitting failed, falling back to text split: {e}")
             texts = self._split_text(content, metadata)
             return [Document(page_content=t, metadata=metadata) for t in texts]
 
@@ -207,13 +208,13 @@ if __name__ == "__main__":
         )
     ]
 
-    print(f"--- Starting Split Test (Total Input: {len(test_docs)} docs) ---")
+    logger.debug(f"--- Starting Split Test (Total Input: {len(test_docs)} docs) ---")
     final_chunks = splitter.split_documents(test_docs)
     
     for i, res in enumerate(final_chunks):
-        print(f"\nChunk {i+1} | Source: {res.metadata.get('source')} | Type: {type(res)}")
-        print(f"Content: {res.page_content[:100]}...")
+        logger.debug(f"\nChunk {i+1} | Source: {res.metadata.get('source')} | Type: {type(res)}")
+        logger.debug(f"Content: {res.page_content[:100]}...")
 
     # Validate final type
     assert all(isinstance(d, Document) for d in final_chunks), "Error: Not all outputs are Document objects!"
-    print("\n✅ Test Passed: All chunks are validated as List[Document]")
+    logger.info("\n✅ Test Passed: All chunks are validated as List[Document]")
