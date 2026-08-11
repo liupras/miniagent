@@ -26,7 +26,6 @@ from app.schemas.common import ApiResponse, BaseDomainError, NotFoundError, Alre
 from app.core.i18n.i18n import t
 from app.core.audit_context import (
     begin_audit_context,
-    get_audit_context,
     reset_audit_context,
 )
 from app.infra.db.audit import record_request_outcome
@@ -111,8 +110,13 @@ async def record_unhandled_auth_attempt(request: Request, response) -> None:
     if not event_type:
         return
 
-    request_id = getattr(request.state, "login_request_id", None) or str(uuid4())
-    response.headers["X-Request-ID"] = request_id
+    # Prefer the middleware-generated request_id so login-log DB entries
+    # share the same correlation ID as the file/console logs.
+    request_id = (
+        getattr(request.state, "request_id", None)
+        or getattr(request.state, "login_request_id", None)
+        or str(uuid4())
+    )
     if getattr(request.state, "login_log_recorded", False):
         return
 
@@ -133,46 +137,59 @@ async def record_unhandled_auth_attempt(request: Request, response) -> None:
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    """Record all HTTP requests"""
+    """Record all HTTP requests and inject request_id into every log line."""
+    request_id = str(uuid4())
+    request.state.request_id = request_id
     start_time = time.time()
-    audit_token = begin_audit_context(
-        request.method,
-        request.url.path,
-        request.client.host if request.client else None,
-    )
-    logger.info(f"📥 {request.method} {request.url.path}")
 
-    try:
-        response = await call_next(request)
-        process_time = time.time() - start_time
-        logger.info(f"📤 {request.method} {request.url.path} - {response.status_code}")
-        response.headers["X-Process-Time"] = str(process_time)
-    except Exception as exc:
-        process_time = time.time() - start_time
-        logger.error(f"📤 {request.method} {request.url.path} - ERROR ({process_time:.3f}s)")
-        response = handle_exception(exc)
-
-    await record_unhandled_auth_attempt(request, response)
-
-    audit_context = get_audit_context()
-    if audit_context is not None:
-        response.headers["X-Request-ID"] = audit_context.request_id
-
-    try:
-        route = request.scope.get("route")
-        await record_request_outcome(
-            request.app.state.container.audit_log_db,
-            status_code=response.status_code,
-            route_name=getattr(route, "name", None),
-            path_params=dict(request.path_params),
+    # contextualize() sets a ContextVar that every `from loguru import logger`
+    # call inside the request scope will pick up automatically.
+    with logger.contextualize(request_id=request_id):
+        audit_token = begin_audit_context(
+            request.method,
+            request.url.path,
+            request.client.host if request.client else None,
+            request_id=request_id,
         )
-    except Exception as audit_exc:
-        # Audit failures must never change the business response.
-        logger.exception(f"Audit log write failed: {audit_exc}")
-    finally:
-        reset_audit_context(audit_token)
+        logger.info(f"📥 {request.method} {request.url.path}")
 
-    return response
+        try:
+            response = await call_next(request)
+            process_time = time.time() - start_time
+            logger.info(
+                f"📤 {request.method} {request.url.path} "
+                f"- {response.status_code} ({process_time:.3f}s)"
+            )
+            response.headers["X-Process-Time"] = str(process_time)
+        except Exception as exc:
+            process_time = time.time() - start_time
+            logger.error(
+                f"📤 {request.method} {request.url.path} "
+                f"- ERROR ({process_time:.3f}s)"
+            )
+            response = handle_exception(exc)
+
+        await record_unhandled_auth_attempt(request, response)
+
+        # Always expose the correlation ID so clients can cross-reference
+        # with server-side file logs and DB audit entries.
+        response.headers["X-Request-ID"] = request_id
+
+        try:
+            route = request.scope.get("route")
+            await record_request_outcome(
+                request.app.state.container.audit_log_db,
+                status_code=response.status_code,
+                route_name=getattr(route, "name", None),
+                path_params=dict(request.path_params),
+            )
+        except Exception as audit_exc:
+            # Audit failures must never change the business response.
+            logger.exception(f"Audit log write failed: {audit_exc}")
+        finally:
+            reset_audit_context(audit_token)
+
+        return response
     
 # ==================== Exception handling ====================
 

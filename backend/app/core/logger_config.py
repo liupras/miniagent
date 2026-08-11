@@ -62,16 +62,21 @@ def setup_logger():
     
     # Remove the default handler
     logger.remove()
-    
+
+    # Default extra fields so format strings referencing {extra[...]} never
+    # raise KeyError outside a request context (e.g. during startup).
+    logger.configure(extra={"request_id": "-"})
+
     # Get the log file path
     log_dir = settings.get_log_dir()
-    
+
     # ==================== 1. console output ====================
     logger.add(
         sys.stdout,
         format=(
             "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
             "<level>{level: <8}</level> | "
+            "<cyan>{extra[request_id]}</cyan> | "
             "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
             "<level>{message}</level>"
         ),
@@ -80,7 +85,7 @@ def setup_logger():
         backtrace=True,
         diagnose=settings.debug
     )
-    
+
     # ==================== 2. Ordinary log file ====================
     # INFO and higher levels, rotating by date
     logger.add(
@@ -88,6 +93,7 @@ def setup_logger():
         format=(
             "{time:YYYY-MM-DD HH:mm:ss.SSS} | "
             "{level: <8} | "
+            "{extra[request_id]} | "
             "{name}:{function}:{line} | "
             "{message}"
         ),
@@ -99,7 +105,7 @@ def setup_logger():
         backtrace=True,
         diagnose=settings.debug
     )
-    
+
     # ==================== 3. Error log file ====================
     # ERROR and above levels will be rotated according to their magnitude.
     logger.add(
@@ -107,6 +113,7 @@ def setup_logger():
         format=(
             "{time:YYYY-MM-DD HH:mm:ss.SSS} | "
             "{level: <8} | "
+            "{extra[request_id]} | "
             "{name}:{function}:{line} | "
             "{message}\n"
             "{exception}"
@@ -119,7 +126,7 @@ def setup_logger():
         backtrace=True,
         diagnose=settings.debug
     )
-    
+
     # ==================== 4. Debug log files (development environment only)====================
     if settings.debug:
         logger.add(
@@ -127,6 +134,7 @@ def setup_logger():
             format=(
                 "{time:YYYY-MM-DD HH:mm:ss.SSS} | "
                 "{level: <8} | "
+                "{extra[request_id]} | "
                 "{name}:{function}:{line} | "
                 "{message}"
             ),

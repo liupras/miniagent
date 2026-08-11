@@ -39,8 +39,16 @@ def begin_audit_context(
     method: str,
     path: str,
     ip_address: Optional[str] = None,
+    request_id: Optional[str] = None,
 ) -> Optional[Token]:
-    """Start audit collection for state-changing API requests."""
+    """Start audit collection for state-changing API requests.
+
+    Args:
+        request_id: optional correlation ID from the HTTP middleware. When
+            provided, the audit record shares the same ID as the log lines,
+            making it trivial to cross-reference DB audit entries with file
+            logs. When omitted a fresh UUID is generated.
+    """
     normalized_method = method.upper()
     if (
         normalized_method not in AUDITED_METHODS
@@ -51,7 +59,7 @@ def begin_audit_context(
 
     return _audit_context.set(
         AuditRequestContext(
-            request_id=str(uuid4()),
+            request_id=request_id or str(uuid4()),
             method=normalized_method,
             path=path,
             ip_address=ip_address,
