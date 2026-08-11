@@ -149,3 +149,4 @@ cython_debug/
 /backend/logs
 /backend/models
 /.pnpm-store
+/.workbuddy

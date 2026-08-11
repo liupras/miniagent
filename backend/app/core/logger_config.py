@@ -15,9 +15,39 @@ Uses Loguru for log management, supporting:
 - Performance monitoring
 """
 
+import logging
 import sys
 from loguru import logger
 from app.core.config import settings
+
+
+class InterceptHandler(logging.Handler):
+    """Bridge stdlib logging to Loguru.
+
+    Third-party libraries (uvicorn, sqlalchemy, chromadb, etc.) use Python's
+    standard logging module. Without this handler their log records never reach
+    Loguru's configured sinks and are either lost or printed with a different
+    format. This handler forwards every stdlib log record to Loguru.
+    """
+
+    def emit(self, record: logging.LogRecord) -> None:
+        # Map the stdlib level to a Loguru level name.
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        # Walk the call stack to find the actual caller so that Loguru
+        # reports the correct module/function/line instead of this handler.
+        frame, depth = logging.currentframe(), 2
+        while frame and frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+
+        logger.opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
+        )
+
 
 def setup_logger():
     """
@@ -48,7 +78,7 @@ def setup_logger():
         level=settings.log_level,
         colorize=True,
         backtrace=True,
-        diagnose=True
+        diagnose=settings.debug
     )
     
     # ==================== 2. Ordinary log file ====================
@@ -67,7 +97,7 @@ def setup_logger():
         compression="zip",  # Compress old logs
         encoding="utf-8",
         backtrace=True,
-        diagnose=True
+        diagnose=settings.debug
     )
     
     # ==================== 3. Error log file ====================
@@ -87,7 +117,7 @@ def setup_logger():
         compression="zip",
         encoding="utf-8",
         backtrace=True,
-        diagnose=True
+        diagnose=settings.debug
     )
     
     # ==================== 4. Debug log files (development environment only)====================
@@ -106,10 +136,22 @@ def setup_logger():
             compression="zip",
             encoding="utf-8",
             backtrace=True,
-            diagnose=True
+            diagnose=settings.debug
         )
     
-    # ==================== 5. JSON format logs (optional, for log analysis)====================
+    # ==================== Bridge stdlib logging to Loguru ====================
+    # Redirect all standard-library logging (uvicorn, sqlalchemy, chromadb, etc.)
+    # through Loguru so every log line shares the same sinks, format and rotation.
+    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+
+    # Some libraries (e.g. uvicorn) install their own handlers on named child
+    # loggers; override those so nothing bypasses the InterceptHandler.
+    for _name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+        _logger = logging.getLogger(_name)
+        _logger.handlers = [InterceptHandler()]
+        _logger.propagate = False
+
+    # ==================== 6. JSON format logs (optional, for log analysis)====================
     # Uncomment to enable
     # logger.add(
     #     log_dir / "structured_{time:YYYY-MM-DD}.json",
