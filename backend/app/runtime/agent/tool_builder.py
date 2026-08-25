@@ -46,7 +46,10 @@ from __future__ import annotations
 
 import importlib
 import json
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type,TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
 
 import httpx
 from langchain_core.tools import StructuredTool, BaseTool
@@ -57,6 +60,7 @@ import inspect
 
 from app.infra.db.database import Agent as AgentORM
 from app.infra.db.database import Tool as ToolORM
+from app.runtime.smart_router_factory import SmartRouterFactory
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -146,7 +150,7 @@ def _resolve_callable(callable_path: str):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _build_function_tool(
-        container,
+        container:ServiceContainer,
         agent_orm,
         tool_orm, 
         config: Dict[str, Any]) -> BaseTool:
@@ -183,7 +187,7 @@ def _build_function_tool(
     )
 
 def _build_sql_agent_tool(
-        container,
+        container: ServiceContainer,
         agent_orm,
         tool_orm, 
         config: Dict[str, Any]) -> BaseTool:
@@ -373,11 +377,11 @@ def _build_smart_router_tool(
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def build_tool(
-    container,
-    agent_orm:AgentORM,
-    tool_orm:ToolORM,
+    container: ServiceContainer,
+    agent_orm: AgentORM,
+    tool_orm: ToolORM,
     config_override: Optional[Dict[str, Any]],
-    router_factory,         # service_container.SmartRouterFactory
+    router_factory:SmartRouterFactory,         # service_container.SmartRouterFactory
 ) -> Optional[BaseTool]:
     """
     Convert a single Tool ORM instance to a LangChain BaseTool.
@@ -446,7 +450,7 @@ async def build_tool(
 
 
 async def build_tools_for_agent(
-    container       ,
+    container:ServiceContainer,
     agent_orm           : AgentORM,
     agent_tool_relations: List,     # List[AgentToolRelation ORM rows]
     tool_orm_map        : Dict[str, Any],   # {tool_name: Tool ORM}

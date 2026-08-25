@@ -4,7 +4,12 @@
 # @date    : 2026-06-19
 # @description: SmartRouter Registry
 
-from typing import Dict
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
 
 from app.core.logger_config import get_logger
 
@@ -24,11 +29,7 @@ class SmartRouterFactory:
     Manage SmartRouter instances (one per router_config_id).
     """
 
-    def __init__(self, container):
-        from app.core.service_container import ServiceContainer
-        if not isinstance(container, ServiceContainer):
-            raise TypeError(f"Expected ServiceContainer, got {type(container)}")
-        
+    def __init__(self, container: ServiceContainer):        
         self.container = container
 
         from app.runtime.cache.models import CacheType, CACHE_META

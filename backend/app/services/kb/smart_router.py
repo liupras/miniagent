@@ -4,6 +4,13 @@
 # @date    : 2026-04-01
 # @description: Intelligent querying of multiple knowledge bases.
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.core.service_container import ServiceContainer
+
 import asyncio
 from typing import List, Dict, Optional
 from dataclasses import dataclass
@@ -51,7 +58,7 @@ class SmartRouter:
 
     def __init__(
         self,
-        container,
+        container: ServiceContainer,
         router_config:RouterConfig,
         embedding_db:AsyncEmbeddingDatabase
     ):
