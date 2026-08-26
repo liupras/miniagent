@@ -4,22 +4,33 @@
 # @date    : 2026-01-19
 # @description: Utility functions
 
-from typing import Generator, List,Dict
+import json
+from typing import Any, Generator, List,Dict
 
 from app.utils.tokens import estimate_tokens
 from app.runtime.types import MessageRole
 
-def estimate_messages_tokens(messages: List[Dict]) -> int:
+def estimate_messages_tokens(messages: List[Dict[str, Any]]) -> int:
     """
     Calculate the total number of tokens in the message list.
-    Here we use a simple approximation by counting the total string length.
+    This legacy estimate covers roles and content and is used by ordinary
+    conversation-history truncation.
     In a production environment, consider using a tokenizer for accurate token counting.
     """
-    total_length = 0
+    total_tokens = 0
     for msg in messages:
-        str_all = msg.get("role", "") + msg.get("content", "")
-        total_length += estimate_tokens(str_all)
-    return total_length
+        text = str(msg.get("role", "")) + str(msg.get("content", ""))
+        total_tokens += estimate_tokens(text)
+    return total_tokens
+
+
+def estimate_chat_payload_tokens(messages: List[Dict[str, Any]]) -> int:
+    """Estimate a complete chat payload, including tool protocol metadata."""
+    total_tokens = 0
+    for msg in messages:
+        serialized = json.dumps(msg, ensure_ascii=False, default=str)
+        total_tokens += estimate_tokens(serialized)
+    return total_tokens
 
 def truncate_messages(messages: List[Dict], max_token: int) -> List[Dict]:
     """

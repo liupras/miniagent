@@ -5,7 +5,10 @@
 # @description: Central registry for all AsyncLazyCache instances.
 
 from __future__ import annotations
-from asyncio.log import logger
+
+from app.core.logger_config import get_logger
+logger = get_logger(__name__)
+
 from typing import Callable, Dict, Any, List, Optional
 from .lazy_cache import AsyncLazyCache
 

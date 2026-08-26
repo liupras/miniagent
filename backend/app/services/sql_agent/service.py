@@ -246,7 +246,9 @@ class SQLAgentService:
         llm = AgentLLM(
             client=client, 
             model=llm_config.model_name,
-            tool_prompt_template=agent_llm_tool_schema_template
+            tool_prompt_template=agent_llm_tool_schema_template,
+            context_window_tokens=llm_config.context_window_tokens,
+            max_output_tokens=llm_config.max_output_tokens,
         )
         return SQLAgent(
             llm=llm,

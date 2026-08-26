@@ -367,7 +367,12 @@ async def build_agent_runner(
         max_output_tokens=effective_max_output_tokens,
     )
     
-    agent_llm_client = AgentLLM(client=llm_client, model=llm_config.model_name)
+    agent_llm_client = AgentLLM(
+        client=llm_client,
+        model=llm_config.model_name,
+        context_window_tokens=llm_config.context_window_tokens,
+        max_output_tokens=effective_max_output_tokens,
+    )
 
     # ── 3. Compile LangChain agent ──────────────────────────────────
     agent = ToolReActAgent(

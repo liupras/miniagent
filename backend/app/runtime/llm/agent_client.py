@@ -5,20 +5,33 @@
 # @description: Agent LLM client
 
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from .client import LLMClient
+from .func import estimate_chat_payload_tokens
 from app.runtime.types import MessageRole
+from app.runtime.conversation.service_conversation import calculate_input_budget
+from app.core.logger_config import get_logger
+
+logger = get_logger(__name__)
 
 class AgentLLM:
     def __init__(
         self, 
         client:LLMClient, 
         model: str,            
-        tool_prompt_template: str=None
+        tool_prompt_template: str=None,
+        context_window_tokens: Optional[int] = None,
+        max_output_tokens: Optional[int] = None,
     ):
         self.client = client
         self.model = model
+        self.context_window_tokens = context_window_tokens
+        self.max_output_tokens = (
+            max_output_tokens
+            if max_output_tokens is not None
+            else getattr(client, "max_output_tokens", None)
+        )
         self._tool_prompt_template = (
             tool_prompt_template
             or self._default_tool_prompt()
@@ -72,30 +85,263 @@ class AgentLLM:
 
         full_messages = messages.copy()
 
-        if not tool_schema:
-            return full_messages
-
-        if self._has_tool_prompt(full_messages):
-            return full_messages
-
-        tool_prompt = self._tool_prompt_template.format(
-            tool_schema=json.dumps(
-                tool_schema,
-                indent=2,
-                ensure_ascii=False,
+        if tool_schema and not self._has_tool_prompt(full_messages):
+            tool_prompt = self._tool_prompt_template.format(
+                tool_schema=json.dumps(
+                    tool_schema,
+                    indent=2,
+                    ensure_ascii=False,
+                )
             )
-        )
+            full_messages.insert(
+                0,
+                {
+                    "role": MessageRole.SYSTEM,
+                    "content": tool_prompt,
+                    "_tool_prompt": True,
+                },
+            )
 
-        full_messages.insert(
-            0,
-            {
-                "role": MessageRole.SYSTEM,
-                "content": tool_prompt,
-                "_tool_prompt": True,
-            },
-        )
+        return self._fit_messages_to_context(full_messages)
 
-        return full_messages
+    def _fit_messages_to_context(
+        self,
+        messages: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """Trim complete conversation turns before every model request."""
+        if self.context_window_tokens is None or self.max_output_tokens is None:
+            return messages
+
+        input_budget = calculate_input_budget(
+            context_window_tokens=self.context_window_tokens,
+            max_output_tokens=self.max_output_tokens,
+        )
+        original_tokens = estimate_chat_payload_tokens(messages)
+        if original_tokens <= input_budget:
+            return messages
+
+        system_messages: List[Dict[str, Any]] = []
+        body_start = 0
+        for message in messages:
+            if message.get("role") != MessageRole.SYSTEM:
+                break
+            system_messages.append(message)
+            body_start += 1
+
+        system_tokens = estimate_chat_payload_tokens(system_messages)
+        if system_tokens >= input_budget:
+            raise ValueError(
+                "System prompts and tool schemas exceed the available input token budget"
+            )
+
+        turns = self._split_turns(messages[body_start:])
+        if not turns:
+            return system_messages
+
+        remaining = input_budget - system_tokens
+        latest_turn = turns[-1]
+        compacted_latest = self._compact_latest_turn(latest_turn, remaining)
+        selected_turns: List[List[Dict[str, Any]]] = [compacted_latest]
+        remaining -= estimate_chat_payload_tokens(compacted_latest)
+
+        for turn in reversed(turns[:-1]):
+            turn_tokens = estimate_chat_payload_tokens(turn)
+            if turn_tokens > remaining:
+                break
+            selected_turns.append(turn)
+            remaining -= turn_tokens
+
+        selected_turns.reverse()
+        trimmed = system_messages + [
+            message
+            for turn in selected_turns
+            for message in turn
+        ]
+        trimmed_tokens = estimate_chat_payload_tokens(trimmed)
+        if trimmed_tokens > input_budget:
+            raise ValueError(
+                "Unable to fit the latest ReAct turn into the available input token budget"
+            )
+        logger.debug(
+            "[AgentLLM] ReAct context trimmed from ~{} to ~{} tokens "
+            "(input_budget={}, messages={}->{}).",
+            original_tokens,
+            trimmed_tokens,
+            input_budget,
+            len(messages),
+            len(trimmed),
+        )
+        return trimmed
+
+    @staticmethod
+    def _split_turns(messages: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+        turns: List[List[Dict[str, Any]]] = []
+        current: List[Dict[str, Any]] = []
+        for message in messages:
+            if message.get("role") == MessageRole.USER and current:
+                turns.append(current)
+                current = []
+            current.append(message)
+        if current:
+            turns.append(current)
+        return turns
+
+    def _compact_latest_turn(
+        self,
+        turn: List[Dict[str, Any]],
+        budget: int,
+    ) -> List[Dict[str, Any]]:
+        if estimate_chat_payload_tokens(turn) <= budget:
+            return turn
+
+        first = turn[0]
+        blocks = self._split_tool_blocks(turn[1:])
+
+        # Keep at least the protocol metadata for the newest assistant/tool
+        # exchange. Otherwise one very large user message could consume the
+        # whole budget and orphan the ReAct loop from its latest observation.
+        first_budget = budget
+        if blocks:
+            latest_skeleton_tokens = estimate_chat_payload_tokens(
+                self._empty_tool_contents(blocks[-1])
+            )
+            empty_first_tokens = estimate_chat_payload_tokens(
+                [{**first, "content": ""}]
+            )
+            if empty_first_tokens + latest_skeleton_tokens <= budget:
+                first_budget -= latest_skeleton_tokens
+
+        first_compacted = self._truncate_message_content(first, first_budget)
+        first_tokens = estimate_chat_payload_tokens([first_compacted])
+        if first_tokens >= budget:
+            return [first_compacted]
+
+        selected: List[List[Dict[str, Any]]] = []
+        remaining = budget - first_tokens
+
+        for block in reversed(blocks):
+            block_tokens = estimate_chat_payload_tokens(block)
+            if block_tokens <= remaining:
+                selected.append(block)
+                remaining -= block_tokens
+                continue
+
+            if not selected:
+                compacted = self._compact_tool_block(block, remaining)
+                if compacted:
+                    selected.append(compacted)
+            break
+
+        selected.reverse()
+        return [first_compacted] + [
+            message
+            for block in selected
+            for message in block
+        ]
+
+    @staticmethod
+    def _split_tool_blocks(messages: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+        blocks: List[List[Dict[str, Any]]] = []
+        current: List[Dict[str, Any]] = []
+        for message in messages:
+            if message.get("role") == MessageRole.ASSISTANT and current:
+                blocks.append(current)
+                current = []
+            current.append(message)
+        if current:
+            blocks.append(current)
+        return blocks
+
+    def _compact_tool_block(
+        self,
+        block: List[Dict[str, Any]],
+        budget: int,
+    ) -> List[Dict[str, Any]]:
+        if budget <= 0:
+            return []
+
+        skeleton = self._empty_tool_contents(block)
+        if estimate_chat_payload_tokens(skeleton) > budget:
+            return []
+
+        compacted = skeleton
+        marker = "\n[Content truncated to fit the model context window]"
+        for index, message in enumerate(block):
+            if message.get("role") != MessageRole.TOOL:
+                continue
+
+            content = message.get("content", "")
+            if not isinstance(content, str):
+                candidate = compacted.copy()
+                candidate[index] = message
+                if estimate_chat_payload_tokens(candidate) <= budget:
+                    compacted = candidate
+                continue
+
+            candidate = compacted.copy()
+            candidate[index] = message
+            if estimate_chat_payload_tokens(candidate) <= budget:
+                compacted = candidate
+                continue
+
+            low, high = 0, len(content)
+            best = compacted[index]
+            while low <= high:
+                middle = (low + high) // 2
+                updated = {
+                    **message,
+                    "content": content[:middle] + marker,
+                }
+                candidate = compacted.copy()
+                candidate[index] = updated
+                if estimate_chat_payload_tokens(candidate) <= budget:
+                    best = updated
+                    low = middle + 1
+                else:
+                    high = middle - 1
+            compacted[index] = best
+        return compacted
+
+    @staticmethod
+    def _empty_tool_contents(
+        block: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        return [
+            {**message, "content": ""}
+            if message.get("role") == MessageRole.TOOL
+            else message
+            for message in block
+        ]
+
+    @staticmethod
+    def _truncate_message_content(
+        message: Dict[str, Any],
+        budget: int,
+    ) -> Dict[str, Any]:
+        content = message.get("content", "")
+        if not isinstance(content, str) or estimate_chat_payload_tokens([message]) <= budget:
+            return message
+
+        marker = "\n[Content truncated to fit the model context window]"
+        empty_message = {**message, "content": ""}
+        if estimate_chat_payload_tokens([empty_message]) > budget:
+            raise ValueError("Message metadata exceeds the available input token budget")
+
+        marker_message = {**message, "content": marker}
+        if estimate_chat_payload_tokens([marker_message]) > budget:
+            return empty_message
+
+        low, high = 0, len(content)
+        best = marker
+        while low <= high:
+            middle = (low + high) // 2
+            candidate = {**message, "content": content[:middle] + marker}
+            if estimate_chat_payload_tokens([candidate]) <= budget:
+                best = candidate["content"]
+                low = middle + 1
+            else:
+                high = middle - 1
+        return {**message, "content": best}
     
     def _build_response(self,resp):
 
