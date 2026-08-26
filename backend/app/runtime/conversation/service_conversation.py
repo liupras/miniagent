@@ -20,7 +20,8 @@ from app.core.logger_config import get_logger
 logger = get_logger(__name__)
 from app.infra.db.database import ChatMessage, ChatSession
 from app.repositories.async_chat import AsyncChatDatabase
-from app.runtime.llm.func import truncate_messages, estimate_messages_tokens
+from app.runtime.llm.func import truncate_messages
+from app.utils.tokens import TokenCounter, sanitize_chat_messages
 
 from app.schemas.common import NotFoundError
 class SessionNotFoundError(NotFoundError):
@@ -116,6 +117,7 @@ class ConversationService:
         system_prompt:str,
         context_window_tokens: int,
         max_output_tokens: int,
+        model_name: str,
         history: Optional[List[Dict[str, str]]],
         user_id: Optional[str],
         session_id: Optional[int],
@@ -176,13 +178,24 @@ class ConversationService:
             elif role == "assistant":
                 msgs.append(AIMessage(content=content))
         
-        total_tokens = estimate_messages_tokens(
-            [{"role": t.get("role", ""), "content": t.get("content", "")} for t in truncated]
+        provider_messages = sanitize_chat_messages(
+            [
+                {"role": t.get("role", ""), "content": t.get("content", "")}
+                for t in truncated
+            ]
         )
+        # This is a preliminary context before AgentLLM injects its tool
+        # prompt. Keep this pass lightweight; AgentLLM performs the optional
+        # near-limit tokenizer pass on the final provider payload.
+        total_tokens = TokenCounter(
+            model=model_name,
+            enable_exact_near_limit=False,
+        ).count_messages(provider_messages)
         logger.debug(
             f"[ConversationService] context — "
-            f"{len(msgs)} messages, ~{total_tokens} tokens "
+            f"{len(msgs)} messages, ~{total_tokens} payload tokens "
             f"(input_budget={input_budget}, "
+            f"model={model_name}, "
             f"context_window={context_window_tokens}, "
             f"max_output={max_output_tokens}, "
             f"safety_margin={TOKEN_SAFETY_MARGIN})."

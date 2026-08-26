@@ -12,11 +12,9 @@ from app.core.logger_config import get_logger
 logger = get_logger(__name__)
 from .stream_parser import StreamParser
 from .models import LLMClientError,LLMResponse
+from app.utils.tokens import sanitize_chat_messages
 
 Message = Dict[str, Any]
-
-import litellm
-litellm._turn_on_debug()
    
 class LLMClient:
     """
@@ -62,7 +60,7 @@ class LLMClient:
     ):
         params = {
             "model": model,
-            "messages": messages,
+            "messages": sanitize_chat_messages(messages),
             **kwargs,
         }
 

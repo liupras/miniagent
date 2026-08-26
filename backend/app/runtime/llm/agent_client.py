@@ -8,10 +8,10 @@ import json
 from typing import List, Dict, Any, Optional
 
 from .client import LLMClient
-from .func import estimate_chat_payload_tokens
 from app.runtime.types import MessageRole
 from app.runtime.conversation.service_conversation import calculate_input_budget
 from app.core.logger_config import get_logger
+from app.utils.tokens import TokenCounter, sanitize_chat_messages
 
 logger = get_logger(__name__)
 
@@ -23,6 +23,7 @@ class AgentLLM:
         tool_prompt_template: str=None,
         context_window_tokens: Optional[int] = None,
         max_output_tokens: Optional[int] = None,
+        token_counter: Optional[TokenCounter] = None,
     ):
         self.client = client
         self.model = model
@@ -32,6 +33,7 @@ class AgentLLM:
             if max_output_tokens is not None
             else getattr(client, "max_output_tokens", None)
         )
+        self.token_counter = token_counter or TokenCounter(model=model)
         self._tool_prompt_template = (
             tool_prompt_template
             or self._default_tool_prompt()
@@ -102,7 +104,8 @@ class AgentLLM:
                 },
             )
 
-        return self._fit_messages_to_context(full_messages)
+        provider_messages = sanitize_chat_messages(full_messages)
+        return self._fit_messages_to_context(provider_messages)
 
     def _fit_messages_to_context(
         self,
@@ -116,7 +119,7 @@ class AgentLLM:
             context_window_tokens=self.context_window_tokens,
             max_output_tokens=self.max_output_tokens,
         )
-        original_tokens = estimate_chat_payload_tokens(messages)
+        original_tokens = self._count_messages(messages, budget=input_budget)
         if original_tokens <= input_budget:
             return messages
 
@@ -128,7 +131,7 @@ class AgentLLM:
             system_messages.append(message)
             body_start += 1
 
-        system_tokens = estimate_chat_payload_tokens(system_messages)
+        system_tokens = self._count_messages(system_messages)
         if system_tokens >= input_budget:
             raise ValueError(
                 "System prompts and tool schemas exceed the available input token budget"
@@ -142,10 +145,10 @@ class AgentLLM:
         latest_turn = turns[-1]
         compacted_latest = self._compact_latest_turn(latest_turn, remaining)
         selected_turns: List[List[Dict[str, Any]]] = [compacted_latest]
-        remaining -= estimate_chat_payload_tokens(compacted_latest)
+        remaining -= self._count_messages(compacted_latest)
 
         for turn in reversed(turns[:-1]):
-            turn_tokens = estimate_chat_payload_tokens(turn)
+            turn_tokens = self._count_messages(turn)
             if turn_tokens > remaining:
                 break
             selected_turns.append(turn)
@@ -157,7 +160,7 @@ class AgentLLM:
             for turn in selected_turns
             for message in turn
         ]
-        trimmed_tokens = estimate_chat_payload_tokens(trimmed)
+        trimmed_tokens = self._count_messages(trimmed, budget=input_budget)
         if trimmed_tokens > input_budget:
             raise ValueError(
                 "Unable to fit the latest ReAct turn into the available input token budget"
@@ -172,6 +175,13 @@ class AgentLLM:
             len(trimmed),
         )
         return trimmed
+
+    def _count_messages(
+        self,
+        messages: List[Dict[str, Any]],
+        budget: Optional[int] = None,
+    ) -> int:
+        return self.token_counter.count_messages(messages, budget=budget)
 
     @staticmethod
     def _split_turns(messages: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
@@ -191,7 +201,7 @@ class AgentLLM:
         turn: List[Dict[str, Any]],
         budget: int,
     ) -> List[Dict[str, Any]]:
-        if estimate_chat_payload_tokens(turn) <= budget:
+        if self._count_messages(turn) <= budget:
             return turn
 
         first = turn[0]
@@ -202,17 +212,17 @@ class AgentLLM:
         # whole budget and orphan the ReAct loop from its latest observation.
         first_budget = budget
         if blocks:
-            latest_skeleton_tokens = estimate_chat_payload_tokens(
+            latest_skeleton_tokens = self._count_messages(
                 self._empty_tool_contents(blocks[-1])
             )
-            empty_first_tokens = estimate_chat_payload_tokens(
+            empty_first_tokens = self._count_messages(
                 [{**first, "content": ""}]
             )
             if empty_first_tokens + latest_skeleton_tokens <= budget:
                 first_budget -= latest_skeleton_tokens
 
         first_compacted = self._truncate_message_content(first, first_budget)
-        first_tokens = estimate_chat_payload_tokens([first_compacted])
+        first_tokens = self._count_messages([first_compacted])
         if first_tokens >= budget:
             return [first_compacted]
 
@@ -220,7 +230,7 @@ class AgentLLM:
         remaining = budget - first_tokens
 
         for block in reversed(blocks):
-            block_tokens = estimate_chat_payload_tokens(block)
+            block_tokens = self._count_messages(block)
             if block_tokens <= remaining:
                 selected.append(block)
                 remaining -= block_tokens
@@ -261,7 +271,7 @@ class AgentLLM:
             return []
 
         skeleton = self._empty_tool_contents(block)
-        if estimate_chat_payload_tokens(skeleton) > budget:
+        if self._count_messages(skeleton) > budget:
             return []
 
         compacted = skeleton
@@ -274,13 +284,13 @@ class AgentLLM:
             if not isinstance(content, str):
                 candidate = compacted.copy()
                 candidate[index] = message
-                if estimate_chat_payload_tokens(candidate) <= budget:
+                if self._count_messages(candidate) <= budget:
                     compacted = candidate
                 continue
 
             candidate = compacted.copy()
             candidate[index] = message
-            if estimate_chat_payload_tokens(candidate) <= budget:
+            if self._count_messages(candidate) <= budget:
                 compacted = candidate
                 continue
 
@@ -294,7 +304,7 @@ class AgentLLM:
                 }
                 candidate = compacted.copy()
                 candidate[index] = updated
-                if estimate_chat_payload_tokens(candidate) <= budget:
+                if self._count_messages(candidate) <= budget:
                     best = updated
                     low = middle + 1
                 else:
@@ -313,22 +323,22 @@ class AgentLLM:
             for message in block
         ]
 
-    @staticmethod
     def _truncate_message_content(
+        self,
         message: Dict[str, Any],
         budget: int,
     ) -> Dict[str, Any]:
         content = message.get("content", "")
-        if not isinstance(content, str) or estimate_chat_payload_tokens([message]) <= budget:
+        if not isinstance(content, str) or self._count_messages([message]) <= budget:
             return message
 
         marker = "\n[Content truncated to fit the model context window]"
         empty_message = {**message, "content": ""}
-        if estimate_chat_payload_tokens([empty_message]) > budget:
+        if self._count_messages([empty_message]) > budget:
             raise ValueError("Message metadata exceeds the available input token budget")
 
         marker_message = {**message, "content": marker}
-        if estimate_chat_payload_tokens([marker_message]) > budget:
+        if self._count_messages([marker_message]) > budget:
             return empty_message
 
         low, high = 0, len(content)
@@ -336,7 +346,7 @@ class AgentLLM:
         while low <= high:
             middle = (low + high) // 2
             candidate = {**message, "content": content[:middle] + marker}
-            if estimate_chat_payload_tokens([candidate]) <= budget:
+            if self._count_messages([candidate]) <= budget:
                 best = candidate["content"]
                 low = middle + 1
             else:

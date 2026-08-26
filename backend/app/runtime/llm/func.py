@@ -4,10 +4,9 @@
 # @date    : 2026-01-19
 # @description: Utility functions
 
-import json
 from typing import Any, Generator, List,Dict
 
-from app.utils.tokens import estimate_tokens
+from app.utils.tokens import TokenCounter, estimate_tokens
 from app.runtime.types import MessageRole
 
 def estimate_messages_tokens(messages: List[Dict[str, Any]]) -> int:
@@ -25,12 +24,8 @@ def estimate_messages_tokens(messages: List[Dict[str, Any]]) -> int:
 
 
 def estimate_chat_payload_tokens(messages: List[Dict[str, Any]]) -> int:
-    """Estimate a complete chat payload, including tool protocol metadata."""
-    total_tokens = 0
-    for msg in messages:
-        serialized = json.dumps(msg, ensure_ascii=False, default=str)
-        total_tokens += estimate_tokens(serialized)
-    return total_tokens
+    """Backward-compatible lightweight estimate of the provider payload."""
+    return TokenCounter(enable_exact_near_limit=False).count_messages(messages)
 
 def truncate_messages(messages: List[Dict], max_token: int) -> List[Dict]:
     """

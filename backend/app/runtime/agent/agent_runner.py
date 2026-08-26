@@ -174,6 +174,7 @@ class AgentRunner:
             system_prompt = self._system_prompt,
             context_window_tokens=self._context_window_tokens,
             max_output_tokens=self._max_output_tokens,
+            model_name=self._model_name,
             history = history, 
             user_id = user_id, 
             session_id = session_id
@@ -248,6 +249,7 @@ class AgentRunner:
             system_prompt = self._system_prompt,
             context_window_tokens=self._context_window_tokens,
             max_output_tokens=self._max_output_tokens,
+            model_name=self._model_name,
             history = history, 
             user_id = user_id, 
             session_id = session_id

@@ -5,7 +5,7 @@ import unittest
 
 from app.runtime.conversation.service_conversation import calculate_input_budget
 from app.runtime.llm.agent_client import AgentLLM
-from app.runtime.llm.func import estimate_chat_payload_tokens
+from app.utils.tokens import TokenCounter
 
 
 class _FakeLLMClient:
@@ -20,11 +20,16 @@ class AgentLLMContextTests(unittest.TestCase):
             self.context_window_tokens,
             self.max_output_tokens,
         )
+        self.token_counter = TokenCounter(
+            model="test-model",
+            enable_exact_near_limit=False,
+        )
         self.llm = AgentLLM(
             client=_FakeLLMClient(),
             model="test-model",
             context_window_tokens=self.context_window_tokens,
             max_output_tokens=self.max_output_tokens,
+            token_counter=self.token_counter,
         )
 
     def test_keeps_messages_unchanged_when_they_fit(self):
@@ -46,7 +51,7 @@ class AgentLLMContextTests(unittest.TestCase):
 
         trimmed = self.llm._fit_messages_to_context(messages)
 
-        self.assertLessEqual(estimate_chat_payload_tokens(trimmed), self.input_budget)
+        self.assertLessEqual(self.token_counter.count_messages(trimmed), self.input_budget)
         self.assertNotIn(messages[1], trimmed)
         self.assertEqual(trimmed[-2:], messages[-2:])
 
@@ -77,7 +82,7 @@ class AgentLLMContextTests(unittest.TestCase):
 
         trimmed = self.llm._fit_messages_to_context(messages)
 
-        self.assertLessEqual(estimate_chat_payload_tokens(trimmed), self.input_budget)
+        self.assertLessEqual(self.token_counter.count_messages(trimmed), self.input_budget)
         assistant_index = next(
             index for index, message in enumerate(trimmed)
             if message.get("role") == "assistant"
@@ -111,7 +116,7 @@ class AgentLLMContextTests(unittest.TestCase):
 
         trimmed = self.llm._fit_messages_to_context(messages)
 
-        self.assertLessEqual(estimate_chat_payload_tokens(trimmed), self.input_budget)
+        self.assertLessEqual(self.token_counter.count_messages(trimmed), self.input_budget)
         self.assertEqual([message["role"] for message in trimmed[-2:]], ["assistant", "tool"])
         self.assertEqual(trimmed[-1]["tool_call_id"], "call_1")
 
@@ -123,6 +128,45 @@ class AgentLLMContextTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "System prompts"):
             self.llm._fit_messages_to_context(messages)
+
+    def test_exact_counter_receives_the_sanitized_provider_payload(self):
+        calls = []
+
+        def exact_counter(**kwargs):
+            calls.append(kwargs)
+            return 10
+
+        llm = AgentLLM(
+            client=_FakeLLMClient(),
+            model="test-model",
+            context_window_tokens=self.context_window_tokens,
+            max_output_tokens=self.max_output_tokens,
+            token_counter=TokenCounter(
+                model="test-model",
+                exact_threshold_ratio=0.01,
+                exact_counter=exact_counter,
+            ),
+        )
+        messages = [
+            {
+                "role": "user",
+                "content": "Use the tool",
+                "_internal_trace": "must not be sent",
+            }
+        ]
+
+        provider_messages = llm._build_messages(
+            messages,
+            tool_schema=[{"type": "function", "function": {"name": "search"}}],
+        )
+
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0]["messages"], provider_messages)
+        self.assertTrue(all(
+            not any(str(key).startswith("_") for key in message)
+            for message in provider_messages
+        ))
+        self.assertIn("search", provider_messages[0]["content"])
 
 
 if __name__ == "__main__":
