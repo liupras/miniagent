@@ -21,7 +21,10 @@ from app.core.logger_config import get_logger
 logger = get_logger(__name__)
 from app.infra.db.database import LLM
 from app.runtime.agent.react_agent import ToolReActAgent
-from app.runtime.conversation.service_conversation import ConversationService
+from app.runtime.conversation.service_conversation import (
+    ConversationService,
+    calculate_input_budget,
+)
 from app.runtime.types import MessageRole, LangChainMessageRole
 from app.runtime.llm.client import LLMClient
 from app.runtime.llm.agent_client import AgentLLM
@@ -86,6 +89,7 @@ class AgentRunner:
         system_prompt: str,
         chat_service: ConversationService,
         llm_config:LLM,
+        agent_max_output_tokens: Optional[int] = None,
     ):
         self.agent_id = agent_id
         self.agent_name = agent_name
@@ -93,12 +97,29 @@ class AgentRunner:
         self._system_prompt = system_prompt
         self._conversation_service = chat_service
         self._llm_config = llm_config
+        self._agent_max_output_tokens = agent_max_output_tokens
+
+        try:
+            calculate_input_budget(
+                context_window_tokens=self._context_window_tokens,
+                max_output_tokens=self._max_output_tokens,
+            )
+        except ValueError as exc:
+            raise ValueError(
+                f"Agent '{agent_name}' has an invalid token budget: {exc}"
+            ) from exc
 
     # ── Convenience properties (read through llm_config so values stay current) ──
 
     @property
-    def _max_tokens(self) -> int:
-        return self._llm_config.max_tokens or 2000
+    def _context_window_tokens(self) -> int:
+        return self._llm_config.context_window_tokens
+
+    @property
+    def _max_output_tokens(self) -> int:
+        if self._agent_max_output_tokens is not None:
+            return self._agent_max_output_tokens
+        return self._llm_config.max_output_tokens
 
     @property
     def _model_name(self) -> str:
@@ -151,7 +172,8 @@ class AgentRunner:
         messages = await self._conversation_service.build_messages(
             query=query, 
             system_prompt = self._system_prompt,
-            max_tokens=self._max_tokens,
+            context_window_tokens=self._context_window_tokens,
+            max_output_tokens=self._max_output_tokens,
             history = history, 
             user_id = user_id, 
             session_id = session_id
@@ -224,7 +246,8 @@ class AgentRunner:
         messages = await self._conversation_service.build_messages(
             query=query, 
             system_prompt = self._system_prompt,
-            max_tokens=self._max_tokens,
+            context_window_tokens=self._context_window_tokens,
+            max_output_tokens=self._max_output_tokens,
             history = history, 
             user_id = user_id, 
             session_id = session_id
@@ -331,10 +354,17 @@ async def build_agent_runner(
     if is_thinking_model and is_local_ollama:
         system_prompt = "/no_think\n\n" + system_prompt     
 
+    effective_max_output_tokens = (
+        agent_orm.max_output_tokens
+        if agent_orm.max_output_tokens is not None
+        else llm_config.max_output_tokens
+    )
+
     llm_client = LLMClient(
         base_url=llm_config.base_url,
         api_key=llm_config.api_key,
         temperature=llm_config.temperature,
+        max_output_tokens=effective_max_output_tokens,
     )
     
     agent_llm_client = AgentLLM(client=llm_client, model=llm_config.model_name)
@@ -348,7 +378,9 @@ async def build_agent_runner(
 
     logger.info(
         f"[AgentRunner] Built agent '{agent_orm.name}' "
-        f"with {len(tools)} tool(s), LLM='{llm_config.model_name}'."
+        f"with {len(tools)} tool(s), LLM='{llm_config.model_name}', "
+        f"context_window_tokens={llm_config.context_window_tokens}, "
+        f"max_output_tokens={effective_max_output_tokens}."
     )
 
     return AgentRunner(
@@ -358,4 +390,5 @@ async def build_agent_runner(
         system_prompt=system_prompt,
         chat_service=chat_service,
         llm_config=llm_config,
+        agent_max_output_tokens=agent_orm.max_output_tokens,
     )

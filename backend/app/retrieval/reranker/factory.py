@@ -57,6 +57,7 @@ class RerankerFactory:
                         base_url = llm_config.base_url,
                         api_key=llm_config.api_key,
                         temperature=llm_config.temperature,
+                        max_output_tokens=llm_config.max_output_tokens,
                     )
                     reranker = BGEReranker.remote(
                         client     = client,
@@ -70,6 +71,7 @@ class RerankerFactory:
                         base_url = llm_config.base_url,
                         api_key=None,
                         temperature=llm_config.temperature,
+                        max_output_tokens=llm_config.max_output_tokens,
                     )
                     reranker = BGEReranker.ollama(
                         client         = client,
@@ -103,6 +105,7 @@ class RerankerFactory:
                 base_url=llm_config.base_url,
                 api_key=llm_config.api_key,
                 temperature=llm_config.temperature,
+                max_output_tokens=llm_config.max_output_tokens,
             )
             reranker = LLMReranker(client=llm_client,model=llm_config.model_name)
 

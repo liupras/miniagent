@@ -8,9 +8,9 @@
 # Each turn = 1 user message + 1 assistant message → up to 2 * DB_HISTORY_LIMIT rows.
 DB_HISTORY_LIMIT: int = 40
 
-# How many tokens to reserve for the model's *output*.
-# Input context is capped at  max_tokens - CONTEXT_TOKEN_RESERVE.
-CONTEXT_TOKEN_RESERVE: int = 500
+# Provider chat templates and tokenizer estimates introduce a small amount of
+# overhead that is not represented by the message content itself.
+TOKEN_SAFETY_MARGIN: int = 512
 
 from typing import Dict, List, Optional, Tuple
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
@@ -30,6 +30,32 @@ class SessionNotFoundError(NotFoundError):
 class MessageNotFoundError(NotFoundError):
     def __init__(self, message_id: int):
         super().__init__("Message", message_id)
+
+
+def calculate_input_budget(
+    context_window_tokens: int,
+    max_output_tokens: int,
+    safety_margin_tokens: int = TOKEN_SAFETY_MARGIN,
+) -> int:
+    """Return the token budget available to input messages."""
+    if context_window_tokens <= 0:
+        raise ValueError("context_window_tokens must be greater than zero")
+    if max_output_tokens <= 0:
+        raise ValueError("max_output_tokens must be greater than zero")
+    if safety_margin_tokens < 0:
+        raise ValueError("safety_margin_tokens must not be negative")
+
+    input_budget = (
+        context_window_tokens
+        - max_output_tokens
+        - safety_margin_tokens
+    )
+    if input_budget <= 0:
+        raise ValueError(
+            "No input token budget remains after reserving max_output_tokens "
+            "and the safety margin"
+        )
+    return input_budget
 
 
 class ConversationService:
@@ -88,7 +114,8 @@ class ConversationService:
         self,
         query: str,
         system_prompt:str,
-        max_tokens:int,
+        context_window_tokens: int,
+        max_output_tokens: int,
         history: Optional[List[Dict[str, str]]],
         user_id: Optional[str],
         session_id: Optional[int],
@@ -131,8 +158,10 @@ class ConversationService:
             + list(resolved_history)
         )
 
-        # Leave CONTEXT_TOKEN_RESERVE tokens for the model's output.
-        input_budget = max(max_tokens - CONTEXT_TOKEN_RESERVE, 512)
+        input_budget = calculate_input_budget(
+            context_window_tokens=context_window_tokens,
+            max_output_tokens=max_output_tokens,
+        )
         truncated = truncate_messages(raw_msgs, input_budget)
 
         # ── Convert to LangChain message objects ───────────────────────────
@@ -153,7 +182,10 @@ class ConversationService:
         logger.debug(
             f"[ConversationService] context — "
             f"{len(msgs)} messages, ~{total_tokens} tokens "
-            f"(budget={input_budget})."
+            f"(input_budget={input_budget}, "
+            f"context_window={context_window_tokens}, "
+            f"max_output={max_output_tokens}, "
+            f"safety_margin={TOKEN_SAFETY_MARGIN})."
         )
         return msgs
     

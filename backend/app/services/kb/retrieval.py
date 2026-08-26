@@ -1095,6 +1095,7 @@ class RetrievalPipeline:
             base_url=llm_config.base_url,
             api_key=llm_config.api_key,
             temperature=llm_config.temperature,
+            max_output_tokens=llm_config.max_output_tokens,
         )
 
         # Query stages

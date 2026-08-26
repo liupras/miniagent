@@ -29,6 +29,7 @@ class LLMClient:
             api_key:Optional[str] = None, 
             temperature: float = 0.5,
             hide_thinking: bool = True,
+            max_output_tokens: Optional[int] = None,
         ):
         """
         Initialize LLM client
@@ -49,6 +50,9 @@ class LLMClient:
             else 0.5
         )
         self.hide_thinking = hide_thinking
+        if max_output_tokens is not None and max_output_tokens <= 0:
+            raise LLMClientError("max_output_tokens must be greater than zero")
+        self.max_output_tokens = max_output_tokens
 
     def _completion_kwargs(
             self,
@@ -69,7 +73,17 @@ class LLMClient:
             params["api_base"] = self.base_url
 
         if "temperature" not in kwargs:
-            params["temperature"] = self.temperature        
+            params["temperature"] = self.temperature
+
+        # ``max_output_tokens`` is the application's provider-neutral name.
+        # LiteLLM accepts ``max_tokens`` for the configured providers. An
+        # explicit per-call limit takes precedence over this client default.
+        if (
+            self.max_output_tokens is not None
+            and "max_tokens" not in kwargs
+            and "max_completion_tokens" not in kwargs
+        ):
+            params["max_tokens"] = self.max_output_tokens
 
         return params    
        

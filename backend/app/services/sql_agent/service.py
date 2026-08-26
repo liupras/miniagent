@@ -195,6 +195,7 @@ class SQLAgentService:
             base_url=llm_config.base_url,
             api_key=llm_config.api_key,
             temperature=0,
+            max_output_tokens=llm_config.max_output_tokens,
         )
 
         # ── Build SQLTools (wraps the global DuckDB connection) ────────
