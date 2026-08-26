@@ -5,11 +5,11 @@
 # @description: Prompt-aware prompt resolution
 
 from typing import Dict
+from app.core.language import normalize_language
 from app.core.logger_config import get_logger
 logger = get_logger(__name__)
 from app.services.admin.system_setting import SystemSettingService
 from app.services.admin.prompt import PromptService
-from app.repositories.async_prompt import normalize_prompt_lang
 
 class PromptLoader:
 
@@ -32,7 +32,7 @@ class PromptLoader:
         Bulk-load all prompt templates for self.lang from the Prompt table.
         """
         try:
-            self._language = normalize_prompt_lang(
+            self._language = normalize_language(
                 await self._setting_service.get_system_language()
             )
             logger.debug(f"prompt loader's language is {self._language}.")

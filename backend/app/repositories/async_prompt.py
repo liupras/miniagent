@@ -6,21 +6,23 @@
 
 from typing import Dict, List, Optional, Tuple
 
+from app.core.language import normalize_language
 from app.core.logger_config import get_logger
 
 logger = get_logger(__name__)
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 
 from ..infra.db.async_base import AsyncBaseDatabase
 from ..infra.db.database import Prompt
 
-
-def normalize_prompt_lang(lang: str) -> str:
-    """Normalize language tags to the project's ``zh`` / ``en`` form."""
-    parts = lang.strip().replace("-", "_").split("_", 1)
-    if len(parts) == 1:
-        return parts[0].lower()
-    return f"{parts[0].lower()}_{parts[1].upper()}"
+def _prompt_lang_matches(lang: str):
+    """Match canonical and previously stored regional language tags."""
+    base_language = normalize_language(lang)
+    stored_language = func.lower(func.replace(Prompt.lang, "-", "_"))
+    return or_(
+        stored_language == base_language,
+        stored_language.like(f"{base_language}_%"),
+    )
 
 
 class AsyncPromptDatabase(AsyncBaseDatabase):
@@ -38,7 +40,7 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
             result = await session.execute(
                 select(Prompt).where(         
                     Prompt.key   == key,
-                    func.lower(Prompt.lang) == normalize_prompt_lang(lang).lower(),
+                    _prompt_lang_matches(lang),
                 )
             )
             row = result.scalar_one_or_none()
@@ -68,7 +70,7 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
             result = await session.execute(
                 select(Prompt)
                 .where(  
-                    func.lower(Prompt.lang) == normalize_prompt_lang(lang).lower(),
+                    _prompt_lang_matches(lang),
                 )
                 .order_by(Prompt.key)
             )
@@ -134,13 +136,13 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
         """
         Insert or update the row for *(key, lang)* asynchronously.
         """
-        lang = normalize_prompt_lang(lang)
+        lang = normalize_language(lang)
 
         async with self.get_session() as session:
             result = await session.execute(
                 select(Prompt).where(                    
                     Prompt.key   == key,
-                    func.lower(Prompt.lang) == lang.lower(),
+                    _prompt_lang_matches(lang),
                 )
             )
             row = result.scalar_one_or_none()
@@ -155,6 +157,7 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
                 session.add(row)
                 logger.info(f"[DB] Prompt created: [{lang}] /{key}")
             else:
+                row.lang = lang
                 row.value = value
                 if description is not None:
                     row.description = description
@@ -172,11 +175,11 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
 
         async with self.get_session() as session:
             for item in rows:
-                lang = normalize_prompt_lang(item["lang"])
+                lang = normalize_language(item["lang"])
                 result = await session.execute(
                     select(Prompt).where(   
                         Prompt.key   == item["key"],
-                        func.lower(Prompt.lang) == lang.lower(),
+                        _prompt_lang_matches(lang),
                     )
                 )
                 existing = result.scalar_one_or_none()
@@ -190,6 +193,7 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
                     ))
                     created += 1
                 else:
+                    existing.lang = lang
                     existing.value = item["value"]
                     if "description" in item:
                         existing.description = item["description"]
@@ -204,13 +208,13 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
         """
         Delete the row for *(key, lang)* asynchronously.
         """
-        lang = normalize_prompt_lang(lang)
+        lang = normalize_language(lang)
 
         async with self.get_session() as session:
             result = await session.execute(
                 select(Prompt).where(    
                     Prompt.key   == key,
-                    func.lower(Prompt.lang) == lang.lower(),
+                    _prompt_lang_matches(lang),
                 )
             )
             row = result.scalar_one_or_none()
@@ -230,10 +234,10 @@ class AsyncPromptDatabase(AsyncBaseDatabase):
         """
         Delete every row for *lang* asynchronously.
         """
-        lang = normalize_prompt_lang(lang)
+        lang = normalize_language(lang)
 
         async with self.get_session() as session:
-            stmt = select(Prompt).where(func.lower(Prompt.lang) == lang.lower())
+            stmt = select(Prompt).where(_prompt_lang_matches(lang))
             result = await session.execute(stmt)
             rows = result.scalars().all()
 

@@ -6,7 +6,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.repositories.async_prompt import normalize_prompt_lang
+from app.core.language import normalize_language
 
 
 class PromptIdentity(BaseModel):
@@ -24,15 +24,7 @@ class PromptIdentity(BaseModel):
     @field_validator("lang")
     @classmethod
     def normalize_lang(cls, value: str) -> str:
-        normalized = normalize_prompt_lang(value)
-        parts = normalized.split("_", 1)
-        if not parts[0].isalpha() or not 2 <= len(parts[0]) <= 3:
-            raise ValueError("Invalid language tag")
-        if len(parts) == 2 and (
-            not parts[1].isalpha() or not 2 <= len(parts[1]) <= 4
-        ):
-            raise ValueError("Invalid language tag")
-        return normalized
+        return normalize_language(value)
 
 
 class PromptCreate(PromptIdentity):

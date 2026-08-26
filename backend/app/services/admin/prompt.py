@@ -6,7 +6,8 @@
 
 from typing import Dict, Optional
 
-from app.repositories.async_prompt import AsyncPromptDatabase, normalize_prompt_lang
+from app.core.language import normalize_language
+from app.repositories.async_prompt import AsyncPromptDatabase
 from app.schemas.admin.prompt import (
     PromptBulkUpsert,
     PromptBulkResult,
@@ -49,8 +50,12 @@ class PromptService:
                 or needle in (row.description or "").lower()
             ]
         if lang:
-            normalized = lang.strip().replace("-", "_").lower()
-            rows = [row for row in rows if row.lang.lower() == normalized]
+            normalized = normalize_language(lang)
+            rows = [
+                row
+                for row in rows
+                if normalize_language(row.lang) == normalized
+            ]
 
         total = len(rows)
         start = (page - 1) * page_size
@@ -63,7 +68,7 @@ class PromptService:
 
     async def list_languages(self) -> list[str]:
         languages = await self._db.list_supported_languages()
-        return sorted({normalize_prompt_lang(lang) for lang in languages})
+        return sorted({normalize_language(lang) for lang in languages})
 
     async def get_prompt(self, key: str, lang: str) -> PromptOut:
         row = await self._db.get(key, lang)
@@ -120,6 +125,6 @@ class PromptService:
         for p in prompts:
             if p.key not in prompt_dict:
                 prompt_dict[p.key] = {}
-            prompt_dict[p.key][normalize_prompt_lang(p.lang)] = p.value
+            prompt_dict[p.key][normalize_language(p.lang)] = p.value
 
         return prompt_dict
