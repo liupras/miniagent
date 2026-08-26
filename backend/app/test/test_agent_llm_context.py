@@ -168,6 +168,39 @@ class AgentLLMContextTests(unittest.TestCase):
         ))
         self.assertIn("search", provider_messages[0]["content"])
 
+    def test_tokenizer_runs_only_for_original_and_final_payload_boundaries(self):
+        exact_calls = []
+        lightweight = TokenCounter(enable_exact_near_limit=False)
+
+        def exact_counter(**kwargs):
+            exact_calls.append(kwargs["messages"])
+            return lightweight.count_messages(kwargs["messages"])
+
+        llm = AgentLLM(
+            client=_FakeLLMClient(),
+            model="test-model",
+            context_window_tokens=self.context_window_tokens,
+            max_output_tokens=self.max_output_tokens,
+            token_counter=TokenCounter(
+                model="test-model",
+                exact_threshold_ratio=0.01,
+                exact_counter=exact_counter,
+            ),
+        )
+        messages = [
+            {"role": "system", "content": "system"},
+            {"role": "user", "content": "old-" + "x" * 5000},
+            {"role": "assistant", "content": "answer-" + "y" * 5000},
+            {"role": "user", "content": "latest question"},
+        ]
+
+        trimmed = llm._fit_messages_to_context(messages)
+
+        assert len(exact_calls) == 2
+        assert exact_calls[0] == messages
+        assert exact_calls[1] == trimmed
+        assert len(trimmed) < len(messages)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,76 +4,199 @@
 # @date    : 2026-01-19
 # @description: Utility functions
 
-from typing import Any, Generator, List,Dict
+from copy import deepcopy
+from typing import Any, Generator, List, Dict, Optional
 
-from app.utils.tokens import TokenCounter, estimate_tokens
+from app.utils.tokens import TokenCounter, sanitize_chat_messages
 from app.runtime.types import MessageRole
 
-def estimate_messages_tokens(messages: List[Dict[str, Any]]) -> int:
+TRUNCATION_MARKER = "\n[Content truncated to fit the model context window]"
+
+def truncate_messages(
+    messages: List[Dict[str, Any]],
+    max_token: int,
+    token_counter: Optional[TokenCounter] = None,
+) -> List[Dict[str, Any]]:
+    """Fit a chronological ordinary conversation into ``max_token``.
+
+    Leading system messages and the current (last) user message are fixed.
+    Historical user/assistant turns are retained atomically from newest to
+    oldest. The input collection and its dictionaries are never mutated.
     """
-    Calculate the total number of tokens in the message list.
-    This legacy estimate covers roles and content and is used by ordinary
-    conversation-history truncation.
-    In a production environment, consider using a tokenizer for accurate token counting.
-    """
-    total_tokens = 0
-    for msg in messages:
-        text = str(msg.get("role", "")) + str(msg.get("content", ""))
-        total_tokens += estimate_tokens(text)
-    return total_tokens
+    if max_token <= 0:
+        raise ValueError("max_token must be greater than zero")
+
+    counter = token_counter or TokenCounter(enable_exact_near_limit=False)
+    provider_messages = sanitize_chat_messages(deepcopy(messages))
+    if not provider_messages:
+        return []
+
+    system_messages, body = _split_leading_system_messages(provider_messages)
+    if any(message.get("role") == MessageRole.SYSTEM for message in body):
+        raise ValueError("System messages must precede conversation messages")
+
+    if not body:
+        if _messages_fit(provider_messages, max_token, counter):
+            return provider_messages
+        raise ValueError("System prompts exceed the available input token budget")
+    if body[-1].get("role") != MessageRole.USER:
+        raise ValueError("The current user message must be the final conversation message")
+
+    if _messages_fit(provider_messages, max_token, counter):
+        return provider_messages
+
+    system_tokens = counter.count_messages(system_messages, budget=max_token)
+    if system_tokens >= max_token:
+        raise ValueError("System prompts exceed the available input token budget")
+
+    current_message = body[-1]
+    current_context = system_messages + [current_message]
+    if not _messages_fit(current_context, max_token, counter):
+        current_message = _truncate_message_to_fit(
+            prefix=system_messages,
+            message=current_message,
+            max_token=max_token,
+            counter=counter,
+        )
+
+    history_turns = _split_history_turns(body[:-1])
+    selected_turns: List[List[Dict[str, Any]]] = []
+    for turn in reversed(history_turns):
+        candidate_turns = [turn] + selected_turns
+        candidate = (
+            system_messages
+            + [message for item in candidate_turns for message in item]
+            + [current_message]
+        )
+        if not _messages_fit(candidate, max_token, counter):
+            break
+        selected_turns = candidate_turns
+
+    result = (
+        system_messages
+        + [message for turn in selected_turns for message in turn]
+        + [current_message]
+    )
+
+    # A model tokenizer may count more than the lightweight estimator. Remove
+    # oldest complete turns first, then shrink only the current user content.
+    while selected_turns and not _messages_fit(result, max_token, counter):
+        selected_turns.pop(0)
+        result = (
+            system_messages
+            + [message for turn in selected_turns for message in turn]
+            + [current_message]
+        )
+
+    if not _messages_fit(result, max_token, counter):
+        current_message = _truncate_message_to_fit(
+            prefix=system_messages,
+            message=current_message,
+            max_token=max_token,
+            counter=counter,
+        )
+        result = system_messages + [current_message]
+
+    if not _messages_fit(result, max_token, counter):
+        raise ValueError("Unable to fit the current conversation into the input budget")
+    return result
 
 
-def estimate_chat_payload_tokens(messages: List[Dict[str, Any]]) -> int:
-    """Backward-compatible lightweight estimate of the provider payload."""
-    return TokenCounter(enable_exact_near_limit=False).count_messages(messages)
+def _messages_fit(
+    messages: List[Dict[str, Any]],
+    max_token: int,
+    counter: TokenCounter,
+    allow_exact: bool = True,
+) -> bool:
+    if allow_exact:
+        # TokenCounter invokes the local tokenizer only near the limit.
+        return counter.count_messages(messages, budget=max_token) <= max_token
+    return counter.count_messages(messages) <= max_token
 
-def truncate_messages(messages: List[Dict], max_token: int) -> List[Dict]:
-    """
-    Prune the message list to ensure the total string length does not exceed `max_token`
 
-    Rules: Preserve system prompts → Preserve from the latest history backwards → Ensure the user's current input is not truncated
-    """
-    # Detach the system prompt (must be retained).
-    system_msg = [msg for msg in messages if msg["role"] == MessageRole.SYSTEM]
-    non_system_msgs = [msg for msg in messages if msg["role"] != MessageRole.SYSTEM]
+def _split_leading_system_messages(
+    messages: List[Dict[str, Any]],
+) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    boundary = 0
+    for message in messages:
+        if message.get("role") != MessageRole.SYSTEM:
+            break
+        boundary += 1
+    return messages[:boundary], messages[boundary:]
 
-    # Calculate the length of the system prompt
-    system_length = estimate_messages_tokens(system_msg)
-    remaining_length = max_token - system_length
 
-    if remaining_length <= 0 or not non_system_msgs:
-        # Extreme case: System prompts have exceeded the limit, only a portion of system prompts are retained.
-        system_msg[0]["content"] = system_msg[0]["content"][:max_token]
-        return [system_msg[0]]
-    
-    # Iterate through non-system messages from back to front (latest messages first), accumulating the length until the upper limit is reached.
-    truncated_non_system = []
-    current_length = 0
-    # First, extract the current user input (the last non-system message) to ensure it is not truncated.
-    user_input_msg = non_system_msgs[0] if non_system_msgs else None   
-    if user_input_msg:
-        user_input_length = estimate_tokens(user_input_msg["content"])
-        if user_input_length > remaining_length:
-            # Extreme case: If user input exceeds the limit, only a portion of the user input will be retained.
-            user_input_msg["content"] = user_input_msg["content"][:remaining_length]
-            truncated_non_system.append(user_input_msg)
+def _split_history_turns(
+    messages: List[Dict[str, Any]],
+) -> List[List[Dict[str, Any]]]:
+    """Group history by user turns and discard orphan/unsupported messages."""
+    turns: List[List[Dict[str, Any]]] = []
+    current: List[Dict[str, Any]] = []
+    for message in messages:
+        role = message.get("role")
+        if role == MessageRole.USER:
+            if current:
+                turns.append(current)
+            current = [message]
+        elif role == MessageRole.ASSISTANT and current:
+            current.append(message)
+    if current:
+        turns.append(current)
+    return turns
+
+
+def _truncate_message_to_fit(
+    prefix: List[Dict[str, Any]],
+    message: Dict[str, Any],
+    max_token: int,
+    counter: TokenCounter,
+) -> Dict[str, Any]:
+    content = str(message.get("content", ""))
+    empty_message = {**message, "content": ""}
+    if not _messages_fit(prefix + [empty_message], max_token, counter):
+        raise ValueError("System prompts leave no room for the current user message")
+
+    marker_message = {**message, "content": TRUNCATION_MARKER}
+    if not _messages_fit(prefix + [marker_message], max_token, counter):
+        return empty_message
+
+    low, high = 0, len(content)
+    best = marker_message
+    while low <= high:
+        middle = (low + high) // 2
+        candidate = {
+            **message,
+            "content": content[:middle] + TRUNCATION_MARKER,
+        }
+        if _messages_fit(
+            prefix + [candidate],
+            max_token,
+            counter,
+            allow_exact=False,
+        ):
+            best = candidate
+            low = middle + 1
         else:
-            current_length += user_input_length
-            truncated_non_system.append(user_input_msg)
-            # Then process the historical records (from back to front, i.e., the most recent history is retained first).
-            for msg in non_system_msgs[1:]:
-                msg_length = estimate_tokens(msg["content"])
-                if current_length + msg_length <= remaining_length:
-                    truncated_non_system.append(msg)
-                    current_length += msg_length
-                else:
-                    break
-        # Reverse the history and restore the original order.
-        truncated_non_system = list(reversed(truncated_non_system))
-    
-    # Merge the final message list
-    final_messages = system_msg + truncated_non_system
-    return final_messages
+            high = middle - 1
+
+    if _messages_fit(prefix + [best], max_token, counter):
+        return best
+
+    # Rare fallback: the model tokenizer counted more than the lightweight
+    # estimate. Repeat the search with exact-near-limit checks enabled.
+    low, high = 0, max(0, len(best.get("content", "")) - len(TRUNCATION_MARKER))
+    exact_best = marker_message
+    while low <= high:
+        middle = (low + high) // 2
+        candidate = {
+            **message,
+            "content": content[:middle] + TRUNCATION_MARKER,
+        }
+        if _messages_fit(prefix + [candidate], max_token, counter):
+            exact_best = candidate
+            low = middle + 1
+        else:
+            high = middle - 1
+    return exact_best
 
 def generate_stream_response(generator: Generator[str, None, None]):
     """Convert the generator to SSE streaming response format"""
@@ -83,58 +206,3 @@ def generate_stream_response(generator: Generator[str, None, None]):
             yield f"data: {chunk}\n\n"
     # Streaming end marker
     yield "data: [DONE]\n\n"
-
-if __name__ == "__main__":
-    """
-    测试用例覆盖场景：
-    1. 常规场景：消息总长度未超限制，完整保留
-    2. 常规场景：消息总长度超限，保留最新历史+用户输入+系统提示
-    3. 边界场景：系统提示长度超限，仅截断系统提示
-    """
-    
-    def test_case(case_name, messages, max_token, expected_length):
-        """执行单个测试用例并输出结果"""
-        # 深拷贝消息，避免测试用例之间互相影响
-        import copy
-        test_msgs = copy.deepcopy(messages)
-        result = truncate_messages(test_msgs, max_token)
-        result_total_tokens = estimate_messages_tokens(result)
-        success = result_total_tokens <= max_token and (expected_length is None or result_total_tokens == expected_length)
-        status = "PASS" if success else "FAIL"
-        print(f"[{status}] {case_name}")
-        print(f"  输入消息数: {len(messages)}, 输出消息数: {len(result)}")
-        print(f"  输出总Token数: {result_total_tokens}, 最大限制: {max_token}")
-        print(f"  输出消息内容: {[{'role': m['role'], 'content': m['content'][:20]+'...' if len(m['content'])>20 else m['content']} for m in result]}")
-        print("-" * 80)
-        return success
-
-    # 测试用例1：常规场景 - 总长度未超限制
-    # 非系统消息第一个是最新用户输入："谢谢"
-    test_messages_1 = [
-        {"role": "system", "content": "你是一个助手"},  # system: 6 token
-        {"role": "user", "content": "谢谢"},            # user: 2 token (最新输入，第一个非系统消息)
-        {"role": "assistant", "content": "您好！"},      # assistant: 3 token
-        {"role": "user", "content": "你好"}             # user: 2 token
-    ]
-    test_case("常规场景-总长度未超限制", test_messages_1, 50, 14)
-
-    # 测试用例2：常规场景 - 总长度超限
-    # 非系统消息第一个是最新用户输入："问题3"
-    test_messages_2 = [
-        {"role": "system", "content": "你是一个助手"},  # 6 token
-        {"role": "user", "content": "问题3"},          # 3 token (最新输入，第一个非系统消息)
-        {"role": "assistant", "content": "回答2"},      # 3 token
-        {"role": "user", "content": "问题2"},          # 3 token
-        {"role": "assistant", "content": "回答1"},      # 3 token
-        {"role": "user", "content": "问题1"}           # 3 token
-    ]
-    # 预期：system(6) + 问题3(3) + 回答2(3) + 问题2(3) = 15
-    test_case("常规场景-总长度超限", test_messages_2, 10, 15)
-
-    # 测试用例3：边界场景 - 系统提示长度超限
-    test_messages_3 = [
-        {"role": "system", "content": "你是一个非常非常非常长的系统提示，长度超过最大限制"}  # 25 token
-    ]
-    test_case("边界场景-系统提示长度超限", test_messages_3, 10, 10)
-
-    print("所有测试用例执行完成！")

@@ -8,6 +8,7 @@ import json
 from typing import List, Dict, Any, Optional
 
 from .client import LLMClient
+from .func import TRUNCATION_MARKER
 from app.runtime.types import MessageRole
 from app.runtime.conversation.service_conversation import calculate_input_budget
 from app.core.logger_config import get_logger
@@ -275,7 +276,7 @@ class AgentLLM:
             return []
 
         compacted = skeleton
-        marker = "\n[Content truncated to fit the model context window]"
+        marker = TRUNCATION_MARKER
         for index, message in enumerate(block):
             if message.get("role") != MessageRole.TOOL:
                 continue
@@ -332,7 +333,7 @@ class AgentLLM:
         if not isinstance(content, str) or self._count_messages([message]) <= budget:
             return message
 
-        marker = "\n[Content truncated to fit the model context window]"
+        marker = TRUNCATION_MARKER
         empty_message = {**message, "content": ""}
         if self._count_messages([empty_message]) > budget:
             raise ValueError("Message metadata exceeds the available input token budget")

@@ -232,7 +232,7 @@ class AsyncChatDatabase(AsyncBaseDatabase):
                     ChatSession.user_id == user_id,
                     ChatSession.id == session_id
                 )
-                .order_by(ChatMessage.created_at.desc())
+                .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
             )
 
             if limit:

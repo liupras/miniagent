@@ -13,7 +13,10 @@ class AgentRequest(BaseModel):
     query: str = Field(..., description="User-input test questions", examples=["你好，请问你能帮我做什么？"])
     history: Optional[List[Dict[str, str]]] = Field(
         default_factory=list,
-        description="Explicitly passed historical dialogue context, in the format: [{'role': 'user', 'content': 'hi'}]"
+        description=(
+            "Explicit user/assistant history ordered from oldest to newest, "
+            "in the format: [{'role': 'user', 'content': 'hi'}]"
+        )
     )
     user_id: Optional[str] = Field(default=None, description="Ignored for authenticated user calls")
     session_id: Optional[int] = Field(default=None, description="Existing chat session ID")

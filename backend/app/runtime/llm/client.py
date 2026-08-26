@@ -12,7 +12,7 @@ from app.core.logger_config import get_logger
 logger = get_logger(__name__)
 from .stream_parser import StreamParser
 from .models import LLMClientError,LLMResponse
-from app.utils.tokens import sanitize_chat_messages
+from app.utils.tokens import TokenCounter, sanitize_chat_messages
 
 Message = Dict[str, Any]
    
@@ -95,17 +95,18 @@ class LLMClient:
         logger.debug(f"Calling Model: {model},Message count: {len(messages)}.")
         
         try:
-            response = completion(
-                **self._completion_kwargs(
-                    model=model,
-                    messages=messages,
-                    **kwargs,
-                )
+            params = self._completion_kwargs(
+                model=model,
+                messages=messages,
+                **kwargs,
             )
+            response = completion(**params)
 
             return self._build_response(
                 response,
-                model,                
+                model,
+                prompt_messages=params["messages"],
+                tools=params.get("tools"),
             )
         except Exception as e:
             logger.error(f"[LLMClient] API Call failed: {str(e)}")
@@ -120,23 +121,26 @@ class LLMClient:
         """Normal mode call"""
         logger.debug(f"Calling Model: {model},Message count: {len(messages)}.")
         
-        response = await acompletion(
-            **self._completion_kwargs(
-                model=model,
-                messages=messages,
-                **kwargs,
-            )
+        params = self._completion_kwargs(
+            model=model,
+            messages=messages,
+            **kwargs,
         )
+        response = await acompletion(**params)
 
         return self._build_response(
             response,
-            model,            
+            model,
+            prompt_messages=params["messages"],
+            tools=params.get("tools"),
         )    
 
     def _build_response(
         self,
         response,
-        model: str,        
+        model: str,
+        prompt_messages: Optional[List[Message]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
     ) -> LLMResponse:
         
         msg = response.choices[0].message
@@ -160,6 +164,12 @@ class LLMClient:
                 "total_tokens":
                     response.usage.total_tokens,
             }
+            self._log_token_usage(
+                model=model,
+                messages=prompt_messages or [],
+                tools=tools,
+                usage=usage,
+            )
 
         tool_calls = getattr(
             msg,
@@ -174,6 +184,41 @@ class LLMClient:
                 usage=usage,
                 tool_calls=tool_calls,
                 raw_response=response
+            )
+
+    @staticmethod
+    def _log_token_usage(
+        model: str,
+        messages: List[Message],
+        tools: Optional[List[Dict[str, Any]]],
+        usage: Dict[str, Any],
+    ) -> None:
+        try:
+            actual = usage.get("prompt_tokens")
+            if not messages or not isinstance(actual, int) or actual <= 0:
+                return
+
+            estimated = TokenCounter(
+                model=model,
+                enable_exact_near_limit=False,
+            ).count_messages(messages, tools=tools)
+            difference = estimated - actual
+            error_ratio = difference / actual
+            logger.debug(
+                "[LLMClient] Prompt token usage: model={}, estimated={}, "
+                "actual={}, difference={}, error_ratio={:.2%}",
+                model,
+                estimated,
+                actual,
+                difference,
+                error_ratio,
+            )
+        except Exception as exc:
+            # Diagnostics must never turn a successful model response into an
+            # application failure.
+            logger.debug(
+                "[LLMClient] Prompt token usage diagnostics skipped: {}",
+                exc,
             )
     
     def stream(
