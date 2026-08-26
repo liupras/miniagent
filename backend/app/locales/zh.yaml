@@ -65,6 +65,7 @@ llm:
   already_exists: LLM已存在
   already_exists_with_model: "LLM '{provider}/{model}' 已存在"
   model_combo_taken: provider_name 与 model_name 组合已被占用
+  invalid_value: "LLM {id} 的最大输出 Token 不能超过上下文窗口"
 
 user:
   not_found: "用户 '{id}' 不存在"

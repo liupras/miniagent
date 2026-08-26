@@ -26,7 +26,12 @@ from app.schemas.admin.llm import (
     LLMOptionItem,
     LLMListParams,
 )
-from app.schemas.common import NotFoundError, AlreadyExistsError,PageResult
+from app.schemas.common import (
+    AlreadyExistsError,
+    InvalidValueError,
+    NotFoundError,
+    PageResult,
+)
 
 class LLMNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
@@ -35,6 +40,10 @@ class LLMNotFoundError(NotFoundError):
 class LLMAlreadyExistsError(AlreadyExistsError):
     def __init__(self, entity_id: Any):
         super().__init__("LLM", entity_id)
+
+class LLMTokenLimitError(InvalidValueError):
+    def __init__(self, llm_id: Any):
+        super().__init__("LLM", llm_id)
 
 
 # ──────────────────────────────────────────────
@@ -118,39 +127,40 @@ class LLMService:
         """Create a new LLM. Raises LLMConflictError on duplicate."""
         try:
             row = await self._db.create(
+                name=payload.name,
                 provider_name=payload.provider_name,
                 base_url=payload.base_url,
                 model_name=payload.model_name,
                 api_key=payload.api_key,
                 temperature=payload.temperature,
-                max_tokens=payload.max_tokens,
+                context_window_tokens=payload.context_window_tokens,
+                max_output_tokens=payload.max_output_tokens,
                 capabilities=payload.capabilities,
             )
         except IntegrityError as exc:
-            logger.error(exec)
+            logger.error(exc)
             raise LLMAlreadyExistsError(f"LLM '{payload.provider_name}/{payload.model_name}'")
-  
 
-        # patch the name field (not handled by AsyncLLMDatabase.create)
-        updated = await self._db.update(row.id, name=payload.name)
-        return LLMOut.model_validate(updated or row)
+        self._cache.on_llm_changed()
+        return LLMOut.model_validate(row)
 
     # ── Upsert ────────────────────────────────────────────────────────────
 
     async def upsert_llm(self, payload: LLMUpsert) -> LLMOut:
         """Insert or update by (provider_name, model_name)."""
         row = await self._db.upsert(
+            name=payload.name,
             provider_name=payload.provider_name,
             base_url=payload.base_url,
             model_name=payload.model_name,
             api_key=payload.api_key,
             temperature=payload.temperature,
-            max_tokens=payload.max_tokens,
+            context_window_tokens=payload.context_window_tokens,
+            max_output_tokens=payload.max_output_tokens,
             capabilities=payload.capabilities,
         )
-        updated = await self._db.update(row.id, name=payload.name)
         self._cache.on_llm_changed()
-        return LLMOut.model_validate(updated or row)
+        return LLMOut.model_validate(row)
 
     # ── Update ────────────────────────────────────────────────────────────
 
@@ -160,6 +170,16 @@ class LLMService:
         if not fields:
             row = await self.get_llm(llm_id)   # validates existence
             return LLMOut.model_validate(row)
+
+        current = await self.get_llm(llm_id)
+        context_window_tokens = fields.get(
+            "context_window_tokens", current.context_window_tokens
+        )
+        max_output_tokens = fields.get(
+            "max_output_tokens", current.max_output_tokens
+        )
+        if max_output_tokens > context_window_tokens:
+            raise LLMTokenLimitError(llm_id)
 
         try:
             row = await self._db.update(llm_id, **fields)

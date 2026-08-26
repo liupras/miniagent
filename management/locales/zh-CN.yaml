@@ -640,7 +640,9 @@ llmManagement:
   apiKeyEditHint: 为安全起见，不回显已保存的密钥
   clearApiKey: 清除已保存密钥
   temperature: 温度
-  maxTokens: 最大 Token 数
+  contextWindowTokens: 上下文窗口
+  maxOutputTokens: 最大输出 Token
+  tokenLimitError: 最大输出 Token 不能超过上下文窗口
   capabilities: 能力配置
   capabilitiesPlaceholder: "可选 JSON 对象"
   capabilitiesJsonError: 请输入合法的 JSON

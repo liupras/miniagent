@@ -5,6 +5,7 @@
 # @description: Central registry for all AsyncLazyCache instances.
 
 from __future__ import annotations
+from asyncio.log import logger
 from typing import Callable, Dict, Any, List, Optional
 from .lazy_cache import AsyncLazyCache
 
@@ -38,11 +39,12 @@ class CacheRegistry:
 
     def _exists(self, name: str) -> AsyncLazyCache:
         if name not in self._caches:
-            raise KeyError(t("cache.not_found", name=name, count=len(self._caches)))
+            logger.info(f"Cache '{name}' not found in registry. Available caches: {list(self._caches.keys())}")
+            return None
         return self._caches[name]
 
     def decode_key(self, name: str, raw_key: Any) -> Any:
-        self._exists(name)
+        #self._exists(name)
         try:
             return self._key_codecs[name](raw_key)
         except Exception as e:
@@ -50,11 +52,16 @@ class CacheRegistry:
 
     def invalidate(self, name: str, raw_key: Any) -> bool:
         cache = self._exists(name)
+        if not cache:
+            return False
         key = self.decode_key(name, raw_key)
         return cache.invalidate(key)
 
     def invalidate_all(self, name: str) -> int:
-        return self._exists(name).invalidate_all()
+        cache = self._exists(name)
+        if not cache:
+            return 0
+        return cache.invalidate_all()
 
     def invalidate_everywhere(self, raw_key: Any) -> Dict[str, bool]:
         """
@@ -72,12 +79,18 @@ class CacheRegistry:
         return result
 
     def invalidate_where(self, name: str, predicate: Callable[[Any], bool]) -> int:
-        return self._exists(name).invalidate_where(predicate)
+        cache = self._exists(name)
+        if not cache:
+            return 0
+        return cache.invalidate_where(predicate)
 
     def list_names(self) -> List[str]:
         return list(self._caches.keys())
 
     def stats(self, name: Optional[str] = None) -> Dict[str, dict]:
         if name is not None:
-            return {name: self._exists(name).stats()}
+            cache = self._exists(name)
+            if not cache:
+                return {}
+            return {name: cache.stats()}
         return {n: c.stats() for n, c in self._caches.items()}

@@ -6,7 +6,8 @@
     "api_key": null,
     "model_name": "ollama/qwen3:4b",
     "temperature": 0.1,
-    "max_tokens": 10000,
+    "context_window_tokens": 40000,
+    "max_output_tokens": 4096,
     "capabilities":{
       "tool_calling": true,
       "streaming": true,
@@ -20,7 +21,8 @@
     "api_key": null,
     "model_name": "ollama/qwen3:8b",
     "temperature": 0.1,
-    "max_tokens": 10000,
+    "context_window_tokens": 40000,
+    "max_output_tokens": 4096,
     "capabilities":{
       "tool_calling": true,
       "streaming": true,
@@ -34,7 +36,8 @@
     "api_key": null,
     "model_name": "ollama/gemma4:e2b",
     "temperature": 0.1,
-    "max_tokens": 10000,
+    "context_window_tokens": 100000,
+    "max_output_tokens": 4096,
     "capabilities":{
       "tool_calling": true,
       "streaming": true,
@@ -48,7 +51,8 @@
     "api_key": "sk-...",
     "model_name": "dashscope/qwen-plus",
     "temperature": 0.1,
-    "max_tokens": 10000,
+    "context_window_tokens": 900000,
+    "max_output_tokens": 4096,
     "capabilities":{
       "tool_calling": true,
       "streaming": true,

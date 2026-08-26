@@ -11,7 +11,8 @@ export interface LLMItem {
   api_key?: string | null;
   model_name: string;
   temperature: number;
-  max_tokens: number;
+  context_window_tokens: number;
+  max_output_tokens: number;
   capabilities?: LLMCapabilities | null;
   created_at: string;
 }
@@ -37,7 +38,8 @@ export interface LLMCreatePayload {
   api_key?: string | null;
   model_name: string;
   temperature: number;
-  max_tokens: number;
+  context_window_tokens: number;
+  max_output_tokens: number;
   capabilities?: LLMCapabilities | null;
 }
 

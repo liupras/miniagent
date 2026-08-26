@@ -65,6 +65,7 @@ llm:
   already_exists: LLM already exists
   already_exists_with_model: "LLM '{provider}/{model}' already exists"
   model_combo_taken: The combination of provider_name and model_name is already taken
+  invalid_value: "LLM {id} max output tokens cannot exceed its context window"
 
 user:
   not_found: "User '{id}' does not exist"

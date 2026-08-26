@@ -120,7 +120,8 @@ class LLM(Base):
     api_key = Column(String(512), nullable=True, comment="API key (optional for local models)")
     model_name = Column(String(100), nullable=False)
     temperature = Column(Float, default=0.7)
-    max_tokens = Column(Integer, default=2000)
+    context_window_tokens = Column(Integer,nullable=False,default=40000)
+    max_output_tokens = Column(Integer,nullable=False,default=4096)
     capabilities = Column(JSON, nullable=True)
 
     created_at = Column(DateTime, default=lambda: datetime.now())
@@ -145,6 +146,13 @@ class Agent(Base):
     description = Column(Text, nullable=True, comment="Agent Description")
     system_prompt = Column(Text, nullable=False, comment="System Prompt")
     llm_id = Column(Integer, ForeignKey("llms.id", ondelete="SET NULL"), nullable=True)
+
+    max_output_tokens = Column(
+        Integer,
+        nullable=True,
+        default=None,
+        comment="Agent-specific maximum output tokens. If None, use the LLM's default max_tokens.",
+    )
 
     created_at = Column(DateTime, default=lambda: datetime.now())
     updated_at = Column(DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now())

@@ -140,7 +140,7 @@
       :title="
         dialogType === 'add' ? t('llmManagement.add') : t('llmManagement.edit')
       "
-      width="680px"
+      width="760px"
       destroy-on-close
     >
       <el-form
@@ -215,7 +215,7 @@
             </div>
           </div>
         </el-form-item>
-        <div class="grid grid-cols-2 gap-x-4">
+        <div class="grid grid-cols-3 gap-x-4">
           <el-form-item
             :label="t('llmManagement.temperature')"
             prop="temperature"
@@ -229,11 +229,26 @@
               class="w-full!"
             />
           </el-form-item>
-          <el-form-item :label="t('llmManagement.maxTokens')" prop="max_tokens">
+          <el-form-item
+            :label="t('llmManagement.contextWindowTokens')"
+            prop="context_window_tokens"
+          >
             <el-input-number
-              v-model="dialogForm.max_tokens"
+              v-model="dialogForm.context_window_tokens"
               :min="1"
-              :step="100"
+              :step="1024"
+              class="w-full!"
+            />
+          </el-form-item>
+          <el-form-item
+            :label="t('llmManagement.maxOutputTokens')"
+            prop="max_output_tokens"
+          >
+            <el-input-number
+              v-model="dialogForm.max_output_tokens"
+              :min="1"
+              :max="dialogForm.context_window_tokens"
+              :step="256"
               class="w-full!"
             />
           </el-form-item>
@@ -341,9 +356,14 @@ const columns: TableColumnList = [
     width: 100
   },
   {
-    label: t("llmManagement.maxTokens"),
-    prop: "max_tokens",
-    width: 115
+    label: t("llmManagement.contextWindowTokens"),
+    prop: "context_window_tokens",
+    width: 145
+  },
+  {
+    label: t("llmManagement.maxOutputTokens"),
+    prop: "max_output_tokens",
+    width: 145
   },
   {
     label: t("llmManagement.capabilities"),
@@ -380,7 +400,8 @@ const dialogForm = reactive({
   api_key: "",
   model_name: "",
   temperature: 0.7,
-  max_tokens: 2000,
+  context_window_tokens: 40000,
+  max_output_tokens: 4096,
   capabilitiesText: ""
 });
 
@@ -409,6 +430,30 @@ const dialogRules: FormRules = {
   ],
   base_url: [
     { required: true, message: () => t("validation.required"), trigger: "blur" }
+  ],
+  context_window_tokens: [
+    {
+      required: true,
+      message: () => t("validation.required"),
+      trigger: "change"
+    }
+  ],
+  max_output_tokens: [
+    {
+      required: true,
+      message: () => t("validation.required"),
+      trigger: "change"
+    },
+    {
+      validator: (_rule, value: number, callback) => {
+        if (value > dialogForm.context_window_tokens) {
+          callback(new Error(t("llmManagement.tokenLimitError")));
+          return;
+        }
+        callback();
+      },
+      trigger: "change"
+    }
   ],
   capabilitiesText: [
     {
@@ -484,7 +529,8 @@ function openDialog(type: "add" | "edit", row?: LLMItem) {
           api_key: "",
           model_name: row.model_name,
           temperature: row.temperature,
-          max_tokens: row.max_tokens,
+          context_window_tokens: row.context_window_tokens,
+          max_output_tokens: row.max_output_tokens,
           capabilitiesText: row.capabilities
             ? JSON.stringify(row.capabilities, null, 2)
             : ""
@@ -497,7 +543,8 @@ function openDialog(type: "add" | "edit", row?: LLMItem) {
           api_key: "",
           model_name: "",
           temperature: 0.7,
-          max_tokens: 2000,
+          context_window_tokens: 40000,
+          max_output_tokens: 4096,
           capabilitiesText: ""
         }
   );
@@ -512,7 +559,8 @@ async function submitLLM() {
     base_url: dialogForm.base_url.trim(),
     model_name: dialogForm.model_name.trim(),
     temperature: dialogForm.temperature,
-    max_tokens: dialogForm.max_tokens,
+    context_window_tokens: dialogForm.context_window_tokens,
+    max_output_tokens: dialogForm.max_output_tokens,
     capabilities: parseCapabilities(dialogForm.capabilitiesText)
   };
 

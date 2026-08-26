@@ -130,12 +130,14 @@ class AsyncLLMDatabase(AsyncBaseDatabase):
 
     async def create(
         self,
+        name:          str,
         provider_name: str,
         base_url:      str,
         model_name:    str,
         api_key:       Optional[str]  = None,
         temperature:   float          = 0.7,
-        max_tokens:    int            = 2000,
+        context_window_tokens: int    = 40000,
+        max_output_tokens: int        = 4096,
         capabilities:  Optional[Dict] = None,
     ) -> LLM:
         """
@@ -146,12 +148,14 @@ class AsyncLLMDatabase(AsyncBaseDatabase):
         """
         async with self.get_session() as session:
             row = LLM(
+                name          = name,
                 provider_name = provider_name,
                 base_url      = base_url,
                 model_name    = model_name,
                 api_key       = api_key,
                 temperature   = temperature,
-                max_tokens    = max_tokens,
+                context_window_tokens = context_window_tokens,
+                max_output_tokens     = max_output_tokens,
                 capabilities  = capabilities,
             )
             session.add(row)
@@ -164,12 +168,14 @@ class AsyncLLMDatabase(AsyncBaseDatabase):
 
     async def upsert(
         self,
+        name:          str,
         provider_name: str,
         base_url:      str,
         model_name:    str,
         api_key:       Optional[str]  = None,
         temperature:   float          = 0.7,
-        max_tokens:    int            = 2000,
+        context_window_tokens: int    = 40000,
+        max_output_tokens: int        = 4096,
         capabilities:  Optional[Dict] = None,
     ) -> LLM:
         """
@@ -189,12 +195,14 @@ class AsyncLLMDatabase(AsyncBaseDatabase):
 
             if row is None:
                 row = LLM(
+                    name          = name,
                     provider_name = provider_name,
                     base_url      = base_url,
                     model_name    = model_name,
                     api_key       = api_key,
                     temperature   = temperature,
-                    max_tokens    = max_tokens,
+                    context_window_tokens = context_window_tokens,
+                    max_output_tokens     = max_output_tokens,
                     capabilities  = capabilities,
                 )
                 session.add(row)
@@ -202,10 +210,12 @@ class AsyncLLMDatabase(AsyncBaseDatabase):
                     f"[DB] LLM created: provider='{provider_name}' model='{model_name}'"
                 )
             else:
+                row.name         = name
                 row.base_url     = base_url
                 row.api_key      = api_key
                 row.temperature  = temperature
-                row.max_tokens   = max_tokens
+                row.context_window_tokens = context_window_tokens
+                row.max_output_tokens     = max_output_tokens
                 if capabilities is not None:
                     row.capabilities = capabilities
                 logger.info(
@@ -220,14 +230,13 @@ class AsyncLLMDatabase(AsyncBaseDatabase):
         Partially update an existing LLM row by *llm_id*.
 
         Only the keys present in *fields* are modified.
-        Allowed keys: ``base_url``, ``api_key``, ``temperature``,
-        ``max_tokens``, ``capabilities``, ``provider_name``, ``model_name``.
 
         Returns the updated row, or None if not found.
         """
         allowed = {
-            "base_url", "api_key", "temperature",
-            "max_tokens", "capabilities", "provider_name", "model_name",
+            "name", "base_url", "api_key", "temperature",
+            "context_window_tokens", "max_output_tokens", "capabilities",
+            "provider_name", "model_name",
         }
         invalid = set(fields) - allowed
         if invalid:

@@ -638,7 +638,9 @@ llmManagement:
   apiKeyEditHint: Saved keys are not displayed for security
   clearApiKey: Clear saved key
   temperature: Temperature
-  maxTokens: Max Tokens
+  contextWindowTokens: Context Window
+  maxOutputTokens: Max Output Tokens
+  tokenLimitError: Max output tokens cannot exceed the context window
   capabilities: Capabilities
   capabilitiesPlaceholder: "Optional JSON object"
   capabilitiesJsonError: Enter valid JSON
