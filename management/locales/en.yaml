@@ -232,6 +232,11 @@ agent:
   systemPrompt:
     label: System Prompt
     placeholder: Please enter system prompt
+  maxOutputTokens:
+    label: Max Output Tokens
+    placeholder: Leave empty to inherit from LLM
+    hint: When empty, the bound LLM's default max output tokens are used
+    inherit: Inherit LLM
 
   bound:
     users: Bound Users

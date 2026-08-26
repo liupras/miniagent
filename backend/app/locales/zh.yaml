@@ -50,6 +50,7 @@ agent:
   session_not_found: 未找到会话
   session_not_belong: 聊天会话属于另一个智能体
   title_not_empty: 标题不能为空
+  invalid_value: "Agent {id} 的最大输出 Token 不能超过所绑定 LLM 的上下文窗口"
 
 tool:
   not_found: 技能不存在

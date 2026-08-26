@@ -50,6 +50,7 @@ agent:
   session_not_found: Chat session not found
   session_not_belong: The chat session belongs to a different agent
   title_not_empty: Title cannot be empty
+  invalid_value: "Agent {id} max output tokens cannot exceed the bound LLM context window"
 
 tool:
   not_found: Skill does not exist

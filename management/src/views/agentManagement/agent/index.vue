@@ -132,6 +132,15 @@
             <span v-else class="text-gray-400">—</span>
           </template>
 
+          <template #max_output_tokens="{ row }">
+            <span v-if="row.max_output_tokens != null">
+              {{ row.max_output_tokens }}
+            </span>
+            <el-tag v-else size="small" type="info" effect="plain">
+              {{ t("agent.maxOutputTokens.inherit") }}
+            </el-tag>
+          </template>
+
           <!-- Users column -->
           <template #users="{ row }">
             <el-tooltip
@@ -290,6 +299,25 @@
               :value="llm.id"
             />
           </el-select>
+        </el-form-item>
+
+        <el-form-item
+          :label="t('agent.maxOutputTokens.label')"
+          prop="max_output_tokens"
+        >
+          <div class="w-full">
+            <el-input-number
+              v-model="dialogForm.max_output_tokens"
+              :min="1"
+              :step="256"
+              :value-on-clear="null"
+              :placeholder="t('agent.maxOutputTokens.placeholder')"
+              class="w-full!"
+            />
+            <div class="mt-1 text-xs text-gray-400">
+              {{ t("agent.maxOutputTokens.hint") }}
+            </div>
+          </div>
         </el-form-item>
 
         <el-form-item :label="t('form.status')" prop="is_active">
@@ -522,6 +550,7 @@ const dialogForm = reactive({
   description: "",
   system_prompt: "",
   llm_id: undefined as number | undefined,
+  max_output_tokens: null as number | null,
   is_active: true
 });
 
@@ -569,6 +598,12 @@ const columns: TableColumnList = [
     prop: "llm",
     width: 140,
     slot: "llm"
+  },
+  {
+    label: t("agent.maxOutputTokens.label"),
+    prop: "max_output_tokens",
+    width: 145,
+    slot: "max_output_tokens"
   },
   {
     label: t("labels.user"),
@@ -667,6 +702,7 @@ function openDialog(type: "add" | "edit", row?: any) {
       description: row.description ?? "",
       system_prompt: row.system_prompt,
       llm_id: row.llm?.id ?? undefined,
+      max_output_tokens: row.max_output_tokens ?? null,
       is_active: row.is_active
     });
   } else {
@@ -676,6 +712,7 @@ function openDialog(type: "add" | "edit", row?: any) {
       description: "",
       system_prompt: "",
       llm_id: undefined,
+      max_output_tokens: null,
       is_active: true
     });
   }
@@ -691,6 +728,7 @@ async function onSubmit() {
       description: dialogForm.description || null,
       system_prompt: dialogForm.system_prompt,
       llm_id: dialogForm.llm_id ?? null,
+      max_output_tokens: dialogForm.max_output_tokens,
       is_active: dialogForm.is_active
     };
 

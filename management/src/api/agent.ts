@@ -32,7 +32,8 @@ export interface Agent {
   name: string;
   description?: string;
   system_prompt: string;
-  llm_id?: number;
+  llm_id?: number | null;
+  max_output_tokens?: number | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -54,6 +55,7 @@ export interface AgentCreatePayload {
   description?: string | null;
   system_prompt: string;
   llm_id?: number | null;
+  max_output_tokens?: number | null;
   is_active?: boolean;
 }
 

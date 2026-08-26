@@ -37,6 +37,11 @@ class AgentBase(BaseModel):
     description: Optional[str] = Field(None, description="Agent description")
     system_prompt: str = Field(..., description="System prompt")
     llm_id: Optional[int] = Field(None, description="Bound LLM ID")
+    max_output_tokens: Optional[int] = Field(
+        None,
+        ge=1,
+        description="Agent-specific maximum output tokens; null inherits from the bound LLM",
+    )
     is_active: bool = Field(True, description="Whether the agent is active")
 
 
@@ -48,6 +53,7 @@ class AgentUpdate(BaseModel):
     description: Optional[str] = None
     system_prompt: Optional[str] = None
     llm_id: Optional[int] = None
+    max_output_tokens: Optional[int] = Field(None, ge=1)
     is_active: Optional[bool] = None
 
 class AgentOut(AgentBase):

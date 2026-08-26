@@ -234,6 +234,11 @@ agent:
   systemPrompt:
     label: 系统提示词
     placeholder: 请输入系统提示词
+  maxOutputTokens:
+    label: 最大输出 Token
+    placeholder: 留空则继承 LLM
+    hint: 留空时使用所绑定 LLM 的默认最大输出 Token
+    inherit: 继承 LLM
   
   bound:
     users: 绑定用户

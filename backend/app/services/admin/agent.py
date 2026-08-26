@@ -14,10 +14,14 @@ if TYPE_CHECKING:
 from app.infra.db.database import Agent
 from app.schemas.admin.agent import AgentCreate, AgentUpdate, AgentListParams, AgentOut, ToolBrief
 from app.schemas.admin.llm import LLMOptionItem
-from app.schemas.common import PageResult, NotFoundError
+from app.schemas.common import InvalidValueError, PageResult, NotFoundError
 from app.schemas.admin.user import UserOptionItem
 
 class AgentNotFoundError(NotFoundError):
+    def __init__(self, entity_id: Any):
+        super().__init__("Agent", entity_id)
+
+class AgentTokenLimitError(InvalidValueError):
     def __init__(self, entity_id: Any):
         super().__init__("Agent", entity_id)
 
@@ -36,6 +40,7 @@ class AgentService:
     ) -> None:
 
         self._agent_db = container.agent_db
+        self._llm_db = container.llm_db
         self._user_agent_relation_db = container.user_agent_relation_db
         self._agent_tool_relation_db = container.agent_tool_relation_db
         self._tool_db = container.tool_db
@@ -72,6 +77,11 @@ class AgentService:
         """
         Persist a new Agent record.
         """
+        await self._validate_max_output_tokens(
+            llm_id=payload.llm_id,
+            max_output_tokens=payload.max_output_tokens,
+            entity_id=payload.name,
+        )
         agent = await self._agent_db.create_agent(payload.model_dump())
         created = await self._agent_db.get_agent(agent.id)
         return AgentOut.model_validate(created)
@@ -85,13 +95,40 @@ class AgentService:
         Apply a partial update to an existing Agent.
         Raises AgentNotFoundError / AgentNameConflictError as appropriate.
         """
-        agent = await self._agent_db.update_agent(agent_id, payload.model_dump(exclude_unset=True))
+        fields = payload.model_dump(exclude_unset=True)
+        current = await self._agent_db.get_agent(agent_id)
+        if current is None:
+            raise AgentNotFoundError(agent_id)
+
+        await self._validate_max_output_tokens(
+            llm_id=fields.get("llm_id", current.llm_id),
+            max_output_tokens=fields.get(
+                "max_output_tokens", current.max_output_tokens
+            ),
+            entity_id=agent_id,
+        )
+
+        agent = await self._agent_db.update_agent(agent_id, fields)
         if agent is None:
             raise AgentNotFoundError(agent_id)
 
         updated = await self._agent_db.get_agent(agent_id)
         self._cache.on_agent_changed(agent_id)    
         return AgentOut.model_validate(updated)
+
+    async def _validate_max_output_tokens(
+        self,
+        *,
+        llm_id: Optional[int],
+        max_output_tokens: Optional[int],
+        entity_id: Any,
+    ) -> None:
+        if llm_id is None or max_output_tokens is None:
+            return
+
+        llm = await self._llm_db.get(llm_id)
+        if llm and max_output_tokens > llm.context_window_tokens:
+            raise AgentTokenLimitError(entity_id)
 
     async def toggle_active(self, agent_id: int) -> None:
         """
@@ -192,6 +229,14 @@ class AgentService:
         return LLMOptionItem.model_validate(llm)
     
     async def update_agent_llm(self, agent_id: int, llm_id: int) -> None:
+        current = await self._agent_db.get_agent(agent_id)
+        if current is None:
+            raise AgentNotFoundError(agent_id)
+        await self._validate_max_output_tokens(
+            llm_id=llm_id,
+            max_output_tokens=current.max_output_tokens,
+            entity_id=agent_id,
+        )
         agent = await self._agent_db.update_agent_llm(agent_id, llm_id)
         if agent is None:
             raise AgentNotFoundError(agent_id)
