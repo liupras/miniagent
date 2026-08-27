@@ -246,7 +246,7 @@ class Embedding(Base):
     base_url = Column(String(1024), nullable=False)
     api_key = Column(String(512), nullable=True, comment="API key (optional for local models)")
     model_name = Column(String(100), nullable=False)
-    max_tokens = Column(Integer, default=512)
+    max_input_tokens = Column(Integer, default=512)
 
     created_at = Column(DateTime, default=lambda: datetime.now())
 

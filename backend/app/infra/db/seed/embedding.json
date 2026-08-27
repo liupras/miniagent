@@ -5,7 +5,7 @@
     "base_url": "http://localhost:11434",
     "api_key": null,
     "model_name": "quentinz/bge-large-zh-v1.5",
-    "max_tokens": 512
+    "max_input_tokens": 512
   },
   {
     "name": "openai_bge-text-embedding-ada-002",
@@ -13,6 +13,6 @@
     "base_url": "https://api.openai.com/v1",
     "api_key": null,
     "model_name": "text-embedding-ada-002",
-    "max_tokens": 8191
+    "max_input_tokens": 8191
   }
 ]
