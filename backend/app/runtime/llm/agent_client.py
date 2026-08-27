@@ -60,7 +60,7 @@ class AgentLLM:
             stream=False
         )
 
-        return self._build_response(resp)
+        return self._build_response(resp, tool_schema=tool_schema)
     
     async def achat(
         self,
@@ -78,7 +78,7 @@ class AgentLLM:
             messages=full_messages,            
         )
 
-        return self._build_response(resp)
+        return self._build_response(resp, tool_schema=tool_schema)
     
     def _build_messages(
         self,
@@ -89,12 +89,22 @@ class AgentLLM:
         full_messages = messages.copy()
 
         if tool_schema and not self._has_tool_prompt(full_messages):
-            tool_prompt = self._tool_prompt_template.format(
-                tool_schema=json.dumps(
-                    tool_schema,
-                    indent=2,
-                    ensure_ascii=False,
+            schema_json = json.dumps(
+                tool_schema,
+                indent=2,
+                ensure_ascii=False,
+            )
+            placeholder = "{tool_schema}"
+
+            if self._tool_prompt_template.count(placeholder) != 1:
+                raise ValueError(
+                    "工具提示词必须且只能包含一个 {tool_schema} 占位符"
                 )
+
+            tool_prompt = self._tool_prompt_template.replace(
+                placeholder,
+                schema_json,
+                1,
             )
             full_messages.insert(
                 0,
@@ -354,11 +364,23 @@ class AgentLLM:
                 high = middle - 1
         return {**message, "content": best}
     
-    def _build_response(self,resp):
+    def _build_response(self, resp, tool_schema=None):
 
-        content = resp.content.strip()
+        content = (resp.content or "").strip()
+        allowed_tool_names = self._extract_tool_names(tool_schema)
 
-        tool_calls = self._parse_tool_call(content)
+        # Prefer provider-native tool calls when the model/API supports them.
+        # Prompt-generated JSON remains the fallback for local models that only
+        # expose tool calls through message content.
+        tool_calls = self._normalize_tool_calls(
+            getattr(resp, "tool_calls", None),
+            allowed_tool_names=allowed_tool_names,
+        )
+        if not tool_calls:
+            tool_calls = self._parse_tool_call(
+                content,
+                allowed_tool_names=allowed_tool_names,
+            )
 
         if tool_calls:
             return {
@@ -388,18 +410,18 @@ You can use the following tool (must be called in JSON format):
 {tool_schema}
 
 When calling the tool, the output must strictly match:
-{{
+{
     "tool_calls": [
-        {{
+        {
             "id": "call_unique_id",
             "type": "function",
-            "function": {{
+            "function": {
                 "name": "tool_name",
-                "arguments": {{...}}
-            }}
-        }}
+                "arguments": {...}
+            }
+        }
     ]
-}}
+}
 
 Note:
 - Only output JSON, do not interpret it
@@ -407,39 +429,106 @@ Note:
 - Do not output any extra content
 """
 
-    def _parse_tool_call(self, text: str):
-        """JSON parsing tool call"""
+    @staticmethod
+    def _extract_tool_names(tool_schema) -> Optional[set[str]]:
+        """Return configured tool names, or None when no schema was supplied."""
+        if not tool_schema:
+            return None
+
+        schemas = tool_schema if isinstance(tool_schema, list) else [tool_schema]
+        names = {
+            schema.get("function", {}).get("name")
+            for schema in schemas
+            if isinstance(schema, dict)
+        }
+        names.discard(None)
+        return names or None
+
+    @staticmethod
+    def _as_dict(value: Any) -> Optional[Dict[str, Any]]:
+        """Convert LiteLLM/Pydantic tool-call objects to plain dictionaries."""
+        if isinstance(value, dict):
+            return value
+        if hasattr(value, "model_dump"):
+            dumped = value.model_dump()
+            return dumped if isinstance(dumped, dict) else None
+        if hasattr(value, "dict"):
+            dumped = value.dict()
+            return dumped if isinstance(dumped, dict) else None
+        return None
+
+    @classmethod
+    def _normalize_tool_calls(
+        cls,
+        tool_calls: Any,
+        allowed_tool_names: Optional[set[str]] = None,
+    ) -> Optional[List[Dict[str, Any]]]:
+        """Validate and normalize tool calls before the ReAct loop executes them."""
+        if not isinstance(tool_calls, (list, tuple)) or not tool_calls:
+            return None
+
+        normalized = []
+        for index, raw_call in enumerate(tool_calls):
+            call = cls._as_dict(raw_call)
+            if call is None:
+                return None
+
+            function = cls._as_dict(call.get("function"))
+            if function is None:
+                return None
+
+            name = function.get("name")
+            arguments = function.get("arguments", {})
+            if not isinstance(name, str) or not name.strip():
+                return None
+            name = name.strip()
+            if allowed_tool_names is not None and name not in allowed_tool_names:
+                return None
+            if arguments is None:
+                arguments = {}
+            if not isinstance(arguments, (dict, str)):
+                return None
+
+            normalized.append({
+                "id": call.get("id") or f"call_{index}",
+                "type": "function",
+                "function": {
+                    "name": name,
+                    "arguments": arguments,
+                },
+            })
+
+        return normalized
+
+    def _parse_tool_call(
+        self,
+        text: str,
+        allowed_tool_names: Optional[set[str]] = None,
+    ):
+        """Extract the first valid tool-call object from model-generated text."""
         if not text:
             return None
-        
-        clean_text = text.strip()
 
-        if "```" in clean_text:
-            import re
-            # Extract the longest segment enclosed in ```
-            blocks = re.findall(r'```(?:json)?\s*([\s\S]*?)\s*```', clean_text)
-            if blocks:
-                # Try parsing the extracted block content first.
-                for block in blocks:
-                    try:
-                        data = json.loads(block.strip())
-                        if "tool_calls" in data:
-                            return data["tool_calls"]
-                    except:
-                        continue
-    
-        # fallback solution: Use regular expressions to match the outermost {}
-        # This applies to situations where parsing fails due to missing or missing ```, 
-        # or where the JSON contains natural language before or after it.
-        try:
-            import re
-            match = re.search(r'(\{[\s\S]*\})', clean_text)
-            if match:
-                json_str = match.group(1)
-                data = json.loads(json_str)
-                if "tool_calls" in data:
-                    return data["tool_calls"]
-        except Exception:
-            pass
+        # Scan from every opening brace instead of greedily matching the first
+        # and last brace. This handles Markdown/prose wrappers and also repairs
+        # the common local-model output ``{{"tool_calls": ...}}`` by decoding
+        # successfully from its second opening brace.
+        decoder = json.JSONDecoder()
+        for index, char in enumerate(text):
+            if char != "{":
+                continue
+            try:
+                data, _ = decoder.raw_decode(text[index:])
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(data, dict):
+                continue
+
+            tool_calls = self._normalize_tool_calls(
+                data.get("tool_calls"),
+                allowed_tool_names=allowed_tool_names,
+            )
+            if tool_calls:
+                return tool_calls
 
         return None

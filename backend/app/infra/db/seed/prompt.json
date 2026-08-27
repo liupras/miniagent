@@ -214,14 +214,14 @@
     "key": "agent_llm.tool_schema",
     "lang": "zh",
     "description": "描述工具schema细节的提示词",
-    "value": "您可以使用以下工具（必须以 JSON 格式调用）:\n\n{tool_schema}\n\n调用该工具时，输出必须严格匹配:\n{{\n    \"tool_calls\": [\n        {{\n            \"id\": \"call_unique_id\",\n            \"type\": \"function\",\n            \"function\": {{\n                \"name\": \"tool_name\",\n                \"arguments\": {{...}}\n            }}\n        }}\n    ]\n}}\n\n注意：\n- 仅输出 JSON 数据\n- 不要添加 Markdown 内容\n- 不要输出任何额外内容"
+    "value": "您可以使用以下工具（必须以 JSON 格式调用）:\n\n{tool_schema}\n\n调用该工具时，输出必须严格匹配:\n{\n    \"tool_calls\": [\n        {\n            \"id\": \"call_unique_id\",\n            \"type\": \"function\",\n            \"function\": {\n                \"name\": \"tool_name\",\n                \"arguments\": {...}\n            }\n        }\n    ]\n}\n\n注意：\n- 仅输出 JSON 数据\n- 不要添加 Markdown 内容\n- 不要输出任何额外内容\""
   },
   {
     
     "key": "agent_llm.tool_schema",
     "lang": "en",
     "description": "Prompt describing the schema details of the tool",
-    "value": "You can use the following tool (must be called in JSON format):\n\n{tool_schema}\n\nWhen calling the tool, the output must strictly match:\n{{\n    \"tool_calls\": [\n        {{\n            \"id\": \"call_unique_id\",\n            \"type\": \"function\",\n            \"function\": {{\n                \"name\": \"tool_name\",\n                \"arguments\": {{...}}\n            }}\n        }}\n    ]\n}}\n\nNote:\n- Only output JSON\n- Do not add markdown\n- Do not output any extra content"
+    "value": "You can use the following tool (must be called in JSON format):\n\n{tool_schema}\n\nWhen calling the tool, the output must strictly match:\n{\n    \"tool_calls\": [\n        {\n            \"id\": \"call_unique_id\",\n            \"type\": \"function\",\n            \"function\": {\n                \"name\": \"tool_name\",\n                \"arguments\": {...}\n            }\n        }\n    ]\n}\n\nNote:\n- Only output JSON\n- Do not add markdown\n- Do not output any extra content"
   },
   {
     
