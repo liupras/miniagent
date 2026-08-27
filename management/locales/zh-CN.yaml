@@ -675,7 +675,7 @@ embeddingManagement:
   clearApiKey: 清除已保存密钥
   configured: 已配置
   notConfigured: 未配置
-  maxTokens: 最大 Token 数
+  maxInputTokens: 最大输入 Token 数
 
 promptManagement:
   title: Prompt 管理

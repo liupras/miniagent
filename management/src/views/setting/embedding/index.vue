@@ -196,11 +196,11 @@
           </div>
         </el-form-item>
         <el-form-item
-          :label="t('embeddingManagement.maxTokens')"
-          prop="max_tokens"
+          :label="t('embeddingManagement.maxInputTokens')"
+          prop="max_input_tokens"
         >
           <el-input-number
-            v-model="dialogForm.max_tokens"
+            v-model="dialogForm.max_input_tokens"
             :min="1"
             :step="128"
             class="w-full!"
@@ -284,8 +284,8 @@ const columns: TableColumnList = [
     showOverflowTooltip: true
   },
   {
-    label: t("embeddingManagement.maxTokens"),
-    prop: "max_tokens",
+    label: t("embeddingManagement.maxInputTokens"),
+    prop: "max_input_tokens",
     width: 125
   },
   {
@@ -316,7 +316,7 @@ const dialogForm = reactive({
   base_url: "",
   api_key: "",
   model_name: "",
-  max_tokens: 512
+  max_input_tokens: 512
 });
 
 const requiredRule = {
@@ -385,7 +385,7 @@ function openDialog(type: "add" | "edit", row?: EmbeddingItem) {
           base_url: row.base_url,
           api_key: "",
           model_name: row.model_name,
-          max_tokens: row.max_tokens
+          max_input_tokens: row.max_input_tokens
         }
       : {
           id: undefined,
@@ -394,7 +394,7 @@ function openDialog(type: "add" | "edit", row?: EmbeddingItem) {
           base_url: "",
           api_key: "",
           model_name: "",
-          max_tokens: 512
+          max_input_tokens: 512
         }
   );
   dialogVisible.value = true;
@@ -407,7 +407,7 @@ async function submitEmbedding() {
     provider_name: dialogForm.provider_name.trim(),
     base_url: dialogForm.base_url.trim(),
     model_name: dialogForm.model_name.trim(),
-    max_tokens: dialogForm.max_tokens
+    max_input_tokens: dialogForm.max_input_tokens
   };
   if (dialogType.value === "add" || clearApiKey.value) {
     payload.api_key = clearApiKey.value

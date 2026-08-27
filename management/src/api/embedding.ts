@@ -8,7 +8,7 @@ export interface EmbeddingItem {
   base_url: string;
   api_key?: string | null;
   model_name: string;
-  max_tokens: number;
+  max_input_tokens: number;
 }
 
 export interface EmbeddingOption {
@@ -36,7 +36,7 @@ export interface EmbeddingPayload {
   base_url: string;
   api_key?: string | null;
   model_name: string;
-  max_tokens: number;
+  max_input_tokens: number;
 }
 
 const BASE_URL = "admin/embeddings";

@@ -22,7 +22,11 @@ class _EmbeddingBase(BaseModel):
     base_url: str = Field(..., max_length=1024, description="Base URL for the embedding service")
     api_key: Optional[str] = Field(None, max_length=512, description="API key (optional for local models)")
     model_name: str = Field(..., max_length=100, description="Model name")
-    max_tokens: int = Field(default=512, description="Maximum tokens")
+    max_input_tokens: int = Field(
+        default=512,
+        ge=1,
+        description="Maximum input tokens allowed for each embedding text",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -32,17 +36,18 @@ class _EmbeddingBase(BaseModel):
 class EmbeddingCreate(_EmbeddingBase):
     """Body for POST /embeddings — all core fields are required."""
 
-    name: str = Field(..., max_length=100, description="Embedding name")
-    provider_name: str = Field(..., max_length=50, description="Embedding provider name, e.g., openai, local, etc.")
-    base_url: str = Field(..., max_length=1024, description="Base URL for the embedding service")
-    model_name: str = Field(..., max_length=100, description="Model name")
-    max_tokens: int = Field(default=512, description="Maximum tokens")
+    pass
 
 
-class EmbeddingUpdate(_EmbeddingBase):
+class EmbeddingUpdate(BaseModel):
     """Body for PATCH /embeddings/{id} — all fields optional (partial update)."""
 
-    pass
+    name: Optional[str] = Field(None, max_length=100)
+    provider_name: Optional[str] = Field(None, max_length=50)
+    base_url: Optional[str] = Field(None, max_length=1024)
+    api_key: Optional[str] = Field(None, max_length=512)
+    model_name: Optional[str] = Field(None, max_length=100)
+    max_input_tokens: Optional[int] = Field(None, ge=1)
 
 
 # ---------------------------------------------------------------------------

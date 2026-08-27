@@ -18,11 +18,18 @@ from app.schemas.admin.embedding import (
     EmbeddingOption
 )
 
-from app.schemas.common import NotFoundError
+from app.schemas.common import AlreadyExistsError, NotFoundError
 
 class EmbeddingNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):
         super().__init__("Embedding", entity_id)
+
+
+class EmbeddingAlreadyExistsError(AlreadyExistsError):
+    def __init__(self, entity_id: Any):
+        super().__init__("Embedding", entity_id)
+
+
 class EmbeddingService:
     def __init__(self, container:ServiceContainer):
         self._db = container.embed_db
@@ -54,14 +61,30 @@ class EmbeddingService:
 
     async def create(self, payload: EmbeddingCreate) -> EmbeddingRead:
         """Create a new embedding."""
+        if await self._db.get_by_name(payload.name):
+            raise EmbeddingAlreadyExistsError(payload.name)
         data = payload.model_dump()
-        embedding = await self._db.create(data)
+        embedding = await self._db.create(**data)
+        self._cache.on_embedding_changed()
         return EmbeddingRead.model_validate(embedding)
 
     async def update(self, embedding_id: int, payload: EmbeddingUpdate) -> Optional[EmbeddingRead]:
         """Update an embedding."""
+        current = await self._db.get_by_id(embedding_id)
+        if current is None:
+            raise EmbeddingNotFoundError(embedding_id)
+
         data = payload.model_dump(exclude_unset=True)
-        embedding = await self._db.update(embedding_id, data)
+        new_name = data.get("name")
+        if new_name is not None and new_name != current.name:
+            duplicate = await self._db.get_by_name(new_name)
+            if duplicate is not None:
+                raise EmbeddingAlreadyExistsError(new_name)
+
+        if not data:
+            return EmbeddingRead.model_validate(current)
+
+        embedding = await self._db.update(embedding_id, **data)
         if embedding is None:
             raise EmbeddingNotFoundError(embedding_id)
         self._cache.on_embedding_changed()
@@ -69,9 +92,11 @@ class EmbeddingService:
 
     async def delete(self, embedding_id: int) -> int:
         """Delete an embedding."""
-        rowcount = await self._db.delete(embedding_id)
+        deleted = await self._db.delete(embedding_id)
+        if not deleted:
+            raise EmbeddingNotFoundError(embedding_id)
         self._cache.on_embedding_changed()
-        return rowcount
+        return 1
 
     async def get_embedding_options(self) -> List[EmbeddingOption]:
         """Get embedding options for dropdown selection."""

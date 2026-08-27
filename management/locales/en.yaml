@@ -673,7 +673,7 @@ embeddingManagement:
   clearApiKey: Clear saved key
   configured: Configured
   notConfigured: Not configured
-  maxTokens: Max Tokens
+  maxInputTokens: Max Input Tokens
 
 promptManagement:
   title: Prompt Management

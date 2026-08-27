@@ -4,7 +4,7 @@
 # @date    : 2026-04-15
 # @description: EmbeddingDatabase — ORM access layer for the Embedding table.
 
-from typing import List, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 from sqlalchemy import func, select, delete, distinct
 from ..infra.db.database import Embedding
 from ..infra.db.async_base import AsyncBaseDatabase
@@ -22,7 +22,7 @@ class AsyncEmbeddingDatabase(AsyncBaseDatabase):
         base_url:      str,
         model_name:    str,
         api_key:       Optional[str] = None,
-        max_tokens:    int           = 512,
+        max_input_tokens: int        = 512,
     ) -> Embedding:
         embedding = Embedding(
             name=name,
@@ -30,7 +30,7 @@ class AsyncEmbeddingDatabase(AsyncBaseDatabase):
             base_url=base_url,
             api_key=api_key,
             model_name=model_name,
-            max_tokens=max_tokens,
+            max_input_tokens=max_input_tokens,
         )
         async with self.get_session() as s:
             s.add(embedding)
@@ -50,7 +50,10 @@ class AsyncEmbeddingDatabase(AsyncBaseDatabase):
 
     async def get_by_name(self, name: str) -> Optional[Embedding]:
         async with self.get_session() as s:
-            return await s.get(Embedding, name)
+            result = await s.execute(
+                select(Embedding).where(Embedding.name == name)
+            )
+            return result.scalar_one_or_none()
         
     async def get_all_embeddings(self) -> List[Embedding]:
         """
@@ -129,17 +132,28 @@ class AsyncEmbeddingDatabase(AsyncBaseDatabase):
 
     async def update(
         self,
-        name:          str,
-        **kwargs  # Simplify the update logic for a large number of optional parameters using kwargs.
+        embedding_id: int,
+        **fields: Any,
     ) -> Optional[Embedding]:
+        allowed = {
+            "name",
+            "provider_name",
+            "base_url",
+            "api_key",
+            "model_name",
+            "max_input_tokens",
+        }
+        invalid = set(fields) - allowed
+        if invalid:
+            raise ValueError(f"Invalid field(s) for Embedding.update: {invalid}")
+
         async with self.get_session() as s:
-            embedding = await s.get(Embedding, name)
+            embedding = await s.get(Embedding, embedding_id)
             if not embedding:
                 return None
-            
-            for key, value in kwargs.items():
-                if value is not None:
-                    setattr(embedding, key, value)            
+
+            for key, value in fields.items():
+                setattr(embedding, key, value)
 
             return embedding
 
@@ -147,9 +161,9 @@ class AsyncEmbeddingDatabase(AsyncBaseDatabase):
     # Delete
     # =========================================================================
 
-    async def delete(self, name: str) -> bool:
+    async def delete(self, embedding_id: int) -> bool:
         async with self.get_session() as s:
-            embedding = await s.get(Embedding, name)
+            embedding = await s.get(Embedding, embedding_id)
             if not embedding:
                 return False
             await s.delete(embedding)
