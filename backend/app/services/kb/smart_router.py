@@ -23,6 +23,7 @@ from app.runtime.cache.lazy_cache import AsyncLazyCache
 from .retrieval_model import ChunkResult
 from .retrieval_model import KBInfo
 from app.repositories.async_embedding import AsyncEmbeddingDatabase
+from app.retrieval.embedding_inputs import EmbeddingInputGuard
 
 @dataclass
 class MultiKBQueryResult:
@@ -89,7 +90,12 @@ class SmartRouter:
             self._kb_embedding_cache,            
         )
 
-    async def _build_kb_embedding(self, kb_id: int, embedding) -> Optional[List[float]]:
+    async def _build_kb_embedding(
+        self,
+        kb_id: int,
+        embedding,
+        input_guard: EmbeddingInputGuard,
+    ) -> Optional[List[float]]:
         """
         AsyncLazyCache builder for the KB embedding cache.
 
@@ -115,11 +121,20 @@ class SmartRouter:
             logger.debug(f"[SmartRouter] kb={kb_id} has no embeddable text — caching None")
             return None
 
-        kb_vec = embedding.embed_query(kb_text)
+        kb_vec = embedding.embed_query(input_guard.truncate_text(kb_text))
         return kb_vec
 
-    async def _get_kb_embedding(self, kb_id: int, embedding) -> Optional[List[float]]:
-        return await self._kb_embedding_cache.get_or_build(kb_id, embedding)
+    async def _get_kb_embedding(
+        self,
+        kb_id: int,
+        embedding,
+        input_guard: EmbeddingInputGuard,
+    ) -> Optional[List[float]]:
+        return await self._kb_embedding_cache.get_or_build(
+            kb_id,
+            embedding,
+            input_guard,
+        )
     
     async def query(
         self,
@@ -218,12 +233,20 @@ class SmartRouter:
             model=embedding_provider.model_name,
             base_url=embedding_provider.base_url,
         )
+        input_guard = EmbeddingInputGuard(
+            max_input_tokens=embedding_provider.max_input_tokens,
+            model=embedding_provider.model_name,
+        )
 
-        query_vec = embedding.embed_query(query)
+        query_vec = embedding.embed_query(input_guard.truncate_text(query))
         scores = []
 
         for kb_id in kb_ids:
-            kb_vec = await self._get_kb_embedding(kb_id, embedding)
+            kb_vec = await self._get_kb_embedding(
+                kb_id,
+                embedding,
+                input_guard,
+            )
             if kb_vec is None:
                 continue
 

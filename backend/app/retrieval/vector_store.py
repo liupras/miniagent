@@ -33,6 +33,11 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from tqdm import tqdm
 
+from app.retrieval.embedding_inputs import (
+    EmbeddingInputGuard,
+    EmbeddingInputTooLongError,
+)
+
 # ==========================================================
 # CONSTANTS
 # ==========================================================
@@ -71,7 +76,8 @@ class VectorStoreManager:
         self,
         db_path:        str = "./data/vector",        
         ollama_base_url: str = "http://localhost:11434",
-        embed_model: str = "quentinz/bge-large-zh-v1.5",        
+        embed_model: str = "quentinz/bge-large-zh-v1.5",
+        max_input_tokens: int = 512,
         vector_dim:int=1024   # kept for API compatibility, Chroma auto-detects  
     ):
         """
@@ -82,6 +88,11 @@ class VectorStoreManager:
             vector_dim:      Embedding dimension (informational; Chroma auto-detects).                    
         """
         self.vector_dim = vector_dim
+        self.max_input_tokens = max_input_tokens
+        self.embedding_input_guard = EmbeddingInputGuard(
+            max_input_tokens=max_input_tokens,
+            model=embed_model,
+        )
         self.embedding  = OllamaEmbeddings(
             model=embed_model,
             base_url=ollama_base_url,
@@ -239,6 +250,8 @@ class VectorStoreManager:
         """
         if not chunks:
             return
+        if embed_batch_size <= 0:
+            raise ValueError("embed_batch_size must be greater than zero")
         
         store = self._get_store(kb_id)
         
@@ -251,6 +264,14 @@ class VectorStoreManager:
             logger.info("[Chroma] All chunks already exist.")
             return 
 
+        for chunk in new_chunks:
+            if not self.embedding_input_guard.fits(chunk.text):
+                raise EmbeddingInputTooLongError(
+                    f"Chunk {chunk.id} exceeds the safe embedding input limit "
+                    f"of {self.embedding_input_guard.safe_input_tokens} tokens; "
+                    "split it before assigning vector IDs"
+                )
+
         total = len(new_chunks)
         logger.info(f"[Chroma] KB {kb_id} is preparing to embed {len(new_chunks)} new blocks.")
 
@@ -262,7 +283,10 @@ class VectorStoreManager:
 
             # Embed batch
             texts = [c.text for c in batch]
-            vectors = self.embedding.embed_documents(texts)
+            vectors = self._embed_documents_with_retry(
+                texts,
+                initial_batch_size=embed_batch_size,
+            )
 
             ids       = []
             documents = []
@@ -293,7 +317,7 @@ class VectorStoreManager:
                 metadatas=metadatas,
             )           
 
-            done = min(start + embed_batch_size, total)
+            done = min(start + len(batch), total)
             logger.debug(f"[Chroma] kb={kb_id} Embedding progress: {done}/{total}")
 
             pbar.update(len(batch))
@@ -302,6 +326,47 @@ class VectorStoreManager:
                 on_batch(done, total) 
 
         pbar.close()      
+
+    def _embed_documents_with_retry(
+        self,
+        texts: List[str],
+        initial_batch_size: int,
+    ) -> List[List[float]]:
+        """Embed in fixed-size requests, halving the size after a failure."""
+        if initial_batch_size <= 0:
+            raise ValueError("embed_batch_size must be greater than zero")
+        if not texts:
+            return []
+
+        vectors: List[List[float]] = []
+        offset = 0
+        request_size = min(initial_batch_size, len(texts))
+
+        while offset < len(texts):
+            current = texts[offset:offset + request_size]
+            try:
+                current_vectors = self.embedding.embed_documents(current)
+                if len(current_vectors) != len(current):
+                    raise ValueError(
+                        "Embedding provider returned a different number of "
+                        "vectors than input texts"
+                    )
+            except Exception:
+                if len(current) == 1:
+                    raise
+                reduced_size = max(1, len(current) // 2)
+                logger.warning(
+                    "[Embedding] Batch of {} failed; retrying with batch size {}.",
+                    len(current),
+                    reduced_size,
+                )
+                request_size = reduced_size
+                continue
+
+            vectors.extend(current_vectors)
+            offset += len(current)
+
+        return vectors
 
     # ==========================================================
     # Delete
@@ -466,7 +531,8 @@ class VectorStoreManager:
             where = self._build_where(metadata_filter)
             logger.debug(f"[Chroma] similarity_search kb={kb_id} where={where}")
 
-            query_vector = self.embedding.embed_query(query)
+            safe_query = self.embedding_input_guard.truncate_text(query)
+            query_vector = self.embedding.embed_query(safe_query)
 
             query_kwargs: dict = {
                 "query_embeddings": [query_vector],

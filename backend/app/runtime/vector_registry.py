@@ -66,4 +66,5 @@ class VectorStoreRegistry:
             db_path=settings.get_vector_db_path(),
             ollama_base_url=embed_data.base_url,
             embed_model=embed_data.model_name,
+            max_input_tokens=embed_data.max_input_tokens,
         )

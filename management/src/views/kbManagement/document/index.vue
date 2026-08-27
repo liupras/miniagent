@@ -180,10 +180,11 @@ function onFileChange(uploadFile: UploadFile) {
           ? t('document.dialog.addTitle')
           : t('document.dialog.updateTitle')
       "
-      width="520px"
+      width="min(760px, 92vw)"
+      class="document-upload-dialog"
       destroy-on-close
     >
-      <el-form label-width="100px">
+      <el-form class="document-upload-form" label-width="110px">
         <el-form-item
           v-if="uploadMode === 'add'"
           :label="t('form.kbName.label')"
@@ -205,6 +206,7 @@ function onFileChange(uploadFile: UploadFile) {
         </el-form-item>
         <el-form-item :label="t('document.field.file')" required>
           <el-upload
+            class="document-uploader"
             drag
             :auto-upload="false"
             :limit="1"
@@ -291,5 +293,50 @@ function onFileChange(uploadFile: UploadFile) {
 .upload-hint {
   padding: 24px 0;
   color: var(--el-text-color-secondary);
+}
+
+.document-upload-form {
+  padding-right: 8px;
+}
+
+.document-uploader,
+.document-uploader :deep(.el-upload),
+.document-uploader :deep(.el-upload-dragger),
+.document-uploader :deep(.el-upload-list) {
+  width: 100%;
+  max-width: 100%;
+}
+
+.document-uploader :deep(.el-upload-dragger) {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.document-uploader :deep(.el-upload-list__item-name) {
+  min-width: 0;
+}
+
+@media (width <= 640px) {
+  .document-upload-form {
+    padding-right: 0;
+  }
+
+  .document-upload-form :deep(.el-form-item) {
+    display: block;
+  }
+
+  .document-upload-form :deep(.el-form-item__label) {
+    width: auto !important;
+    height: auto;
+    margin-bottom: 8px;
+    line-height: 22px;
+    text-align: left;
+  }
+
+  .document-upload-form :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+  }
 }
 </style>

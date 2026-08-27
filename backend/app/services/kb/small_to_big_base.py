@@ -11,7 +11,7 @@
 
 
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from typing import final
 from copy import deepcopy
 
@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from app.infra.db.database  import ParentChunk, Chunk
 from app.utils.hash import sha256_hash
 from app.utils.tokens import estimate_tokens as count_tokens
+from app.retrieval.embedding_inputs import EmbeddingInputGuard
 
 from app.services.kb.smart_document_splitter import SmartDocumentSplitter
 
@@ -31,6 +32,8 @@ class ChunkConfig:
     parent_overlap: int = 150
     child_chunk_size: int = 250
     child_overlap: int = 50
+    embedding_model: Optional[str] = None
+    max_input_tokens: Optional[int] = None
 
 class SmallToBigProcessor:
     """
@@ -73,6 +76,14 @@ class SmallToBigProcessor:
     ) -> Tuple[List[ParentChunk], List[Chunk]]:
                 
         parent_docs = self._split_to_parents(structured_docs,config)
+        input_guard = (
+            EmbeddingInputGuard(
+                max_input_tokens=config.max_input_tokens,
+                model=config.embedding_model,
+            )
+            if config.max_input_tokens is not None
+            else None
+        )
 
         parent_chunks: List[ParentChunk] = []
         small_chunks:  List[Chunk]       = []
@@ -84,6 +95,11 @@ class SmallToBigProcessor:
             parent_chunks.append(parent)
 
             child_docs = self._split_to_childs([doc], config=config)
+            if input_guard is not None:
+                child_docs = self._split_oversized_child_docs(
+                    child_docs,
+                    input_guard,
+                )
             for i, child_doc in enumerate(child_docs):
                 meta = self._build_chunk_metadata(doc, idx, parent_hash)   
                 meta["relative_index"] = i # The location recorded inside the parent block             
@@ -92,6 +108,22 @@ class SmallToBigProcessor:
                 global_child_idx += 1
 
         return parent_chunks, small_chunks
+
+    @staticmethod
+    def _split_oversized_child_docs(
+        child_docs: List[Document],
+        input_guard: EmbeddingInputGuard,
+    ) -> List[Document]:
+        safe_docs: List[Document] = []
+        for child_doc in child_docs:
+            for text in input_guard.split_text(child_doc.page_content):
+                safe_docs.append(
+                    Document(
+                        page_content=text,
+                        metadata=deepcopy(child_doc.metadata) or {},
+                    )
+                )
+        return safe_docs
 
     # ─────────────────────────────────────────────
     # Overridable hooks
@@ -160,8 +192,8 @@ class SmallToBigProcessor:
             hash_value  = parent_hash,
             text        = text,
             chunk_index = idx,
-            char_count  = len(text),
             token_count = count_tokens(text),
+            char_count  = len(text),
             created_at  = datetime.now(),
         )
 
@@ -183,6 +215,7 @@ class SmallToBigProcessor:
             hash_value  = chunk_hash,
             text        = text,
             chunk_index = idx,
+            token_count = count_tokens(text),
             char_count  = len(text),
             created_at  = datetime.now(),
         )

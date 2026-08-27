@@ -285,7 +285,9 @@ class KBDocumentService:
         chunk_config = ChunkConfig(parent_chunk_size=kb.parent_size,
                                    parent_overlap=kb.parent_overlap,
                                    child_chunk_size=kb.chunk_size,
-                                   child_overlap=kb.chunk_overlap)
+                                   child_overlap=kb.chunk_overlap,
+                                   embedding_model=vs.embedding.model,
+                                   max_input_tokens=vs.max_input_tokens)
         parent_chunks, small_chunks = await asyncio.to_thread(plugin.processor.process,raw_docs,kb_id,doc_id, chunk_config)
         await E(t("progress.stage.split"), 
             t("progress.message.split_progress",parent_chunks=len(parent_chunks),small_chunks=len(small_chunks)), 35)
