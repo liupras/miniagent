@@ -36,6 +36,20 @@ def _extract_content(msg: Any) -> str:
         return msg.get("content", "")
     return getattr(msg, "content", "")
 
+def _extract_role(msg: Any) -> Optional[str]:
+    """Extract the normalized role from dict and LangChain messages."""
+    if isinstance(msg, dict):
+        return msg.get("role")
+
+    msg_type = getattr(msg, "type", None)
+    role_mapping = {
+        LangChainMessageRole.HUMAN: MessageRole.USER,
+        LangChainMessageRole.AI: MessageRole.ASSISTANT,
+        LangChainMessageRole.SYSTEM: MessageRole.SYSTEM,
+        LangChainMessageRole.TOOL: MessageRole.TOOL,
+    }
+    return role_mapping.get(msg_type, msg_type)
+
 def _extract_tool_calls(msg: Any) -> Optional[List[Dict[str, Any]]]:
     """Adaptive extraction of standardized tool call information"""
     if isinstance(msg, dict):
@@ -270,29 +284,38 @@ class AgentRunner:
         ):
             if isinstance(chunk, dict):
                 latest_message = chunk["messages"][-1]
+                role = _extract_role(latest_message)
+                tool_calls = _extract_tool_calls(latest_message)
+
+                # Tool observations are internal evidence for the next ReAct
+                # round.  Exposing them as text leaks raw JSON to the user and
+                # pollutes the persisted assistant conversation history.
+                if role == MessageRole.TOOL:
+                    continue
+
+                if role != MessageRole.ASSISTANT:
+                    continue
+
+                if tool_calls:
+                    content = f"[Tool call] {', '.join(tc['name'] for tc in tool_calls)}"
+                    logger.debug(f"Calling tools: {content}")
+                    yield json.dumps({
+                        "event": "tool_start",
+                        "tools": [tc["name"] for tc in tool_calls],
+                    }, ensure_ascii=False)
+                    continue
+
                 msg_content = _extract_content(latest_message)
                 if msg_content:
-                    tool_calls = _extract_tool_calls(latest_message)
-                    if tool_calls:
-                        content = f"[Tool call] {', '.join(tc['name'] for tc in tool_calls)}"
-                        logger.debug(f"Calling tools: {content}")
-                        #yield content
-                        yield json.dumps({
-                            "event": "tool_start", 
-                            "tools": [tc['name'] for tc in tool_calls]
-                        }, ensure_ascii=False)                        
-                    else:
-                        msg_content = _extract_content(latest_message)
-                        if msg_content:
-                            # Incremental differential calculation (since it is in values ​​mode, the complete current text will be obtained each time, and the content that has already been printed needs to be subtracted).
-                            current_chunk = msg_content[len("".join(collected_chunks)):]
-                            if current_chunk:
-                                collected_chunks.append(current_chunk)
-                                #yield current_chunk
-                                yield json.dumps({
-                                    "event": "text", 
-                                    "chunk": current_chunk
-                                }, ensure_ascii=False)
+                    # ToolReActAgent emits one complete assistant message per
+                    # ReAct step, not cumulative token snapshots.  Therefore a
+                    # cross-message character offset would incorrectly truncate
+                    # the final answer after a tool observation.
+                    collected_chunks.append(msg_content)
+                    yield json.dumps({
+                        "event": "text",
+                        "chunk": msg_content,
+                    }, ensure_ascii=False)
 
         # ── Persist complete assistant reply ───────────────────────────────
         if use_db and collected_chunks:

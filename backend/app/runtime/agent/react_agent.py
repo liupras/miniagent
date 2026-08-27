@@ -57,8 +57,7 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
         for step in range(max_steps):
             response_dict = await self.agent_llm.achat(messages, tool_schema=self.tool_schemas)
 
-            response_dict = self._normalize_response(response_dict)
-                
+            response_dict = self._normalize_response(response_dict)                
             messages.append(response_dict)
    
             yield {"messages": messages}

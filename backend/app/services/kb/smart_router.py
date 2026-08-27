@@ -144,7 +144,8 @@ class SmartRouter:
     ) -> MultiKBQueryResult:
         """
         Execute query with smart KB routing.
-        """        
+        """      
+        logger.debug(f"[SmartRouter] Querying with query='{query}', kb_ids={kb_ids}, metadata_filter={metadata_filter}")  
         if kb_ids is None:
             return MultiKBQueryResult.create_empty(query=query)
         
