@@ -24,7 +24,7 @@ def test_virtual_court_solo_judge_seed_is_unique_and_constrained():
 
     prompt = agent["system_prompt"]
     for required_rule in (
-        "VirtualCourt 是当前阶段",
+        "调用方是当前阶段",
         "allowed_actions",
         "intellectual_property_law_search",
         "不得认定事实真伪",
@@ -55,4 +55,3 @@ def test_virtual_court_solo_judge_binds_only_ip_law_search():
     tool = next(item for item in tools if item.get("name") == TOOL_NAME)
     assert tool["tool_type"] == "smart_router"
     assert tool["config"]["allowed_kb_ids"] == [4]
-
