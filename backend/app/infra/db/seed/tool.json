@@ -7,7 +7,8 @@
       "router_config_id": "default",
       "allowed_kb_ids": [
         2,
-        3
+        3,
+        4
       ],
       "max_chunks": 6,
       "include_confidence": true

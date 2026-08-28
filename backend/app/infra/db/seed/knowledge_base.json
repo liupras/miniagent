@@ -42,5 +42,20 @@
     "_llm_name": "ollama_qwen_4b",
     "_embedding_name": "ollama_bge-large-zh-v1.5",
     "_comment": "_llm_name and _embedding_name are resolved to llm.id and embedding.id at seed time"
+  },
+  {
+    "name": "kb_intellectual_property_cn",
+    "keywords":["知识产权","专利","商标","著作权","商业秘密","不正当竞争","侵权","纠纷"],
+    "description": "中国知识产权法知识库（中华人民共和国专利法、商标法、著作权法等）。\n\n适用于以下问题：\n- 专利申请、授权、维护\n- 商标注册、使用、保护\n- 著作权登记、行使\n- 商业秘密保护\n- 不正当竞争行为识别与处理\n\n典型问题示例：\n- 如何申请专利？\n- 商标注册需要什么条件？\n- 著作权保护期限是多久？\n\n不适用于：\n- 一般民事纠纷（请使用民法工具）\n- 刑事案件（请使用刑法工具）\n\n当用户问题涉及知识产权保护、申请、侵权时使用本工具。",
+    "collection_name": "kb_collection_intellectual_property_cn",    
+    "parent_size":1200,
+    "parent_overlap":0,
+    "chunk_size": 300,
+    "chunk_overlap": 60,
+    "is_active": true,
+    "_domain_name": "law_cn",
+    "_llm_name": "ollama_qwen_4b",
+    "_embedding_name": "ollama_bge-large-zh-v1.5",
+    "_comment": "_llm_name and _embedding_name are resolved to llm.id and embedding.id at seed time"
   }
 ]

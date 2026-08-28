@@ -58,5 +58,35 @@
       }
     },
     "created_by": "system"
+  },
+  {
+    "config_id": "config_kb_intellectual_property_cn",
+    "_kb_name": "kb_intellectual_property_cn",
+    "_comment": "_kb_name is resolved to kb.id at seed time",
+    "version": 1,
+    "is_active": true,
+    "vector_top_k": 30,
+    "bm25_top_k": 30,
+    "rrf_k": 60,
+    "rerank_top_k": 8,
+    "final_top_k": 4,
+    "vector_score_threshold": 0.5,
+    "bm25_score_threshold": 0.1,
+    "enable_query_rewrite":false,
+    "enable_query_expansion":false,
+    "enable_query_hyde": false,
+    "enable_bm25": true,
+    "enable_reranker": true,
+    "enable_small_to_big": true,
+    "reranking_mode": "rerank",
+    "extra_config": {
+      "reranker": {
+        "backend": "local",
+        "model_name": "BAAI/bge-reranker-base",
+        "max_length": 512,
+        "batch_size": 64
+      }
+    },
+    "created_by": "system"
   }
 ]
