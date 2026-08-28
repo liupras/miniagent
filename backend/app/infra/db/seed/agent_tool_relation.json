@@ -10,5 +10,10 @@
     {
         "_agent_name":"law_assistant",
         "_tool_name":"sql_agent"
+    },
+    {
+        "_agent_name":"virtual_court_solo_judge",
+        "_tool_name":"intellectual_property_law_search",
+        "priority": 0
     }
 ]
