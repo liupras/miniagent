@@ -142,7 +142,9 @@ cython_debug/
 /backend/data/vector
 /backend/app/data
 /backend/data/bge-reranking
-/doc
+/doc/*
+!/doc/独任审判员智能体职责规范_V1.md
+!/doc/固定流程与动态智能边界规范_V1.md
 /backend/data
 /backend/db
 /backend/files
@@ -150,3 +152,4 @@ cython_debug/
 /backend/models
 /.pnpm-store
 /.workbuddy
+/doc
