@@ -1,5 +1,23 @@
-#!/usr/bin/env python
-"""Batch-import a directory of Chinese legal documents into a law_cn KB."""
+#!/usr/bin/python
+# -*- coding:utf-8 -*-
+# @author  : Liu Lijun
+# @date    : 2026-05-29
+# @description: Batch-import a directory of Chinese legal documents into a law_cn KB.
+
+"""
+运行方式：
+
+python scripts/import_law_documents.py `
+  --kb-name kb_intellectual_property_cn `
+  --metadata-csv "D:\backup\知识产权法律法规\meta_data.csv" `
+  --documents-dir "D:\backup\知识产权法律法规\txt_utf8"
+
+--dry-run            只检查，不入库
+--on-existing skip   已有同名文档则跳过，默认
+--on-existing fail   遇到已有文档立即失败
+--on-existing update 更新文件和元数据
+--continue-on-error  单个文档失败后继续
+"""
 
 from __future__ import annotations
 
