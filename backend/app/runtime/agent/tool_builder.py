@@ -46,7 +46,6 @@ from __future__ import annotations
 
 import importlib
 import json
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Type,TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -144,18 +143,6 @@ def _resolve_callable(callable_path: str):
     module_path, func_name = callable_path.rsplit(":", 1)
     module = importlib.import_module(module_path)
     return getattr(module, func_name)
-
-
-def _get_chunk_source(chunk: Any) -> Optional[str]:
-    """Return the uploaded filename without its final extension."""
-    metadata = getattr(chunk, "metadata", None) or {}
-    citation = metadata.get("citation") or {}
-    filename = citation.get("filename")
-    if not isinstance(filename, str) or not filename.strip():
-        return None
-
-    source = Path(filename.strip()).stem.strip()
-    return source or None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -360,11 +347,12 @@ def _build_smart_router_tool(
 
         chunks_out = []
         for chunk in result.chunks[:max_chunks]:
+            citation = (chunk.metadata or {}).get("citation") or {}
             chunks_out.append(
                 {
                     "text": chunk.text,
                     "score": round(float(chunk.final_score), 4),
-                    "source": _get_chunk_source(chunk),
+                    "citation": citation,
                 }
             )
 
