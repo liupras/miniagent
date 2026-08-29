@@ -35,6 +35,9 @@ entity:
 infrastructure:
   error: 基础设施服务调用失败
 
+database:
+  initialization_failed: 数据库初始化失败
+
 integration:
   error: 集成接口调用失败
   not_configured: VirtualCourt 集成接口尚未配置
@@ -47,6 +50,11 @@ judge:
   unavailable: 独任审判员服务暂时不可用
   timeout: 独任审判员决策超时
   invalid_response: 独任审判员智能体返回了无效响应
+
+domain_plugin:
+  error: 知识领域插件初始化失败
+  none_configured: 没有配置任何知识领域插件
+  registration_failed: "知识领域 {domain} 的插件注册失败"
 
 # ── 404：按实体 ──
 kb:

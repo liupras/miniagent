@@ -35,6 +35,9 @@ entity:
 infrastructure:
   error: Infrastructure service call failed
 
+database:
+  initialization_failed: Database initialization failed
+
 integration:
   error: Integration request failed
   not_configured: VirtualCourt integration is not configured
@@ -47,6 +50,11 @@ judge:
   unavailable: Judge service is temporarily unavailable
   timeout: Judge decision timed out
   invalid_response: Judge agent returned an invalid response
+
+domain_plugin:
+  error: Knowledge-domain plugin initialization failed
+  none_configured: No knowledge-domain plugins are configured
+  registration_failed: "Plugin registration failed for domain {domain}"
 
 # ── 404: By Entity ──
 kb:

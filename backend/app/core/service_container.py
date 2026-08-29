@@ -39,7 +39,12 @@ from app.infra.db.audit import install_audit_listeners
 
 from app.services.kb.service_document import KBDocumentService
 from app.services.kb.service_retrieval import KBRetrievalService
+from app.services.kb.domain_plugin import DomainPlugin
 from app.services.kb.domain_registry import DomainRegistry
+from app.services.kb.exceptions import (
+    DomainPluginRegistrationError,
+    NoDomainPluginsConfiguredError,
+)
 from app.services.kb.service_smart_router import KBSmartRouterService
 from app.services.auth.route_service import RouteService
 from app.runtime.agent.agent_factory import AgentFactory
@@ -198,25 +203,42 @@ class ServiceContainer:
         
     async def init_plugins(self):
         """
-        Load Domain configuration from database and dynamically register plugins.
-        It is recommended to call this method in the app's startup hook (such as FastAPI's startup event).
+        Atomically load and register every configured domain plugin.
+
+        A persisted Domain is an active runtime configuration, so its plugin is
+        required. Any import, construction, or type-validation failure aborts
+        application startup instead of leaving a partially populated registry.
         """
         domains = await self.domain_db.get_all_domains()
-        
+        if not domains:
+            raise NoDomainPluginsConfiguredError()
+
+        loaded_plugins: list[tuple[str, DomainPlugin]] = []
         for domain_orm in domains:
             try:
                 processor_cls = import_class(domain_orm.processor_class)
                 processor_instance = processor_cls()
-                plugin_cls = import_class(domain_orm.plugin_class) 
-                plugin_instance = plugin_cls(processor=processor_instance)                 
-                self.domain_registry.register(
-                    domain=domain_orm.name,
-                    plugin=plugin_instance
+                plugin_cls = import_class(domain_orm.plugin_class)
+                plugin_instance = plugin_cls(processor=processor_instance)
+                if not isinstance(plugin_instance, DomainPlugin):
+                    raise TypeError(
+                        f"{domain_orm.plugin_class} must inherit DomainPlugin"
+                    )
+                loaded_plugins.append((domain_orm.name, plugin_instance))
+            except Exception as exc:
+                logger.exception(
+                    "Failed to load required plugin for domain '{}': {}",
+                    domain_orm.name,
+                    exc,
                 )
-                logger.info(f"Successfully registered plugin for domain: {domain_orm.name}")
-                
-            except Exception as e:
-                logger.error(f"Failed to register plugin for {domain_orm.name}: {e}")
+                raise DomainPluginRegistrationError(
+                    domain_orm.name,
+                    cause=exc,
+                ) from exc
+
+        for domain_name, plugin in loaded_plugins:
+            self.domain_registry.register(domain=domain_name, plugin=plugin)
+            logger.info("Successfully registered plugin for domain: {}", domain_name)
 
     def shutdown(self):
         """Optional: clean up resources if needed."""

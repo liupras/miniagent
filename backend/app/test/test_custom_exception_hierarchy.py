@@ -1,11 +1,16 @@
 import pytest
 
 from app.api.integrations.errors import IntegrationAPIError
+from app.infra.db.exceptions import DatabaseInitializationError
 from app.retrieval.embedding_inputs import EmbeddingInputTooLongError
 from app.runtime.agent.tool_builder import ToolBuildError
 from app.runtime.llm.models import LLMClientError
 from app.schemas.exceptions import BaseDomainError, InfrastructureError
 from app.schemas.integrations.virtual_court import IntegrationErrorCode
+from app.services.kb.exceptions import (
+    DomainPluginRegistrationError,
+    NoDomainPluginsConfiguredError,
+)
 from app.services.virtual_court import (
     JudgeConfigurationError,
     JudgeInvalidResponseError,
@@ -32,6 +37,15 @@ from app.services.virtual_court import (
         (JudgeUnavailableError("provider unavailable"), "judge.unavailable"),
         (JudgeTimeoutError("timed out"), "judge.timeout"),
         (JudgeInvalidResponseError("bad output"), "judge.invalid_response"),
+        (DatabaseInitializationError(), "database.initialization_failed"),
+        (
+            DomainPluginRegistrationError("law_cn"),
+            "domain_plugin.registration_failed",
+        ),
+        (
+            NoDomainPluginsConfiguredError(),
+            "domain_plugin.none_configured",
+        ),
     ],
 )
 def test_custom_errors_inherit_base_domain_error(error, expected_key):

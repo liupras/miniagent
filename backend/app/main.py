@@ -18,6 +18,7 @@ setup_logger()
 logger = get_logger(__name__)
 
 from app.core.config import settings
+from app.infra.db.exceptions import DatabaseInitializationError
 from app.infra.db.initializer import init_database_on_startup
 
 from app.core.service_container import ServiceContainer
@@ -41,18 +42,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     logger.info(f"🔍 ChromaDB: {settings.get_vector_db_path()}")
     logger.info("=" * 60)
     
-    # 🔥 Automatic database initialization
+    # 🔥 Automatic database initialization. The database is a required
+    # dependency, so startup must fail rather than serve partial functionality.
     try:
-        init_database_on_startup(
+        database_ready = init_database_on_startup(
             force_rebuild=False,  # Set to False for production environments, and to True for development environments.
             seed_data=True        # Should preset data be filled?
         )
-    except Exception as e:
-        logger.error(f"❌ Database initialization failed: {e}")
-        logger.exception(e)
-
-        # Decide whether to continue the startup process (you can choose to throw an exception to prevent startup).
-        # raise
+        if not database_ready:
+            raise DatabaseInitializationError()
+    except Exception as exc:
+        logger.exception(f"❌ Database initialization failed: {exc}")
+        raise
     
     logger.info("=" * 60)
     logger.success("✅ Application startup complete")
