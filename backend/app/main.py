@@ -176,39 +176,30 @@ async def log_requests(request: Request, call_next):
         logger.info(f"📥 {request.method} {request.url.path}")
 
         try:
-            response = await call_next(request)
+            try:
+                response = await call_next(request)
+            except Exception:
+                process_time = time.time() - start_time
+                logger.error(
+                    f"📤 {request.method} {request.url.path} "
+                    f"- ERROR ({process_time:.3f}s)"
+                )
+                await record_request_outcome_safely(request, 500)
+                raise
+
             process_time = time.time() - start_time
             logger.info(
                 f"📤 {request.method} {request.url.path} "
                 f"- {response.status_code} ({process_time:.3f}s)"
             )
+
             response.headers["X-Process-Time"] = str(process_time)
-        except Exception:
-            process_time = time.time() - start_time
-            logger.error(
-                f"📤 {request.method} {request.url.path} "
-                f"- ERROR ({process_time:.3f}s)"
-            )
-            try:
-                await record_request_outcome_safely(request, 500)
-            finally:
-                reset_audit_context(audit_token)
-            raise
-        except BaseException:
-            # Cancellation and shutdown exceptions still require context cleanup.
-            reset_audit_context(audit_token)
-            raise
+            response.headers["X-Request-ID"] = request_id
 
-        # Always expose the correlation ID so clients can cross-reference
-        # with server-side file logs and DB audit entries.
-        response.headers["X-Request-ID"] = request_id
-
-        try:
             await record_request_outcome_safely(request, response.status_code)
+            return response
         finally:
             reset_audit_context(audit_token)
-
-        return response
     
 # ==================== API router====================
 from app.api.admin.llm import router as admin_llm_router
