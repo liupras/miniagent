@@ -8,7 +8,7 @@ import math
 from typing import Optional
 
 from app.core.logger_config import get_logger
-from app.schemas.common import InfrastructureError
+from app.schemas.exceptions import InfrastructureError
 from app.utils.tokens import TokenCounter
 
 logger = get_logger(__name__)

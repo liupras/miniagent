@@ -14,7 +14,8 @@ if TYPE_CHECKING:
 
 from app.infra.db.database import User
 from app.schemas.admin.user import UserCreate, UserListParams, UserOptionItem, UserOut, UserUpdate
-from app.schemas.common import AlreadyExistsError, NotFoundError, PageResult
+from app.schemas.exceptions import AlreadyExistsError, NotFoundError
+from app.schemas.common import PageResult
 
 
 class UserNotFoundError(NotFoundError):

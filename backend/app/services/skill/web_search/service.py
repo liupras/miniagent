@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from app.core.service_container import ServiceContainer
 
 from app.core.i18n.i18n import t
-from app.schemas.common import NotFoundError
+from app.schemas.exceptions import NotFoundError
 
 class ToolNotFoundError(NotFoundError):
     def __init__(self, tool_name: str):

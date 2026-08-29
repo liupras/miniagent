@@ -14,7 +14,8 @@ if TYPE_CHECKING:
 from app.infra.db.database import Agent
 from app.schemas.admin.agent import AgentCreate, AgentUpdate, AgentListParams, AgentOut, ToolBrief
 from app.schemas.admin.llm import LLMOptionItem
-from app.schemas.common import InvalidValueError, PageResult, NotFoundError
+from app.schemas.common import PageResult
+from app.schemas.exceptions import InvalidValueError, NotFoundError
 from app.schemas.admin.user import UserOptionItem
 
 class AgentNotFoundError(NotFoundError):

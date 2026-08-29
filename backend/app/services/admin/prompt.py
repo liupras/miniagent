@@ -15,8 +15,8 @@ from app.schemas.admin.prompt import (
     PromptOut,
     PromptUpdate,
 )
-from app.schemas.common import AlreadyExistsError, NotFoundError, PageResult
-
+from app.schemas.exceptions import AlreadyExistsError, NotFoundError
+from app.schemas.common import PageResult
 
 class PromptNotFoundError(NotFoundError):
     def __init__(self, key: str, lang: str) -> None:

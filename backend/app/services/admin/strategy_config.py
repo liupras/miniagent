@@ -17,7 +17,7 @@ from app.schemas.admin.strategy_config import (
     StrategyConfigOut,
     StrategyConfigUpdate,
 )
-from app.schemas.common import NotFoundError,BadRequestError
+from app.schemas.exceptions import NotFoundError,BadRequestError
 
 class StrategyConfigNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):

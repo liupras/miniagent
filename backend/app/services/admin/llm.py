@@ -26,11 +26,11 @@ from app.schemas.admin.llm import (
     LLMOptionItem,
     LLMListParams,
 )
-from app.schemas.common import (
+from app.schemas.common import PageResult
+from app.schemas.exceptions import (
     AlreadyExistsError,
     InvalidValueError,
     NotFoundError,
-    PageResult,
 )
 
 class LLMNotFoundError(NotFoundError):

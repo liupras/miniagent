@@ -15,8 +15,7 @@ from app.runtime.cache.lazy_cache import AsyncLazyCache
 from app.runtime.agent.tool_builder import build_tools_for_agent
 from app.runtime.agent.agent_runner import AgentRunner, build_agent_runner
 
-from app.core.i18n.i18n import t
-from app.schemas.common import NotFoundError,InactiveError
+from app.schemas.exceptions import NotFoundError,InactiveError
 
 if TYPE_CHECKING:
     from app.core.service_container import ServiceContainer

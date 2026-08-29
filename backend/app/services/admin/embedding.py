@@ -18,7 +18,7 @@ from app.schemas.admin.embedding import (
     EmbeddingOption
 )
 
-from app.schemas.common import AlreadyExistsError, NotFoundError
+from app.schemas.exceptions import AlreadyExistsError, NotFoundError
 
 class EmbeddingNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):

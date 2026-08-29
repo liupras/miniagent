@@ -14,7 +14,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.core.logger_config import get_logger
-from app.schemas.common import BaseDomainError
+from app.schemas.exceptions import BaseDomainError
 from app.schemas.integrations.virtual_court import (
     IntegrationError,
     IntegrationErrorCode,

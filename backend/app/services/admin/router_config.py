@@ -11,7 +11,7 @@ from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from app.core.service_container import ServiceContainer
 
-from app.schemas.common import NotFoundError
+from app.schemas.exceptions import NotFoundError
 from app.schemas.admin.router_config import RouterConfigResponse, RouterConfigUpdate
 
 class RouterConfigNotFoundError(NotFoundError):

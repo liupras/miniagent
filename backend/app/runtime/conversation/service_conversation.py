@@ -23,7 +23,7 @@ from app.repositories.async_chat import AsyncChatDatabase
 from app.runtime.llm.func import truncate_messages
 from app.utils.tokens import TokenCounter, sanitize_chat_messages
 
-from app.schemas.common import NotFoundError
+from app.schemas.exceptions import NotFoundError
 class SessionNotFoundError(NotFoundError):
     def __init__(self, session_id: str):
         super().__init__("Session", session_id)

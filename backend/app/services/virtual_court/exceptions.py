@@ -7,7 +7,7 @@
 from collections.abc import Mapping
 from typing import Any
 
-from app.schemas.common import BaseDomainError
+from app.schemas.exceptions import BaseDomainError
 
 
 class JudgeServiceError(BaseDomainError):

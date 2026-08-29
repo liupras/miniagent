@@ -13,7 +13,7 @@ from app.retrieval.vector_store import VectorStoreManager
 from app.core.config import settings
 
 from app.runtime.cache.lazy_cache import AsyncLazyCache
-from app.schemas.common import NotFoundError
+from app.schemas.exceptions import NotFoundError
 
 class KBNotFoundError(NotFoundError):
     def __init__(self, kb_id: int):

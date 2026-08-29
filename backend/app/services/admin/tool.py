@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 from app.infra.db.database import Tool
 from app.schemas.admin.tool import ToolCreate, ToolRead, ToolUpdate
-from app.schemas.common import NotFoundError,AlreadyExistsError
+from app.schemas.exceptions import NotFoundError,AlreadyExistsError
 
 class ToolNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):

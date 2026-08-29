@@ -1,5 +1,5 @@
 from app.schemas import common
-from app.schemas.common import BadRequestError, BaseDomainError, NotFoundError
+from app.schemas.exceptions import BadRequestError, BaseDomainError, NotFoundError
 
 
 def test_legacy_entity_error_uses_entity_specific_translation(monkeypatch):

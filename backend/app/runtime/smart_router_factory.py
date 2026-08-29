@@ -18,7 +18,7 @@ from app.infra.db.database import RouterConfig
 from app.runtime.cache.lazy_cache import AsyncLazyCache
 from app.services.kb.smart_router import SmartRouter
 
-from app.schemas.common import NotFoundError
+from app.schemas.exceptions import NotFoundError
 
 class RouterConfigNotFoundError(NotFoundError):
     def __init__(self, router_config_id: str):

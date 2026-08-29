@@ -19,10 +19,11 @@ setup_logger()
 logger = get_logger(__name__)
 
 from app.core.config import settings
-from app.infra.db.initializer import db_manager, init_database_on_startup
+from app.infra.db.initializer import init_database_on_startup
 
 from app.core.service_container import ServiceContainer
-from app.schemas.common import ApiResponse, BaseDomainError, NotFoundError, AlreadyExistsError
+from app.schemas.common import ApiResponse
+from app.schemas.exceptions import BaseDomainError, NotFoundError, AlreadyExistsError
 
 from app.core.i18n.i18n import t
 from app.core.audit_context import (

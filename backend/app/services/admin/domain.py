@@ -22,7 +22,7 @@ from app.schemas.admin.domain import (
     DomainOption
 )
 
-from app.schemas.common import AlreadyExistsError, NotFoundError
+from app.schemas.exceptions import AlreadyExistsError, NotFoundError
 
 class DomainNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):

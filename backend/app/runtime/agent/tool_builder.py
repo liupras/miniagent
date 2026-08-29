@@ -61,7 +61,7 @@ import inspect
 from app.infra.db.database import Agent as AgentORM
 from app.infra.db.database import Tool as ToolORM
 from app.runtime.smart_router_factory import SmartRouterFactory
-from app.schemas.common import InfrastructureError
+from app.schemas.exceptions import InfrastructureError
 
 
 class ToolBuildError(InfrastructureError):

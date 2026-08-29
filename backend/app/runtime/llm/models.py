@@ -6,7 +6,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from app.schemas.common import InfrastructureError
+from app.schemas.exceptions import InfrastructureError
 
 
 class LLMClientError(InfrastructureError):

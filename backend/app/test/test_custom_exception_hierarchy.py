@@ -4,7 +4,7 @@ from app.api.integrations.errors import IntegrationAPIError
 from app.retrieval.embedding_inputs import EmbeddingInputTooLongError
 from app.runtime.agent.tool_builder import ToolBuildError
 from app.runtime.llm.models import LLMClientError
-from app.schemas.common import BaseDomainError, InfrastructureError
+from app.schemas.exceptions import BaseDomainError, InfrastructureError
 from app.schemas.integrations.virtual_court import IntegrationErrorCode
 from app.services.virtual_court import (
     JudgeConfigurationError,

@@ -15,7 +15,7 @@ from app.services.kb.retrieval import RetrievalPipeline
 
 from .retrieval_model import ChunkResult,KBInfo
 
-from app.schemas.common import NotFoundError
+from app.schemas.exceptions import NotFoundError
 
 class KBNotFoundError(NotFoundError):
     def __init__(self, kb_id: int):

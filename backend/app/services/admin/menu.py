@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 from app.infra.db.database import Menu
 from app.schemas.admin.permission import MenuCreate, MenuOut, MenuUpdate
-from app.schemas.common import AlreadyExistsError, NotFoundError
+from app.schemas.exceptions import AlreadyExistsError, NotFoundError
 
 
 class MenuNotFoundError(NotFoundError):

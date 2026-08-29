@@ -18,7 +18,7 @@ from app.schemas.admin.knowledge_base import (
     KnowledgeBaseOption,
     KnowledgeBaseStats
 )
-from app.schemas.common import NotFoundError
+from app.schemas.exceptions import NotFoundError
 
 class KBNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):

@@ -24,7 +24,7 @@ from app.runtime.llm.client import LLMClient
 from app.runtime.llm.agent_client import AgentLLM
 
 from app.core.i18n.i18n import t
-from app.schemas.common import NotFoundError
+from app.schemas.exceptions import NotFoundError
 
 class ToolNotFoundError(NotFoundError):
     def __init__(self, tool_name: str):

@@ -6,8 +6,8 @@ from typing import Optional
 
 from app.repositories.async_audit_log import AsyncAuditLogDatabase
 from app.schemas.admin.audit_log import AuditLogOut
-from app.schemas.common import NotFoundError, PageResult
-
+from app.schemas.exceptions import NotFoundError
+from app.schemas.common import PageResult
 
 class AuditLogNotFoundError(NotFoundError):
     def __init__(self, audit_id: int) -> None:

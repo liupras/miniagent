@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 from app.infra.db.database import Role
 from app.schemas.admin.permission import RoleCreate, RoleMenuUpdate, RoleOut, RoleUpdate
-from app.schemas.common import AlreadyExistsError, NotFoundError, PageResult
-
+from app.schemas.exceptions import AlreadyExistsError, NotFoundError
+from app.schemas.common import PageResult
 
 class RoleNotFoundError(NotFoundError):
     def __init__(self, entity_id: Any):

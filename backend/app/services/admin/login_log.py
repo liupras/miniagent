@@ -9,8 +9,8 @@ from typing import Optional
 
 from app.repositories.async_login_log import AsyncLoginLogDatabase
 from app.schemas.admin.login_log import LoginLogOut
-from app.schemas.common import NotFoundError, PageResult
-
+from app.schemas.exceptions import NotFoundError
+from app.schemas.common import PageResult
 
 class LoginLogNotFoundError(NotFoundError):
     def __init__(self, login_log_id: int) -> None:
