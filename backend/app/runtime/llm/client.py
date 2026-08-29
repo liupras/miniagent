@@ -4,8 +4,11 @@
 # @date    : 2026-01-19
 # @description: General LLM client
 
-from litellm import completion, acompletion, embedding,aembedding
-from typing import Any, AsyncGenerator, Optional,Dict,List,Generator,Union
+import asyncio
+import concurrent.futures
+from typing import Any, AsyncGenerator, Optional, Dict, List, Generator, Union
+
+from litellm import completion, acompletion, embedding, aembedding
 
 from app.core.logger_config import get_logger
 
@@ -84,6 +87,15 @@ class LLMClient:
             params["max_tokens"] = self.max_output_tokens
 
         return params    
+
+    @staticmethod
+    def _operation_error(operation: str, exc: Exception) -> LLMClientError:
+        """Convert a provider/client failure into the stable LLM boundary error."""
+        logger.exception("[LLMClient] {} failed", operation)
+        return LLMClientError(
+            f"LLM {operation} failed",
+            cause=exc,
+        )
        
     def chat(
         self,
@@ -94,23 +106,25 @@ class LLMClient:
         """Normal mode call"""
         logger.debug(f"Calling Model: {model},Message count: {len(messages)}.")
         
-        params = self._completion_kwargs(
-            model=model,
-            messages=messages,
-            **kwargs,
-        )
         try:
+            params = self._completion_kwargs(
+                model=model,
+                messages=messages,
+                **kwargs,
+            )
             response = completion(**params)
-        except Exception as e:
-            logger.error(f"[LLMClient] API Call failed: {str(e)}")
-            raise LLMClientError(f"API Call failed: {str(e)}") from e
-
-        return self._build_response(
-            response,
-            model,
-            prompt_messages=params["messages"],
-            tools=params.get("tools"),
-        )
+            return self._build_response(
+                response,
+                model,
+                prompt_messages=params["messages"],
+                tools=params.get("tools"),
+            )
+        except concurrent.futures.CancelledError:
+            raise
+        except LLMClientError:
+            raise
+        except Exception as exc:
+            raise self._operation_error("chat call", exc) from exc
     
     async def achat(
         self,
@@ -121,23 +135,25 @@ class LLMClient:
         """Normal mode call"""
         logger.debug(f"Calling Model: {model},Message count: {len(messages)}.")
 
-        params = self._completion_kwargs(
-            model=model,
-            messages=messages,
-            **kwargs,
-        )
         try:
+            params = self._completion_kwargs(
+                model=model,
+                messages=messages,
+                **kwargs,
+            )
             response = await acompletion(**params)
-        except Exception as e:
-            logger.error(f"[LLMClient] Async API call failed: {str(e)}")
-            raise LLMClientError(f"API Call failed: {str(e)}") from e
-
-        return self._build_response(
-            response,
-            model,
-            prompt_messages=params["messages"],
-            tools=params.get("tools"),
-        )
+            return self._build_response(
+                response,
+                model,
+                prompt_messages=params["messages"],
+                tools=params.get("tools"),
+            )
+        except asyncio.CancelledError:
+            raise
+        except LLMClientError:
+            raise
+        except Exception as exc:
+            raise self._operation_error("async chat call", exc) from exc
 
     def _build_response(
         self,
@@ -235,21 +251,28 @@ class LLMClient:
         """Streaming mode call"""
         logger.debug(f"Streaming call model: {model}, Message count: {len(messages)}.")
         
-        response = completion(
-            stream=True,
-            **self._completion_kwargs(
-                model=model,
-                messages=messages,
-                **kwargs,
+        try:
+            response = completion(
+                stream=True,
+                **self._completion_kwargs(
+                    model=model,
+                    messages=messages,
+                    **kwargs,
+                )
             )
-        )
 
-        parser = StreamParser(hide_thinking)
-        for chunk in response:
-            token = parser.parse(chunk)
+            parser = StreamParser(hide_thinking)
+            for chunk in response:
+                token = parser.parse(chunk)
 
-            if token:
-                yield token        
+                if token:
+                    yield token
+        except concurrent.futures.CancelledError:
+            raise
+        except LLMClientError:
+            raise
+        except Exception as exc:
+            raise self._operation_error("streaming chat call", exc) from exc
     
     async def astream(
         self,
@@ -261,21 +284,28 @@ class LLMClient:
         """Streaming mode call"""
         logger.debug(f"Streaming call model: {model}, Message count: {len(messages)}.")
         
-        response = await acompletion(
-            stream=True,
-            **self._completion_kwargs(
-                model=model,
-                messages=messages,
-                **kwargs,
+        try:
+            response = await acompletion(
+                stream=True,
+                **self._completion_kwargs(
+                    model=model,
+                    messages=messages,
+                    **kwargs,
+                )
             )
-        )
 
-        parser = StreamParser(hide_thinking)
-        async for chunk in response:
-            token = parser.parse(chunk)
+            parser = StreamParser(hide_thinking)
+            async for chunk in response:
+                token = parser.parse(chunk)
 
-            if token:
-                yield token
+                if token:
+                    yield token
+        except asyncio.CancelledError:
+            raise
+        except LLMClientError:
+            raise
+        except Exception as exc:
+            raise self._operation_error("async streaming chat call", exc) from exc
 
     def embed(
         self,
@@ -298,9 +328,12 @@ class LLMClient:
                 item["embedding"]
                 for item in response.data
             ]
-        except Exception as e:
-            logger.error(f"[LLMClient] Embedding call failed: {str(e)}")
-            raise LLMClientError(f"Embedding call failed: {str(e)}")
+        except concurrent.futures.CancelledError:
+            raise
+        except LLMClientError:
+            raise
+        except Exception as exc:
+            raise self._operation_error("embedding call", exc) from exc
         
     async def aembed(
         self,
@@ -323,9 +356,12 @@ class LLMClient:
                 item["embedding"]
                 for item in response.data
             ]
-        except Exception as e:
-            logger.error(f"[LLMClient] Embedding call failed: {str(e)}")
-            raise LLMClientError(f"Embedding call failed: {str(e)}")
+        except asyncio.CancelledError:
+            raise
+        except LLMClientError:
+            raise
+        except Exception as exc:
+            raise self._operation_error("async embedding call", exc) from exc
         
     def _strip_thinking(self, content: str) -> str:
         import re

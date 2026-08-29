@@ -105,14 +105,14 @@ def test_chat_and_achat_share_sanitized_payload_and_output_limit(monkeypatch):
     assert all(call["messages"] == [{"role": "user", "content": "hello"}] for call in calls)
 
 
-def test_achat_wraps_provider_errors(monkeypatch):
+def test_achat_wraps_provider_errors_without_exposing_provider_detail(monkeypatch):
     async def fake_acompletion(**kwargs):
         raise ConnectionError("provider unavailable")
 
     monkeypatch.setattr(client_module, "acompletion", fake_acompletion)
     client = LLMClient(base_url="https://provider.example/v1")
 
-    with pytest.raises(LLMClientError, match="provider unavailable"):
+    with pytest.raises(LLMClientError) as caught:
         asyncio.run(
             client.achat(
                 "test-model",
@@ -120,15 +120,112 @@ def test_achat_wraps_provider_errors(monkeypatch):
             )
         )
 
+    assert isinstance(caught.value.cause, ConnectionError)
+    assert "provider unavailable" not in caught.value.to_detail()
 
-def test_achat_does_not_wrap_internal_response_parsing_errors(monkeypatch):
+
+def test_achat_wraps_response_parsing_errors_at_the_llm_boundary(monkeypatch):
     async def fake_acompletion(**kwargs):
         return SimpleNamespace(choices=[])
 
     monkeypatch.setattr(client_module, "acompletion", fake_acompletion)
     client = LLMClient(base_url="https://provider.example/v1")
 
-    with pytest.raises(IndexError):
+    with pytest.raises(LLMClientError) as caught:
+        asyncio.run(
+            client.achat(
+                "test-model",
+                [{"role": "user", "content": "hello"}],
+            )
+        )
+
+    assert isinstance(caught.value.cause, IndexError)
+
+
+def test_chat_wraps_provider_errors(monkeypatch):
+    def fake_completion(**kwargs):
+        raise ConnectionError("provider unavailable")
+
+    monkeypatch.setattr(client_module, "completion", fake_completion)
+    client = LLMClient(base_url="https://provider.example/v1")
+
+    with pytest.raises(LLMClientError) as caught:
+        client.chat("test-model", [{"role": "user", "content": "hello"}])
+
+    assert isinstance(caught.value.cause, ConnectionError)
+
+
+def test_stream_wraps_errors_raised_during_iteration(monkeypatch):
+    def fake_completion(**kwargs):
+        def chunks():
+            raise ConnectionError("stream interrupted")
+            yield
+
+        return chunks()
+
+    monkeypatch.setattr(client_module, "completion", fake_completion)
+    client = LLMClient(base_url="https://provider.example/v1")
+
+    with pytest.raises(LLMClientError) as caught:
+        list(client.stream("test-model", [{"role": "user", "content": "hello"}]))
+
+    assert isinstance(caught.value.cause, ConnectionError)
+
+
+def test_astream_wraps_errors_raised_during_iteration(monkeypatch):
+    async def fake_acompletion(**kwargs):
+        async def chunks():
+            raise ConnectionError("stream interrupted")
+            yield
+
+        return chunks()
+
+    async def collect(client):
+        return [
+            item
+            async for item in client.astream(
+                "test-model",
+                [{"role": "user", "content": "hello"}],
+            )
+        ]
+
+    monkeypatch.setattr(client_module, "acompletion", fake_acompletion)
+    client = LLMClient(base_url="https://provider.example/v1")
+
+    with pytest.raises(LLMClientError) as caught:
+        asyncio.run(collect(client))
+
+    assert isinstance(caught.value.cause, ConnectionError)
+
+
+def test_embed_and_aembed_use_the_same_boundary_error(monkeypatch):
+    def fake_embedding(**kwargs):
+        raise ConnectionError("embedding unavailable")
+
+    async def fake_aembedding(**kwargs):
+        raise ConnectionError("embedding unavailable")
+
+    monkeypatch.setattr(client_module, "embedding", fake_embedding)
+    monkeypatch.setattr(client_module, "aembedding", fake_aembedding)
+    client = LLMClient(base_url="https://provider.example/v1")
+
+    with pytest.raises(LLMClientError) as sync_caught:
+        client.embed("embedding-model", ["hello"])
+    with pytest.raises(LLMClientError) as async_caught:
+        asyncio.run(client.aembed("embedding-model", ["hello"]))
+
+    assert isinstance(sync_caught.value.cause, ConnectionError)
+    assert isinstance(async_caught.value.cause, ConnectionError)
+
+
+def test_async_llm_call_does_not_wrap_cancellation(monkeypatch):
+    async def fake_acompletion(**kwargs):
+        raise asyncio.CancelledError()
+
+    monkeypatch.setattr(client_module, "acompletion", fake_acompletion)
+    client = LLMClient(base_url="https://provider.example/v1")
+
+    with pytest.raises(asyncio.CancelledError):
         asyncio.run(
             client.achat(
                 "test-model",
