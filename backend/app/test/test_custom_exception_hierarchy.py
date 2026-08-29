@@ -4,6 +4,10 @@ from app.api.integrations.errors import IntegrationAPIError
 from app.infra.db.exceptions import DatabaseInitializationError
 from app.retrieval.embedding_inputs import EmbeddingInputTooLongError
 from app.runtime.agent.tool_builder import ToolBuildError
+from app.runtime.conversation.service_conversation import (
+    MessageNotFoundError,
+    SessionNotFoundError,
+)
 from app.runtime.llm.models import LLMClientError
 from app.schemas.exceptions import (
     BaseDomainError,
@@ -81,6 +85,8 @@ from app.services.workplace_agent import (
         (AgentSessionNotFoundError(3), "agent.session_not_found"),
         (SessionAgentMismatchError(3, 2), "agent.session_not_belong"),
         (SessionTitleInvalidError(), "agent.title_not_empty"),
+        (SessionNotFoundError(3), "session.not_found"),
+        (MessageNotFoundError(4), "message.not_found"),
     ],
 )
 def test_custom_errors_inherit_base_domain_error(error, expected_key):

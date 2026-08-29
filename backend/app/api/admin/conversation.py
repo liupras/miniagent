@@ -8,7 +8,6 @@ from fastapi import (
     Request,
     APIRouter,
     Depends,
-    HTTPException,
 )
 
 from app.schemas.common import ApiResponse
@@ -54,9 +53,7 @@ async def get_chat_session(
 ):
     """Get a chat session by session ID."""
     session = await service.get_session(session_id)
-    if not session:
-        raise HTTPException(404, detail="Chat session not found")
-    
+
     response = ChatSessionResponse(
         session_id=session.id,
         title=session.title,

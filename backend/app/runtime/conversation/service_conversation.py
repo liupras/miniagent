@@ -228,9 +228,12 @@ class ConversationService:
         return msgs
     
 
-    async def get_session(self, session_id: str) -> Optional[ChatSession]:
-        """Get a chat session by session ID."""
-        return await self._chat_db.get_session_by_id(session_id)
+    async def get_session(self, session_id: str) -> ChatSession:
+        """Get a chat session or raise a stable application error."""
+        session = await self._chat_db.get_session_by_id(session_id)
+        if session is None:
+            raise SessionNotFoundError(session_id)
+        return session
 
     async def create_user_session(self, user_id: int, agent_id: int) -> ChatSession:
         return await self._chat_db.create_user_session(user_id, agent_id)
