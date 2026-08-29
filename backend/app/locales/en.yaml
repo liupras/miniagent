@@ -195,6 +195,7 @@ sql_agent:
   unsupported_file_extension: "Unsupported file type for '{filename}'. Allowed extensions: {allowed}"
   import_failed: "Could not import '{filename}'; check the file contents and import parameters"
   operation_failed: "Table operation failed: {operation}"
+  stream_failed: SQL Agent response stream failed
 
 sqltable:
   not_found: "Table '{id}' does not exist"

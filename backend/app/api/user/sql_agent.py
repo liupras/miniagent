@@ -6,16 +6,19 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request,Query
-from fastapi.responses import StreamingResponse
-import json
 import asyncio
+import json
 
+from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import StreamingResponse
+
+from app.core.i18n.i18n import t
 from app.core.logger_config import get_logger
+from app.schemas.common import ApiResponse
+from app.schemas.user.sql_agent import QueryRequest
+
 
 logger = get_logger(__name__)
-from app.schemas.user.sql_agent import QueryRequest
-from app.schemas.common import ApiResponse
 
 router = APIRouter()
 
@@ -81,10 +84,18 @@ async def chat_stream(
                 await asyncio.sleep(0)
                 
         except asyncio.CancelledError:
-            # Handle early disconnection from the front end gracefully (e.g., when the user clicks to stop generation).
-            logger.warning("Stream connection cancelled by the client.")
-        except Exception as e:
-            logger.error(f"Error in stream: {e}")
-            yield f"event: error\ndata: {json.dumps({'detail': str(e)})}\n\n"
+            # Preserve cancellation semantics so upstream resources can stop.
+            raise
+        except Exception as exc:
+            # The response has already started, so the global FastAPI
+            # exception handler cannot replace it with an HTTP response.
+            # Keep diagnostics server-side and expose only a stable SSE error.
+            logger.exception("SQL Agent stream failed: {}", exc)
+            payload = {
+                "event": "error",
+                "code": "SQL_AGENT_STREAM_FAILED",
+                "message": t("sql_agent.stream_failed"),
+            }
+            yield f"event: error\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

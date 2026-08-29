@@ -195,6 +195,7 @@ sql_agent:
   unsupported_file_extension: "文件“{filename}”类型不受支持，支持的扩展名：{allowed}"
   import_failed: "无法导入文件“{filename}”，请检查文件内容和导入参数"
   operation_failed: "数据表操作失败：{operation}"
+  stream_failed: SQL Agent 响应流执行失败
 
 sqltable:
   not_found: "数据表 '{id}' 不存在"
