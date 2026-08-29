@@ -23,8 +23,14 @@ auth:
 
 # ── 通用 fallback ──
 entity:
+  base_error: 操作失败
   not_found: "{entity} '{id}' 不存在"
   already_exists: "{entity} '{id}' 已存在"
+  empty_data: "{entity} '{id}' 没有有效数据"
+  bad_request: 请求无效
+  readonly: "{entity} '{id}' 为只读数据"
+  invalid_value: "{entity} '{id}' 的值无效"
+  inactive: "{entity} '{id}' 已停用"
 
 # ── 404：按实体 ──
 kb:

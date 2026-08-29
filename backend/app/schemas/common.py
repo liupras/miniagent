@@ -4,6 +4,7 @@
 # @date    : 2026-05-29
 # @description: Shared Pydantic schemas used across all modules
 
+from collections.abc import Mapping
 from typing import Any, Generic, List, Optional, TypeVar
 from pydantic import BaseModel, Field
 
@@ -42,25 +43,68 @@ class ApiResponse(BaseModel, Generic[T]):
     
 
 class BaseDomainError(Exception):
-    """Business Logic Exception Base Class"""
+    """Base class for stable, localizable application errors.
+
+    ``error_key`` may be either an entity-relative key (for example
+    ``not_found``) or a complete i18n key (for example ``judge.timeout``).
+    The optional ``cause`` is retained for diagnostics only and is never
+    included in the localized client-facing detail.
+    """
+
     error_key = "base_error"
 
-    def __init__(self, entity_name: str, entity_id: Any, message: str):
+    def __init__(
+        self,
+        entity_name: str | None = None,
+        entity_id: Any = None,
+        message: str | None = None,
+        *,
+        error_key: str | None = None,
+        params: Mapping[str, Any] | None = None,
+        cause: BaseException | None = None,
+    ) -> None:
         self.entity_name = entity_name
         self.entity_id = entity_id
-        super().__init__(f"{entity_name} '{entity_id}' {message}")
+        self.error_key = error_key or type(self).error_key
+        self.params = dict(params or {})
+        self.cause = cause
+        if cause is not None:
+            self.__cause__ = cause
 
-    def i18n_key(self, kind: str) -> str:
-        """kind: 'not_found' | 'already_exists' | 'empty_data'"""
-        prefix = self.entity_name.lower()
-        return f"{prefix}.{kind}"
+        diagnostic_message = message or self.error_key
+        if entity_name is not None:
+            diagnostic_message = f"{entity_name} '{entity_id}' {diagnostic_message}"
+        super().__init__(diagnostic_message)
+
+    def i18n_key(self, kind: str | None = None) -> str:
+        """Return a complete i18n key for this error."""
+        selected_key = kind or self.error_key
+        if "." in selected_key or self.entity_name is None:
+            return selected_key
+        return f"{self.entity_name.lower()}.{selected_key}"
+
+    def _translation_params(self) -> dict[str, Any]:
+        params = {
+            "id": self.entity_id,
+            "entity": self.entity_name or "",
+        }
+        params.update(self.params)
+        return params
     
     def to_detail(self) -> str:
-        return _translate(
-            self.i18n_key(self.error_key),
-            id=self.entity_id,
-            entity=self.entity_name,
-        )
+        """Return localized, client-safe detail without exposing the cause."""
+        params = self._translation_params()
+        key = self.i18n_key()
+        detail = _translate(key, **params)
+        if detail != key:
+            return detail
+
+        fallback_key = f"entity.{self.error_key.rsplit('.', 1)[-1]}"
+        fallback_detail = _translate(fallback_key, **params)
+        if fallback_detail != fallback_key:
+            return fallback_detail
+
+        return _translate("common.failed")
 
 class NotFoundError(BaseDomainError):
     error_key = "not_found"
@@ -82,7 +126,7 @@ class BadRequestError(BaseDomainError):
     error_key = "bad_request"
     
     def __init__(self, entity_name: str, entity_id: Any):
-        super().__init__(entity_name, entity_id)
+        super().__init__(entity_name, entity_id, "is a bad request")
 
 class ReadOnlyError(BaseDomainError):
     error_key = "readonly"

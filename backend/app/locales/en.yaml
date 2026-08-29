@@ -23,8 +23,14 @@ auth:
 
 # ── General fallback ──
 entity:
+  base_error: Operation failed
   not_found: "{entity} '{id}' does not exist"
   already_exists: "{entity} '{id}' already exists"
+  empty_data: "{entity} '{id}' has no valid data"
+  bad_request: Bad request
+  readonly: "{entity} '{id}' is read-only"
+  invalid_value: "{entity} '{id}' has an invalid value"
+  inactive: "{entity} '{id}' is inactive"
 
 # ── 404: By Entity ──
 kb:
