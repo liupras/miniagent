@@ -5,7 +5,6 @@
 # @description: Error responses shared by system-to-system integration APIs.
 
 from __future__ import annotations
-
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -14,11 +13,15 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.core.logger_config import get_logger
-from app.schemas.exceptions import BaseDomainError
 from app.schemas.integrations.virtual_court import (
     IntegrationError,
     IntegrationErrorCode,
     IntegrationErrorResponse,
+)
+from app.services.integration_auth import (
+    IntegrationAccessError,
+    IntegrationNotConfiguredError,
+    InvalidIntegrationCredentialsError,
 )
 from app.services.virtual_court import (
     JudgeConfigurationError,
@@ -31,30 +34,6 @@ from app.services.virtual_court import (
 
 logger = get_logger(__name__)
 INTEGRATION_PATH_PREFIX = "/api/v1/integrations/"
-
-
-class IntegrationAPIError(BaseDomainError):
-    """A safe, externally versioned integration failure."""
-
-    def __init__(
-        self,
-        *,
-        status_code: int,
-        code: IntegrationErrorCode,
-        message: str,
-        retryable: bool,
-        details: dict[str, Any] | None = None,
-        error_key: str | None = None,
-    ) -> None:
-        super().__init__(
-            message=message,
-            error_key=error_key or "integration.error",
-            params=details,
-        )
-        self.status_code = status_code
-        self.code = code
-        self.retryable = retryable
-        self.details = details or {}
 
 
 def integration_error_response(
@@ -79,16 +58,25 @@ def integration_error_response(
     )
 
 
-async def integration_api_error_handler(
+async def integration_access_error_handler(
     _request: Request,
-    exc: IntegrationAPIError,
+    exc: IntegrationAccessError,
 ) -> JSONResponse:
+    if isinstance(exc, IntegrationNotConfiguredError):
+        status_code = 503
+        code = IntegrationErrorCode.SERVICE_UNAVAILABLE
+    elif isinstance(exc, InvalidIntegrationCredentialsError):
+        status_code = 401
+        code = IntegrationErrorCode.AUTHENTICATION_FAILED
+    else:
+        status_code = 500
+        code = IntegrationErrorCode.INTERNAL_ERROR
+
     return integration_error_response(
-        status_code=exc.status_code,
-        code=exc.code,
+        status_code=status_code,
+        code=code,
         message=exc.to_detail(),
-        retryable=exc.retryable,
-        details=exc.details,
+        retryable=False,
     )
 
 
@@ -142,7 +130,10 @@ async def integration_request_validation_handler(
 
 
 def register_integration_exception_handlers(app: FastAPI) -> None:
-    app.add_exception_handler(IntegrationAPIError, integration_api_error_handler)
+    app.add_exception_handler(
+        IntegrationAccessError,
+        integration_access_error_handler,
+    )
     app.add_exception_handler(JudgeServiceError, judge_service_error_handler)
     app.add_exception_handler(
         RequestValidationError,

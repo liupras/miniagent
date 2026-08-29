@@ -1,6 +1,5 @@
 import pytest
 
-from app.api.integrations.errors import IntegrationAPIError
 from app.infra.db.exceptions import DatabaseInitializationError
 from app.retrieval.embedding_inputs import EmbeddingInputTooLongError
 from app.runtime.agent.tool_builder import ToolBuildError
@@ -14,7 +13,10 @@ from app.schemas.exceptions import (
     InfrastructureError,
     PermissionDeniedError,
 )
-from app.schemas.integrations.virtual_court import IntegrationErrorCode
+from app.services.integration_auth import (
+    IntegrationNotConfiguredError,
+    InvalidIntegrationCredentialsError,
+)
 from app.services.kb.exceptions import (
     DomainPluginRegistrationError,
     NoDomainPluginsConfiguredError,
@@ -89,6 +91,11 @@ from app.services.workplace_agent import (
         (SessionNotFoundError(3), "session.not_found"),
         (MessageNotFoundError(4), "message.not_found"),
         (DatabaseInfoUnavailableError(), "operations.database_info_failed"),
+        (IntegrationNotConfiguredError(), "integration.not_configured"),
+        (
+            InvalidIntegrationCredentialsError(),
+            "integration.authentication_failed",
+        ),
     ],
 )
 def test_custom_errors_inherit_base_domain_error(error, expected_key):
@@ -104,19 +111,3 @@ def test_infrastructure_errors_share_infrastructure_base():
 
 def test_agent_access_denied_uses_permission_denied_base():
     assert isinstance(AgentAccessDeniedError(1, 2), PermissionDeniedError)
-
-
-def test_integration_api_error_is_localizable_domain_error():
-    error = IntegrationAPIError(
-        status_code=401,
-        code=IntegrationErrorCode.AUTHENTICATION_FAILED,
-        message="invalid credentials",
-        retryable=False,
-        error_key="integration.authentication_failed",
-    )
-
-    assert isinstance(error, BaseDomainError)
-    assert error.i18n_key() == "integration.authentication_failed"
-    assert error.status_code == 401
-    assert error.code == IntegrationErrorCode.AUTHENTICATION_FAILED
-    assert error.retryable is False
