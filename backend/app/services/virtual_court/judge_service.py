@@ -70,11 +70,20 @@ class JudgeService:
                 raw_output = await runner.invoke(query=self._build_agent_query(request))
                 response = validate_judge_agent_output(raw_output, request)
         except TimeoutError as exc:
-            raise JudgeTimeoutError("judge decision timed out") from exc
+            raise JudgeTimeoutError(
+                "judge decision timed out",
+                cause=exc,
+            ) from exc
         except (AgentNotFoundError, AgentInactiveError, ToolBuildError) as exc:
-            raise JudgeConfigurationError("judge agent is not available") from exc
+            raise JudgeConfigurationError(
+                "judge agent is not available",
+                cause=exc,
+            ) from exc
         except LLMClientError as exc:
-            raise JudgeUnavailableError("judge model is unavailable") from exc
+            raise JudgeUnavailableError(
+                "judge model is unavailable",
+                cause=exc,
+            ) from exc
 
         logger.info(
             "[JudgeService] decision validated: state_version={}, action={}, "

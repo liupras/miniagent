@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
+from app.schemas import exceptions as domain_exceptions
 from app.api.integrations.errors import register_integration_exception_handlers
 from app.api.integrations.virtual_court.judge import router
 from app.core.config import settings
@@ -187,6 +188,32 @@ def test_judge_api_maps_service_errors(
     assert response.status_code == status_code
     assert response.json()["error"]["code"] == error_code
     assert response.json()["error"]["retryable"] is retryable
+
+
+def test_judge_api_localizes_error_without_exposing_diagnostics(monkeypatch):
+    monkeypatch.setattr(settings, "virtual_court_api_key", SecretStr(API_KEY))
+    monkeypatch.setattr(
+        domain_exceptions,
+        "t",
+        lambda key, **params: (
+            "独任审判员服务暂时不可用"
+            if key == "judge.unavailable"
+            else key
+        ),
+    )
+    error = JudgeUnavailableError(
+        "private provider endpoint and credential detail"
+    )
+
+    response = _client(_FakeJudgeService(error=error)).post(
+        ENDPOINT,
+        headers=_auth_headers(),
+        json=_request_data(),
+    )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["message"] == "独任审判员服务暂时不可用"
+    assert "private provider endpoint" not in response.text
 
 
 def test_openapi_declares_api_key_header(monkeypatch):

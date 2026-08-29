@@ -138,8 +138,10 @@ def test_decide_sends_reasoning_input_and_schema_without_state_version():
 def test_decide_rejects_invalid_agent_output():
     service = JudgeService(_FakeAgentFactory(_FakeRunner("not json")))
 
-    with pytest.raises(JudgeInvalidResponseError):
+    with pytest.raises(JudgeInvalidResponseError) as caught:
         asyncio.run(service.decide(_request()))
+
+    assert caught.value.cause is not None
 
 
 @pytest.mark.parametrize(
@@ -152,15 +154,20 @@ def test_decide_rejects_invalid_agent_output():
 def test_decide_translates_configuration_failures(source_error, expected_error):
     factory = _FakeAgentFactory(_FakeRunner(_valid_output()), error=source_error)
 
-    with pytest.raises(expected_error):
+    with pytest.raises(expected_error) as caught:
         asyncio.run(JudgeService(factory).decide(_request()))
+
+    assert caught.value.cause is source_error
 
 
 def test_decide_translates_llm_failure():
-    runner = _FakeRunner(_valid_output(), error=LLMClientError("unavailable"))
+    source_error = LLMClientError("private provider detail")
+    runner = _FakeRunner(_valid_output(), error=source_error)
 
-    with pytest.raises(JudgeUnavailableError):
+    with pytest.raises(JudgeUnavailableError) as caught:
         asyncio.run(JudgeService(_FakeAgentFactory(runner)).decide(_request()))
+
+    assert caught.value.cause is source_error
 
 
 def test_decide_rejects_runner_without_required_legal_tool():
@@ -174,5 +181,7 @@ def test_decide_enforces_its_own_timeout():
     runner = _FakeRunner(_valid_output(), delay=0.1)
     service = JudgeService(_FakeAgentFactory(runner), timeout_seconds=0.01)
 
-    with pytest.raises(JudgeTimeoutError):
+    with pytest.raises(JudgeTimeoutError) as caught:
         asyncio.run(service.decide(_request()))
+
+    assert isinstance(caught.value.cause, TimeoutError)

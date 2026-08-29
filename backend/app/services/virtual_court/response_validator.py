@@ -37,7 +37,8 @@ def validate_judge_agent_output(
         output = JudgeAgentOutput.model_validate_json(raw_output)
     except (ValidationError, ValueError) as exc:
         raise JudgeInvalidResponseError(
-            "judge output does not match the strict response schema"
+            "judge output does not match the strict response schema",
+            cause=exc,
         ) from exc
 
     action = output.action
