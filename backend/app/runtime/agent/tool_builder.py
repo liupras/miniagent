@@ -61,10 +61,13 @@ import inspect
 from app.infra.db.database import Agent as AgentORM
 from app.infra.db.database import Tool as ToolORM
 from app.runtime.smart_router_factory import SmartRouterFactory
+from app.schemas.common import InfrastructureError
 
 
-class ToolBuildError(RuntimeError):
+class ToolBuildError(InfrastructureError):
     """A configured agent tool could not be built."""
+
+    error_key = "tool.build_failed"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

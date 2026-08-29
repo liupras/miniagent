@@ -106,6 +106,27 @@ class BaseDomainError(Exception):
 
         return _translate("common.failed")
 
+
+class InfrastructureError(BaseDomainError):
+    """Base class for failures isolated at an infrastructure boundary."""
+
+    error_key = "infrastructure.error"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        error_key: str | None = None,
+        params: Mapping[str, Any] | None = None,
+        cause: BaseException | None = None,
+    ) -> None:
+        super().__init__(
+            message=message,
+            error_key=error_key,
+            params=params,
+            cause=cause,
+        )
+
 class NotFoundError(BaseDomainError):
     error_key = "not_found"
     def __init__(self, entity_name: str, entity_id: Any):

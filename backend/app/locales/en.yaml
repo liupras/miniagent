@@ -32,6 +32,21 @@ entity:
   invalid_value: "{entity} '{id}' has an invalid value"
   inactive: "{entity} '{id}' is inactive"
 
+infrastructure:
+  error: Infrastructure service call failed
+
+integration:
+  error: Integration request failed
+  not_configured: VirtualCourt integration is not configured
+  authentication_failed: Invalid integration credentials
+
+judge:
+  failed: Judge service failed
+  configuration_error: Judge service is not configured correctly
+  unavailable: Judge service is temporarily unavailable
+  timeout: Judge decision timed out
+  invalid_response: Judge agent returned an invalid response
+
 # ── 404: By Entity ──
 kb:
   not_found: Knowledge base does not exist
@@ -45,6 +60,7 @@ document:
 
 embedding:
   not_found: Embedding configuration does not exist
+  input_too_long: Embedding input exceeds the model token limit
 
 agent:
   not_found: Agent does not exist
@@ -65,6 +81,7 @@ tool:
   already_exists: Skill already exists
   already_exists_with_name: "Skill '{name}' already exists"
   tool_type_invalid: "tool_type must be one of {VALID_TOOL_TYPES}"
+  build_failed: Skill build failed
 
 llm:
   not_found: LLM does not exist
@@ -73,6 +90,7 @@ llm:
   already_exists_with_model: "LLM '{provider}/{model}' already exists"
   model_combo_taken: The combination of provider_name and model_name is already taken
   invalid_value: "LLM {id} max output tokens cannot exceed its context window"
+  client_error: LLM service call failed
 
 user:
   not_found: "User '{id}' does not exist"

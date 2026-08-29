@@ -8,13 +8,16 @@ import math
 from typing import Optional
 
 from app.core.logger_config import get_logger
+from app.schemas.common import InfrastructureError
 from app.utils.tokens import TokenCounter
 
 logger = get_logger(__name__)
 
 
-class EmbeddingInputTooLongError(ValueError):
+class EmbeddingInputTooLongError(InfrastructureError):
     """Raised when even the smallest input cannot fit the configured budget."""
+
+    error_key = "embedding.input_too_long"
 
 
 class EmbeddingInputGuard:

@@ -14,6 +14,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.core.logger_config import get_logger
+from app.schemas.common import BaseDomainError
 from app.schemas.integrations.virtual_court import (
     IntegrationError,
     IntegrationErrorCode,
@@ -32,7 +33,7 @@ logger = get_logger(__name__)
 INTEGRATION_PATH_PREFIX = "/api/v1/integrations/"
 
 
-class IntegrationAPIError(Exception):
+class IntegrationAPIError(BaseDomainError):
     """A safe, externally versioned integration failure."""
 
     def __init__(
@@ -43,17 +44,17 @@ class IntegrationAPIError(Exception):
         message: str,
         retryable: bool,
         details: dict[str, Any] | None = None,
+        error_key: str | None = None,
     ) -> None:
-        super().__init__(message)
-        self.status_code = status_code
-        self.payload = IntegrationErrorResponse(
-            error=IntegrationError(
-                code=code,
-                message=message,
-                retryable=retryable,
-                details=details or {},
-            )
+        super().__init__(
+            message=message,
+            error_key=error_key or "integration.error",
+            params=details,
         )
+        self.status_code = status_code
+        self.code = code
+        self.retryable = retryable
+        self.details = details or {}
 
 
 def integration_error_response(
@@ -82,7 +83,13 @@ async def integration_api_error_handler(
     _request: Request,
     exc: IntegrationAPIError,
 ) -> JSONResponse:
-    return JSONResponse(status_code=exc.status_code, content=exc.payload.model_dump(mode="json"))
+    return integration_error_response(
+        status_code=exc.status_code,
+        code=exc.code,
+        message=exc.to_detail(),
+        retryable=exc.retryable,
+        details=exc.details,
+    )
 
 
 async def judge_service_error_handler(
@@ -92,34 +99,29 @@ async def judge_service_error_handler(
     if isinstance(exc, JudgeConfigurationError):
         status_code = 503
         code = IntegrationErrorCode.SERVICE_UNAVAILABLE
-        message = "Judge service is not configured correctly."
         retryable = False
     elif isinstance(exc, JudgeUnavailableError):
         status_code = 503
         code = IntegrationErrorCode.SERVICE_UNAVAILABLE
-        message = "Judge service is temporarily unavailable."
         retryable = True
     elif isinstance(exc, JudgeTimeoutError):
         status_code = 504
         code = IntegrationErrorCode.UPSTREAM_TIMEOUT
-        message = "Judge decision timed out."
         retryable = True
     elif isinstance(exc, JudgeInvalidResponseError):
         status_code = 502
         code = IntegrationErrorCode.MODEL_RESPONSE_INVALID
-        message = "Judge agent returned an invalid response."
         retryable = True
     else:
         status_code = 500
         code = IntegrationErrorCode.INTERNAL_ERROR
-        message = "Judge service failed unexpectedly."
         retryable = False
 
     logger.warning("[VirtualCourt] {}: {}", type(exc).__name__, exc)
     return integration_error_response(
         status_code=status_code,
         code=code,
-        message=message,
+        message=exc.to_detail(),
         retryable=retryable,
     )
 

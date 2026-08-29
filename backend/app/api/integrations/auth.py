@@ -36,6 +36,7 @@ def require_virtual_court_api_key(
             code=IntegrationErrorCode.SERVICE_UNAVAILABLE,
             message="VirtualCourt integration is not configured.",
             retryable=False,
+            error_key="integration.not_configured",
         )
 
     if provided_key is None or not secrets.compare_digest(provided_key, expected_key):
@@ -44,4 +45,5 @@ def require_virtual_court_api_key(
             code=IntegrationErrorCode.AUTHENTICATION_FAILED,
             message="Invalid integration credentials.",
             retryable=False,
+            error_key="integration.authentication_failed",
         )

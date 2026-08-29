@@ -6,9 +6,13 @@
 
 from typing import Any, Dict, List, Optional
 
-class LLMClientError(Exception):
+from app.schemas.common import InfrastructureError
+
+
+class LLMClientError(InfrastructureError):
     """LLM client custom exceptions"""
-    pass
+
+    error_key = "llm.client_error"
 
 class LLMResponse:
     """LLM response wrapper class"""
