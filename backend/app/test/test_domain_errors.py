@@ -1,4 +1,4 @@
-from app.schemas import common
+from app.schemas import exceptions
 from app.schemas.exceptions import BadRequestError, BaseDomainError, NotFoundError
 
 
@@ -8,8 +8,8 @@ def test_legacy_entity_error_uses_entity_specific_translation(monkeypatch):
         "entity.not_found": "Generic Agent 7 was not found",
     }
     monkeypatch.setattr(
-        common,
-        "_translate",
+        exceptions,
+        "t",
         lambda key, **params: translations.get(key, key).format(**params),
     )
 
@@ -22,8 +22,8 @@ def test_legacy_entity_error_uses_entity_specific_translation(monkeypatch):
 def test_entity_error_falls_back_to_generic_translation(monkeypatch):
     translations = {"entity.not_found": "{entity} {id} was not found"}
     monkeypatch.setattr(
-        common,
-        "_translate",
+        exceptions,
+        "t",
         lambda key, **params: translations.get(key, key).format(**params),
     )
 
@@ -35,8 +35,8 @@ def test_entity_error_falls_back_to_generic_translation(monkeypatch):
 def test_explicit_i18n_key_and_params_are_supported(monkeypatch):
     translations = {"judge.timeout": "Judge timed out after {timeout} seconds"}
     monkeypatch.setattr(
-        common,
-        "_translate",
+        exceptions,
+        "t",
         lambda key, **params: translations.get(key, key).format(**params),
     )
 
@@ -52,8 +52,8 @@ def test_explicit_i18n_key_and_params_are_supported(monkeypatch):
 def test_cause_is_kept_for_diagnostics_but_not_exposed(monkeypatch):
     cause = RuntimeError("provider secret")
     monkeypatch.setattr(
-        common,
-        "_translate",
+        exceptions,
+        "t",
         lambda key, **params: "Safe message" if key == "service.unavailable" else key,
     )
 
@@ -67,8 +67,8 @@ def test_cause_is_kept_for_diagnostics_but_not_exposed(monkeypatch):
 
 def test_bad_request_error_can_be_constructed(monkeypatch):
     monkeypatch.setattr(
-        common,
-        "_translate",
+        exceptions,
+        "t",
         lambda key, **params: "Bad request" if key == "entity.bad_request" else key,
     )
 

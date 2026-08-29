@@ -7,7 +7,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 import time
 from typing import AsyncGenerator
 from uuid import uuid4
@@ -22,21 +21,13 @@ from app.core.config import settings
 from app.infra.db.initializer import init_database_on_startup
 
 from app.core.service_container import ServiceContainer
-from app.schemas.common import ApiResponse
-from app.schemas.exceptions import BaseDomainError, NotFoundError, AlreadyExistsError
-
-from app.core.i18n.i18n import t
 from app.core.audit_context import (
     begin_audit_context,
     reset_audit_context,
 )
 from app.infra.db.audit import record_request_outcome
-from app.api.integrations.errors import (
-    INTEGRATION_PATH_PREFIX,
-    integration_error_response,
-    register_integration_exception_handlers,
-)
-from app.schemas.integrations.virtual_court import IntegrationErrorCode
+from app.api.exception_handlers import register_global_exception_handlers
+from app.api.integrations.errors import register_integration_exception_handlers
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
@@ -88,8 +79,12 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
-    debug=settings.debug
+    # Keep Starlette's traceback response disabled so the registered global
+    # Exception handler is authoritative in every environment. Application
+    # log verbosity remains controlled by settings.debug.
+    debug=False,
 )
+register_global_exception_handlers(app)
 register_integration_exception_handlers(app)
 
 # ==================== Middleware configuration ====================
@@ -110,7 +105,7 @@ _AUTH_LOG_EVENTS = {
 }
 
 
-async def record_unhandled_auth_attempt(request: Request, response) -> None:
+async def record_unhandled_auth_attempt(request: Request) -> None:
     """Record auth calls rejected before their endpoint body can run."""
     if request.method != "POST":
         return
@@ -144,12 +139,30 @@ async def record_unhandled_auth_attempt(request: Request, response) -> None:
         logger.exception(f"Login log fallback write failed: {exc}")
 
 
+async def record_request_outcome_safely(request: Request, status_code: int) -> None:
+    """Persist secondary request records without changing the response."""
+    await record_unhandled_auth_attempt(request)
+
+    try:
+        route = request.scope.get("route")
+        await record_request_outcome(
+            request.app.state.container.audit_log_db,
+            status_code=status_code,
+            route_name=getattr(route, "name", None),
+            path_params=dict(request.path_params),
+        )
+    except Exception as audit_exc:
+        # Audit failures must never change the business response.
+        logger.exception(f"Audit log write failed: {audit_exc}")
+
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     """Record all HTTP requests and inject request_id into every log line."""
     request_id = str(uuid4())
     request.state.request_id = request_id
     start_time = time.time()
+    request.state.request_started_at = start_time
 
     # contextualize() sets a ContextVar that every `get_logger(__name__)` call
     # call inside the request scope will pick up automatically.
@@ -170,99 +183,32 @@ async def log_requests(request: Request, call_next):
                 f"- {response.status_code} ({process_time:.3f}s)"
             )
             response.headers["X-Process-Time"] = str(process_time)
-        except Exception as exc:
+        except Exception:
             process_time = time.time() - start_time
             logger.error(
                 f"📤 {request.method} {request.url.path} "
                 f"- ERROR ({process_time:.3f}s)"
             )
-            response = handle_exception(exc, request=request)
-
-        await record_unhandled_auth_attempt(request, response)
+            try:
+                await record_request_outcome_safely(request, 500)
+            finally:
+                reset_audit_context(audit_token)
+            raise
+        except BaseException:
+            # Cancellation and shutdown exceptions still require context cleanup.
+            reset_audit_context(audit_token)
+            raise
 
         # Always expose the correlation ID so clients can cross-reference
         # with server-side file logs and DB audit entries.
         response.headers["X-Request-ID"] = request_id
 
         try:
-            route = request.scope.get("route")
-            await record_request_outcome(
-                request.app.state.container.audit_log_db,
-                status_code=response.status_code,
-                route_name=getattr(route, "name", None),
-                path_params=dict(request.path_params),
-            )
-        except Exception as audit_exc:
-            # Audit failures must never change the business response.
-            logger.exception(f"Audit log write failed: {audit_exc}")
+            await record_request_outcome_safely(request, response.status_code)
         finally:
             reset_audit_context(audit_token)
 
         return response
-    
-# ==================== Exception handling ====================
-
-def create_api_response(
-    code: int = 200,
-    message: str = "success",
-    data: any = None,
-    status_code: int = 200
-) -> JSONResponse:
-    """Create JSON response from ApiResponse Pydantic model
-    
-    Convert the ApiResponse Pydantic model to JSONResponse, 
-    retaining all Pydantic functionality (validation, serialization, ORM integration, etc.), 
-    while also supporting direct return of exception handlers.
-    
-    Args:
-        code: Business status code (200 = success)
-        message: Human-readable message
-        data: Response payload
-        status_code: HTTP status code (always 200 for API responses)
-    
-    Returns:
-        JSONResponse that can be returned from exception handlers
-    """
-    api_resp = ApiResponse(code=code, message=message, data=data)
-    return JSONResponse(
-        status_code=status_code,
-        content=api_resp.model_dump(exclude_none=True)
-    )
-
-def handle_exception(
-    exc: Exception,
-    *,
-    request: Request | None = None,
-) -> JSONResponse:
-    """Global exception handling"""
-
-    if request and request.url.path.startswith(INTEGRATION_PATH_PREFIX):
-        logger.exception(f"Unhandled integration exception: {exc}")
-        return integration_error_response(
-            status_code=500,
-            code=IntegrationErrorCode.INTERNAL_ERROR,
-            message="Integration service failed unexpectedly.",
-            retryable=False,
-        )
-
-    if isinstance(exc, NotFoundError):
-        logger.warning(f"⚠️  NotFoundError: {exc}")
-        return create_api_response(status_code=404,code=404, message=exc.to_detail())
-    
-    elif isinstance(exc, AlreadyExistsError):
-        logger.warning(f"⚠️  AlreadyExistsError: {exc}")
-        return create_api_response(status_code=409,code=409, message=exc.to_detail())
-    
-    elif isinstance(exc, BaseDomainError):
-        logger.warning(f"⚠️  BaseDomainError: {exc}")
-        return create_api_response(status_code=400,code=400, message=exc.to_detail())
-    
-    # Handle other exceptions
-    logger.error(f"❌ Unhandled exception: {exc}")
-    logger.exception(f"❌ Unhandled exception: {exc}")
-    
-    error_data = {"error": str(exc) if settings.debug else t("common.error_500")}
-    return create_api_response(status_code=500,code=500, message=t("common.error_500"), data=error_data)
     
 # ==================== API router====================
 from app.api.admin.llm import router as admin_llm_router

@@ -39,6 +39,7 @@ integration:
   error: 集成接口调用失败
   not_configured: VirtualCourt 集成接口尚未配置
   authentication_failed: 集成接口凭据无效
+  unexpected_error: 集成服务发生内部错误
 
 judge:
   failed: 独任审判员服务执行失败

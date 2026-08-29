@@ -39,6 +39,7 @@ integration:
   error: Integration request failed
   not_configured: VirtualCourt integration is not configured
   authentication_failed: Invalid integration credentials
+  unexpected_error: Integration service failed unexpectedly
 
 judge:
   failed: Judge service failed
