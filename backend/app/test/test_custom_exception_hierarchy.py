@@ -3,6 +3,7 @@ import pytest
 from app.infra.db.exceptions import DatabaseInitializationError
 from app.retrieval.embedding_inputs import EmbeddingInputTooLongError
 from app.runtime.agent.tool_builder import ToolBuildError
+from app.runtime.agent.exceptions import ToolExecutionError, ToolNotRegisteredError
 from app.runtime.conversation.service_conversation import (
     MessageNotFoundError,
     SessionNotFoundError,
@@ -55,6 +56,8 @@ from app.services.workplace_agent import (
     ("error", "expected_key"),
     [
         (ToolBuildError("tool failed"), "tool.build_failed"),
+        (ToolExecutionError("sql_agent"), "tool.execution_failed"),
+        (ToolNotRegisteredError("missing_tool"), "tool.not_found"),
         (LLMClientError("provider failed"), "llm.client_error"),
         (
             EmbeddingInputTooLongError("input is too long"),
@@ -122,6 +125,7 @@ def test_custom_errors_inherit_base_domain_error(error, expected_key):
 
 def test_infrastructure_errors_share_infrastructure_base():
     assert isinstance(ToolBuildError("failed"), InfrastructureError)
+    assert isinstance(ToolExecutionError("sql_agent"), InfrastructureError)
     assert isinstance(LLMClientError("failed"), InfrastructureError)
     assert isinstance(EmbeddingInputTooLongError("failed"), InfrastructureError)
 

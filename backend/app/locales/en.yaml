@@ -107,6 +107,7 @@ tool:
   already_exists_with_name: "Skill '{name}' already exists"
   tool_type_invalid: "tool_type must be one of {VALID_TOOL_TYPES}"
   build_failed: Skill build failed
+  execution_failed: "Skill '{name}' execution failed"
 
 llm:
   not_found: LLM does not exist
@@ -228,8 +229,6 @@ message:
 
 agent_runner:
   max_steps_error: "Error: Agent reached maximum iteration steps and was forced to terminate."
-  tool_not_found: "Error: Tool '{tool_name}' is not registered."
-  tool_exec_error: "Error executing tool {tool_name}: {error}"
   tool_arg_error: "Tool argument JSON parsing failed: {e}, raw value: {tool_args}"
   tool_arg_error_short:  "Error: Failed to parse arguments for tool '{tool_name}'"
 

@@ -17,7 +17,9 @@ from app.core.logger_config import get_logger
 logger = get_logger(__name__)
 from app.runtime.llm.agent_client import AgentLLM
 from app.core.i18n.i18n import t
+from app.runtime.agent.exceptions import ToolExecutionError, ToolNotRegisteredError
 from app.runtime.types import MessageRole
+from app.schemas.exceptions import BaseDomainError
 
 
 class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
@@ -228,26 +230,24 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
         return True, tool_args
     
     async def _execute_tool_async(self, tool_name: str, tool_args: Any) -> str:
-
         if tool_name not in self.tools_map:
-            observation = t("agent_runner.tool_not_found", tool_name=tool_name)
-            logger.error(observation)
-            return observation
+            raise ToolNotRegisteredError(tool_name)
         
         try:
             observation = await self.tools_map[tool_name].ainvoke(tool_args)
             return str(observation)
-        except Exception as e:                        
-            observation = t("agent_runner.tool_exec_error", tool_name=tool_name, error=e)
-            logger.error(observation)
-            return observation
+        except asyncio.CancelledError:
+            raise
+        except BaseDomainError:
+            raise
+        except Exception as exc:
+            logger.exception("Tool '{}' execution failed", tool_name)
+            raise ToolExecutionError(tool_name, cause=exc) from exc
         
     def _execute_tool_sync(self, tool_name: str, tool_args: Any) -> str:
         """Tool lookup and sandbox-safe invocation in synchronous contexts (including asynchronous tool bridging)"""
         if tool_name not in self.tools_map:
-            observation = t("agent_runner.tool_not_found", tool_name=tool_name)
-            logger.error(observation)
-            return observation
+            raise ToolNotRegisteredError(tool_name)
 
         tool = self.tools_map[tool_name]
         try:
@@ -258,7 +258,7 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
             
             # If the tool only has an async implementation and is currently in a running loop,
             # Use a dedicated thread pool to run the coroutine in a separate asynchronous event loop, completely eliminating the "This event loop is already running" crash.
-            if tool.is_async:
+            if getattr(tool, "is_async", False):
                 coro = tool.ainvoke(tool_args)
                 try:
                     running_loop = asyncio.get_running_loop()
@@ -274,10 +274,13 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
             else:
                 observation = tool.invoke(tool_args)
             return str(observation)
-        except Exception as e:                        
-            observation = t("agent_runner.tool_exec_error", tool_name=tool_name, error=e)
-            logger.error(observation)
-            return observation
+        except (asyncio.CancelledError, concurrent.futures.CancelledError):
+            raise
+        except BaseDomainError:
+            raise
+        except Exception as exc:
+            logger.exception("Tool '{}' execution failed", tool_name)
+            raise ToolExecutionError(tool_name, cause=exc) from exc
         
     def _handle_max_steps_error(self, messages: List[Dict[str, Any]]) -> None:
         """Unified handling of error interception exceeding the maximum inference step limit"""
