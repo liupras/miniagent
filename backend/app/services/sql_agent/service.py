@@ -9,15 +9,23 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, Optional
+
+import duckdb
+import pandas as pd
 
 from app.core.logger_config import get_logger
 
 logger = get_logger(__name__)
 from app.runtime.cache.lazy_cache import AsyncLazyCache
-from .engine import SQLAgent,SQLAgentConfig
-from .sql_tools import SQLTools
 from .manager import DBManager
+from .exceptions import (
+    SQLTableImportError,
+    SQLTableNotFoundError,
+    SQLTableOperationError,
+    SQLUnsupportedFileTypeError,
+)
 
 from app.infra.db.database import Tool
 from app.runtime.llm.client import LLMClient
@@ -36,6 +44,7 @@ class LLMNotFoundError(NotFoundError):
 
 if TYPE_CHECKING:
     from app.core.service_container import ServiceContainer
+    from .engine import SQLAgent
 
 # Cache key: (llm_provider_id, schema_name)
 #_CacheKey = Tuple[int, str]
@@ -44,6 +53,10 @@ class SQLAgentService:
     """
     Application-level service that manages SQLAgent instances.
     """
+
+    CSV_EXTENSIONS = frozenset({".csv", ".txt", ".tsv"})
+    EXCEL_EXTENSIONS = frozenset({".xlsx", ".xls", ".xlsm"})
+    SUPPORTED_EXTENSIONS = CSV_EXTENSIONS | EXCEL_EXTENSIONS
 
     def __init__(self, container: "ServiceContainer") -> None:
         self._container  = container
@@ -58,7 +71,7 @@ class SQLAgentService:
         self._db_manager = DBManager(duckdb_manager=self._duckdb_manager)
 
         from app.runtime.cache.models import CacheType, CACHE_META
-        self._agent_cache = AsyncLazyCache[str, SQLAgent](
+        self._agent_cache = AsyncLazyCache(
             builder=self._build_agent,
             name=CacheType.SQL_AGENT,
             description=f"{CACHE_META[CacheType.SQL_AGENT].key_name} → {CACHE_META[CacheType.SQL_AGENT].value_name}",
@@ -157,24 +170,24 @@ class SQLAgentService:
         TypeError
             On unresolvable type conflicts (propagated from DBManager).
         """
-        logger.info(
-            f"[SQLAgentService] import_csv  file={file_path!r}  "
-            f"schema={schema_name!r}  table={table_name!r}  pk={primary_key!r}"
+        result = await self.import_table(
+            file_path=file_path,
+            source_filename=Path(file_path).name,
+            schema_name=schema_name,
+            table_name=table_name,
+            sheet_name=None,
+            primary_key=primary_key,
+            force_cast=force_cast,
+            allow_new_columns=allow_new_columns,
         )
-        return await asyncio.to_thread(
-            self._db_manager.import_csv,
-            file_path,
-            schema_name,
-            table_name,
-            primary_key,
-            force_cast,
-            allow_new_columns,
-        )
+        return result["table_path"]
 
     async def _build_agent(
         self, tool_name: str
     ) -> SQLAgent:
         """Load LLM config + prompts from DB and construct a SQLAgent."""
+        from .engine import SQLAgent, SQLAgentConfig
+        from .sql_tools import SQLTools
 
         tool: Optional[Tool] = await self._tool_db.get_by_name(tool_name)
         if tool is None:
@@ -259,7 +272,7 @@ class SQLAgentService:
     async def import_table(
         self,
         file_path: str,
-        file_type: str,
+        source_filename: str,
         schema_name: str,
         table_name: str | None,
         sheet_name: str | None,
@@ -267,26 +280,76 @@ class SQLAgentService:
         force_cast: bool,
         allow_new_columns: bool
     ) -> dict:
-        return await asyncio.to_thread(
-            self._db_manager.import_table,
-            file_path=file_path,
-            file_type=file_type,
-            schema_name=schema_name,
-            table_name=table_name,
-            sheet_name=sheet_name,
-            primary_key=primary_key,
-            force_cast=force_cast,
-            allow_new_columns=allow_new_columns,
+        file_type = self.classify_import_file(source_filename)
+        resolved_table_name = table_name or Path(source_filename).stem
+
+        try:
+            result = await asyncio.to_thread(
+                self._db_manager.import_table,
+                file_path=file_path,
+                file_type=file_type,
+                schema_name=schema_name,
+                table_name=resolved_table_name,
+                sheet_name=sheet_name,
+                primary_key=primary_key,
+                force_cast=force_cast,
+                allow_new_columns=allow_new_columns,
+            )
+        except (ValueError, TypeError, UnicodeError, pd.errors.ParserError) as exc:
+            raise SQLTableImportError(source_filename, cause=exc) from exc
+        except (duckdb.Error, ImportError) as exc:
+            raise SQLTableOperationError("import", cause=exc) from exc
+
+        result.update(
+            {
+                "schema_name": schema_name,
+                "table_name": resolved_table_name,
+                "file_type": file_type,
+            }
+        )
+        return result
+
+    @classmethod
+    def classify_import_file(cls, filename: str) -> str:
+        extension = Path(filename or "").suffix.lower()
+        if extension in cls.CSV_EXTENSIONS:
+            return "csv"
+        if extension in cls.EXCEL_EXTENSIONS:
+            return "excel"
+        raise SQLUnsupportedFileTypeError(
+            filename,
+            ", ".join(sorted(cls.SUPPORTED_EXTENSIONS)),
         )
 
+    async def _run_table_operation(self, operation: str, function, /, *args, **kwargs):
+        try:
+            return await asyncio.to_thread(function, *args, **kwargs)
+        except duckdb.Error as exc:
+            raise SQLTableOperationError(operation, cause=exc) from exc
+
     async def list_schemas(self) -> list[dict]:
-        return await asyncio.to_thread(self._db_manager.list_schemas)
+        return await self._run_table_operation(
+            "list_schemas",
+            self._db_manager.list_schemas,
+        )
 
     async def list_tables(self, schema_name: str) -> list[dict]:
-        return await asyncio.to_thread(self._db_manager.list_tables, schema_name)
+        return await self._run_table_operation(
+            "list_tables",
+            self._db_manager.list_tables,
+            schema_name,
+        )
 
-    async def get_table_columns(self, schema_name: str, table_name: str) -> list[dict] | None:
-        return await asyncio.to_thread(self._db_manager.get_table_columns, schema_name, table_name)
+    async def get_table_columns(self, schema_name: str, table_name: str) -> list[dict]:
+        columns = await self._run_table_operation(
+            "get_table_columns",
+            self._db_manager.get_table_columns,
+            schema_name,
+            table_name,
+        )
+        if columns is None:
+            raise SQLTableNotFoundError(schema_name, table_name)
+        return columns
 
     async def preview_table(
         self,
@@ -296,8 +359,9 @@ class SQLAgentService:
         page_size: int,
         order_by: str | None = None,
         order_desc: bool = False
-    ) -> dict | None:
-        return await asyncio.to_thread(
+    ) -> dict:
+        preview = await self._run_table_operation(
+            "preview_table",
             self._db_manager.preview_table,
             schema_name=schema_name,
             table_name=table_name,
@@ -306,7 +370,17 @@ class SQLAgentService:
             order_by=order_by,
             order_desc=order_desc,
         )
+        if preview is None:
+            raise SQLTableNotFoundError(schema_name, table_name)
+        return preview
 
-    async def drop_table(self, schema_name: str, table_name: str) -> bool:
-        return await asyncio.to_thread(self._db_manager.drop_table, schema_name, table_name)
+    async def drop_table(self, schema_name: str, table_name: str) -> None:
+        deleted = await self._run_table_operation(
+            "drop_table",
+            self._db_manager.drop_table,
+            schema_name,
+            table_name,
+        )
+        if not deleted:
+            raise SQLTableNotFoundError(schema_name, table_name)
 

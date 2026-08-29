@@ -4,12 +4,17 @@
 # @date    : 2026-04-30 (updated 2026-07-06: Excel import + table management)
 # @description: db manager
 
+from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING
 
 import pandas as pd
 from app.core.logger_config import get_logger
 logger = get_logger(__name__)
-from app.infra.db.duckdb_manager import DuckDBManager
+
+if TYPE_CHECKING:
+    from app.infra.db.duckdb_manager import DuckDBManager
 
 from app.core.i18n.i18n import t
 
@@ -173,21 +178,13 @@ class DBManager:
                 ON CONFLICT ({pk_conflict_clause}) 
                 DO UPDATE SET {update_stmt}
             """
-            try:
-                self._conn.execute(upsert_sql)
-                logger.success(f"UPSERT completed for {full_table_path} on PK: {pk_cols}")
-            except Exception as e:
-                logger.error(f"UPSERT failed: {e}")
-                raise e
+            self._conn.execute(upsert_sql)
+            logger.success(f"UPSERT completed for {full_table_path} on PK: {pk_cols}")
         else:
             # If there is no primary key, revert to normal append logic.
             # Using INSERT INTO ... BY NAME ensures column names are automatically aligned.
-            try:
-                self._conn.execute(f'INSERT INTO {full_table_path} BY NAME SELECT * FROM df_new')
-                logger.warning(f"No primary key provided. Data appended to {full_table_path} (may contain duplicates).")
-            except Exception as e:
-                logger.error(f"Insert failed: {e}")
-                raise e
+            self._conn.execute(f'INSERT INTO {full_table_path} BY NAME SELECT * FROM df_new')
+            logger.warning(f"No primary key provided. Data appended to {full_table_path} (may contain duplicates).")
 
         return self._import_result(full_table_path, file_type, resolved_sheet_name)
 

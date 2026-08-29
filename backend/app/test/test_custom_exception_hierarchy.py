@@ -11,6 +11,12 @@ from app.services.kb.exceptions import (
     DomainPluginRegistrationError,
     NoDomainPluginsConfiguredError,
 )
+from app.services.sql_agent.exceptions import (
+    SQLTableImportError,
+    SQLTableNotFoundError,
+    SQLTableOperationError,
+    SQLUnsupportedFileTypeError,
+)
 from app.services.virtual_court import (
     JudgeConfigurationError,
     JudgeInvalidResponseError,
@@ -45,6 +51,19 @@ from app.services.virtual_court import (
         (
             NoDomainPluginsConfiguredError(),
             "domain_plugin.none_configured",
+        ),
+        (
+            SQLTableNotFoundError("main", "orders"),
+            "sqltable.not_found",
+        ),
+        (
+            SQLUnsupportedFileTypeError("orders.pdf", ".csv"),
+            "sql_agent.unsupported_file_extension",
+        ),
+        (SQLTableImportError("orders.csv"), "sql_agent.import_failed"),
+        (
+            SQLTableOperationError("list_tables"),
+            "sql_agent.operation_failed",
         ),
     ],
 )

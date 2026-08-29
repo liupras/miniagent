@@ -31,6 +31,7 @@ entity:
   readonly: "{entity} '{id}' 为只读数据"
   invalid_value: "{entity} '{id}' 的值无效"
   inactive: "{entity} '{id}' 已停用"
+  unsupported_media_type: 不支持该文件类型
 
 infrastructure:
   error: 基础设施服务调用失败
@@ -189,6 +190,12 @@ sql_agent:
   syntax_error: "语法错误: {error}"
   unsupported_file_type: "不支持的 file_type：“{file_type}”，应为 'csv' 或 'excel'"
   delete_success: '表 "{schema_name}"."{table_name}" 已删除'
+  unsupported_file_extension: "文件“{filename}”类型不受支持，支持的扩展名：{allowed}"
+  import_failed: "无法导入文件“{filename}”，请检查文件内容和导入参数"
+  operation_failed: "数据表操作失败：{operation}"
+
+sqltable:
+  not_found: "数据表 '{id}' 不存在"
 
 cache:
   not_found: "未注册的缓存名称: {name}，可用: {count} 个缓存"

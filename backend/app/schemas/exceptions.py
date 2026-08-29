@@ -116,6 +116,21 @@ class BadRequestError(BaseDomainError):
     def __init__(self, entity_name: str, entity_id: Any):
         super().__init__(entity_name, entity_id, "is a bad request")
 
+
+class UnsupportedMediaTypeError(BaseDomainError):
+    """The supplied media type cannot be processed by the application."""
+
+    error_key = "entity.unsupported_media_type"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        error_key: str | None = None,
+        params: Mapping[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message=message, error_key=error_key, params=params)
+
 class ReadOnlyError(BaseDomainError):
     error_key = "readonly"
 

@@ -22,7 +22,9 @@ from app.schemas.common import ApiResponse
 from app.schemas.exceptions import (
     AlreadyExistsError,
     BaseDomainError,
+    InfrastructureError,
     NotFoundError,
+    UnsupportedMediaTypeError,
 )
 from app.schemas.integrations.virtual_court import IntegrationErrorCode
 
@@ -78,6 +80,10 @@ async def domain_error_handler(
         status_code = 404
     elif isinstance(exc, AlreadyExistsError):
         status_code = 409
+    elif isinstance(exc, UnsupportedMediaTypeError):
+        status_code = 415
+    elif isinstance(exc, InfrastructureError):
+        status_code = 503
     else:
         status_code = 400
 

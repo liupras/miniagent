@@ -31,6 +31,7 @@ entity:
   readonly: "{entity} '{id}' is read-only"
   invalid_value: "{entity} '{id}' has an invalid value"
   inactive: "{entity} '{id}' is inactive"
+  unsupported_media_type: Unsupported file type
 
 infrastructure:
   error: Infrastructure service call failed
@@ -189,6 +190,12 @@ sql_agent:
   syntax_error: "Syntax error: {error}"
   unsupported_file_type: "Unsupported file_type: '{file_type}', expected 'csv' or 'excel'"
   delete_success: 'Table "{schema_name}"."{table_name}" deleted'
+  unsupported_file_extension: "Unsupported file type for '{filename}'. Allowed extensions: {allowed}"
+  import_failed: "Could not import '{filename}'; check the file contents and import parameters"
+  operation_failed: "Table operation failed: {operation}"
+
+sqltable:
+  not_found: "Table '{id}' does not exist"
 
 cache:
   not_found: "Unregistered cache name: {name}, available: {count} caches"

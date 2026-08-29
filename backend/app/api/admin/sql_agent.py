@@ -42,11 +42,6 @@ _delete = AuthPermission.Permission("table:delete")
 # Constants
 # ═══════════════════════════════════════════════════════════════════════════
 
-# Extensions we accept for the unified "import table" endpoint.
-CSV_EXTENSIONS = {".csv", ".txt", ".tsv"}
-EXCEL_EXTENSIONS = {".xlsx", ".xls", ".xlsm"}
-SUPPORTED_EXTENSIONS = CSV_EXTENSIONS | EXCEL_EXTENSIONS
-
 # Loosely-checked content types. Browsers/clients are inconsistent about
 # what they send for CSV/Excel, so we mostly rely on the file extension
 # and only use content_type to reject obviously-wrong uploads.
@@ -59,20 +54,6 @@ ACCEPTED_CONTENT_TYPES = {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
     "application/octet-stream",  # generic fallback used by many clients
 }
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# Helpers
-# ═══════════════════════════════════════════════════════════════════════════
-
-def _classify_extension(filename: str) -> Optional[str]:
-    """Return 'csv' or 'excel' based on file extension, or None if unsupported."""
-    ext = os.path.splitext(filename or "")[1].lower()
-    if ext in CSV_EXTENSIONS:
-        return "csv"
-    if ext in EXCEL_EXTENSIONS:
-        return "excel"
-    return None
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -143,16 +124,8 @@ async def import_table(
     4. Delete the temporary file regardless of success or failure.
     5. Return the fully-qualified table path.
     """
-    file_type = _classify_extension(file.filename or "")
-    if file_type is None:
-        return ApiResponse(
-            code=415,
-            message=t(
-                "common.error_unsupported_file_type",
-                filename=file.filename or "",
-                allowed=", ".join(sorted(SUPPORTED_EXTENSIONS)),
-            ),
-        )
+    source_filename = file.filename or ""
+    file_type = service.classify_import_file(source_filename)
 
     if file.content_type and file.content_type not in ACCEPTED_CONTENT_TYPES:
         # Content-type is only a soft signal (many uploaders send generic/incorrect
@@ -165,10 +138,6 @@ async def import_table(
     suffix = os.path.splitext(file.filename or "upload")[1] or (
         ".csv" if file_type == "csv" else ".xlsx"
     )
-    if not table_name:
-        # Prevent temporary filename from becoming table name
-        table_name = os.path.splitext(file.filename)[0]
-
     tmp_path: Optional[str] = None
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -177,7 +146,7 @@ async def import_table(
 
         result = await service.import_table(
             file_path=tmp_path,
-            file_type=file_type,
+            source_filename=source_filename,
             schema_name=schema_name,
             table_name=table_name,
             sheet_name=sheet_name,
@@ -185,23 +154,19 @@ async def import_table(
             force_cast=force_cast,
             allow_new_columns=allow_new_columns,
         )
-    except Exception as exc:
-        logger.error(f"Table import failed ({file_type}): {exc}")
-        return ApiResponse(code=500, message=t("common.error_500"))
     finally:
         # Always clean up the temporary file
-        if tmp_path and os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        await file.close()
+        try:
+            if tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+        except OSError as exc:
+            logger.warning("Failed to remove upload temp file '{}': {}", tmp_path, exc)
+        try:
+            await file.close()
+        except Exception as exc:
+            logger.warning("Failed to close uploaded file '{}': {}", source_filename, exc)
 
-    data = ImportTableResponse(
-        table_path=result["table_path"],
-        schema_name=schema_name,
-        table_name=table_name,
-        row_count=result.get("row_count"),
-        file_type=file_type,
-        sheet_name=result.get("sheet_name") if file_type == "excel" else None,
-    )
+    data = ImportTableResponse.model_validate(result)
     return ApiResponse(data=data)
 
 
@@ -218,11 +183,7 @@ async def list_schemas(
     service=Depends(_get_service),
     caller_id: int            = Depends(_list),
 ) -> ApiResponse:
-    try:
-        schemas = await service.list_schemas()
-    except Exception as exc:
-        logger.error(f"Failed to list schemas: {exc}")
-        return ApiResponse(code=500, message=t("common.error_500"))
+    schemas = await service.list_schemas()
     return ApiResponse(data=[SchemaInfo(**s) for s in schemas])
 
 
@@ -236,11 +197,7 @@ async def list_tables(
     service=Depends(_get_service),
     caller_id: int            = Depends(_list),
 ) -> ApiResponse:
-    try:
-        tables = await service.list_tables(schema_name=schema_name)
-    except Exception as exc:
-        logger.error(f"Failed to list tables for schema '{schema_name}': {exc}")
-        return ApiResponse(code=500, message=t("common.error_500"))
+    tables = await service.list_tables(schema_name=schema_name)
     return ApiResponse(data=[TableInfo(**tbl) for tbl in tables])
 
 
@@ -255,24 +212,10 @@ async def get_table_columns(
     service=Depends(_get_service),
     caller_id: int            = Depends(_list),
 ) -> ApiResponse:
-    try:
-        columns = await service.get_table_columns(
-            schema_name=schema_name, table_name=table_name
-        )
-    except Exception as exc:
-        logger.error(
-            f"Failed to fetch columns for '{schema_name}'.'{table_name}': {exc}"
-        )
-        return ApiResponse(code=500, message=t("common.error_500"))
-    if columns is None:
-        return ApiResponse(
-            code=404,
-            message=t(
-                "common.error_404_table",
-                schema_name=schema_name,
-                table_name=table_name,
-            ),
-        )
+    columns = await service.get_table_columns(
+        schema_name=schema_name,
+        table_name=table_name,
+    )
     return ApiResponse(data=[ColumnInfo(**c) for c in columns])
 
 
@@ -291,29 +234,14 @@ async def get_table_data(
     service=Depends(_get_service),
     caller_id: int            = Depends(_list),
 ) -> ApiResponse:
-    try:
-        preview = await service.preview_table(
-            schema_name=schema_name,
-            table_name=table_name,
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
-            order_desc=order_desc,
-        )
-    except Exception as exc:
-        logger.error(
-            f"Failed to preview table '{schema_name}'.'{table_name}': {exc}"
-        )
-        return ApiResponse(code=500, message=t("common.error_500"))
-    if preview is None:
-        return ApiResponse(
-            code=404,
-            message=t(
-                "common.error_404_table",
-                schema_name=schema_name,
-                table_name=table_name,
-            ),
-        )
+    preview = await service.preview_table(
+        schema_name=schema_name,
+        table_name=table_name,
+        page=page,
+        page_size=page_size,
+        order_by=order_by,
+        order_desc=order_desc,
+    )
     return ApiResponse(
         data=TablePreviewResponse(
             columns=[ColumnInfo(**c) for c in preview["columns"]],
@@ -336,22 +264,7 @@ async def delete_table(
     service=Depends(_get_service),
     caller_id: int            = Depends(_delete),
 ) -> ApiResponse:
-    try:
-        deleted = await service.drop_table(
-            schema_name=schema_name, table_name=table_name
-        )
-    except Exception as exc:
-        logger.error(f"Failed to drop table '{schema_name}'.'{table_name}': {exc}")
-        return ApiResponse(code=500, message=t("common.error_500"))
-    if not deleted:
-        return ApiResponse(
-            code=404,
-            message=t(
-                "common.error_404_table",
-                schema_name=schema_name,
-                table_name=table_name,
-            ),
-        )
+    await service.drop_table(schema_name=schema_name, table_name=table_name)
     return ApiResponse(
         message=t(
             "sql_agent.delete_success", schema_name=schema_name, table_name=table_name
