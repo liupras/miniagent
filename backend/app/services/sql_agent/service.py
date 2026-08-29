@@ -31,8 +31,7 @@ from app.infra.db.database import Tool
 from app.runtime.llm.client import LLMClient
 from app.runtime.llm.agent_client import AgentLLM
 
-from app.core.i18n.i18n import t
-from app.schemas.exceptions import NotFoundError
+from app.schemas.exceptions import NotFoundError, ToolInactiveError
 
 class ToolNotFoundError(NotFoundError):
     def __init__(self, tool_name: str):
@@ -194,7 +193,7 @@ class SQLAgentService:
             logger.error(f"[SQLAgentService] tool {tool_name!r} not found in database.")
             raise ToolNotFoundError(tool_name)
         if not tool.is_active:
-            raise ValueError(t("tool.inactive", name=tool_name))
+            raise ToolInactiveError(tool_name)
         
         config = tool.config or {}
         llm_id = config.get("llm_id", 1)

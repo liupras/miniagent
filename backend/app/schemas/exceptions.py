@@ -162,5 +162,28 @@ class InvalidValueError(BaseDomainError):
 class InactiveError(BaseDomainError):
     error_key = "inactive"
 
-    def __init__(self, entity_name: str, entity_id: Any):
-        super().__init__(entity_name, entity_id, "is inactive and cannot be used")
+    def __init__(
+        self,
+        entity_name: str,
+        entity_id: Any,
+        *,
+        params: Mapping[str, Any] | None = None,
+    ):
+        super().__init__(
+            entity_name,
+            entity_id,
+            "is inactive and cannot be used",
+            params=params,
+        )
+
+
+class ToolInactiveError(InactiveError):
+    """The requested tool exists but is disabled."""
+
+    def __init__(self, tool_name: str) -> None:
+        self.tool_name = tool_name
+        super().__init__(
+            "Tool",
+            tool_name,
+            params={"name": tool_name},
+        )

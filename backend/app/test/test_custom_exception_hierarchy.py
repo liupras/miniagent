@@ -12,6 +12,7 @@ from app.schemas.exceptions import (
     BaseDomainError,
     InfrastructureError,
     PermissionDeniedError,
+    ToolInactiveError,
 )
 from app.services.integration_auth import (
     IntegrationNotConfiguredError,
@@ -105,6 +106,7 @@ from app.services.workplace_agent import (
         ),
         (SmartRouterQueryError("router-1"), "smart_router.query_failed"),
         (RetrievalConfidenceMissingError(1), "kb.no_confidence"),
+        (ToolInactiveError("sql_agent"), "tool.inactive"),
     ],
 )
 def test_custom_errors_inherit_base_domain_error(error, expected_key):
