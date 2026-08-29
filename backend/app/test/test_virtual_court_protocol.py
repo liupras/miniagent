@@ -20,6 +20,7 @@ from app.schemas.integrations.virtual_court import (
 
 def _request_data() -> dict:
     return {
+        "state_version": 18,
         "current_stage": "COURT_INVESTIGATION",
         "current_step": "INQUIRY-D-A",
         "trigger": "CLARIFICATION_NEEDED",
@@ -94,6 +95,7 @@ def test_allowed_actions_must_not_contain_duplicates():
 
 def test_legal_explanation_without_citations_is_marked_insufficient():
     response = JudgeDecisionResponse(
+        state_version=18,
         speech=JudgeSpeech(
             type=SpeechType.LEGAL_EXPLANATION,
             text="当前知识库未检索到足够依据。",
@@ -109,6 +111,7 @@ def test_legal_explanation_without_citations_is_marked_insufficient():
 def test_party_action_and_speech_type_must_match():
     with pytest.raises(ValidationError, match="requires QUESTION speech"):
         JudgeDecisionResponse(
+            state_version=18,
             speech=JudgeSpeech(
                 type=SpeechType.CLARIFICATION,
                 text="请被告回答。",
@@ -124,6 +127,7 @@ def test_party_action_and_speech_type_must_match():
 
 def test_request_contains_only_reasoning_inputs():
     assert set(JudgeDecisionRequest.model_fields) == {
+        "state_version",
         "current_stage",
         "current_step",
         "trigger",
@@ -140,6 +144,7 @@ def test_request_contains_only_reasoning_inputs():
 
 def test_response_contains_only_decision_outputs():
     assert set(JudgeDecisionResponse.model_fields) == {
+        "state_version",
         "speech",
         "action",
         "legal_citations",

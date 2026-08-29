@@ -55,6 +55,7 @@ class ConfidenceLevel(StrEnum):
 
 
 class JudgeDecisionRequest(IntegrationModel):
+    state_version: int = Field(ge=0)
     current_stage: str = Field(min_length=1, max_length=64)
     current_step: str = Field(
         min_length=2,
@@ -147,6 +148,7 @@ class LegalCitation(IntegrationModel):
 
 
 class JudgeDecisionResponse(IntegrationModel):
+    state_version: int = Field(ge=0)
     speech: JudgeSpeech
     action: JudgeActionProposal
     legal_citations: list[LegalCitation] = Field(default_factory=list, max_length=20)

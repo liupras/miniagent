@@ -8,27 +8,28 @@
 
 协议只传递影响独任审判员智能体推理的内容，只返回 VirtualCourt 需要消费的决策结果。
 
-- VirtualCourt 持有案件 ID、庭审会话 ID、状态版本、恢复点和控制模式；
+- VirtualCourt 持有案件 ID、庭审会话 ID、恢复点和控制模式；
 - MiniAgent 不保存或校验另一份庭审权威状态；
-- VirtualCourt 在调用前保存本地状态快照，响应返回后自行判断是否已经过期；
+- 请求携带 `state_version`，响应原样回显，VirtualCourt 据此判断结果是否已经过期；
 - HTTP 路径中的 `/api/v1` 已表示协议版本，请求体不再重复携带版本；
 - 请求与响应的追踪由 HTTP 层处理，不进入模型上下文；
 - 每次请求自包含，不传完整会话历史。
 
 本协议只定义独任审判员动态决策。摘要和撰写能力应使用独立协议。
 
-## 2. 为什么没有 `state_version`
+## 2. `state_version` 的用途
 
-`state_version` 对 VirtualCourt 的并发控制有用，但不影响 MiniAgent 推理。
+`state_version` 是协议安全字段，不是智能体推理内容。
 
-MiniAgent 收到一个版本号后无法判断它是否仍为最新，只能原样回显。因此把它传给模型没有实际价值。
+VirtualCourt 发起请求时传入当前版本，MiniAgent 在响应中原样回显。VirtualCourt 收到响应后将其与当前权威状态版本比较，从而拒绝迟到结果。
 
 VirtualCourt 应在本地处理：
 
 ```text
-发起请求时记录 local_state_version
+请求携带 state_version
 → 等待 MiniAgent 响应
-→ 比较 current_state_version 与 local_state_version
+→ 响应原样回显 state_version
+→ 比较响应版本与 current_state_version
 → 相同才允许采用响应，不同则丢弃
 ```
 
@@ -40,6 +41,7 @@ VirtualCourt 应在本地处理：
 
 | 字段 | 类型 | 必填 | 推理用途 |
 | --- | --- | --- | --- |
+| `state_version` | integer | 是 | 协议安全字段；标记决策所基于的庭审状态版本，不进入模型提示词 |
 | `current_stage` | string | 是 | 理解当前庭审阶段 |
 | `current_step` | string | 是 | 理解当前冻结步骤和程序位置 |
 | `trigger` | enum | 是 | 说明为什么调用智能体 |
@@ -63,7 +65,6 @@ VirtualCourt 应在本地处理：
 | `case_id` | 案件身份不影响推理，案情由 `case_context` 提供 |
 | `court_session_id` | 属于 VirtualCourt 会话管理 |
 | `turn_id` | 属于 VirtualCourt 事件管理 |
-| `state_version` | 由 VirtualCourt 本地判断响应是否过期 |
 | `control_mode` | MiniAgent 始终只返回建议，是否自动执行由 VirtualCourt 决定 |
 | `script_guidance` | 与 `task` 重复，恢复点属于 VirtualCourt 内部状态 |
 
@@ -153,6 +154,7 @@ VirtualCourt 应在本地处理：
 
 ```json
 {
+  "state_version": 18,
   "current_stage": "COURT_INVESTIGATION",
   "current_step": "INQUIRY-D-A",
   "trigger": "CLARIFICATION_NEEDED",
@@ -194,6 +196,7 @@ VirtualCourt 应在本地处理：
 
 | 字段 | 类型 | 用途 |
 | --- | --- | --- |
+| `state_version` | integer | 原样回显请求版本，供 VirtualCourt 拒绝迟到响应 |
 | `speech` | object | VirtualCourt 可播报的候选法官发言 |
 | `action` | object | 唯一候选动作 |
 | `legal_citations` | object[] | 法律解释使用的可核验依据 |
@@ -211,7 +214,6 @@ VirtualCourt 应在本地处理：
 | `request_id` | 同步 HTTP 响应无需在业务体回显 |
 | `decision_id` | MiniAgent 不执行状态变更，无需单独去重标识 |
 | `case_id`、`court_session_id`、`turn_id` | 都是请求方内部标识 |
-| `state_version` | VirtualCourt 使用本地快照判断过期 |
 | `control_mode` | VirtualCourt 已持有控制模式 |
 | `decision_basis` | 不影响执行且容易变成冗余推理文本 |
 | `created_at` | HTTP 和服务日志已有时间记录 |
@@ -243,6 +245,7 @@ VirtualCourt 应在本地处理：
 
 ```json
 {
+  "state_version": 18,
   "speech": {
     "type": "CLARIFICATION",
     "text": "被告，请明确回答：使用涉案图片前，你方是否核验过上传者身份、授权范围或者商用许可？",
@@ -264,7 +267,7 @@ VirtualCourt 应在本地处理：
 响应模型校验通过后，VirtualCourt 仍必须检查：
 
 1. 本次 HTTP 调用是否仍是当前有效调用；
-2. 当前庭审状态是否仍等于发起调用时保存的本地状态快照；
+2. 响应的 `state_version` 是否仍等于当前权威状态版本；
 3. 除 `NO_ACTION` 外，返回动作是否属于请求的 `allowed_actions`；
 4. 返回目标是否属于请求的 `allowed_targets`；
 5. 当前步骤是否仍允许动态插入；
