@@ -13,6 +13,7 @@ logger = get_logger(__name__)
 from app.runtime.cache.lazy_cache import AsyncLazyCache
 from app.services.kb.retrieval import RetrievalPipeline
 
+from .exceptions import RetrievalConfidenceMissingError
 from .retrieval_model import ChunkResult,KBInfo
 
 from app.schemas.exceptions import NotFoundError
@@ -28,8 +29,6 @@ class StrategyConfigNotFoundError(NotFoundError):
 class LLMConfigNotFoundError(NotFoundError):
     def __init__(self, kb_id: int):
         super().__init__("LLM", kb_id)
-
-from app.core.i18n.i18n import t
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Query result models
@@ -175,7 +174,7 @@ class KBRetrievalService:
         confidence = state.confidence
         if confidence is None:
             logger.warning(f"[KBRetrievalService.query] No confidence result for kb={kb_id} query={query}")
-            raise RuntimeError(t("kb.no_confidence"))
+            raise RetrievalConfidenceMissingError(kb_id)
 
         # ── Serialise to QueryResult ───────────────────────────────────
         chunks_out: List[ChunkResult] = [

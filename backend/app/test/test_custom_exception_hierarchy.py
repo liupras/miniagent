@@ -20,6 +20,7 @@ from app.services.integration_auth import (
 from app.services.kb.exceptions import (
     DomainPluginRegistrationError,
     NoDomainPluginsConfiguredError,
+    RetrievalConfidenceMissingError,
     SmartRouterConfigurationError,
     SmartRouterQueryError,
 )
@@ -103,6 +104,7 @@ from app.services.workplace_agent import (
             "smart_router.configuration_error",
         ),
         (SmartRouterQueryError("router-1"), "smart_router.query_failed"),
+        (RetrievalConfidenceMissingError(1), "kb.no_confidence"),
     ],
 )
 def test_custom_errors_inherit_base_domain_error(error, expected_key):

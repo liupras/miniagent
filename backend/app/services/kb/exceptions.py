@@ -41,6 +41,25 @@ class SmartRouterQueryError(SmartRouterError):
         )
 
 
+class RetrievalError(InfrastructureError):
+    """Base class for knowledge-base retrieval pipeline failures."""
+
+    error_key = "retrieval.failed"
+
+
+class RetrievalConfidenceMissingError(RetrievalError):
+    """The retrieval pipeline completed without producing confidence data."""
+
+    error_key = "kb.no_confidence"
+
+    def __init__(self, kb_id: int) -> None:
+        self.kb_id = kb_id
+        super().__init__(
+            f"Retrieval pipeline returned no confidence for KB '{kb_id}'",
+            params={"kb_id": kb_id},
+        )
+
+
 class DomainPluginError(InfrastructureError):
     """Base class for domain-plugin startup failures."""
 
