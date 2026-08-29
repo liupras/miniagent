@@ -57,14 +57,11 @@ class JWTAuth:
             "type": token_type  # token type
         }
         
-        # create token
-        try:
-            token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
-            logger.debug(f"Token created for user: {username}, expires at: {expire}")
-            return token
-        except Exception as e:
-            logger.error(f"Failed to create token: {str(e)}", exc_info=True)
-            raise
+        # Encoding/configuration failures are not authentication failures and
+        # must remain visible to the application error boundary.
+        token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
+        logger.debug(f"Token created for user: {username}, expires at: {expire}")
+        return token
     
     def verify_token(self, token: str) -> Optional[str]:
         """
@@ -98,11 +95,8 @@ class JWTAuth:
         except jwt.ExpiredSignatureError:
             logger.warning("Token has expired")
             return None
-        except jwt.InvalidTokenError as e:
-            logger.warning(f"Invalid token: {str(e)}")
-            return None
-        except Exception as e:
-            logger.error(f"Failed to verify token: {str(e)}", exc_info=True)
+        except jwt.InvalidTokenError:
+            logger.warning("Invalid token")
             return None
     
     def decode_token(self, token: str, verify: bool = False) -> Optional[Dict]:
@@ -131,8 +125,8 @@ class JWTAuth:
         except jwt.ExpiredSignatureError:
             logger.warning("Token has expired during decode")
             return None
-        except Exception as e:
-            logger.error(f"Failed to decode token: {str(e)}", exc_info=True)
+        except jwt.InvalidTokenError:
+            logger.warning("Invalid token during decode")
             return None
     
     def get_token_info(self, token: str) -> Dict:
@@ -158,11 +152,16 @@ class JWTAuth:
             # Convert timestamps to a readable format
             exp_datetime = None
             if exp_timestamp:
-                # First convert to naive datetime, then add the UTC time zone.
-                exp_datetime = datetime.fromtimestamp(exp_timestamp).replace(tzinfo=timezone.utc)
+                exp_datetime = datetime.fromtimestamp(
+                    exp_timestamp,
+                    tz=timezone.utc,
+                )
             iat_datetime = None
             if iat_timestamp:
-                iat_datetime = datetime.fromtimestamp(iat_timestamp).replace(tzinfo=timezone.utc)
+                iat_datetime = datetime.fromtimestamp(
+                    iat_timestamp,
+                    tz=timezone.utc,
+                )
             now_datetime = datetime.now(timezone.utc)
             
             # Check if it has expired
@@ -181,9 +180,9 @@ class JWTAuth:
             
         except jwt.InvalidTokenError:
             return {"error": "Invalid token", "valid": False}
-        except Exception as e:
-            logger.error(f"Failed to get token info: {str(e)}", exc_info=True)
-            return {"error": str(e), "valid": False}
+        except (TypeError, ValueError, OverflowError, OSError):
+            logger.warning("Invalid temporal claim in token")
+            return {"error": "Invalid token", "valid": False}
 
 
 # Global instance
