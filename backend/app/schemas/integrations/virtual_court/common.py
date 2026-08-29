@@ -36,12 +36,6 @@ class CaseContext(IntegrationModel):
     dispute_focuses: list[str] = Field(default_factory=list, max_length=20)
 
 
-class EvidenceContext(IntegrationModel):
-    offered_by: PartyRole
-    name: str = Field(min_length=1, max_length=256)
-    purpose: str = Field(default="", max_length=2000)
-
-
 class StageSummary(IntegrationModel):
     stage_id: str = Field(min_length=1, max_length=64)
     summary: str = Field(min_length=1, max_length=4000)

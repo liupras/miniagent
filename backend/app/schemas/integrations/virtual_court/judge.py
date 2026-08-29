@@ -9,7 +9,6 @@ from pydantic import Field, field_validator, model_validator
 from .common import (
     CaseContext,
     CourtEvent,
-    EvidenceContext,
     IntegrationModel,
     PartyRole,
     StageSummary,
@@ -68,7 +67,6 @@ class JudgeDecisionRequest(IntegrationModel):
     allowed_actions: list[ActionType] = Field(default_factory=list, max_length=10)
     allowed_targets: list[PartyRole] = Field(default_factory=list, max_length=2)
     case_context: CaseContext
-    current_evidence: EvidenceContext | None = None
     stage_summaries: list[StageSummary] = Field(default_factory=list, max_length=12)
     recent_events: list[CourtEvent] = Field(default_factory=list, max_length=30)
 

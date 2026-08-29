@@ -50,7 +50,6 @@ VirtualCourt 应在本地处理：
 | `allowed_actions` | action[] | 是 | 限制智能体可建议的动作 |
 | `allowed_targets` | party[] | 是 | 限制可提问或澄清的当事人 |
 | `case_context` | object | 是 | 提供与判断有关的案情 |
-| `current_evidence` | object/null | 否 | 提供当前证据内容和证明目的 |
 | `stage_summaries` | object[] | 否 | 提供既往阶段的压缩上下文 |
 | `recent_events` | object[] | 否 | 提供当前任务所需的近期庭审内容 |
 
@@ -67,6 +66,7 @@ VirtualCourt 应在本地处理：
 | `turn_id` | 属于 VirtualCourt 事件管理 |
 | `control_mode` | MiniAgent 始终只返回建议，是否自动执行由 VirtualCourt 决定 |
 | `script_guidance` | 与 `task` 重复，恢复点属于 VirtualCourt 内部状态 |
+| `current_evidence` | 与 `task` 和 `recent_events` 重复；证据展示由 VirtualCourt 管理 |
 
 ### 3.2 触发类型
 
@@ -114,19 +114,7 @@ VirtualCourt 应在本地处理：
 
 案号、案件名称和法院名称属于展示或标识信息，不进入智能体推理请求。
 
-### 3.5 当前证据
-
-`current_evidence` 只保留：
-
-| 字段 | 含义 |
-| --- | --- |
-| `offered_by` | 举证方 |
-| `name` | 证据组名称 |
-| `purpose` | 证明目的 |
-
-证据 ID 和当前页码由 VirtualCourt 管理。
-
-### 3.6 阶段摘要和近期事件
+### 3.5 阶段摘要和近期事件
 
 阶段摘要：
 
@@ -177,7 +165,6 @@ VirtualCourt 应在本地处理：
       "被告使用涉案作品是否构成侵权"
     ]
   },
-  "current_evidence": null,
   "stage_summaries": [],
   "recent_events": [
     {

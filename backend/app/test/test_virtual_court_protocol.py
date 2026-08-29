@@ -6,7 +6,6 @@ from app.schemas.integrations.virtual_court import (
     CaseContext,
     ConfidenceLevel,
     CourtEvent,
-    EvidenceContext,
     JudgeActionProposal,
     JudgeDecisionRequest,
     JudgeDecisionResponse,
@@ -136,7 +135,6 @@ def test_request_contains_only_reasoning_inputs():
         "allowed_actions",
         "allowed_targets",
         "case_context",
-        "current_evidence",
         "stage_summaries",
         "recent_events",
     }
@@ -163,7 +161,6 @@ def test_context_models_contain_only_reasoning_inputs():
         "defenses",
         "dispute_focuses",
     }
-    assert set(EvidenceContext.model_fields) == {"offered_by", "name", "purpose"}
     assert set(StageSummary.model_fields) == {"stage_id", "summary"}
     assert set(CourtEvent.model_fields) == {
         "event_type",
