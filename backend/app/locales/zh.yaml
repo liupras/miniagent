@@ -227,6 +227,9 @@ session:
 message:
   not_found: 未发现该消息
 
+conversation:
+  title_generation_failed: 会话标题生成失败
+
 agent_runner:
   max_steps_error: "错误： Agent 达到了最大迭代步数，强制结束。"
   tool_arg_error: "错误：工具参数 JSON 解析失败：{e}，原始值：{tool_args}"

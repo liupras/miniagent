@@ -227,6 +227,9 @@ session:
 message:
   not_found: The message was not found.
 
+conversation:
+  title_generation_failed: Conversation title generation failed
+
 agent_runner:
   max_steps_error: "Error: Agent reached maximum iteration steps and was forced to terminate."
   tool_arg_error: "Tool argument JSON parsing failed: {e}, raw value: {tool_args}"

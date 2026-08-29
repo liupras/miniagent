@@ -14,8 +14,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.infra.db.async_base import AsyncBaseDatabase
 from app.infra.db.database import ChatSession, ChatMessage
 
-from app.runtime.conversation.title_generator import title_generator
-
 class AsyncChatDatabase(AsyncBaseDatabase):
 
     async def create_user_session(self, user_id: int, agent_id: int) -> ChatSession:
@@ -178,24 +176,17 @@ class AsyncChatDatabase(AsyncBaseDatabase):
         agent_id: int,
         session_id: Optional[int],
         role: str,
-        content: str,        
+        content: str,
+        session_title: Optional[str] = None,
     ) -> int:
 
         async with self.get_session() as session:
             chat_session = await self._get_or_create_session(session, user_id, agent_id,session_id)
 
-            # 1. A title will only be generated using the current content if the role is "user" and the current session does not yet have a title.
-            if role == "user" and not chat_session.title:
-                try:
-                    generated_title = title_generator.generate(content)
-                    chat_session.title = generated_title
-                except Exception as e:                    
-                    from app.core.logger_config import get_logger
-                    logger = get_logger(__name__)
-                    logger.error(f"Failed to generate title for session {session_id}: {e}")
-                    chat_session.title="..."
+            if session_title is not None and not chat_session.title:
+                chat_session.title = session_title
 
-            # 2. Create and save new messages
+            # 1. Create and save new messages
             message = ChatMessage(
                 session_id=chat_session.id,
                 role=role,
@@ -206,12 +197,12 @@ class AsyncChatDatabase(AsyncBaseDatabase):
             session.add(message)
             await session.flush()
 
-            # 3. Count the total number of real messages in this session.
+            # 2. Count the total number of real messages in this session.
             count_stmt = select(func.count(ChatMessage.id)).filter_by(session_id=chat_session.id)
             count_result = await session.execute(count_stmt)
             total_messages = count_result.scalar() or 0
 
-            # 4. Synchronize updates to the session table
+            # 3. Synchronize updates to the session table
             chat_session.message_count = total_messages
             chat_session.updated_at = datetime.now()
 

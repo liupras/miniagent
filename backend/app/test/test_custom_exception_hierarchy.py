@@ -8,6 +8,7 @@ from app.runtime.conversation.service_conversation import (
     MessageNotFoundError,
     SessionNotFoundError,
 )
+from app.runtime.conversation.title_generator import TitleGenerationError
 from app.runtime.llm.models import LLMClientError
 from app.schemas.exceptions import (
     BaseDomainError,
@@ -100,6 +101,7 @@ from app.services.workplace_agent import (
         (SessionTitleInvalidError(), "agent.title_not_empty"),
         (SessionNotFoundError(3), "session.not_found"),
         (MessageNotFoundError(4), "message.not_found"),
+        (TitleGenerationError(), "conversation.title_generation_failed"),
         (DatabaseInfoUnavailableError(), "operations.database_info_failed"),
         (IntegrationNotConfiguredError(), "integration.not_configured"),
         (
