@@ -131,6 +131,22 @@ class UnsupportedMediaTypeError(BaseDomainError):
     ) -> None:
         super().__init__(message=message, error_key=error_key, params=params)
 
+
+class PermissionDeniedError(BaseDomainError):
+    """The authenticated caller is not allowed to perform the operation."""
+
+    error_key = "entity.permission_denied"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        error_key: str | None = None,
+        params: Mapping[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message=message, error_key=error_key, params=params)
+
+
 class ReadOnlyError(BaseDomainError):
     error_key = "readonly"
 

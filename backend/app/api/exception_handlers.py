@@ -24,6 +24,7 @@ from app.schemas.exceptions import (
     BaseDomainError,
     InfrastructureError,
     NotFoundError,
+    PermissionDeniedError,
     UnsupportedMediaTypeError,
 )
 from app.schemas.integrations.virtual_court import IntegrationErrorCode
@@ -82,6 +83,8 @@ async def domain_error_handler(
         status_code = 409
     elif isinstance(exc, UnsupportedMediaTypeError):
         status_code = 415
+    elif isinstance(exc, PermissionDeniedError):
+        status_code = 403
     elif isinstance(exc, InfrastructureError):
         status_code = 503
     else:

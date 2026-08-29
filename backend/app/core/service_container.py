@@ -67,6 +67,7 @@ from app.services.admin.audit_log import AuditLogService
 from app.services.admin.login_log import LoginLogAdminService
 from app.services.auth.login_log import LoginLogService
 from app.services.virtual_court import JudgeService
+from app.services.workplace_agent import WorkplaceAgentService
 
 from app.runtime.conversation.service_conversation import ConversationService
 
@@ -152,6 +153,7 @@ class ServiceContainer:
 
         self.conversation_service = ConversationService(chat_db=self.chat_db)
         self.agent_factory = AgentFactory(self)
+        self.workplace_agent_service = WorkplaceAgentService(self)
         self.judge_service = JudgeService(
             self.agent_factory,
             timeout_seconds=settings.virtual_court_judge_timeout_seconds,

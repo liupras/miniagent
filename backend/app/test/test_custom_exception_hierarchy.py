@@ -5,7 +5,11 @@ from app.infra.db.exceptions import DatabaseInitializationError
 from app.retrieval.embedding_inputs import EmbeddingInputTooLongError
 from app.runtime.agent.tool_builder import ToolBuildError
 from app.runtime.llm.models import LLMClientError
-from app.schemas.exceptions import BaseDomainError, InfrastructureError
+from app.schemas.exceptions import (
+    BaseDomainError,
+    InfrastructureError,
+    PermissionDeniedError,
+)
 from app.schemas.integrations.virtual_court import IntegrationErrorCode
 from app.services.kb.exceptions import (
     DomainPluginRegistrationError,
@@ -23,6 +27,13 @@ from app.services.virtual_court import (
     JudgeServiceError,
     JudgeTimeoutError,
     JudgeUnavailableError,
+)
+from app.services.workplace_agent import (
+    AgentAccessDeniedError,
+    AgentSelectionError,
+    AgentSessionNotFoundError,
+    SessionAgentMismatchError,
+    SessionTitleInvalidError,
 )
 
 
@@ -65,6 +76,11 @@ from app.services.virtual_court import (
             SQLTableOperationError("list_tables"),
             "sql_agent.operation_failed",
         ),
+        (AgentSelectionError(), "agent.input_invalid"),
+        (AgentAccessDeniedError(1, 2), "agent.unauthorized"),
+        (AgentSessionNotFoundError(3), "agent.session_not_found"),
+        (SessionAgentMismatchError(3, 2), "agent.session_not_belong"),
+        (SessionTitleInvalidError(), "agent.title_not_empty"),
     ],
 )
 def test_custom_errors_inherit_base_domain_error(error, expected_key):
@@ -76,6 +92,10 @@ def test_infrastructure_errors_share_infrastructure_base():
     assert isinstance(ToolBuildError("failed"), InfrastructureError)
     assert isinstance(LLMClientError("failed"), InfrastructureError)
     assert isinstance(EmbeddingInputTooLongError("failed"), InfrastructureError)
+
+
+def test_agent_access_denied_uses_permission_denied_base():
+    assert isinstance(AgentAccessDeniedError(1, 2), PermissionDeniedError)
 
 
 def test_integration_api_error_is_localizable_domain_error():

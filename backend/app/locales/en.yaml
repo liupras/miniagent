@@ -32,6 +32,7 @@ entity:
   invalid_value: "{entity} '{id}' has an invalid value"
   inactive: "{entity} '{id}' is inactive"
   unsupported_media_type: Unsupported file type
+  permission_denied: Permission denied
 
 infrastructure:
   error: Infrastructure service call failed
@@ -82,6 +83,7 @@ agent:
   session_not_found: Chat session not found
   session_not_belong: The chat session belongs to a different agent
   title_not_empty: Title cannot be empty
+  stream_failed: Agent response stream failed
   invalid_value: "Agent {id} max output tokens cannot exceed the bound LLM context window"
 
 tool:

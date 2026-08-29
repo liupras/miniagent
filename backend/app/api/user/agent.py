@@ -6,75 +6,28 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from app.core.logger_config import get_logger
-logger = get_logger(__name__)
+from fastapi import APIRouter, Depends, Query, Request
 from sse_starlette.sse import EventSourceResponse
 
 from app.core.config import settings
 from app.core.i18n.i18n import t
+from app.core.logger_config import get_logger
 from app.core.security.auth_permission import AuthPermission
-from app.runtime.agent.agent_factory import AgentFactory
-from app.runtime.conversation.service_conversation import ConversationService
 from app.schemas.common import ApiResponse
 from app.schemas.user.agent import AgentRequest, RenameSessionRequest
+from app.services.workplace_agent import WorkplaceAgentService
 
+
+logger = get_logger(__name__)
 router = APIRouter()
 current_user = AuthPermission.CurrentUser()
 
 
-def _get_agent_factory(request: Request) -> AgentFactory:
-    return request.app.state.container.agent_factory
-
-
-def _get_service(request: Request) -> ConversationService:
-    return request.app.state.container.conversation_service
-
-
-async def _resolve_runner(body: AgentRequest, factory: AgentFactory):
-    if body.agent_id is not None:
-        return await factory.get_runner(body.agent_id)
-    if body.agent_name:
-        return await factory.get_runner_by_name(body.agent_name)
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=t("agent.input_invalid"),
-    )
-
-
-async def _ensure_agent_access(
-    request: Request,
-    user_id: int,
-    agent_id: int,
-) -> None:
-    relation_db = request.app.state.container.user_agent_relation_db
-    if not await relation_db.user_has_agent(user_id, agent_id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=t("agent.unauthorized"),
-        )
-
-
-async def _resolve_chat_session(
-    service: ConversationService,
-    user_id: int,
-    agent_id: int,
-    session_id: int | None,
-):
-    if session_id is None:
-        return await service.create_user_session(user_id, agent_id)
-
-    chat_session = await service.get_user_session(session_id, user_id)
-    if chat_session is None:
-        raise HTTPException(status_code=404, detail=t("agent.session_not_found"))
-    if chat_session.agent_id != agent_id:
-        raise HTTPException(
-            status_code=400,
-            detail=t("agent.session_not_belong"),
-        )
-    return chat_session
+def _get_service(request: Request) -> WorkplaceAgentService:
+    return request.app.state.container.workplace_agent_service
 
 
 def _session_payload(item) -> dict:
@@ -91,12 +44,10 @@ def _session_payload(item) -> dict:
 
 @router.get("/available", response_model=ApiResponse, summary="List assigned agents")
 async def list_available_agents(
-    request: Request,
+    service: WorkplaceAgentService = Depends(_get_service),
     user_id: int = Depends(current_user),
 ) -> ApiResponse:
-    agents = await request.app.state.container.user_agent_relation_db.get_user_agents(
-        user_id
-    )
+    agents = await service.list_available_agents(user_id)
     return ApiResponse(
         data={
             "version": settings.app_version,
@@ -117,7 +68,7 @@ async def list_my_sessions(
     query: str | None = Query(default=None, max_length=200),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=100),
-    service: ConversationService = Depends(_get_service),
+    service: WorkplaceAgentService = Depends(_get_service),
     user_id: int = Depends(current_user),
 ) -> ApiResponse:
     total, items = await service.list_user_sessions(
@@ -145,13 +96,9 @@ async def list_my_messages(
     session_id: int,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=200, ge=1, le=500),
-    service: ConversationService = Depends(_get_service),
+    service: WorkplaceAgentService = Depends(_get_service),
     user_id: int = Depends(current_user),
 ) -> ApiResponse:
-    chat_session = await service.get_user_session(session_id, user_id)
-    if chat_session is None:
-        raise HTTPException(status_code=404, detail=t("agent.session_not_found"))
-
     total, items = await service.list_user_messages(
         session_id=session_id,
         user_id=user_id,
@@ -187,14 +134,10 @@ async def list_my_messages(
 async def rename_my_session(
     session_id: int,
     body: RenameSessionRequest,
-    service: ConversationService = Depends(_get_service),
+    service: WorkplaceAgentService = Depends(_get_service),
     user_id: int = Depends(current_user),
 ) -> ApiResponse:
-    title = body.title.strip()
-    if not title:
-        raise HTTPException(status_code=422, detail=t("agent.title_not_empty"))
-    if not await service.rename_user_session(session_id, user_id, title):
-        raise HTTPException(status_code=404, detail=t("agent.session_not_found"))
+    title = await service.rename_user_session(session_id, user_id, body.title)
     return ApiResponse(data={"session_id": session_id, "title": title})
 
 
@@ -205,50 +148,42 @@ async def rename_my_session(
 )
 async def delete_my_session(
     session_id: int,
-    service: ConversationService = Depends(_get_service),
+    service: WorkplaceAgentService = Depends(_get_service),
     user_id: int = Depends(current_user),
 ) -> ApiResponse:
-    if not await service.delete_user_session(session_id, user_id):
-        raise HTTPException(status_code=404, detail=t("agent.session_not_found"))
+    await service.delete_user_session(session_id, user_id)
     return ApiResponse()
 
 
 @router.post("/invoke", response_model=ApiResponse, summary="Invoke an assigned agent")
 async def agent_invoke(
-    request: Request,
     body: AgentRequest,
-    factory: AgentFactory = Depends(_get_agent_factory),
-    service: ConversationService = Depends(_get_service),
+    service: WorkplaceAgentService = Depends(_get_service),
     user_id: int = Depends(current_user),
 ) -> ApiResponse:
-    runner = await _resolve_runner(body, factory)
-    await _ensure_agent_access(request, user_id, runner.agent_id)
-    chat_session = await _resolve_chat_session(
-        service, user_id, runner.agent_id, body.session_id
-    )
-    answer = await runner.invoke(
+    answer, session_id = await service.invoke(
+        user_id=user_id,
+        agent_id=body.agent_id,
+        agent_name=body.agent_name,
+        session_id=body.session_id,
         query=body.query,
         history=body.history or None,
-        user_id=str(user_id),
-        session_id=chat_session.id,
     )
-    return ApiResponse(
-        data={"answer": answer, "session_id": chat_session.id}
-    )
+    return ApiResponse(data={"answer": answer, "session_id": session_id})
 
 
 @router.post("/stream", summary="Stream an assigned agent response over SSE")
 async def agent_stream(
     request: Request,
     body: AgentRequest,
-    factory: AgentFactory = Depends(_get_agent_factory),
-    service: ConversationService = Depends(_get_service),
+    service: WorkplaceAgentService = Depends(_get_service),
     user_id: int = Depends(current_user),
 ):
-    runner = await _resolve_runner(body, factory)
-    await _ensure_agent_access(request, user_id, runner.agent_id)
-    chat_session = await _resolve_chat_session(
-        service, user_id, runner.agent_id, body.session_id
+    runner, chat_session = await service.prepare_call(
+        user_id=user_id,
+        agent_id=body.agent_id,
+        agent_name=body.agent_name,
+        session_id=body.session_id,
     )
 
     logger.info(
@@ -277,7 +212,12 @@ async def agent_stream(
                     break
                 data = json.loads(chunk_str)
                 yield {"event": data.get("event", "message"), "data": chunk_str}
+        except asyncio.CancelledError:
+            raise
         except Exception as exc:
+            # Once the SSE response has started, exception handlers can no
+            # longer replace it with an HTTP error response. Isolate the
+            # runtime failure here and report a stable terminal SSE event.
             logger.exception(
                 "Agent stream failed for user_id={} session_id={}: {}",
                 user_id,
@@ -287,7 +227,11 @@ async def agent_stream(
             yield {
                 "event": "error",
                 "data": json.dumps(
-                    {"event": "error", "message": "Agent response failed"},
+                    {
+                        "event": "error",
+                        "code": "AGENT_STREAM_FAILED",
+                        "message": t("agent.stream_failed"),
+                    },
                     ensure_ascii=False,
                 ),
             }
