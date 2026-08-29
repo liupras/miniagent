@@ -115,3 +115,40 @@ class DomainService:
         count = await self._repo.bulk_delete(ids)
         self._cache.on_domain_changed()
         return count
+
+    async def bulk_upsert(
+        self,
+        payloads: List[dict],
+    ) -> tuple[int, int, List[str]]:
+        """Best-effort domain import with per-record failure isolation.
+
+        Each repository call owns its transaction. Database failures are
+        therefore rolled back and re-raised by the repository session boundary
+        before this import workflow records the failed item and continues.
+        """
+        inserted = skipped = 0
+        errors: List[str] = []
+
+        for payload in payloads:
+            domain_name = str(payload.get("name") or "<unknown>")
+            try:
+                existing = await self._repo.get_by_name(domain_name)
+                if existing:
+                    skipped += 1
+                    continue
+
+                await self._repo.create(payload)
+                inserted += 1
+            except Exception as exc:
+                # Per-item isolation is intentional for this best-effort import
+                # workflow. Repository methods have already rolled back their
+                # failed transaction before control reaches this point.
+                logger.exception(
+                    "Failed to import domain '{}'",
+                    domain_name,
+                )
+                errors.append(f"{domain_name}: {exc}")
+
+        if inserted:
+            self._cache.on_domain_changed()
+        return inserted, skipped, errors

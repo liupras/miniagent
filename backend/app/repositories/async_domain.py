@@ -170,29 +170,3 @@ class AsyncDomainDatabase(AsyncBaseDatabase):
                     await session.delete(obj)
                     deleted += 1
             return deleted
-        
-
-    async def bulk_upsert(
-        self, payloads: List[dict]
-    ) -> tuple[int, int, List[str]]:
-        """
-        Insert each item only if its name does not yet exist (insert-or-skip).
-
-        Returns:
-            (inserted_count, skipped_count, error_messages)
-        """
-        inserted = skipped = 0
-        errors: List[str] = []
-
-        for payload in payloads:
-            try:
-                existing = await self.get_by_name(payload["name"])
-                if existing:
-                    skipped += 1
-                    continue
-                await self.create(payload)
-                inserted += 1
-            except Exception as exc:  # noqa: BLE001
-                errors.append(f"{payload["name"]}: {exc}")
-
-        return inserted, skipped, errors
