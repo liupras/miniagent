@@ -17,10 +17,26 @@ from typing import Any
 
 import duckdb
 import psutil
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 
 from app.core.config import settings
+from app.core.logger_config import get_logger
+from app.infra.db.database import Agent, Embedding, KnowledgeBase, LLM, Tool, User
 from app.infra.db.initializer import db_manager
+from app.schemas.exceptions import InfrastructureError
+
+
+logger = get_logger(__name__)
+
+
+class DatabaseInfoUnavailableError(InfrastructureError):
+    error_key = "operations.database_info_failed"
+
+    def __init__(self, *, cause: BaseException | None = None) -> None:
+        super().__init__(
+            "Failed to retrieve database information",
+            cause=cause,
+        )
 
 
 def _elapsed_ms(started: float) -> float:
@@ -38,6 +54,33 @@ class SystemStatusService:
     def __init__(self, _container) -> None:
         # Keep the application container argument for the existing DI factory.
         pass
+
+    async def get_database_info(self) -> dict[str, Any]:
+        """Return database diagnostics without exposing backend failures."""
+        try:
+            tables = inspect(db_manager.engine).get_table_names()
+            db = db_manager.get_session()
+            try:
+                record_counts = {
+                    "users": db.query(User).count(),
+                    "agents": db.query(Agent).count(),
+                    "llm_configs": db.query(LLM).count(),
+                    "embedding_configs": db.query(Embedding).count(),
+                    "knowledge_bases": db.query(KnowledgeBase).count(),
+                    "tools": db.query(Tool).count(),
+                }
+            finally:
+                db.close()
+
+            return {
+                "database_path": str(settings.get_sqlite_path()),
+                "tables": tables,
+                "table_count": len(tables),
+                "record_counts": record_counts,
+            }
+        except Exception as exc:
+            logger.exception("Failed to retrieve database information: {}", exc)
+            raise DatabaseInfoUnavailableError(cause=exc) from exc
 
     async def get_status(self) -> dict[str, Any]:
         started = perf_counter()

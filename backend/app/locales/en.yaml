@@ -40,6 +40,9 @@ infrastructure:
 database:
   initialization_failed: Database initialization failed
 
+operations:
+  database_info_failed: Unable to retrieve database information
+
 integration:
   error: Integration request failed
   not_configured: VirtualCourt integration is not configured

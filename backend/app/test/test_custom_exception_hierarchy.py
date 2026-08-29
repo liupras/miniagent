@@ -19,6 +19,7 @@ from app.services.kb.exceptions import (
     DomainPluginRegistrationError,
     NoDomainPluginsConfiguredError,
 )
+from app.services.admin.system_status import DatabaseInfoUnavailableError
 from app.services.sql_agent.exceptions import (
     SQLTableImportError,
     SQLTableNotFoundError,
@@ -87,6 +88,7 @@ from app.services.workplace_agent import (
         (SessionTitleInvalidError(), "agent.title_not_empty"),
         (SessionNotFoundError(3), "session.not_found"),
         (MessageNotFoundError(4), "message.not_found"),
+        (DatabaseInfoUnavailableError(), "operations.database_info_failed"),
     ],
 )
 def test_custom_errors_inherit_base_domain_error(error, expected_key):

@@ -8,19 +8,22 @@ import time
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
-from app.core.logger_config import get_logger
-logger = get_logger(__name__)
-from sqlalchemy import inspect
 
 from app.core.config import settings
+from app.core.logger_config import get_logger
 from app.core.security.auth_permission import AuthPermission
-from app.infra.db.database import Agent, Embedding, KnowledgeBase, LLM, Tool, User
 from app.infra.db.initializer import db_manager
 from app.schemas.common import ApiResponse
 from app.services.admin.system_status import SystemStatusService
 
+
+logger = get_logger(__name__)
 router = APIRouter(tags=["Operations and maintenance"])
 _admin_status = AuthPermission.Permission("system_setting:list")
+
+
+def _get_system_status_service(request: Request) -> SystemStatusService:
+    return SystemStatusService(request.app.state.container)
 
 
 @router.get("/")
@@ -74,32 +77,11 @@ async def get_config():
 
 
 @router.get("/db/info")
-async def database_info():
+async def database_info(
+    service: SystemStatusService = Depends(_get_system_status_service),
+):
     """Retrieve SQLite table and record-count information."""
-    try:
-        tables = inspect(db_manager.engine).get_table_names()
-        db = db_manager.get_session()
-        try:
-            table_info = {
-                "users": db.query(User).count(),
-                "agents": db.query(Agent).count(),
-                "llm_configs": db.query(LLM).count(),
-                "embedding_configs": db.query(Embedding).count(),
-                "knowledge_bases": db.query(KnowledgeBase).count(),
-                "tools": db.query(Tool).count(),
-            }
-        finally:
-            db.close()
-
-        return {
-            "database_path": str(settings.get_sqlite_path()),
-            "tables": tables,
-            "table_count": len(tables),
-            "record_counts": table_info,
-        }
-    except Exception as exc:
-        logger.error(f"Failed to retrieve database information: {exc}")
-        return JSONResponse(status_code=500, content={"error": str(exc)})
+    return await service.get_database_info()
 
 
 @router.get(
@@ -108,8 +90,7 @@ async def database_info():
     summary="Get API and dependency health status",
 )
 async def system_status(
-    request: Request,
+    service: SystemStatusService = Depends(_get_system_status_service),
     caller_id: int = Depends(_admin_status),
 ):
-    service = SystemStatusService(request.app.state.container)
     return ApiResponse(data=await service.get_status())

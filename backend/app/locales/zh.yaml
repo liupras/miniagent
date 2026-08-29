@@ -40,6 +40,9 @@ infrastructure:
 database:
   initialization_failed: 数据库初始化失败
 
+operations:
+  database_info_failed: 无法获取数据库信息
+
 integration:
   error: 集成接口调用失败
   not_configured: VirtualCourt 集成接口尚未配置
