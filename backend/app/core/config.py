@@ -6,7 +6,7 @@
 
 from pathlib import Path
 from typing import List
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -21,6 +21,17 @@ class Settings(BaseSettings):
     # ==================== API configuration ====================
     api_host: str = Field(default="0.0.0.0", description="API host")
     api_port: int = Field(default=8088, description="API port")
+    virtual_court_api_key: SecretStr = Field(
+        default=SecretStr(""),
+        repr=False,
+        description="API key accepted from the VirtualCourt integration",
+    )
+    virtual_court_judge_timeout_seconds: float = Field(
+        default=120.0,
+        gt=0,
+        le=600,
+        description="Maximum duration of one VirtualCourt judge decision",
+    )
     
     # ==================== Database configuration ====================
     sqlite_db_path: str = Field(default="db", description="SQLite database path")

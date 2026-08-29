@@ -147,7 +147,10 @@ class ServiceContainer:
 
         self.conversation_service = ConversationService(chat_db=self.chat_db)
         self.agent_factory = AgentFactory(self)
-        self.judge_service = JudgeService(self.agent_factory)
+        self.judge_service = JudgeService(
+            self.agent_factory,
+            timeout_seconds=settings.virtual_court_judge_timeout_seconds,
+        )
 
         # ── Service singletons ──────────────────────────────────────────
         self.document_service = KBDocumentService(self)

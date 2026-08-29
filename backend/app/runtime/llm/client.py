@@ -94,23 +94,23 @@ class LLMClient:
         """Normal mode call"""
         logger.debug(f"Calling Model: {model},Message count: {len(messages)}.")
         
+        params = self._completion_kwargs(
+            model=model,
+            messages=messages,
+            **kwargs,
+        )
         try:
-            params = self._completion_kwargs(
-                model=model,
-                messages=messages,
-                **kwargs,
-            )
             response = completion(**params)
-
-            return self._build_response(
-                response,
-                model,
-                prompt_messages=params["messages"],
-                tools=params.get("tools"),
-            )
         except Exception as e:
             logger.error(f"[LLMClient] API Call failed: {str(e)}")
-            raise LLMClientError(f"API Call failed: {str(e)}")
+            raise LLMClientError(f"API Call failed: {str(e)}") from e
+
+        return self._build_response(
+            response,
+            model,
+            prompt_messages=params["messages"],
+            tools=params.get("tools"),
+        )
     
     async def achat(
         self,
@@ -120,20 +120,24 @@ class LLMClient:
     ) -> LLMResponse:
         """Normal mode call"""
         logger.debug(f"Calling Model: {model},Message count: {len(messages)}.")
-        
+
         params = self._completion_kwargs(
             model=model,
             messages=messages,
             **kwargs,
         )
-        response = await acompletion(**params)
+        try:
+            response = await acompletion(**params)
+        except Exception as e:
+            logger.error(f"[LLMClient] Async API call failed: {str(e)}")
+            raise LLMClientError(f"API Call failed: {str(e)}") from e
 
         return self._build_response(
             response,
             model,
             prompt_messages=params["messages"],
             tools=params.get("tools"),
-        )    
+        )
 
     def _build_response(
         self,

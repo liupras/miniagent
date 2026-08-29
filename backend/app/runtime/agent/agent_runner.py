@@ -112,6 +112,7 @@ class AgentRunner:
         self._conversation_service = chat_service
         self._llm_config = llm_config
         self._agent_max_output_tokens = agent_max_output_tokens
+        self.tool_names = frozenset(getattr(agent, "tools_map", {}))
 
         try:
             calculate_input_budget(

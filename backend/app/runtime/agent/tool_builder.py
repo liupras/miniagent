@@ -62,6 +62,11 @@ from app.infra.db.database import Agent as AgentORM
 from app.infra.db.database import Tool as ToolORM
 from app.runtime.smart_router_factory import SmartRouterFactory
 
+
+class ToolBuildError(RuntimeError):
+    """A configured agent tool could not be built."""
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
@@ -383,7 +388,7 @@ async def build_tool(
     tool_orm: ToolORM,
     config_override: Optional[Dict[str, Any]],
     router_factory:SmartRouterFactory,         # service_container.SmartRouterFactory
-) -> Optional[BaseTool]:
+) -> BaseTool:
     """
     Convert a single Tool ORM instance to a LangChain BaseTool.
 
@@ -393,61 +398,52 @@ async def build_tool(
         router_factory  SmartRouterFactory from ServiceContainer.
 
     Returns:
-        A LangChain BaseTool, or None if the tool is inactive / unsupported.
+        A ready LangChain tool. Configured tools fail fast when unavailable.
     """
     if not tool_orm.is_active:
-        logger.debug(f"[ToolBuilder] Skipping inactive tool '{tool_orm.name}'")
-        return None
+        raise ToolBuildError(f"Tool '{tool_orm.name}' is inactive")
 
     # Merge base config with per-agent override
     base_config: Dict[str, Any] = tool_orm.config or {}
     merged_config: Dict[str, Any] = {**base_config, **(config_override or {})}
 
-    try:
-        tool_type: str = tool_orm.tool_type
+    tool_type: str = tool_orm.tool_type
 
+    try:
         if tool_type == "function":
             return _build_function_tool(
                 container=container,
                 agent_orm=agent_orm,
-                tool_orm=tool_orm, 
-                config=merged_config
+                tool_orm=tool_orm,
+                config=merged_config,
             )
-        
-        elif tool_type == "sql_agent":
+        if tool_type == "sql_agent":
             return _build_sql_agent_tool(
                 container=container,
                 agent_orm=agent_orm,
-                tool_orm=tool_orm, 
-                config=merged_config
+                tool_orm=tool_orm,
+                config=merged_config,
             )
-        
-        elif tool_type == "api":
+        if tool_type == "api":
             return _build_api_tool(tool_orm, merged_config)
-
-        elif tool_type == "smart_router":
-            router_config_id: Optional[str] = base_config.get("router_config_id","default")
+        if tool_type == "smart_router":
+            router_config_id: Optional[str] = base_config.get(
+                "router_config_id",
+                "default",
+            )
             if not router_config_id:
-                raise ValueError(
-                    f"Tool '{tool_orm.name}' (smart_router) "
-                    "is missing router_config_id"
+                raise ToolBuildError(
+                    f"Tool '{tool_orm.name}' is missing router_config_id"
                 )
             smart_router = await router_factory.get_router(router_config_id)
             return _build_smart_router_tool(tool_orm, merged_config, smart_router)
-
-        else:
-            logger.warning(
-                f"[ToolBuilder] Unknown tool_type='{tool_type}' "
-                f"for tool '{tool_orm.name}' — skipping."
-            )
-            return None
-
-    except Exception as exc:
-        logger.error(
-            f"[ToolBuilder] Failed to build tool '{tool_orm.name}': {exc}",
-            exc_info=True,
+        raise ToolBuildError(
+            f"Tool '{tool_orm.name}' has unsupported type '{tool_type}'"
         )
-        return None
+    except ToolBuildError:
+        raise
+    except Exception as exc:
+        raise ToolBuildError(f"Failed to build tool '{tool_orm.name}'") from exc
 
 
 async def build_tools_for_agent(
@@ -467,18 +463,16 @@ async def build_tools_for_agent(
         router_factory          SmartRouterFactory from ServiceContainer.
 
     Returns:
-        List of ready-to-use LangChain tools (inactive/failed ones omitted).
+        List of ready-to-use LangChain tools.
     """
     tools: List[BaseTool] = []
 
     for relation in agent_tool_relations:
         tool_orm = tool_orm_map.get(relation.tool_name)
         if tool_orm is None:
-            logger.warning(
-                f"[ToolBuilder] Tool '{relation.tool_name}' not found "
-                "in tool_orm_map — skipping."
+            raise ToolBuildError(
+                f"Configured tool '{relation.tool_name}' was not found"
             )
-            continue
 
         lc_tool = await build_tool(
             container=container,
@@ -487,8 +481,7 @@ async def build_tools_for_agent(
             config_override=relation.config_override,
             router_factory=router_factory,
         )
-        if lc_tool is not None:
-            tools.append(lc_tool)
+        tools.append(lc_tool)
 
     logger.info(f"[ToolBuilder] Built {len(tools)} tool(s) for agent.")
     return tools

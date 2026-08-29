@@ -16,7 +16,7 @@ from app.runtime.agent.tool_builder import build_tools_for_agent
 from app.runtime.agent.agent_runner import AgentRunner, build_agent_runner
 
 from app.core.i18n.i18n import t
-from app.schemas.common import NotFoundError
+from app.schemas.common import NotFoundError,InactiveError
 
 if TYPE_CHECKING:
     from app.core.service_container import ServiceContainer
@@ -24,6 +24,11 @@ if TYPE_CHECKING:
 class AgentNotFoundError(NotFoundError):
     def __init__(self, agent_name: Any):
         super().__init__("Agent", agent_name)
+
+class AgentInactiveError(InactiveError):
+    """The requested agent exists but cannot be executed."""
+    def __init__(self, agent_name: Any):
+            super().__init__("Agent", agent_name)
 
 class AgentFactory:
     """
@@ -97,7 +102,7 @@ class AgentFactory:
         if not agent_orm:
             raise AgentNotFoundError(agent_id)
         if not agent_orm.is_active:
-            raise ValueError(t("agent.inactive", agent=agent_orm.name, id=agent_id))
+            raise AgentInactiveError(agent_orm.name)
         logger.debug(f"[AgentFactory] Building runner for agent '{agent_orm.name}'.")
 
         # ── 2. Tool relations (ordered by priority) ────────────────────────

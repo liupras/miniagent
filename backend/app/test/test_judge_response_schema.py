@@ -8,7 +8,7 @@ from app.schemas.integrations.virtual_court import (
     judge_agent_output_json_schema,
 )
 from app.services.virtual_court import (
-    JudgeOutputValidationError,
+    JudgeInvalidResponseError,
     validate_judge_agent_output,
 )
 
@@ -74,7 +74,7 @@ def test_strict_output_rejects_extra_missing_and_coerced_fields(mutate):
     data = _valid_output_data()
     mutate(data)
 
-    with pytest.raises(JudgeOutputValidationError, match="strict response schema"):
+    with pytest.raises(JudgeInvalidResponseError, match="strict response schema"):
         validate_judge_agent_output(
             json.dumps(data, ensure_ascii=False),
             _request(),
@@ -84,7 +84,7 @@ def test_strict_output_rejects_extra_missing_and_coerced_fields(mutate):
 def test_strict_output_rejects_markdown_fences():
     raw = f"```json\n{json.dumps(_valid_output_data(), ensure_ascii=False)}\n```"
 
-    with pytest.raises(JudgeOutputValidationError, match="strict response schema"):
+    with pytest.raises(JudgeInvalidResponseError, match="strict response schema"):
         validate_judge_agent_output(raw, _request())
 
 
@@ -97,7 +97,7 @@ def test_strict_output_rejects_an_action_not_allowed_by_request():
     }
     data["action"] = {"type": "ADVANCE_STEP", "target_role": None}
 
-    with pytest.raises(JudgeOutputValidationError, match="is not allowed"):
+    with pytest.raises(JudgeInvalidResponseError, match="is not allowed"):
         validate_judge_agent_output(
             json.dumps(data, ensure_ascii=False),
             _request(),
@@ -109,7 +109,7 @@ def test_strict_output_rejects_a_target_not_allowed_by_request():
     data["speech"]["target_role"] = "PLAINTIFF"
     data["action"]["target_role"] = "PLAINTIFF"
 
-    with pytest.raises(JudgeOutputValidationError, match="target .* is not allowed"):
+    with pytest.raises(JudgeInvalidResponseError, match="target .* is not allowed"):
         validate_judge_agent_output(
             json.dumps(data, ensure_ascii=False),
             _request(),

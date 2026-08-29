@@ -16,6 +16,17 @@ from ..infra.db.database import LLM, Agent, User
 class AsyncAgentDatabase(AsyncBaseDatabase):
     """Read/write operations for the Agent table."""
 
+    async def get_agent_by_name(self, name: str) -> Optional[Agent]:
+        """Return an Agent by its exact name, eagerly loading its LLM."""
+        async with self.get_session() as session:
+            stmt = (
+                select(Agent)
+                .options(selectinload(Agent.llm))
+                .where(Agent.name == name)
+            )
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
+
     async def get_agent(self, agent_id: int) -> Optional[Agent]:
         """Return Agent by primary key, eagerly loading LLM relationship."""
         async with self.get_session() as session:

@@ -4,6 +4,8 @@
 > 冻结日期：2026-08-29  
 > 接口：`POST /api/v1/integrations/virtual-court/judge/decide`
 
+鉴权使用请求头 `X-Integration-Key`，密钥由 MiniAgent 环境变量 `VIRTUAL_COURT_API_KEY` 配置。密钥不得出现在 URL、请求体或日志中。
+
 ## 1. 设计原则
 
 协议只传递影响独任审判员智能体推理的内容，只返回 VirtualCourt 需要消费的决策结果。
@@ -287,14 +289,16 @@ MiniAgent 首先按严格 Schema 解析模型输出，并检查动作和目标�
 
 支持的错误代码：
 
-- `INVALID_REQUEST`
-- `AUTHENTICATION_FAILED`
-- `PERMISSION_DENIED`
-- `RATE_LIMITED`
-- `MODEL_RESPONSE_INVALID`
-- `SERVICE_UNAVAILABLE`
-- `UPSTREAM_TIMEOUT`
-- `INTERNAL_ERROR`
+| HTTP | 错误代码 | 是否可重试 | 含义 |
+| --- | --- | --- | --- |
+| `401` | `AUTHENTICATION_FAILED` | 否 | `X-Integration-Key` 缺失或错误 |
+| `422` | `INVALID_REQUEST` | 否 | 请求不符合 `JudgeDecisionRequest` |
+| `502` | `MODEL_RESPONSE_INVALID` | 是 | Agent 输出未通过严格 Schema 或权限校验 |
+| `503` | `SERVICE_UNAVAILABLE` | 是/否 | Agent、LLM 不可用；未配置集成密钥时不可重试 |
+| `504` | `UPSTREAM_TIMEOUT` | 是 | Judge 决策超过配置的等待时间 |
+| `500` | `INTERNAL_ERROR` | 否 | 未预期的服务端错误 |
+
+`PERMISSION_DENIED` 和 `RATE_LIMITED` 保留给后续扩展，当前 Judge API 不返回这两个代码。
 
 ## 9. HTTP 层职责
 
@@ -313,6 +317,30 @@ MiniAgent 只生成候选决定，不执行 VirtualCourt 状态变更，因此�
 `JudgeService` 固定调用 `virtual_court_solo_judge`，不接受调用方指定其他 Agent。每次调用都是无会话、无历史的独立推理：服务只把请求中的推理字段和 `JudgeAgentOutput` JSON Schema 交给 Agent，不传递 `state_version`，也不写入 MiniAgent 会话记录。
 
 Agent 最终文本必须经过严格 Schema、动作权限和目标权限校验。只有全部通过后，服务才从原请求回填 `state_version` 并返回 `JudgeDecisionResponse`。服务不执行候选动作，也不自动重试无效输出。
+
+### 9.2 APIFox 本地测试
+
+启动 MiniAgent 前在 `backend/.env` 中配置：
+
+```env
+VIRTUAL_COURT_API_KEY=自行生成的长随机密钥
+VIRTUAL_COURT_JUDGE_TIMEOUT_SECONDS=120
+```
+
+在 APIFox 请求 Header 中添加：
+
+```text
+X-Integration-Key: 与环境变量相同的密钥
+Content-Type: application/json
+```
+
+请求地址为：
+
+```text
+POST http://127.0.0.1:8088/api/v1/integrations/virtual-court/judge/decide
+```
+
+实际端口以 `API_PORT` 配置为准。请求体可以直接使用本协议第 4 节示例。调用前还必须保证 `bailian_qwen_plus` 已配置有效的阿里云 DashScope API Key。
 
 ## 10. 代码位置
 

@@ -4,8 +4,11 @@
 import asyncio
 from types import SimpleNamespace
 
+import pytest
+
 import app.runtime.llm.client as client_module
 from app.runtime.llm.client import LLMClient
+from app.runtime.llm.models import LLMClientError
 
 
 def test_completion_kwargs_strip_private_message_metadata():
@@ -100,6 +103,38 @@ def test_chat_and_achat_share_sanitized_payload_and_output_limit(monkeypatch):
     assert len(calls) == 2
     assert all(call["max_tokens"] == 96 for call in calls)
     assert all(call["messages"] == [{"role": "user", "content": "hello"}] for call in calls)
+
+
+def test_achat_wraps_provider_errors(monkeypatch):
+    async def fake_acompletion(**kwargs):
+        raise ConnectionError("provider unavailable")
+
+    monkeypatch.setattr(client_module, "acompletion", fake_acompletion)
+    client = LLMClient(base_url="https://provider.example/v1")
+
+    with pytest.raises(LLMClientError, match="provider unavailable"):
+        asyncio.run(
+            client.achat(
+                "test-model",
+                [{"role": "user", "content": "hello"}],
+            )
+        )
+
+
+def test_achat_does_not_wrap_internal_response_parsing_errors(monkeypatch):
+    async def fake_acompletion(**kwargs):
+        return SimpleNamespace(choices=[])
+
+    monkeypatch.setattr(client_module, "acompletion", fake_acompletion)
+    client = LLMClient(base_url="https://provider.example/v1")
+
+    with pytest.raises(IndexError):
+        asyncio.run(
+            client.achat(
+                "test-model",
+                [{"role": "user", "content": "hello"}],
+            )
+        )
 
 
 def test_stream_and_astream_share_sanitized_payload_and_output_limit(monkeypatch):

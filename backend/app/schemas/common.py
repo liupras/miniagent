@@ -95,3 +95,9 @@ class InvalidValueError(BaseDomainError):
 
     def __init__(self, entity_name: str, entity_id: Any):
         super().__init__(entity_name, entity_id, "has an invalid value")
+
+class InactiveError(BaseDomainError):
+    error_key = "inactive"
+
+    def __init__(self, entity_name: str, entity_id: Any):
+        super().__init__(entity_name, entity_id, "is inactive and cannot be used")

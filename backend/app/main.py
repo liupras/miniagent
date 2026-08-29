@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 # @author  : Liu Lijun
-# @date    : 2026-02-10
+# @date    : 2026-08-29
 # @description: MiniAgent FastAPI Main Entr,Provides a RESTful API interface for managing intelligent agents, knowledge bases, and conversations.
 
 from contextlib import asynccontextmanager
@@ -30,6 +30,12 @@ from app.core.audit_context import (
     reset_audit_context,
 )
 from app.infra.db.audit import record_request_outcome
+from app.api.integrations.errors import (
+    INTEGRATION_PATH_PREFIX,
+    integration_error_response,
+    register_integration_exception_handlers,
+)
+from app.schemas.integrations.virtual_court import IntegrationErrorCode
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator:
@@ -83,6 +89,7 @@ app = FastAPI(
     lifespan=lifespan,
     debug=settings.debug
 )
+register_integration_exception_handlers(app)
 
 # ==================== Middleware configuration ====================
 
@@ -168,7 +175,7 @@ async def log_requests(request: Request, call_next):
                 f"📤 {request.method} {request.url.path} "
                 f"- ERROR ({process_time:.3f}s)"
             )
-            response = handle_exception(exc)
+            response = handle_exception(exc, request=request)
 
         await record_unhandled_auth_attempt(request, response)
 
@@ -221,8 +228,21 @@ def create_api_response(
         content=api_resp.model_dump(exclude_none=True)
     )
 
-def handle_exception(exc: Exception) -> JSONResponse:
+def handle_exception(
+    exc: Exception,
+    *,
+    request: Request | None = None,
+) -> JSONResponse:
     """Global exception handling"""
+
+    if request and request.url.path.startswith(INTEGRATION_PATH_PREFIX):
+        logger.exception(f"Unhandled integration exception: {exc}")
+        return integration_error_response(
+            status_code=500,
+            code=IntegrationErrorCode.INTERNAL_ERROR,
+            message="Integration service failed unexpectedly.",
+            retryable=False,
+        )
 
     if isinstance(exc, NotFoundError):
         logger.warning(f"⚠️  NotFoundError: {exc}")
@@ -318,6 +338,13 @@ app.include_router(sql_agent_router,prefix="/api/v1/sql-agent", tags=["SQL Agent
 
 from app.api.user.web_search import router as web_search_router
 app.include_router(web_search_router,prefix="/api/v1/skill", tags=["Skill - Web Search"])
+
+from app.api.integrations.virtual_court.judge import router as virtual_court_judge_router
+app.include_router(
+    virtual_court_judge_router,
+    prefix="/api/v1/integrations/virtual-court",
+    tags=["Integration - VirtualCourt"],
+)
 
 from app.api.auth.login import router as auth_router
 app.include_router(auth_router,prefix="/api/v1",tags=["Security"])

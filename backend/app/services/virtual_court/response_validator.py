@@ -15,9 +15,7 @@ from app.schemas.integrations.virtual_court import (
     JudgeDecisionResponse,
 )
 
-
-class JudgeOutputValidationError(ValueError):
-    """The model output cannot be exposed as a valid judge decision."""
+from .exceptions import JudgeInvalidResponseError
 
 
 def validate_judge_agent_output(
@@ -33,12 +31,12 @@ def validate_judge_agent_output(
     """
 
     if not isinstance(raw_output, str) or not raw_output.strip():
-        raise JudgeOutputValidationError("judge output must be a non-empty JSON string")
+        raise JudgeInvalidResponseError("judge output must be a non-empty JSON string")
 
     try:
         output = JudgeAgentOutput.model_validate_json(raw_output)
     except (ValidationError, ValueError) as exc:
-        raise JudgeOutputValidationError(
+        raise JudgeInvalidResponseError(
             "judge output does not match the strict response schema"
         ) from exc
 
@@ -47,7 +45,7 @@ def validate_judge_agent_output(
         action.type != ActionType.NO_ACTION
         and action.type not in request.allowed_actions
     ):
-        raise JudgeOutputValidationError(
+        raise JudgeInvalidResponseError(
             f"action {action.type} is not allowed for the current request"
         )
 
@@ -55,7 +53,7 @@ def validate_judge_agent_output(
         action.target_role is not None
         and action.target_role not in request.allowed_targets
     ):
-        raise JudgeOutputValidationError(
+        raise JudgeInvalidResponseError(
             f"target {action.target_role} is not allowed for the current request"
         )
 
@@ -63,4 +61,3 @@ def validate_judge_agent_output(
         state_version=request.state_version,
         **output.model_dump(),
     )
-

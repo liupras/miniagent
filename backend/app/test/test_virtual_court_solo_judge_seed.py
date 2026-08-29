@@ -18,7 +18,7 @@ def test_virtual_court_solo_judge_seed_is_unique_and_constrained():
 
     assert len(matches) == 1
     agent = matches[0]
-    assert agent["_llm_name"] == "ollama_qwen_8b"
+    assert agent["_llm_name"] == "bailian_qwen_plus"
     assert agent["max_output_tokens"] == 2048
     assert agent["is_active"] is True
 
@@ -27,6 +27,8 @@ def test_virtual_court_solo_judge_seed_is_unique_and_constrained():
         "调用方是当前阶段",
         "allowed_actions",
         "intellectual_property_law_search",
+        "trigger=LEGAL_QUESTION",
+        "其他 trigger 默认不检索",
         "不得认定事实真伪",
         "不得决定证据采信",
         "不得主持调解",
