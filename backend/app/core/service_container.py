@@ -61,6 +61,7 @@ from app.services.admin.prompt import PromptService
 from app.services.admin.audit_log import AuditLogService
 from app.services.admin.login_log import LoginLogAdminService
 from app.services.auth.login_log import LoginLogService
+from app.services.virtual_court import JudgeService
 
 from app.runtime.conversation.service_conversation import ConversationService
 
@@ -145,7 +146,8 @@ class ServiceContainer:
         self.domain_registry = DomainRegistry()
 
         self.conversation_service = ConversationService(chat_db=self.chat_db)
-        self.agent_factory = AgentFactory(self)      
+        self.agent_factory = AgentFactory(self)
+        self.judge_service = JudgeService(self.agent_factory)
 
         # ── Service singletons ──────────────────────────────────────────
         self.document_service = KBDocumentService(self)

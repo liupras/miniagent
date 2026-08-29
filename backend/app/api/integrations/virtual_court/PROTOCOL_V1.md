@@ -308,12 +308,19 @@ MiniAgent 首先按严格 Schema 解析模型输出，并检查动作和目标�
 
 MiniAgent 只生成候选决定，不执行 VirtualCourt 状态变更，因此不在 Judge 协议中实现业务幂等存储。
 
+### 9.1 JudgeService 调用约束
+
+`JudgeService` 固定调用 `virtual_court_solo_judge`，不接受调用方指定其他 Agent。每次调用都是无会话、无历史的独立推理：服务只把请求中的推理字段和 `JudgeAgentOutput` JSON Schema 交给 Agent，不传递 `state_version`，也不写入 MiniAgent 会话记录。
+
+Agent 最终文本必须经过严格 Schema、动作权限和目标权限校验。只有全部通过后，服务才从原请求回填 `state_version` 并返回 `JudgeDecisionResponse`。服务不执行候选动作，也不自动重试无效输出。
+
 ## 10. 代码位置
 
 ```text
 backend/app/api/integrations/virtual_court/PROTOCOL_V1.md
 backend/app/schemas/integrations/virtual_court/common.py
 backend/app/schemas/integrations/virtual_court/judge.py
+backend/app/services/virtual_court/judge_service.py
 backend/app/services/virtual_court/response_validator.py
 ```
 
