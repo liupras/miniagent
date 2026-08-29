@@ -4,9 +4,6 @@
 # @date    : 2026-08-29
 # @description: Stable application exceptions for VirtualCourt judge decisions.
 
-from collections.abc import Mapping
-from typing import Any
-
 from app.schemas.exceptions import BaseDomainError
 
 
@@ -17,12 +14,11 @@ class JudgeServiceError(BaseDomainError):
 
     def __init__(
         self,
-        message: str,
         *,
-        params: Mapping[str, Any] | None = None,
+        params: dict | None = None,
         cause: BaseException | None = None,
     ) -> None:
-        super().__init__(message=message, params=params, cause=cause)
+        super().__init__(params=params, cause=cause)
 
 
 class JudgeConfigurationError(JudgeServiceError):

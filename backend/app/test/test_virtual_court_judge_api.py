@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from app.schemas import exceptions as domain_exceptions
+from app.core.i18n import error_translation
 from app.api.integrations.errors import register_integration_exception_handlers
 from app.api.integrations.virtual_court.judge import router
 from app.core.config import settings
@@ -142,7 +142,7 @@ def test_judge_api_maps_request_and_model_validation_errors(monkeypatch):
     assert response.json()["error"]["code"] == "INVALID_REQUEST"
 
     response = _client(
-        _FakeJudgeService(error=JudgeInvalidResponseError("bad output"))
+        _FakeJudgeService(error=JudgeInvalidResponseError())
     ).post(
         ENDPOINT,
         headers=_auth_headers(),
@@ -155,19 +155,24 @@ def test_judge_api_maps_request_and_model_validation_errors(monkeypatch):
     ("service_error", "status_code", "error_code", "retryable"),
     [
         (
-            JudgeConfigurationError("bad configuration"),
+            JudgeConfigurationError(),
             503,
             "SERVICE_UNAVAILABLE",
             False,
         ),
         (
-            JudgeUnavailableError("provider unavailable"),
+            JudgeUnavailableError(),
             503,
             "SERVICE_UNAVAILABLE",
             True,
         ),
-        (JudgeTimeoutError("timed out"), 504, "UPSTREAM_TIMEOUT", True),
-        (JudgeServiceError("unexpected"), 500, "INTERNAL_ERROR", False),
+        (
+            JudgeTimeoutError(params={"timeout": 120}),
+            504,
+            "UPSTREAM_TIMEOUT",
+            True,
+        ),
+        (JudgeServiceError(), 500, "INTERNAL_ERROR", False),
     ],
 )
 def test_judge_api_maps_service_errors(
@@ -193,7 +198,7 @@ def test_judge_api_maps_service_errors(
 def test_judge_api_localizes_error_without_exposing_diagnostics(monkeypatch):
     monkeypatch.setattr(settings, "virtual_court_api_key", SecretStr(API_KEY))
     monkeypatch.setattr(
-        domain_exceptions,
+        error_translation,
         "t",
         lambda key, **params: (
             "独任审判员服务暂时不可用"
@@ -202,7 +207,7 @@ def test_judge_api_localizes_error_without_exposing_diagnostics(monkeypatch):
         ),
     )
     error = JudgeUnavailableError(
-        "private provider endpoint and credential detail"
+        cause=RuntimeError("private provider endpoint and credential detail")
     )
 
     response = _client(_FakeJudgeService(error=error)).post(

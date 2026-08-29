@@ -13,6 +13,7 @@ from app.core.logger_config import get_logger
 logger = get_logger(__name__)
 from app.schemas.admin.chunk import DocumentChunksOut, ParentChunkRead
 from app.schemas.exceptions import BaseDomainError, EmptyDataError, NotFoundError
+from app.core.i18n.error_translation import translate_domain_error
 from app.utils.hash import calculate_file_sha256
 
 from .smart_document_loader import SmartDocumentLoader
@@ -297,7 +298,9 @@ class KBDocumentService:
             if isinstance(exc, BaseDomainError)
             else error_type(doc_id, cause=exc)
         )
-        public_message = error.to_detail()
+        # This progress event is a final presentation boundary for background
+        # document operations; the exception itself remains language-neutral.
+        public_message = translate_domain_error(error)
 
         if persist_failed_status:
             await self.doc_db.mark_status(

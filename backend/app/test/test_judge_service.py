@@ -173,8 +173,12 @@ def test_decide_translates_llm_failure():
 def test_decide_rejects_runner_without_required_legal_tool():
     runner = _FakeRunner(_valid_output(), tool_names=frozenset({"other_tool"}))
 
-    with pytest.raises(JudgeConfigurationError, match="required legal-search tool"):
+    with pytest.raises(JudgeConfigurationError) as caught:
         asyncio.run(JudgeService(_FakeAgentFactory(runner)).decide(_request()))
+    assert caught.value.params == {
+        "reason": "missing_required_tool",
+        "tool_name": "intellectual_property_law_search",
+    }
 
 
 def test_decide_enforces_its_own_timeout():
@@ -185,3 +189,4 @@ def test_decide_enforces_its_own_timeout():
         asyncio.run(service.decide(_request()))
 
     assert isinstance(caught.value.cause, TimeoutError)
+    assert caught.value.params == {"timeout": 0.01}

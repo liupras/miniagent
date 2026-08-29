@@ -9,6 +9,7 @@ from langchain_core.tools import BaseTool
 from app.runtime.agent.exceptions import ToolExecutionError, ToolNotRegisteredError
 from app.runtime.agent.react_agent import ToolReActAgent
 from app.schemas.exceptions import ToolInactiveError
+from app.core.i18n.error_translation import translate_domain_error
 
 
 class _FailingTool(BaseTool):
@@ -78,7 +79,7 @@ def test_async_tool_wraps_unexpected_error_without_exposing_detail():
 
     assert caught.value.cause is error
     assert caught.value.__cause__ is error
-    assert "private provider detail" not in caught.value.to_detail()
+    assert "private provider detail" not in translate_domain_error(caught.value)
 
 
 def test_sync_tool_wraps_unexpected_error_without_exposing_detail():
@@ -90,7 +91,7 @@ def test_sync_tool_wraps_unexpected_error_without_exposing_detail():
 
     assert caught.value.cause is error
     assert caught.value.__cause__ is error
-    assert "private provider detail" not in caught.value.to_detail()
+    assert "private provider detail" not in translate_domain_error(caught.value)
 
 
 def test_missing_tool_raises_instead_of_becoming_an_observation():

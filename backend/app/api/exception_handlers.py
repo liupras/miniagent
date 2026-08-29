@@ -17,6 +17,7 @@ from app.api.integrations.errors import (
     integration_error_response,
 )
 from app.core.i18n.i18n import t
+from app.core.i18n.error_translation import translate_domain_error
 from app.core.logger_config import get_logger
 from app.schemas.common import ApiResponse
 from app.schemas.exceptions import (
@@ -94,7 +95,7 @@ async def domain_error_handler(
     return create_api_response(
         status_code=status_code,
         code=status_code,
-        message=exc.to_detail(),
+        message=translate_domain_error(exc),
     )
 
 

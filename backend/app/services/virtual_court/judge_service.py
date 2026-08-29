@@ -65,23 +65,25 @@ class JudgeService:
                 runner = await self._agent_factory.get_runner_by_name(self.AGENT_NAME)
                 if self.REQUIRED_TOOL_NAME not in runner.tool_names:
                     raise JudgeConfigurationError(
-                        "judge agent is missing its required legal-search tool"
+                        params={
+                            "reason": "missing_required_tool",
+                            "tool_name": self.REQUIRED_TOOL_NAME,
+                        }
                     )
                 raw_output = await runner.invoke(query=self._build_agent_query(request))
                 response = validate_judge_agent_output(raw_output, request)
         except TimeoutError as exc:
             raise JudgeTimeoutError(
-                "judge decision timed out",
+                params={"timeout": self._timeout_seconds},
                 cause=exc,
             ) from exc
         except (AgentNotFoundError, AgentInactiveError, ToolBuildError) as exc:
             raise JudgeConfigurationError(
-                "judge agent is not available",
+                params={"reason": "agent_unavailable"},
                 cause=exc,
             ) from exc
         except LLMClientError as exc:
             raise JudgeUnavailableError(
-                "judge model is unavailable",
                 cause=exc,
             ) from exc
 

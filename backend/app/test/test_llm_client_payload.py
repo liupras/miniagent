@@ -9,6 +9,7 @@ import pytest
 import app.runtime.llm.client as client_module
 from app.runtime.llm.client import LLMClient
 from app.runtime.llm.models import LLMClientError
+from app.core.i18n.error_translation import translate_domain_error
 
 
 def test_completion_kwargs_strip_private_message_metadata():
@@ -121,7 +122,7 @@ def test_achat_wraps_provider_errors_without_exposing_provider_detail(monkeypatc
         )
 
     assert isinstance(caught.value.cause, ConnectionError)
-    assert "provider unavailable" not in caught.value.to_detail()
+    assert "provider unavailable" not in translate_domain_error(caught.value)
 
 
 def test_achat_wraps_response_parsing_errors_at_the_llm_boundary(monkeypatch):

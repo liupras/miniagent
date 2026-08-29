@@ -53,7 +53,7 @@ judge:
   failed: 独任审判员服务执行失败
   configuration_error: 独任审判员服务配置错误
   unavailable: 独任审判员服务暂时不可用
-  timeout: 独任审判员决策超时
+  timeout: "独任审判员决策超时（{timeout} 秒）"
   invalid_response: 独任审判员智能体返回了无效响应
 
 domain_plugin:

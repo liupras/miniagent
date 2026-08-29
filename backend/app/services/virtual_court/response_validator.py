@@ -31,13 +31,15 @@ def validate_judge_agent_output(
     """
 
     if not isinstance(raw_output, str) or not raw_output.strip():
-        raise JudgeInvalidResponseError("judge output must be a non-empty JSON string")
+        raise JudgeInvalidResponseError(
+            params={"reason": "empty_output"},
+        )
 
     try:
         output = JudgeAgentOutput.model_validate_json(raw_output)
     except (ValidationError, ValueError) as exc:
         raise JudgeInvalidResponseError(
-            "judge output does not match the strict response schema",
+            params={"reason": "schema_validation_failed"},
             cause=exc,
         ) from exc
 
@@ -47,7 +49,10 @@ def validate_judge_agent_output(
         and action.type not in request.allowed_actions
     ):
         raise JudgeInvalidResponseError(
-            f"action {action.type} is not allowed for the current request"
+            params={
+                "reason": "action_not_allowed",
+                "action": action.type.value,
+            }
         )
 
     if (
@@ -55,7 +60,10 @@ def validate_judge_agent_output(
         and action.target_role not in request.allowed_targets
     ):
         raise JudgeInvalidResponseError(
-            f"target {action.target_role} is not allowed for the current request"
+            params={
+                "reason": "target_not_allowed",
+                "target": action.target_role.value,
+            }
         )
 
     return JudgeDecisionResponse(

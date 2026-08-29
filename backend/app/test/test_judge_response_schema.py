@@ -74,18 +74,20 @@ def test_strict_output_rejects_extra_missing_and_coerced_fields(mutate):
     data = _valid_output_data()
     mutate(data)
 
-    with pytest.raises(JudgeInvalidResponseError, match="strict response schema"):
+    with pytest.raises(JudgeInvalidResponseError) as caught:
         validate_judge_agent_output(
             json.dumps(data, ensure_ascii=False),
             _request(),
         )
+    assert caught.value.params["reason"] == "schema_validation_failed"
 
 
 def test_strict_output_rejects_markdown_fences():
     raw = f"```json\n{json.dumps(_valid_output_data(), ensure_ascii=False)}\n```"
 
-    with pytest.raises(JudgeInvalidResponseError, match="strict response schema"):
+    with pytest.raises(JudgeInvalidResponseError) as caught:
         validate_judge_agent_output(raw, _request())
+    assert caught.value.params["reason"] == "schema_validation_failed"
 
 
 def test_strict_output_rejects_an_action_not_allowed_by_request():
@@ -97,11 +99,12 @@ def test_strict_output_rejects_an_action_not_allowed_by_request():
     }
     data["action"] = {"type": "ADVANCE_STEP", "target_role": None}
 
-    with pytest.raises(JudgeInvalidResponseError, match="is not allowed"):
+    with pytest.raises(JudgeInvalidResponseError) as caught:
         validate_judge_agent_output(
             json.dumps(data, ensure_ascii=False),
             _request(),
         )
+    assert caught.value.params["reason"] == "action_not_allowed"
 
 
 def test_strict_output_rejects_a_target_not_allowed_by_request():
@@ -109,11 +112,12 @@ def test_strict_output_rejects_a_target_not_allowed_by_request():
     data["speech"]["target_role"] = "PLAINTIFF"
     data["action"]["target_role"] = "PLAINTIFF"
 
-    with pytest.raises(JudgeInvalidResponseError, match="target .* is not allowed"):
+    with pytest.raises(JudgeInvalidResponseError) as caught:
         validate_judge_agent_output(
             json.dumps(data, ensure_ascii=False),
             _request(),
         )
+    assert caught.value.params["reason"] == "target_not_allowed"
 
 
 def test_output_schema_requires_every_top_level_field_and_forbids_extras():

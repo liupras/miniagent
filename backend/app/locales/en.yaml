@@ -53,7 +53,7 @@ judge:
   failed: Judge service failed
   configuration_error: Judge service is not configured correctly
   unavailable: Judge service is temporarily unavailable
-  timeout: Judge decision timed out
+  timeout: "Judge decision timed out after {timeout} seconds"
   invalid_response: Judge agent returned an invalid response
 
 domain_plugin:

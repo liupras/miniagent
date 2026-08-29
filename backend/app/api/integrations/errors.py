@@ -12,6 +12,7 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.core.i18n.error_translation import translate_domain_error
 from app.core.logger_config import get_logger
 from app.schemas.integrations.virtual_court import (
     IntegrationError,
@@ -75,7 +76,7 @@ async def integration_access_error_handler(
     return integration_error_response(
         status_code=status_code,
         code=code,
-        message=exc.to_detail(),
+        message=translate_domain_error(exc),
         retryable=False,
     )
 
@@ -109,7 +110,7 @@ async def judge_service_error_handler(
     return integration_error_response(
         status_code=status_code,
         code=code,
-        message=exc.to_detail(),
+        message=translate_domain_error(exc),
         retryable=retryable,
     )
 

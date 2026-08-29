@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.schemas.exceptions import BaseDomainError, NotFoundError
+from app.core.i18n.error_translation import translate_domain_error
 from app.services.kb.exceptions import (
     SmartRouterConfigurationError,
     SmartRouterQueryError,
@@ -65,7 +66,7 @@ def test_smart_router_service_wraps_unexpected_failure_once():
         _query(service)
 
     assert caught.value.cause is source_error
-    assert "private vector database detail" not in caught.value.to_detail()
+    assert "private vector database detail" not in translate_domain_error(caught.value)
 
 
 def test_embedding_selection_raises_configuration_domain_error():

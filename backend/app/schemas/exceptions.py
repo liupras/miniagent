@@ -7,15 +7,15 @@
 from collections.abc import Mapping
 from typing import Any
 
-from app.core.i18n.i18n import t
-
 class BaseDomainError(Exception):
     """Base class for stable, localizable application errors.
 
     ``error_key`` may be either an entity-relative key (for example
     ``not_found``) or a complete i18n key (for example ``judge.timeout``).
     The optional ``cause`` is retained for diagnostics only and is never
-    included in the localized client-facing detail.
+    included in client-facing detail. This class never performs localization;
+    response boundaries translate ``error_key`` with ``params`` at the last
+    possible moment.
     """
 
     error_key = "base_error"
@@ -50,28 +50,14 @@ class BaseDomainError(Exception):
             return selected_key
         return f"{self.entity_name.lower()}.{selected_key}"
 
-    def _translation_params(self) -> dict[str, Any]:
+    def translation_params(self) -> dict[str, Any]:
+        """Return interpolation data without performing localization."""
         params = {
             "id": self.entity_id,
             "entity": self.entity_name or "",
         }
         params.update(self.params)
         return params
-    
-    def to_detail(self) -> str:
-        """Return localized, client-safe detail without exposing the cause."""
-        params = self._translation_params()
-        key = self.i18n_key()
-        detail = t(key, **params)
-        if detail != key:
-            return detail
-
-        fallback_key = f"entity.{self.error_key.rsplit('.', 1)[-1]}"
-        fallback_detail = t(fallback_key, **params)
-        if fallback_detail != fallback_key:
-            return fallback_detail
-
-        return t("common.failed")
 
 
 class InfrastructureError(BaseDomainError):

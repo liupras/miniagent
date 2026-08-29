@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from app.schemas import exceptions as domain_exceptions
+from app.core.i18n import error_translation
 from app.services.kb.exceptions import (
     DocumentDeletionError,
     DocumentIndexingError,
@@ -40,7 +40,7 @@ def _translations(key, **params):
 def test_unexpected_document_failure_separates_diagnostics_from_public_text(
     monkeypatch,
 ):
-    monkeypatch.setattr(domain_exceptions, "t", _translations)
+    monkeypatch.setattr(error_translation, "t", _translations)
     service = _service()
     events = []
 
@@ -67,7 +67,7 @@ def test_unexpected_document_failure_separates_diagnostics_from_public_text(
 
 
 def test_existing_document_domain_error_is_preserved(monkeypatch):
-    monkeypatch.setattr(domain_exceptions, "t", _translations)
+    monkeypatch.setattr(error_translation, "t", _translations)
     service = _service()
     events = []
 
@@ -91,7 +91,7 @@ def test_existing_document_domain_error_is_preserved(monkeypatch):
 
 
 def test_delete_failure_does_not_overwrite_document_status(monkeypatch):
-    monkeypatch.setattr(domain_exceptions, "t", _translations)
+    monkeypatch.setattr(error_translation, "t", _translations)
     service = _service()
 
     async def emit(*args, **kwargs):
