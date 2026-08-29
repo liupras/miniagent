@@ -12,6 +12,7 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.api.domain_error_mapping import domain_error_http_status
 from app.core.i18n.error_translation import translate_domain_error
 from app.core.logger_config import get_logger
 from app.schemas.integrations.virtual_court import (
@@ -64,17 +65,14 @@ async def integration_access_error_handler(
     exc: IntegrationAccessError,
 ) -> JSONResponse:
     if isinstance(exc, IntegrationNotConfiguredError):
-        status_code = 503
         code = IntegrationErrorCode.SERVICE_UNAVAILABLE
     elif isinstance(exc, InvalidIntegrationCredentialsError):
-        status_code = 401
         code = IntegrationErrorCode.AUTHENTICATION_FAILED
     else:
-        status_code = 500
         code = IntegrationErrorCode.INTERNAL_ERROR
 
     return integration_error_response(
-        status_code=status_code,
+        status_code=domain_error_http_status(exc),
         code=code,
         message=translate_domain_error(exc),
         retryable=False,
@@ -86,29 +84,24 @@ async def judge_service_error_handler(
     exc: JudgeServiceError,
 ) -> JSONResponse:
     if isinstance(exc, JudgeConfigurationError):
-        status_code = 503
         code = IntegrationErrorCode.SERVICE_UNAVAILABLE
         retryable = False
     elif isinstance(exc, JudgeUnavailableError):
-        status_code = 503
         code = IntegrationErrorCode.SERVICE_UNAVAILABLE
         retryable = True
     elif isinstance(exc, JudgeTimeoutError):
-        status_code = 504
         code = IntegrationErrorCode.UPSTREAM_TIMEOUT
         retryable = True
     elif isinstance(exc, JudgeInvalidResponseError):
-        status_code = 502
         code = IntegrationErrorCode.MODEL_RESPONSE_INVALID
         retryable = True
     else:
-        status_code = 500
         code = IntegrationErrorCode.INTERNAL_ERROR
         retryable = False
 
     logger.warning("[VirtualCourt] {}: {}", type(exc).__name__, exc)
     return integration_error_response(
-        status_code=status_code,
+        status_code=domain_error_http_status(exc),
         code=code,
         message=translate_domain_error(exc),
         retryable=retryable,

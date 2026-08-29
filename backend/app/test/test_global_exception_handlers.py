@@ -71,6 +71,6 @@ def test_unexpected_integration_error_uses_integration_envelope():
 def test_other_domain_errors_keep_the_integration_envelope():
     response = _client().get("/api/v1/integrations/domain-error")
 
-    assert response.status_code == 500
+    assert response.status_code == 400
     assert response.json()["error"]["code"] == "INTERNAL_ERROR"
     assert response.json()["error"]["retryable"] is False

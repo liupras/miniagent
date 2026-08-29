@@ -67,6 +67,9 @@ smart_router:
   query_failed: Smart Router query failed
   partial_failure: Some knowledge base queries failed
 
+retrieval:
+  failed: Knowledge base retrieval failed
+
 reranker:
   configuration_error: Reranker configuration error
   load_failed: Reranker loading failed

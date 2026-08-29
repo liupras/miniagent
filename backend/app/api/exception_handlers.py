@@ -12,6 +12,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.api.domain_error_mapping import domain_error_http_status
 from app.api.integrations.errors import (
     INTEGRATION_PATH_PREFIX,
     integration_error_response,
@@ -21,12 +22,7 @@ from app.core.i18n.error_translation import translate_domain_error
 from app.core.logger_config import get_logger
 from app.schemas.common import ApiResponse
 from app.schemas.exceptions import (
-    AlreadyExistsError,
     BaseDomainError,
-    InfrastructureError,
-    NotFoundError,
-    PermissionDeniedError,
-    UnsupportedMediaTypeError,
 )
 from app.schemas.integrations.virtual_court import IntegrationErrorCode
 
@@ -65,6 +61,8 @@ async def domain_error_handler(
     exc: BaseDomainError,
 ) -> JSONResponse:
     """Translate stable application errors into the standard API envelope."""
+    status_code = domain_error_http_status(exc)
+
     if request.url.path.startswith(INTEGRATION_PATH_PREFIX):
         logger.warning(
             "Unhandled integration domain error {}: {}",
@@ -72,24 +70,11 @@ async def domain_error_handler(
             exc,
         )
         return integration_error_response(
-            status_code=500,
+            status_code=status_code,
             code=IntegrationErrorCode.INTERNAL_ERROR,
-            message=t("integration.unexpected_error"),
+            message=translate_domain_error(exc),
             retryable=False,
         )
-
-    if isinstance(exc, NotFoundError):
-        status_code = 404
-    elif isinstance(exc, AlreadyExistsError):
-        status_code = 409
-    elif isinstance(exc, UnsupportedMediaTypeError):
-        status_code = 415
-    elif isinstance(exc, PermissionDeniedError):
-        status_code = 403
-    elif isinstance(exc, InfrastructureError):
-        status_code = 503
-    else:
-        status_code = 400
 
     logger.warning("{}: {}", type(exc).__name__, exc)
     return create_api_response(
