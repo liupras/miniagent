@@ -2,12 +2,17 @@ import pytest
 
 from app.infra.db.exceptions import DatabaseInitializationError
 from app.retrieval.embedding_inputs import EmbeddingInputTooLongError
+from app.retrieval.reranker.exceptions import (
+    RerankerConfigurationError,
+    RerankerLoadError,
+)
 from app.runtime.agent.tool_builder import ToolBuildError
 from app.runtime.agent.exceptions import ToolExecutionError, ToolNotRegisteredError
 from app.runtime.conversation.service_conversation import (
     MessageNotFoundError,
     SessionNotFoundError,
 )
+from app.runtime.conversation.title_generator import TitleGenerationError
 from app.runtime.llm.models import LLMClientError
 from app.schemas.exceptions import (
     BaseDomainError,
@@ -56,6 +61,11 @@ from app.services.workplace_agent import (
     ("error", "expected_key"),
     [
         (ToolBuildError("tool failed"), "tool.build_failed"),
+        (
+            RerankerConfigurationError("bad config"),
+            "reranker.configuration_error",
+        ),
+        (RerankerLoadError("load failed"), "reranker.load_failed"),
         (ToolExecutionError("sql_agent"), "tool.execution_failed"),
         (ToolNotRegisteredError("missing_tool"), "tool.not_found"),
         (LLMClientError("provider failed"), "llm.client_error"),
@@ -100,6 +110,7 @@ from app.services.workplace_agent import (
         (SessionTitleInvalidError(), "agent.title_not_empty"),
         (SessionNotFoundError(3), "session.not_found"),
         (MessageNotFoundError(4), "message.not_found"),
+        (TitleGenerationError(), "conversation.title_generation_failed"),
         (DatabaseInfoUnavailableError(), "operations.database_info_failed"),
         (IntegrationNotConfiguredError(), "integration.not_configured"),
         (

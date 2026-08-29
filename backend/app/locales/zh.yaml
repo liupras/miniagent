@@ -67,6 +67,10 @@ smart_router:
   query_failed: 智能路由查询失败
   partial_failure: 部分知识库查询失败
 
+reranker:
+  configuration_error: 重排序器配置错误
+  load_failed: 重排序器加载失败
+
 # ── 404：按实体 ──
 kb:
   not_found: 知识库不存在
@@ -226,6 +230,9 @@ session:
 
 message:
   not_found: 未发现该消息
+
+conversation:
+  title_generation_failed: 会话标题生成失败
 
 agent_runner:
   max_steps_error: "错误： Agent 达到了最大迭代步数，强制结束。"

@@ -67,6 +67,10 @@ smart_router:
   query_failed: Smart Router query failed
   partial_failure: Some knowledge base queries failed
 
+reranker:
+  configuration_error: Reranker configuration error
+  load_failed: Reranker loading failed
+
 # ── 404: By Entity ──
 kb:
   not_found: Knowledge base does not exist
@@ -226,6 +230,9 @@ session:
 
 message:
   not_found: The message was not found.
+
+conversation:
+  title_generation_failed: Conversation title generation failed
 
 agent_runner:
   max_steps_error: "Error: Agent reached maximum iteration steps and was forced to terminate."

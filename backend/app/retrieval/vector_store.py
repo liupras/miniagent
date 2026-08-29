@@ -28,7 +28,14 @@ from app.core.logger_config import get_logger
 logger = get_logger(__name__)
 import threading
 import chromadb
+import httpx
+from chromadb.errors import (
+    InvalidArgumentError as ChromaInvalidArgumentError,
+    NotFoundError as ChromaNotFoundError,
+)
 from chromadb.config import Settings
+from ollama import RequestError as OllamaRequestError
+from ollama import ResponseError as OllamaResponseError
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from tqdm import tqdm
@@ -161,7 +168,7 @@ class VectorStoreManager:
             try:
                 collection = self._chroma_client.get_collection(col_name)
                 exists = True
-            except Exception:
+            except ChromaNotFoundError:
                 exists = False
                 collection = None
 
@@ -223,10 +230,9 @@ class VectorStoreManager:
             try:
                 self._chroma_client.delete_collection(collection_name)
                 logger.info(f"[Chroma] Dropped collection: {collection_name}")
-            except Exception as e:
-                logger.warning(f"[Chroma] drop_collection({collection_name}) failed: {e}")
-            finally:
-                self._stores.pop(kb_id, None)
+            except ChromaNotFoundError:
+                logger.info(f"[Chroma] Collection already absent: {collection_name}")
+            self._stores.pop(kb_id, None)
 
     # =========================================================================
     # Write
@@ -351,7 +357,13 @@ class VectorStoreManager:
                         "Embedding provider returned a different number of "
                         "vectors than input texts"
                     )
-            except Exception:
+            except (
+                httpx.HTTPError,
+                OllamaRequestError,
+                OllamaResponseError,
+                OSError,
+                TimeoutError,
+            ):
                 if len(current) == 1:
                     raise
                 reduced_size = max(1, len(current) // 2)
@@ -505,7 +517,7 @@ class VectorStoreManager:
         """
         Return (Document, score) pairs sorted by relevance (highest first).
         Score is cosine similarity in [0, 1].
-        Returns [] if the collection is empty or search fails.
+        Returns [] if the collection is empty or no result meets the threshold.
 
         metadata_filter examples
         ------------------------
@@ -525,59 +537,54 @@ class VectorStoreManager:
                                    {"section": {"$eq": "intro"}}]}
 
         Supported operators: $eq $ne $gt $gte $lt $lte $in $nin
-        """            
+        """
+        store = self._get_store(kb_id)
+        where = self._build_where(metadata_filter)
+        logger.debug(f"[Chroma] similarity_search kb={kb_id} where={where}")
+
+        safe_query = self.embedding_input_guard.truncate_text(query)
+        query_vector = self.embedding.embed_query(safe_query)
+
+        query_kwargs: dict = {
+            "query_embeddings": [query_vector],
+            "n_results": top_k,
+            "include": ["metadatas", "distances", "embeddings"],
+            # Note: Do not include "documents" because we are storing an empty placeholder string.
+        }
+        if where is not None:
+            query_kwargs["where"] = where
+
         try:
-            store = self._get_store(kb_id)
-            where = self._build_where(metadata_filter)
-            logger.debug(f"[Chroma] similarity_search kb={kb_id} where={where}")
+            raw = store._collection.query(**query_kwargs)
+        except (ChromaInvalidArgumentError, ValueError) as where_exc:
+            if where is None:
+                raise
+            # Older Chroma versions reject some otherwise valid WHERE forms.
+            logger.warning(
+                f"[Chroma] where clause {where} caused error: {where_exc}. "
+                f"Retrying without filter."
+            )
+            query_kwargs.pop("where")
+            raw = store._collection.query(**query_kwargs)
 
-            safe_query = self.embedding_input_guard.truncate_text(query)
-            query_vector = self.embedding.embed_query(safe_query)
+        # raw structure: {"ids": [[...]], "metadatas": [[...]], "distances": [[...]]}
+        ids       = raw["ids"][0]
+        metadatas = raw["metadatas"][0]
+        distances = raw["distances"][0]   # cosine distance ∈ [0, 2]，The smaller, the more similar
 
-            query_kwargs: dict = {
-                "query_embeddings": [query_vector],
-                "n_results": top_k,
-                "include": ["metadatas", "distances", "embeddings"],
-                # Note: Do not include "documents" because we are storing an empty placeholder string.
-            }
-            if where is not None:
-                query_kwargs["where"] = where
+        results = []
+        for doc_id, meta, dist in zip(ids, metadatas, distances):
+            score = 1.0 - dist
+            if score < score_threshold:
+                continue
+            doc = Document(
+                page_content="",   # Text is filled back by TextHydrationStage
+                metadata=meta,
+            )
+            results.append((doc, score))
 
-            try:
-                raw = store._collection.query(**query_kwargs)
-            except Exception as where_exc:
-                if where is not None:
-                    # If the WHERE condition causes an exception, it will be downgraded to a full query without the WHERE clause.
-                    logger.warning(
-                        f"[Chroma] where clause {where} caused error: {where_exc}. "
-                        f"Retrying without filter."
-                    )
-                    query_kwargs.pop("where")
-                    raw = store._collection.query(**query_kwargs)
-                else:
-                    raise
-
-            # raw structure: {"ids": [[...]], "metadatas": [[...]], "distances": [[...]]}
-            ids       = raw["ids"][0]
-            metadatas = raw["metadatas"][0]
-            distances = raw["distances"][0]   # cosine distance ∈ [0, 2]，The smaller, the more similar
-
-            results = []
-            for doc_id, meta, dist in zip(ids, metadatas, distances):  
-                score = 1.0 - dist
-                if score < score_threshold:
-                    continue
-                doc = Document(
-                    page_content="",   # Text is filled back by TextHydrationStage
-                    metadata=meta,
-                )
-                results.append((doc, score))
-
-            results.sort(key=lambda x: x[1], reverse=True)
-            return results
-        except Exception as e:
-            logger.exception(f"Search failed: {e}")
-            return []
+        results.sort(key=lambda x: x[1], reverse=True)
+        return results
         
     def as_retriever(
         self,

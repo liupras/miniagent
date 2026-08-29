@@ -13,6 +13,11 @@ from app.infra.db.database import LLM
 from app.retrieval.reranker.bge import BGEReranker
 from app.retrieval.reranker.llm import LLMReranker
 from app.runtime.llm.client import LLMClient
+from app.runtime.llm.models import LLMClientError
+from app.retrieval.reranker.exceptions import (
+    RerankerConfigurationError,
+    RerankerLoadError,
+)
 
 class RerankerFactory:
     """Reranker class"""
@@ -35,11 +40,14 @@ class RerankerFactory:
         reranker_config :Optional[dict] = None,
         llm_config      :LLM = None,
     ):
-        if mode != RerankMode.SCORE and not reranker_config:
-            raise ValueError("[Reranker] config is empty")
+        if mode == RerankMode.SCORE:
+            return cls(mode=mode, top_k=top_k, reranker=None)
 
-        if mode == RerankMode.BGE:
-            try:
+        try:
+            if not reranker_config:
+                raise RerankerConfigurationError("Reranker config is empty")
+
+            if mode == RerankMode.BGE:
                 backend = reranker_config.get("backend", "local")
 
                 if backend == "local":
@@ -53,6 +61,10 @@ class RerankerFactory:
                     )
 
                 elif backend == "remote":
+                    if llm_config is None:
+                        raise RerankerConfigurationError(
+                            "Remote reranker requires an LLM configuration"
+                        )
                     client = LLMClient(
                         base_url = llm_config.base_url,
                         api_key=llm_config.api_key,
@@ -67,6 +79,10 @@ class RerankerFactory:
                     )
 
                 elif backend == "ollama":
+                    if llm_config is None:
+                        raise RerankerConfigurationError(
+                            "Ollama reranker requires an LLM configuration"
+                        )
                     client = LLMClient(
                         base_url = llm_config.base_url,
                         api_key=None,
@@ -75,14 +91,16 @@ class RerankerFactory:
                     )
                     reranker = BGEReranker.ollama(
                         client         = client,
-                        model          = llm_config.get("model", "bge-large-zh"),
+                        model          = llm_config.model_name,
                         query_prefix   = reranker_config.get("query_prefix", ""),
                         passage_prefix = reranker_config.get("passage_prefix", ""),
                         batch_size     = reranker_config.get("batch_size", 64),
                     )
 
                 else:
-                    raise ValueError(f"[Reranker] Unknown reranker backend: {backend!r}")
+                    raise RerankerConfigurationError(
+                        f"Unknown reranker backend: {backend!r}"
+                    )
 
                 logger.info(
                     f"[Reranker] auto-built  "
@@ -94,32 +112,44 @@ class RerankerFactory:
                     reranker = reranker
                 )
 
-            except Exception as exc:
-                # Build failures do not halt the pipeline; RerankStage will automatically downgrade to hybrid.
-                logger.warning(
-                    f"[Reranker] build failed: {exc}  "
-                    f"— RerankStage will degrade to hybrid"
+            if mode == RerankMode.LLM:
+                if llm_config is None:
+                    raise RerankerConfigurationError(
+                        "LLM reranker requires an LLM configuration"
+                    )
+                llm_client = LLMClient(
+                    base_url=llm_config.base_url,
+                    api_key=llm_config.api_key,
+                    temperature=llm_config.temperature,
+                    max_output_tokens=llm_config.max_output_tokens,
                 )
-        elif mode == RerankMode.LLM:
-            llm_client = LLMClient(
-                base_url=llm_config.base_url,
-                api_key=llm_config.api_key,
-                temperature=llm_config.temperature,
-                max_output_tokens=llm_config.max_output_tokens,
-            )
-            reranker = LLMReranker(client=llm_client,model=llm_config.model_name)
-
-            return cls(
+                reranker = LLMReranker(
+                    client=llm_client,
+                    model=llm_config.model_name,
+                )
+                return cls(
                     mode = mode,
                     top_k = top_k,
                     reranker = reranker
                 )
-        else:
+
+            raise RerankerConfigurationError(
+                f"Unsupported reranker mode: {mode!r}"
+            )
+        except (
+            RerankerConfigurationError,
+            RerankerLoadError,
+            LLMClientError,
+        ) as exc:
+            logger.error(
+                "[Reranker] build failed: {} — falling back to hybrid",
+                exc,
+            )
             return cls(
-                    mode = RerankMode.SCORE,
-                    top_k = top_k,
-                    reranker = None
-                )
+                mode=RerankMode.SCORE,
+                top_k=top_k,
+                reranker=None,
+            )
         
     def _resolve_mode(self) -> RerankMode:
         """Degrade gracefully if the required reranker is missing."""

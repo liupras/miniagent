@@ -9,6 +9,19 @@ from __future__ import annotations
 from .cleaner import TitleCleaner
 from .keyword_extractor import KeywordExtractor
 from .config import load_config
+from app.schemas.exceptions import BaseDomainError
+
+
+class TitleGenerationError(BaseDomainError):
+    """A known failure reported by a conversation title capability."""
+
+    error_key = "conversation.title_generation_failed"
+
+    def __init__(self, *, cause: BaseException | None = None) -> None:
+        super().__init__(
+            message="Conversation title generation failed",
+            cause=cause,
+        )
 
 class ConversationTitleGenerator:
     """

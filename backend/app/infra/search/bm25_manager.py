@@ -77,8 +77,8 @@ class BM25Manager:
                     word = line.strip()
                     if word and not word.startswith("#"):
                         stopwords.add(word)
-        except Exception as e:
-            logger.error(f"❌ Load stopwords failed: {e}")
+        except (OSError, UnicodeError) as exc:
+            logger.warning("Load stopwords failed; continuing without them: {}", exc)
         return stopwords
 
     def tokenize(self, text: str):

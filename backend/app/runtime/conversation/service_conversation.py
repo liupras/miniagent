@@ -20,6 +20,11 @@ from app.core.logger_config import get_logger
 logger = get_logger(__name__)
 from app.infra.db.database import ChatMessage, ChatSession
 from app.repositories.async_chat import AsyncChatDatabase
+from app.runtime.conversation.title_generator import (
+    ConversationTitleGenerator,
+    TitleGenerationError,
+    title_generator,
+)
 from app.runtime.llm.func import truncate_messages
 from app.utils.tokens import TokenCounter, sanitize_chat_messages
 
@@ -64,8 +69,36 @@ class ConversationService:
     def __init__(
         self,
         chat_db: AsyncChatDatabase,
+        conversation_title_generator: Optional[ConversationTitleGenerator] = None,
     ):
         self._chat_db = chat_db
+        self._title_generator = conversation_title_generator or title_generator
+
+    async def _title_for_message(
+        self,
+        session_id: Optional[int],
+        role: str,
+        content: str,
+    ) -> Optional[str]:
+        """Generate a title only when the user message belongs to an untitled session."""
+        if role != "user":
+            return None
+
+        if session_id is not None:
+            chat_session = await self._chat_db.get_session_by_id(session_id)
+            if chat_session is not None and chat_session.title:
+                return None
+
+        try:
+            return self._title_generator.generate(content)
+        except TitleGenerationError as exc:
+            # Invalid title input/configuration is a known, non-critical
+            # failure: persisting the conversation takes precedence.
+            logger.warning(
+                "Conversation title generation failed; using default title: {}",
+                exc,
+            )
+            return self._title_generator.config.default_title
 
     async def save_message(
         self,
@@ -75,13 +108,18 @@ class ConversationService:
         role: str,
         content: str,        
     ) -> int:
-        
+        session_title = await self._title_for_message(
+            session_id=session_id,
+            role=role,
+            content=content,
+        )
         res = await self._chat_db.save_message(
             user_id=user_id,
             agent_id=agent_id,
             session_id=session_id,
             role=role,
             content=content,
+            session_title=session_title,
         )
         return res
     

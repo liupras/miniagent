@@ -66,6 +66,7 @@ from app.core.logger_config import get_logger
 
 logger = get_logger(__name__)
 from app.retrieval.reranker.base import BaseReranker, Scorable
+from app.retrieval.reranker.exceptions import RerankerLoadError
 from app.runtime.llm.client import LLMClient
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -130,11 +131,11 @@ class LocalScoringBackend(ScoringBackend):
                 AutoModelForSequenceClassification,
                 AutoTokenizer,
             )
-        except ImportError as e:
-            raise ImportError(
-                "LocalScoringBackend requires 'transformers' and 'torch'.\n"
-                "Install with:  pip install transformers torch"
-            ) from e
+        except ImportError as exc:
+            raise RerankerLoadError(
+                "Local reranker dependencies are unavailable",
+                cause=exc,
+            ) from exc
 
         self._torch     = torch
         self.model_name = model_name
@@ -147,17 +148,23 @@ class LocalScoringBackend(ScoringBackend):
 
         logger.info(f"[LocalScoringBackend] Loading {model_name} on {device} …")
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            model_name,
-            cache_dir=cache_dir,
-        )
-        self.model = AutoModelForSequenceClassification.from_pretrained(
-            model_name,
-            cache_dir=cache_dir,
-        )
-        self.model.eval()
-        self.model.to(self.device)
-        logger.info("[LocalScoringBackend] Model ready.")
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                model_name,
+                cache_dir=cache_dir,
+            )
+            self.model = AutoModelForSequenceClassification.from_pretrained(
+                model_name,
+                cache_dir=cache_dir,
+            )
+            self.model.eval()
+            self.model.to(self.device)
+        except (OSError, ValueError, RuntimeError) as exc:
+            raise RerankerLoadError(
+                f"Failed to load local reranker model '{model_name}'",
+                cause=exc,
+            ) from exc
+        logger.error("[LocalScoringBackend] Model ready.")
 
     async def score(self, query: str, passages: List[str]) -> List[float]:
         return await asyncio.to_thread(self._score_sync, query, passages)

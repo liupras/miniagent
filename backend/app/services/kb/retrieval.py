@@ -1187,35 +1187,33 @@ class RetrievalPipeline:
         reranker_config = extra.get("reranker")
 
         # Rerank stage
-        if cfg.enable_reranker:            
-            try:
-                mode = RerankMode.SCORE
-                if cfg.ranking_mode == KBRankingMode.LLM:
-                    mode = RerankMode.LLM
-                elif cfg.ranking_mode == KBRankingMode.RERANK:
-                    mode = RerankMode.BGE
-                reranker = RerankerFactory.create(
-                    mode=mode,                    
-                    top_k=cfg.rerank_top_k,
-                    reranker_config=reranker_config,
-                    llm_config=llm_config
-                )
-                logger.info(
-                    f"[Pipeline] reranker auto-built  "
-                    f"backend={reranker_config.get('backend')}  "
-                    f"kb={cfg.kb_id}"
-                )
-                rerank_stage = RerankStage(
-                    mode     = cfg.ranking_mode,                    
-                    reranker = reranker,
-                )
-                stages.append(rerank_stage)
-            except Exception as exc:
-                # Build failures do not halt the pipeline; RerankStage will automatically downgrade to hybrid.
-                logger.warning(
-                    f"[Pipeline] reranker build failed: {exc}  "
-                    f"— RerankStage will degrade to hybrid"
-                )
+        if cfg.enable_reranker:
+            mode = RerankMode.SCORE
+            if cfg.ranking_mode == KBRankingMode.LLM:
+                mode = RerankMode.LLM
+            elif cfg.ranking_mode == KBRankingMode.RERANK:
+                mode = RerankMode.BGE
+            reranker = RerankerFactory.create(
+                mode=mode,
+                top_k=cfg.rerank_top_k,
+                reranker_config=reranker_config,
+                llm_config=llm_config,
+            )
+            backend = (
+                reranker_config.get("backend")
+                if isinstance(reranker_config, dict)
+                else None
+            )
+            logger.info(
+                f"[Pipeline] reranker auto-built  "
+                f"backend={backend}  "
+                f"kb={cfg.kb_id}"
+            )
+            rerank_stage = RerankStage(
+                mode=cfg.ranking_mode,
+                reranker=reranker,
+            )
+            stages.append(rerank_stage)
 
         stages.append(
             AdaptiveThresholdStage(

@@ -23,7 +23,7 @@ class _SizeLimitedEmbedding:
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         self.calls.append(list(texts))
         if len(texts) > self.maximum_batch_size:
-            raise RuntimeError("batch too large")
+            raise OSError("batch too large")
         return [[float(text)] for text in texts]
 
 
@@ -33,7 +33,7 @@ class _AlwaysFailingEmbedding:
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         self.call_sizes.append(len(texts))
-        raise RuntimeError("embedding unavailable")
+        raise OSError("embedding unavailable")
 
 
 class _CollectionSpy:
@@ -118,7 +118,7 @@ def test_embedding_batch_re_raises_when_one_input_still_fails():
     manager = object.__new__(VectorStoreManager)
     manager.embedding = _AlwaysFailingEmbedding()
 
-    with pytest.raises(RuntimeError, match="embedding unavailable"):
+    with pytest.raises(OSError, match="embedding unavailable"):
         manager._embed_documents_with_retry(
             [str(index) for index in range(4)],
             initial_batch_size=4,
