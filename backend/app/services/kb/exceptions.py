@@ -60,6 +60,37 @@ class RetrievalConfidenceMissingError(RetrievalError):
         )
 
 
+class DocumentOperationError(InfrastructureError):
+    """Base class for failures during document lifecycle operations."""
+
+    error_key = "document.operation_failed"
+
+    def __init__(
+        self,
+        doc_id: int,
+        *,
+        cause: BaseException | None = None,
+    ) -> None:
+        self.doc_id = doc_id
+        super().__init__(
+            f"Document operation failed for document '{doc_id}'",
+            params={"doc_id": doc_id},
+            cause=cause,
+        )
+
+
+class DocumentIndexingError(DocumentOperationError):
+    error_key = "document.indexing_failed"
+
+
+class DocumentUpdateError(DocumentOperationError):
+    error_key = "document.update_failed"
+
+
+class DocumentDeletionError(DocumentOperationError):
+    error_key = "document.deletion_failed"
+
+
 class DomainPluginError(InfrastructureError):
     """Base class for domain-plugin startup failures."""
 

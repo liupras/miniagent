@@ -12,11 +12,17 @@ from app.core.logger_config import get_logger
 
 logger = get_logger(__name__)
 from app.schemas.admin.chunk import DocumentChunksOut, ParentChunkRead
-from app.schemas.exceptions import EmptyDataError, NotFoundError
+from app.schemas.exceptions import BaseDomainError, EmptyDataError, NotFoundError
 from app.utils.hash import calculate_file_sha256
 
 from .smart_document_loader import SmartDocumentLoader
 from .small_to_big_base import ChunkConfig
+from .exceptions import (
+    DocumentDeletionError,
+    DocumentIndexingError,
+    DocumentOperationError,
+    DocumentUpdateError,
+)
 from app.retrieval.vector_store import VectorStoreManager
 from app.runtime.task.progress_tracker import DocumentStatus,emitter
 from app.infra.db.database import Document
@@ -158,10 +164,16 @@ class KBDocumentService:
             await self.doc_db.mark_status(doc.id, DocumentStatus.COMPLETED.value,error_message="")
             await E(t("progress.stage.done"), t("progress.message.success",id=doc.id), 100, done=True)
         except Exception as exc:
-            logger.exception(f"[KB] add_document failed doc_id={doc.id}: {exc}")
-            await self.doc_db.mark_status(doc.id, DocumentStatus.FAILED.value, error_message=str(exc))
-            await E(t("progress.stage.error"), f"❌ {exc}", 0, done=True, error=True)
-            raise
+            error = await self._record_document_failure(
+                doc_id=doc.id,
+                exc=exc,
+                error_type=DocumentIndexingError,
+                emit=E,
+                persist_failed_status=True,
+            )
+            if error is exc:
+                raise
+            raise error from exc
 
         return await self.doc_db.get_doc(doc.id)
 
@@ -216,10 +228,16 @@ class KBDocumentService:
             await self.doc_db.mark_status(doc_id, DocumentStatus.COMPLETED.value,error_message="")
             await E(t("progress.stage.done"), t("progress.message.updated",id=doc_id), 100, done=True)
         except Exception as exc:
-            logger.exception(f"[KB] update_document failed doc_id={doc_id}: {exc}")
-            await self.doc_db.mark_status(doc_id, DocumentStatus.FAILED.value, error_message=str(exc))
-            await E(t("progress.stage.error"), f"❌ {exc}", 0, done=True, error=True)
-            raise
+            error = await self._record_document_failure(
+                doc_id=doc_id,
+                exc=exc,
+                error_type=DocumentUpdateError,
+                emit=E,
+                persist_failed_status=True,
+            )
+            if error is exc:
+                raise
+            raise error from exc
 
         return await self.doc_db.get_doc(doc_id)
 
@@ -231,7 +249,7 @@ class KBDocumentService:
         doc = await self.doc_db.get_doc(doc_id)
         if not doc:
             await E(t("progress.stage.error"), t("progress.message.not_found",id=doc_id), 0, done=True, error=True)
-            raise KBNotFoundError(doc_id)
+            raise DocumentNotFoundError(doc_id)
 
         try:
             await self._cleanup_doc_data(doc_id, doc.kb_id, task_id)
@@ -243,13 +261,58 @@ class KBDocumentService:
             await E(t("progress.stage.done"), t("progress.message.deleted",id=doc_id), 100, done=True)
             return True
         except Exception as exc:
-            logger.exception(f"[KB] delete_document failed doc_id={doc_id}: {exc}")
-            await E(t("progress.stage.error"), f"❌ {exc}", 0, done=True, error=True)
-            raise
+            error = await self._record_document_failure(
+                doc_id=doc_id,
+                exc=exc,
+                error_type=DocumentDeletionError,
+                emit=E,
+                persist_failed_status=False,
+            )
+            if error is exc:
+                raise
+            raise error from exc
 
     # =========================================================================
     # Internal pipeline
     # =========================================================================
+
+    async def _record_document_failure(
+        self,
+        *,
+        doc_id: int,
+        exc: Exception,
+        error_type: type[DocumentOperationError],
+        emit,
+        persist_failed_status: bool,
+    ) -> BaseDomainError:
+        """Record diagnostics while exposing only a stable localized error."""
+        logger.exception(
+            "[KB] document operation failed doc_id={}: {}: {}",
+            doc_id,
+            type(exc).__name__,
+            exc,
+        )
+        error = (
+            exc
+            if isinstance(exc, BaseDomainError)
+            else error_type(doc_id, cause=exc)
+        )
+        public_message = error.to_detail()
+
+        if persist_failed_status:
+            await self.doc_db.mark_status(
+                doc_id,
+                DocumentStatus.FAILED.value,
+                error_message=public_message,
+            )
+        await emit(
+            t("progress.stage.error"),
+            public_message,
+            0,
+            done=True,
+            error=True,
+        )
+        return error
 
     async def _process_document(
         self, doc_id: int, kb_id: int, source: str, task_id: str

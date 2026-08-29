@@ -77,6 +77,10 @@ document:
   not_found: Document does not exist
   not_found_in_kb: "Document {doc_id} does not exist in knowledge base {kb_id}"
   empty_data: No small chunks
+  operation_failed: Document processing failed
+  indexing_failed: Document indexing failed
+  update_failed: Document update failed
+  deletion_failed: Document deletion failed
 
 embedding:
   not_found: Embedding configuration does not exist

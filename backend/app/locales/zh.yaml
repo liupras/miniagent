@@ -77,6 +77,10 @@ document:
   not_found: 文档不存在
   not_found_in_kb: "知识库 {kb_id} 中不存在文档 {doc_id}"
   empty_data: 没有子数据块
+  operation_failed: 文档处理失败
+  indexing_failed: 文档索引失败
+  update_failed: 文档更新失败
+  deletion_failed: 文档删除失败
 
 embedding:
   not_found: Embedding 配置不存在
