@@ -14,12 +14,14 @@ from .judge import (
     ActionType,
     ConfidenceLevel,
     JudgeActionProposal,
+    JudgeAgentOutput,
     JudgeDecisionRequest,
     JudgeDecisionResponse,
     JudgeSpeech,
     LegalCitation,
     SpeechType,
     TriggerType,
+    judge_agent_output_json_schema,
 )
 
 __all__ = [
@@ -32,6 +34,7 @@ __all__ = [
     "IntegrationErrorCode",
     "IntegrationErrorResponse",
     "JudgeActionProposal",
+    "JudgeAgentOutput",
     "JudgeDecisionRequest",
     "JudgeDecisionResponse",
     "JudgeSpeech",
@@ -40,4 +43,5 @@ __all__ = [
     "SpeechType",
     "StageSummary",
     "TriggerType",
+    "judge_agent_output_json_schema",
 ]

@@ -181,6 +181,13 @@ VirtualCourt 应在本地处理：
 
 模型：`JudgeDecisionResponse`
 
+MiniAgent 内部分为两层：
+
+- `JudgeAgentOutput`：约束大模型直接生成的 JSON，只包含 5 个业务字段；
+- `JudgeDecisionResponse`：在校验通过后，由服务端把请求中的 `state_version` 注入 `JudgeAgentOutput` 得到。
+
+大模型不得生成 `state_version`。这避免模型遗漏、改写或虚构状态版本。
+
 | 字段 | 类型 | 用途 |
 | --- | --- | --- |
 | `state_version` | integer | 原样回显请求版本，供 VirtualCourt 拒绝迟到响应 |
@@ -188,10 +195,9 @@ VirtualCourt 应在本地处理：
 | `action` | object | 唯一候选动作 |
 | `legal_citations` | object[] | 法律解释使用的可核验依据 |
 | `confidence` | enum | `HIGH`、`LOW` 或 `INSUFFICIENT` |
-| `requires_human_review` | boolean | 智能体是否建议人工复核 |
 | `warnings` | string[] | 依据不足或上下文冲突说明 |
 
-响应禁止未定义字段。
+模型必须只输出一个原始 JSON 对象，不得附加 Markdown 代码围栏、解释文字或前后缀。响应禁止未定义字段；5 个顶层字段全部必填，嵌套对象的字段也必须显式给出。无目标角色时输出 `"target_role": null`，空集合输出 `[]`。
 
 ### 5.1 已删除的响应字段
 
@@ -203,6 +209,7 @@ VirtualCourt 应在本地处理：
 | `case_id`、`court_session_id`、`turn_id` | 都是请求方内部标识 |
 | `control_mode` | VirtualCourt 已持有控制模式 |
 | `decision_basis` | 不影响执行且容易变成冗余推理文本 |
+| `requires_human_review` | 与 `confidence` 和 `warnings` 重复；是否转人工由 VirtualCourt 的确定性规则决定 |
 | `created_at` | HTTP 和服务日志已有时间记录 |
 
 ### 5.2 发言与动作一致性
@@ -225,7 +232,7 @@ VirtualCourt 应在本地处理：
 
 - `source` 必填；
 - `article_no` 字段始终保留，无条文编号时为空字符串；
-- `excerpt` 可选；
+- `excerpt` 字段始终保留，无支持性原文时为 `null`；
 - 法律解释没有 Citation 时，`confidence` 必须为 `INSUFFICIENT`，并提供 `warnings`。
 
 ## 6. 响应示例
@@ -244,12 +251,13 @@ VirtualCourt 应在本地处理：
   },
   "legal_citations": [],
   "confidence": "HIGH",
-  "requires_human_review": false,
   "warnings": []
 }
 ```
 
 ## 7. VirtualCourt 的本地校验
+
+MiniAgent 首先按严格 Schema 解析模型输出，并检查动作和目标是否在请求允许范围内；解析或检查失败时返回 `MODEL_RESPONSE_INVALID`，不得把未经校验的模型文本作为业务响应。
 
 响应模型校验通过后，VirtualCourt 仍必须检查：
 
@@ -306,6 +314,7 @@ MiniAgent 只生成候选决定，不执行 VirtualCourt 状态变更，因此�
 backend/app/api/integrations/virtual_court/PROTOCOL_V1.md
 backend/app/schemas/integrations/virtual_court/common.py
 backend/app/schemas/integrations/virtual_court/judge.py
+backend/app/services/virtual_court/response_validator.py
 ```
 
 ## 11. 后续接口

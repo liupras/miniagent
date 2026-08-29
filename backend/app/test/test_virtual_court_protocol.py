@@ -98,8 +98,10 @@ def test_legal_explanation_without_citations_is_marked_insufficient():
         speech=JudgeSpeech(
             type=SpeechType.LEGAL_EXPLANATION,
             text="当前知识库未检索到足够依据。",
+            target_role=None,
         ),
-        action=JudgeActionProposal(type=ActionType.NO_ACTION),
+        action=JudgeActionProposal(type=ActionType.NO_ACTION, target_role=None),
+        legal_citations=[],
         confidence=ConfidenceLevel.INSUFFICIENT,
         warnings=["未检索到可核验的法律依据"],
     )
@@ -120,7 +122,9 @@ def test_party_action_and_speech_type_must_match():
                 type=ActionType.ASK_PARTY,
                 target_role=PartyRole.DEFENDANT,
             ),
+            legal_citations=[],
             confidence=ConfidenceLevel.HIGH,
+            warnings=[],
         )
 
 
@@ -147,7 +151,6 @@ def test_response_contains_only_decision_outputs():
         "action",
         "legal_citations",
         "confidence",
-        "requires_human_review",
         "warnings",
     }
 
