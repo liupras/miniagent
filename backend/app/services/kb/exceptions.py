@@ -7,6 +7,40 @@
 from app.schemas.exceptions import InfrastructureError
 
 
+class SmartRouterError(InfrastructureError):
+    """Base class for expected smart-router failures."""
+
+    error_key = "smart_router.failed"
+
+
+class SmartRouterConfigurationError(SmartRouterError):
+    """The selected routing strategy is not configured correctly."""
+
+    error_key = "smart_router.configuration_error"
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
+class SmartRouterQueryError(SmartRouterError):
+    """An unexpected routing or retrieval dependency failed."""
+
+    error_key = "smart_router.query_failed"
+
+    def __init__(
+        self,
+        router_config_id: str,
+        *,
+        cause: BaseException | None = None,
+    ) -> None:
+        self.router_config_id = router_config_id
+        super().__init__(
+            f"Smart Router query failed for config '{router_config_id}'",
+            params={"router_config_id": router_config_id},
+            cause=cause,
+        )
+
+
 class DomainPluginError(InfrastructureError):
     """Base class for domain-plugin startup failures."""
 

@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from langchain_ollama import OllamaEmbeddings
 from langchain_community.utils.math import cosine_similarity
 from app.core.logger_config import get_logger
+from app.core.i18n.i18n import t
 logger = get_logger(__name__)
 from app.runtime.cache.lazy_cache import AsyncLazyCache
 
@@ -24,6 +25,7 @@ from .retrieval_model import ChunkResult
 from .retrieval_model import KBInfo
 from app.repositories.async_embedding import AsyncEmbeddingDatabase
 from app.retrieval.embedding_inputs import EmbeddingInputGuard
+from .exceptions import SmartRouterConfigurationError
 
 @dataclass
 class MultiKBQueryResult:
@@ -168,14 +170,25 @@ class SmartRouter:
         high_conf_count = 0
         warnings = []
         seen = set()
+        failures: list[Exception] = []
+        successful_queries = 0
 
         for res in results:
+            if isinstance(res, asyncio.CancelledError):
+                raise res
             if isinstance(res, Exception):
-                warning_msg = f"KB query failed: {res}"  
-                if warning_msg not in seen: 
-                    seen.add(res.warning)         
+                failures.append(res)
+                logger.warning(
+                    "[SmartRouter] KB query failed: {}: {}",
+                    type(res).__name__,
+                    res,
+                )
+                warning_msg = t("smart_router.partial_failure")
+                if warning_msg not in seen:
+                    seen.add(warning_msg)
                     warnings.append(warning_msg)
                 continue
+            successful_queries += 1
             all_chunks.extend(res.chunks)
             if res.confidence == "high":
                 high_conf_count += 1
@@ -183,6 +196,11 @@ class SmartRouter:
                 if res.warning not in seen:
                     seen.add(res.warning)
                     warnings.append(res.warning)
+
+        if failures and successful_queries == 0:
+            # Let the application service preserve domain exceptions or wrap
+            # only an unexpected dependency failure once at its boundary.
+            raise failures[0]
 
         all_chunks.sort(key=lambda x: x.final_score, reverse=True)
 
@@ -225,10 +243,14 @@ class SmartRouter:
         embedding_config = self.router_config.extra_config or {}
         embedding_provider_name = embedding_config.get("embedding_provider_name",None)
         if not embedding_provider_name:
-            raise ValueError("embedding_provider_name is not configured.")
+            raise SmartRouterConfigurationError(
+                "embedding_provider_name is not configured"
+            )
         embedding_provider = await self.embedding_db.get_by_name(embedding_provider_name)
         if not embedding_provider:
-            raise ValueError(f"embedding_provider:{embedding_provider_name} is not configured.")
+            raise SmartRouterConfigurationError(
+                f"embedding provider '{embedding_provider_name}' is not configured"
+            )
         
         embedding  = OllamaEmbeddings(
             model=embedding_provider.model_name,

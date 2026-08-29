@@ -8,8 +8,10 @@
 from typing import Dict, List, Optional
 
 from app.core.logger_config import get_logger
+from app.schemas.exceptions import BaseDomainError
 
 logger = get_logger(__name__)
+from .exceptions import SmartRouterQueryError
 from .smart_router import MultiKBQueryResult, SmartRouter
 from .retrieval_model import ChunkResult
 
@@ -137,8 +139,8 @@ class KBSmartRouterService:
 
         Raises
         ------
-        ValueError   RouterConfig not found, or misconfigured router.
-        RuntimeError Unexpected failure inside SmartRouter or a KB pipeline.
+        BaseDomainError      Stable configuration or retrieval failure.
+        SmartRouterQueryError Unexpected infrastructure failure.
         """
         if not kb_ids:
             logger.warning(
@@ -150,26 +152,32 @@ class KBSmartRouterService:
                 query            = query
             )
 
-        router: SmartRouter = await self._factory.get_router(router_config_id)
-
-        logger.info(
-            f"[KBSmartRouterService] query start — "
-            f"router_config_id={router_config_id!r} "
-            f"kb_ids={kb_ids} query={query!r}"
-        )
-
         try:
+            router: SmartRouter = await self._factory.get_router(router_config_id)
+
+            logger.info(
+                f"[KBSmartRouterService] query start — "
+                f"router_config_id={router_config_id!r} "
+                f"kb_ids={kb_ids} query={query!r}"
+            )
+
             raw: MultiKBQueryResult = await router.query(
                 query           = query,
                 kb_ids          = kb_ids,
                 metadata_filter = metadata_filter,
             )
+        except BaseDomainError:
+            # Preserve stable domain meaning and its HTTP/i18n mapping.
+            raise
         except Exception as exc:
             logger.exception(
                 f"[KBSmartRouterService] SmartRouter.query failed — "
                 f"router_config_id={router_config_id!r} query={query!r}"
             )
-            raise RuntimeError(f"SmartRouter query error: {exc}") from exc
+            raise SmartRouterQueryError(
+                router_config_id,
+                cause=exc,
+            ) from exc
 
         logger.info(
             f"[KBSmartRouterService] query done — "

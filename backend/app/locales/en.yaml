@@ -61,6 +61,12 @@ domain_plugin:
   none_configured: No knowledge-domain plugins are configured
   registration_failed: "Plugin registration failed for domain {domain}"
 
+smart_router:
+  failed: Smart Router failed
+  configuration_error: Smart Router is configured incorrectly
+  query_failed: Smart Router query failed
+  partial_failure: Some knowledge base queries failed
+
 # ── 404: By Entity ──
 kb:
   not_found: Knowledge base does not exist

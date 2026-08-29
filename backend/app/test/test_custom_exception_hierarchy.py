@@ -20,6 +20,8 @@ from app.services.integration_auth import (
 from app.services.kb.exceptions import (
     DomainPluginRegistrationError,
     NoDomainPluginsConfiguredError,
+    SmartRouterConfigurationError,
+    SmartRouterQueryError,
 )
 from app.services.admin.system_status import DatabaseInfoUnavailableError
 from app.services.sql_agent.exceptions import (
@@ -96,6 +98,11 @@ from app.services.workplace_agent import (
             InvalidIntegrationCredentialsError(),
             "integration.authentication_failed",
         ),
+        (
+            SmartRouterConfigurationError("missing embedding provider"),
+            "smart_router.configuration_error",
+        ),
+        (SmartRouterQueryError("router-1"), "smart_router.query_failed"),
     ],
 )
 def test_custom_errors_inherit_base_domain_error(error, expected_key):

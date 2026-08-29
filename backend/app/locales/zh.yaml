@@ -61,6 +61,12 @@ domain_plugin:
   none_configured: 没有配置任何知识领域插件
   registration_failed: "知识领域 {domain} 的插件注册失败"
 
+smart_router:
+  failed: 智能路由执行失败
+  configuration_error: 智能路由配置错误
+  query_failed: 智能路由查询失败
+  partial_failure: 部分知识库查询失败
+
 # ── 404：按实体 ──
 kb:
   not_found: 知识库不存在
