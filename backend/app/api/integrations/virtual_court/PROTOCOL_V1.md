@@ -1,7 +1,7 @@
-# VirtualCourt → MiniAgent 独任审判员协议 V1.0
+# VirtualCourt → MiniAgent 独任审判员协议 V1.1
 
 > 状态：冻结  
-> 冻结日期：2026-08-29  
+> 冻结日期：2026-08-31
 > 接口：`POST /api/v1/integrations/virtual-court/judge/decide`
 
 鉴权使用请求头 `X-Integration-Key`，密钥由 MiniAgent 环境变量 `VIRTUAL_COURT_API_KEY` 配置。密钥不得出现在 URL、请求体或日志中。
@@ -54,10 +54,30 @@ VirtualCourt 应在本地处理：
 | `case_context` | object | 是 | 提供与判断有关的案情 |
 | `stage_summaries` | object[] | 否 | 提供既往阶段的压缩上下文 |
 | `recent_events` | object[] | 否 | 提供当前任务所需的近期庭审内容 |
+| `current_issue_id` | string/null | 否 | 当前正在论辩的争点；必须引用 `issues` 中的争点 |
+| `issues` | object[] | 否 | VirtualCourt 持有的结构化争点及当前状态，最多 20 项 |
 
 请求禁止未定义字段。
 
-### 3.1 已删除的请求字段
+### 3.1 争点上下文
+
+`issues` 由 VirtualCourt 创建并持久化，MiniAgent 不创建权威争点，也不直接修改其状态。`issue_id` 在一次请求中必须唯一。
+
+```json
+{
+  "issue_id": "ISSUE-001",
+  "question": "被告是否实施了涉案图片的商业使用",
+  "status": "IN_DEBATE",
+  "plaintiff_position": "原告主张被告将图片用于公众号广告。",
+  "defendant_position": "被告承认使用，但否认属于商业宣传。",
+  "confirmed_facts": ["被告使用了涉案图片"],
+  "unresolved_points": ["使用行为是否具有商业性质"]
+}
+```
+
+`status` 可取：`PENDING`、`IN_DEBATE`、`NEEDS_FURTHER_DEBATE`、`CONFIRMED`。这些是 VirtualCourt 在请求时持有的状态，不是 MiniAgent 可以直接落库的裁判结果。
+
+### 3.2 已删除的请求字段
 
 | 字段 | 删除原因 |
 | --- | --- |
@@ -70,7 +90,7 @@ VirtualCourt 应在本地处理：
 | `script_guidance` | 与 `task` 重复，恢复点属于 VirtualCourt 内部状态 |
 | `current_evidence` | 与 `task` 和 `recent_events` 重复；证据展示由 VirtualCourt 管理 |
 
-### 3.2 触发类型
+### 3.3 触发类型
 
 | 值 | 含义 |
 | --- | --- |
@@ -82,7 +102,7 @@ VirtualCourt 应在本地处理：
 | `STAGE_READY` | 在允许范围内建议下一动作 |
 | `MANUAL_ASSIST` | 为人工法官生成建议 |
 
-### 3.3 动作类型
+### 3.4 动作类型
 
 | 值 | 含义 |
 | --- | --- |
@@ -101,7 +121,7 @@ VirtualCourt 应在本地处理：
 
 允许 `ASK_PARTY` 或 `REQUEST_CLARIFICATION` 时，`allowed_targets` 不得为空。返回目标必须属于该集合。
 
-### 3.4 案情上下文
+### 3.5 案情上下文
 
 `case_context` 只保留：
 
@@ -116,7 +136,7 @@ VirtualCourt 应在本地处理：
 
 案号、案件名称和法院名称属于展示或标识信息，不进入智能体推理请求。
 
-### 3.5 阶段摘要和近期事件
+### 3.6 阶段摘要和近期事件
 
 阶段摘要：
 
@@ -167,6 +187,18 @@ VirtualCourt 应在本地处理：
       "被告使用涉案作品是否构成侵权"
     ]
   },
+  "current_issue_id": "ISSUE-001",
+  "issues": [
+    {
+      "issue_id": "ISSUE-001",
+      "question": "被告是否实施了涉案图片的商业使用",
+      "status": "IN_DEBATE",
+      "plaintiff_position": "原告主张被告将图片用于商业宣传。",
+      "defendant_position": "被告承认使用，但认为图片可公开下载。",
+      "confirmed_facts": ["被告使用了涉案图片"],
+      "unresolved_points": ["是否核验商用授权"]
+    }
+  ],
   "stage_summaries": [],
   "recent_events": [
     {
@@ -198,10 +230,27 @@ MiniAgent 内部分为两层：
 | `legal_citations` | object[] | 法律解释使用的可核验依据 |
 | `confidence` | enum | `HIGH`、`LOW` 或 `INSUFFICIENT` |
 | `warnings` | string[] | 依据不足或上下文冲突说明 |
+| `issue_assessment` | object | 对当前争点的结构化建议；最终状态仍由 VirtualCourt 决定 |
 
-模型必须只输出一个原始 JSON 对象，不得附加 Markdown 代码围栏、解释文字或前后缀。响应禁止未定义字段；5 个顶层字段全部必填，嵌套对象的字段也必须显式给出。无目标角色时输出 `"target_role": null`，空集合输出 `[]`。
+模型必须只输出一个原始 JSON 对象，不得附加 Markdown 代码围栏、解释文字或前后缀。响应禁止未定义字段；6 个业务顶层字段全部必填，嵌套对象的字段也必须显式给出。无目标角色时输出 `"target_role": null`，空集合输出 `[]`。
 
-### 5.1 已删除的响应字段
+### 5.1 争点评估
+
+`issue_assessment` 的字段为：
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `assessed_issue_id` | string/null | 被评估争点；有当前争点时必须等于请求的 `current_issue_id` |
+| `result` | enum | `NOT_APPLICABLE`、`CONTINUE_DEBATE`、`READY_TO_CONFIRM` 或 `INSUFFICIENT_CONTEXT` |
+| `confirmed_facts` | string[] | 本轮分析认为双方已经明确、可供 VirtualCourt 审核的事实 |
+| `unresolved_points` | string[] | 尚需继续查明的具体事项 |
+| `next_issue_id` | string/null | 当前争点可确认后建议处理的下一争点；必须引用请求中的另一争点 |
+
+`CONTINUE_DEBATE` 必须至少包含一个 `unresolved_points`。只有 `READY_TO_CONFIRM` 可以给出 `next_issue_id`。没有当前争点时必须返回 `NOT_APPLICABLE`，各 ID 为 `null`、事实数组为空。
+
+`READY_TO_CONFIRM` 只是模型建议，不等于权威状态 `CONFIRMED`。VirtualCourt 必须在版本、程序规则及人工确认（如适用）校验通过后自行更新状态。
+
+### 5.2 已删除的响应字段
 
 | 字段 | 删除原因 |
 | --- | --- |
@@ -214,7 +263,7 @@ MiniAgent 内部分为两层：
 | `requires_human_review` | 与 `confidence` 和 `warnings` 重复；是否转人工由 VirtualCourt 的确定性规则决定 |
 | `created_at` | HTTP 和服务日志已有时间记录 |
 
-### 5.2 发言与动作一致性
+### 5.3 发言与动作一致性
 
 - `ASK_PARTY` 必须对应 `QUESTION`；
 - `REQUEST_CLARIFICATION` 必须对应 `CLARIFICATION`；
@@ -222,7 +271,7 @@ MiniAgent 内部分为两层：
 - 提问和澄清必须指定 `target_role`；
 - 其他发言类型不能指定目标。
 
-### 5.3 法律 Citation
+### 5.4 法律 Citation
 
 ```json
 {
@@ -242,6 +291,13 @@ MiniAgent 内部分为两层：
 ```json
 {
   "state_version": 18,
+  "issue_assessment": {
+    "assessed_issue_id": "ISSUE-001",
+    "result": "CONTINUE_DEBATE",
+    "confirmed_facts": ["被告使用了涉案图片"],
+    "unresolved_points": ["使用前是否核验商用授权"],
+    "next_issue_id": null
+  },
   "speech": {
     "type": "CLARIFICATION",
     "text": "被告，请明确回答：使用涉案图片前，你方是否核验过上传者身份、授权范围或者商用许可？",
@@ -269,6 +325,7 @@ MiniAgent 首先按严格 Schema 解析模型输出，并检查动作和目标�
 4. 返回目标是否属于请求的 `allowed_targets`；
 5. 当前步骤是否仍允许动态插入；
 6. 人工法官模式下是否已经取得人工确认。
+7. `assessed_issue_id` 是否等于当前权威争点，`next_issue_id` 是否仍为可处理争点；
 
 任一检查失败，响应不得改变庭审状态。
 

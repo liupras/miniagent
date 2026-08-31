@@ -10,6 +10,8 @@ from app.schemas.integrations.virtual_court import (
     JudgeDecisionRequest,
     JudgeDecisionResponse,
     JudgeSpeech,
+    IssueAssessment,
+    IssueAssessmentResult,
     PartyRole,
     SpeechType,
     StageSummary,
@@ -95,6 +97,13 @@ def test_allowed_actions_must_not_contain_duplicates():
 def test_legal_explanation_without_citations_is_marked_insufficient():
     response = JudgeDecisionResponse(
         state_version=18,
+        issue_assessment=IssueAssessment(
+            assessed_issue_id=None,
+            result=IssueAssessmentResult.NOT_APPLICABLE,
+            confirmed_facts=[],
+            unresolved_points=[],
+            next_issue_id=None,
+        ),
         speech=JudgeSpeech(
             type=SpeechType.LEGAL_EXPLANATION,
             text="当前知识库未检索到足够依据。",
@@ -113,6 +122,13 @@ def test_party_action_and_speech_type_must_match():
     with pytest.raises(ValidationError, match="requires QUESTION speech"):
         JudgeDecisionResponse(
             state_version=18,
+            issue_assessment=IssueAssessment(
+                assessed_issue_id=None,
+                result=IssueAssessmentResult.NOT_APPLICABLE,
+                confirmed_facts=[],
+                unresolved_points=[],
+                next_issue_id=None,
+            ),
             speech=JudgeSpeech(
                 type=SpeechType.CLARIFICATION,
                 text="请被告回答。",
@@ -141,6 +157,8 @@ def test_request_contains_only_reasoning_inputs():
         "case_context",
         "stage_summaries",
         "recent_events",
+        "current_issue_id",
+        "issues",
     }
 
 
@@ -152,7 +170,21 @@ def test_response_contains_only_decision_outputs():
         "legal_citations",
         "confidence",
         "warnings",
+        "issue_assessment",
     }
+
+
+def test_request_validates_current_issue_reference_and_unique_ids():
+    data = _request_data()
+    data["current_issue_id"] = "ISSUE-001"
+    data["issues"] = [
+        {"issue_id": "ISSUE-001", "question": "是否构成侵权", "status": "IN_DEBATE"}
+    ]
+    assert JudgeDecisionRequest.model_validate(data).current_issue_id == "ISSUE-001"
+
+    data["current_issue_id"] = "ISSUE-999"
+    with pytest.raises(ValidationError, match="must reference an issue"):
+        JudgeDecisionRequest.model_validate(data)
 
 
 def test_context_models_contain_only_reasoning_inputs():

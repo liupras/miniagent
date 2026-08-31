@@ -35,6 +35,13 @@ def _request(**overrides) -> JudgeDecisionRequest:
 
 def _valid_output_data() -> dict:
     return {
+        "issue_assessment": {
+            "assessed_issue_id": None,
+            "result": "NOT_APPLICABLE",
+            "confirmed_facts": [],
+            "unresolved_points": [],
+            "next_issue_id": None,
+        },
         "speech": {
             "type": "CLARIFICATION",
             "text": "被告，请明确回答使用前是否核验过商用授权。",
@@ -58,6 +65,47 @@ def test_strict_output_accepts_exact_json_and_injects_state_version():
 
     assert response.state_version == 18
     assert response.action.type.value == "REQUEST_CLARIFICATION"
+
+
+def test_issue_assessment_is_bound_to_current_and_known_issues():
+    request = _request(
+        current_issue_id="ISSUE-001",
+        issues=[
+            {"issue_id": "ISSUE-001", "question": "是否实施商业使用", "status": "IN_DEBATE"},
+            {"issue_id": "ISSUE-002", "question": "损失数额", "status": "PENDING"},
+        ],
+    )
+    data = _valid_output_data()
+    data["issue_assessment"] = {
+        "assessed_issue_id": "ISSUE-001",
+        "result": "READY_TO_CONFIRM",
+        "confirmed_facts": ["被告确认使用涉案图片"],
+        "unresolved_points": [],
+        "next_issue_id": "ISSUE-002",
+    }
+
+    response = validate_judge_agent_output(json.dumps(data, ensure_ascii=False), request)
+
+    assert response.issue_assessment.next_issue_id == "ISSUE-002"
+
+
+def test_issue_assessment_rejects_a_model_invented_next_issue():
+    request = _request(
+        current_issue_id="ISSUE-001",
+        issues=[{"issue_id": "ISSUE-001", "question": "是否实施商业使用", "status": "IN_DEBATE"}],
+    )
+    data = _valid_output_data()
+    data["issue_assessment"] = {
+        "assessed_issue_id": "ISSUE-001",
+        "result": "READY_TO_CONFIRM",
+        "confirmed_facts": [],
+        "unresolved_points": [],
+        "next_issue_id": "ISSUE-999",
+    }
+
+    with pytest.raises(JudgeInvalidResponseError) as caught:
+        validate_judge_agent_output(json.dumps(data, ensure_ascii=False), request)
+    assert caught.value.params["reason"] == "invalid_next_issue"
 
 
 @pytest.mark.parametrize(

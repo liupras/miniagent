@@ -48,6 +48,13 @@ def _response() -> JudgeDecisionResponse:
         json.dumps(
             {
             "state_version": 18,
+            "issue_assessment": {
+                "assessed_issue_id": None,
+                "result": "NOT_APPLICABLE",
+                "confirmed_facts": [],
+                "unresolved_points": [],
+                "next_issue_id": None,
+            },
             "speech": {
                 "type": "CLARIFICATION",
                 "text": "被告，请明确回答使用前是否核验过商用授权。",

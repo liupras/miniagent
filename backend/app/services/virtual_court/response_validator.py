@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from app.schemas.integrations.virtual_court import (
     ActionType,
+    IssueAssessmentResult,
     JudgeAgentOutput,
     JudgeDecisionRequest,
     JudgeDecisionResponse,
@@ -65,6 +66,26 @@ def validate_judge_agent_output(
                 "target": action.target_role.value,
             }
         )
+
+    assessment = output.issue_assessment
+    issue_ids = {issue.issue_id for issue in request.issues}
+    if request.current_issue_id is None:
+        if assessment.result != IssueAssessmentResult.NOT_APPLICABLE:
+            raise JudgeInvalidResponseError(
+                params={"reason": "unexpected_issue_assessment"}
+            )
+    elif assessment.assessed_issue_id != request.current_issue_id:
+        raise JudgeInvalidResponseError(
+            params={"reason": "assessed_issue_mismatch"}
+        )
+    if assessment.next_issue_id is not None:
+        if (
+            assessment.next_issue_id not in issue_ids
+            or assessment.next_issue_id == request.current_issue_id
+        ):
+            raise JudgeInvalidResponseError(
+                params={"reason": "invalid_next_issue"}
+            )
 
     return JudgeDecisionResponse(
         state_version=request.state_version,

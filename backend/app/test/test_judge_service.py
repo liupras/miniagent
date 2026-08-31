@@ -40,6 +40,13 @@ def _request() -> JudgeDecisionRequest:
 def _valid_output() -> str:
     return json.dumps(
         {
+            "issue_assessment": {
+                "assessed_issue_id": None,
+                "result": "NOT_APPLICABLE",
+                "confirmed_facts": [],
+                "unresolved_points": [],
+                "next_issue_id": None,
+            },
             "speech": {
                 "type": "CLARIFICATION",
                 "text": "被告，请明确回答使用前是否核验过商用授权。",
@@ -132,6 +139,7 @@ def test_decide_sends_reasoning_input_and_schema_without_state_version():
     assert "trigger=LEGAL_QUESTION" in query
     assert "必须先调用 intellectual_property_law_search" in query
     assert "其他情况不检索" in query
+    assert "不得声称已修改 VirtualCourt 的权威状态" in query
     assert "state_version" not in query
 
 
