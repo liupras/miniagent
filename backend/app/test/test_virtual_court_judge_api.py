@@ -6,10 +6,12 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from app.core.i18n import error_translation
 from app.api.integrations.errors import register_integration_exception_handlers
+from app.api.integrations import errors as integration_errors
+from app.api.integrations.virtual_court import judge as judge_api
 from app.api.integrations.virtual_court.judge import router
 from app.core.config import settings
+from app.core.i18n import error_translation
 from app.schemas.integrations.virtual_court import JudgeDecisionResponse
 from app.services.virtual_court import (
     JudgeConfigurationError,
@@ -157,6 +159,59 @@ def test_judge_api_maps_request_and_model_validation_errors(monkeypatch):
     )
     assert response.status_code == 502
     assert response.json()["error"]["code"] == "MODEL_RESPONSE_INVALID"
+
+
+def test_judge_api_logs_request_lifecycle_without_payload(monkeypatch):
+    monkeypatch.setattr(settings, "virtual_court_api_key", SecretStr(API_KEY))
+    messages = []
+    monkeypatch.setattr(
+        judge_api.logger,
+        "info",
+        lambda message, *args: messages.append(message.format(*args)),
+    )
+
+    response = _client(_FakeJudgeService()).post(
+        ENDPOINT,
+        headers=_auth_headers(),
+        json=_request_data(),
+    )
+
+    assert response.status_code == 200
+    assert any("judge request accepted" in message for message in messages)
+    assert any("judge request completed" in message for message in messages)
+    assert all(API_KEY not in message for message in messages)
+    assert all(_request_data()["task"] not in message for message in messages)
+
+
+def test_judge_api_logs_422_validation_details_without_submitted_values(monkeypatch):
+    monkeypatch.setattr(settings, "virtual_court_api_key", SecretStr(API_KEY))
+    messages = []
+    monkeypatch.setattr(
+        integration_errors.logger,
+        "warning",
+        lambda message, *args: messages.append(message.format(*args)),
+    )
+    invalid_request = _request_data()
+    invalid_request.pop("current_step")
+    sensitive_task = "sensitive-case-content"
+    invalid_request["task"] = sensitive_task
+
+    response = _client(_FakeJudgeService()).post(
+        ENDPOINT,
+        headers=_auth_headers(),
+        json=invalid_request,
+    )
+
+    assert response.status_code == 422
+    validation_log = next(
+        message for message in messages if "request validation failed" in message
+    )
+    assert "status=422" in validation_log
+    assert "current_step" in validation_log
+    assert "Field required" in validation_log
+    assert sensitive_task not in validation_log
+    assert API_KEY not in validation_log
+
 
 @pytest.mark.parametrize(
     ("service_error", "status_code", "error_code", "retryable"),
