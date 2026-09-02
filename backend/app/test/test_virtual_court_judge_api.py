@@ -183,6 +183,34 @@ def test_judge_api_logs_request_lifecycle_without_payload(monkeypatch):
     assert all(_request_data()["task"] not in message for message in messages)
 
 
+def test_judge_api_logs_request_and_response_payloads_at_debug_level(monkeypatch):
+    monkeypatch.setattr(settings, "virtual_court_api_key", SecretStr(API_KEY))
+    messages = []
+    monkeypatch.setattr(
+        judge_api.logger,
+        "debug",
+        lambda message, *args: messages.append(message.format(*args)),
+    )
+
+    response = _client(_FakeJudgeService()).post(
+        ENDPOINT,
+        headers=_auth_headers(),
+        json=_request_data(),
+    )
+
+    assert response.status_code == 200
+    request_log = next(
+        message for message in messages if "judge request payload" in message
+    )
+    response_log = next(
+        message for message in messages if "judge response payload" in message
+    )
+    assert '"task":"要求被告明确回答是否核验过商用授权。"' in request_log
+    assert '"action":{"type":"REQUEST_CLARIFICATION"' in response_log
+    assert API_KEY not in request_log
+    assert API_KEY not in response_log
+
+
 def test_judge_api_logs_422_validation_details_without_submitted_values(monkeypatch):
     monkeypatch.setattr(settings, "virtual_court_api_key", SecretStr(API_KEY))
     messages = []

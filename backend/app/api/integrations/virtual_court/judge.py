@@ -59,9 +59,17 @@ async def decide(
         body.current_step,
         body.trigger,
     )
+    logger.debug(
+        "[VirtualCourt] judge request payload: {}",
+        body.model_dump_json(),
+    )
 
     response = await service.decide(body)
 
+    logger.debug(
+        "[VirtualCourt] judge response payload: {}",
+        response.model_dump_json(),
+    )
     logger.info(
         "[VirtualCourt] judge request completed: state_version={}, action={}, "
         "confidence={}, elapsed_ms={:.1f}",
