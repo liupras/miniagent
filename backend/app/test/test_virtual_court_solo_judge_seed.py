@@ -26,6 +26,11 @@ def test_virtual_court_solo_judge_seed_is_unique_and_constrained():
     for required_rule in (
         "调用方是当前阶段",
         "allowed_actions",
+        "recent_events 只是可选的近期庭审记录",
+        "current_step=INQUIRY-ENTRY",
+        "current_step=INQUIRY-EXIT",
+        "不得返回 NO_ACTION",
+        "无需询问时返回 END_CURRENT_STAGE",
         "intellectual_property_law_search",
         "trigger=LEGAL_QUESTION",
         "其他 trigger 默认不检索",
