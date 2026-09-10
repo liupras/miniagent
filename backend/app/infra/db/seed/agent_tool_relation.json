@@ -12,7 +12,12 @@
         "_tool_name":"sql_agent"
     },
     {
-        "_agent_name":"virtual_court_solo_judge",
+        "_agent_name":"virtual_court_investigation_judge",
+        "_tool_name":"intellectual_property_law_search",
+        "priority": 0
+    },
+    {
+        "_agent_name":"virtual_court_debate_judge",
         "_tool_name":"intellectual_property_law_search",
         "priority": 0
     }

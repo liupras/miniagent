@@ -114,16 +114,32 @@ def test_agent_repository_supports_factory_name_lookup():
     assert callable(getattr(AsyncAgentDatabase, "get_agent_by_name", None))
 
 
-def test_decide_uses_dedicated_agent_and_injects_state_version():
+@pytest.mark.parametrize(
+    ("stage", "agent_name"),
+    [
+        ("COURT_INVESTIGATION", "virtual_court_investigation_judge"),
+        ("COURT_DEBATE", "virtual_court_debate_judge"),
+    ],
+)
+def test_decide_uses_dedicated_agent_and_injects_state_version(stage, agent_name):
     runner = _FakeRunner(_valid_output())
     factory = _FakeAgentFactory(runner)
     service = JudgeService(factory)
 
-    response = asyncio.run(service.decide(_request()))
+    request = JudgeDecisionRequest.model_validate(
+        {**_request().model_dump(), "current_stage": stage}
+    )
+    response = asyncio.run(service.decide(request))
 
-    assert factory.names == ["virtual_court_solo_judge"]
+    assert factory.names == [agent_name]
     assert response.state_version == 18
     assert response.action.type.value == "REQUEST_CLARIFICATION"
+    if stage == "COURT_INVESTIGATION":
+        assert "不进行辩论争点评估" in runner.queries[0]
+        assert "需要继续查明时返回 CONTINUE_DEBATE" not in runner.queries[0]
+    else:
+        assert "需要继续查明时返回 CONTINUE_DEBATE" in runner.queries[0]
+        assert "不进行辩论争点评估" not in runner.queries[0]
 
 
 def test_decide_sends_reasoning_input_and_schema_without_state_version():
@@ -155,7 +171,7 @@ def test_decide_rejects_invalid_agent_output():
 @pytest.mark.parametrize(
     ("source_error", "expected_error"),
     [
-        (AgentNotFoundError("virtual_court_solo_judge"), JudgeConfigurationError),
+        (AgentNotFoundError("virtual_court_investigation_judge"), JudgeConfigurationError),
         (ToolBuildError("tool failed"), JudgeConfigurationError),
     ],
 )

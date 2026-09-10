@@ -43,7 +43,7 @@ ERROR_RESPONSES = {
     response_model=JudgeDecisionResponse,
     status_code=status.HTTP_200_OK,
     responses=ERROR_RESPONSES,
-    summary="Request one constrained sole-judge decision",
+    summary="Request one constrained investigation or debate judge decision",
 )
 async def decide(
     body: JudgeDecisionRequest,

@@ -69,6 +69,7 @@ def test_strict_output_accepts_exact_json_and_injects_state_version():
 
 def test_issue_assessment_is_bound_to_current_and_known_issues():
     request = _request(
+        current_stage="COURT_DEBATE",
         current_issue_id="ISSUE-001",
         issues=[
             {"issue_id": "ISSUE-001", "question": "是否实施商业使用", "status": "IN_DEBATE"},
@@ -89,8 +90,37 @@ def test_issue_assessment_is_bound_to_current_and_known_issues():
     assert response.issue_assessment.next_issue_id == "ISSUE-002"
 
 
+def test_investigation_keeps_issues_as_context_without_assessing_them():
+    request = _request(
+        current_issue_id="ISSUE-001",
+        issues=[{"issue_id": "ISSUE-001", "question": "是否商业使用", "status": "PENDING"}],
+    )
+    data = _valid_output_data()
+    response = validate_judge_agent_output(json.dumps(data), request)
+    assert response.issue_assessment.result.value == "NOT_APPLICABLE"
+
+    data["issue_assessment"].update(
+        assessed_issue_id="ISSUE-001", result="READY_TO_CONFIRM"
+    )
+    with pytest.raises(JudgeInvalidResponseError) as caught:
+        validate_judge_agent_output(json.dumps(data), request)
+    assert caught.value.params["reason"] == "unexpected_issue_assessment"
+
+
+def test_debate_requires_assessment_of_current_issue():
+    request = _request(
+        current_stage="COURT_DEBATE",
+        current_issue_id="ISSUE-001",
+        issues=[{"issue_id": "ISSUE-001", "question": "是否商业使用", "status": "IN_DEBATE"}],
+    )
+    with pytest.raises(JudgeInvalidResponseError) as caught:
+        validate_judge_agent_output(json.dumps(_valid_output_data()), request)
+    assert caught.value.params["reason"] == "assessed_issue_mismatch"
+
+
 def test_issue_assessment_rejects_a_model_invented_next_issue():
     request = _request(
+        current_stage="COURT_DEBATE",
         current_issue_id="ISSUE-001",
         issues=[{"issue_id": "ISSUE-001", "question": "是否实施商业使用", "status": "IN_DEBATE"}],
     )

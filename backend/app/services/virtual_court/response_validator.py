@@ -14,6 +14,7 @@ from app.schemas.integrations.virtual_court import (
     JudgeAgentOutput,
     JudgeDecisionRequest,
     JudgeDecisionResponse,
+    JudgeStage,
 )
 
 from .exceptions import JudgeInvalidResponseError
@@ -69,7 +70,10 @@ def validate_judge_agent_output(
 
     assessment = output.issue_assessment
     issue_ids = {issue.issue_id for issue in request.issues}
-    if request.current_issue_id is None:
+    if (
+        request.current_stage == JudgeStage.COURT_INVESTIGATION
+        or request.current_issue_id is None
+    ):
         if assessment.result != IssueAssessmentResult.NOT_APPLICABLE:
             raise JudgeInvalidResponseError(
                 params={"reason": "unexpected_issue_assessment"}

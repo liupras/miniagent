@@ -98,20 +98,34 @@ def _auth_headers() -> dict[str, str]:
     return {"X-Integration-Key": API_KEY}
 
 
-def test_judge_api_accepts_key_and_returns_strict_response(monkeypatch):
+@pytest.mark.parametrize("stage", ["COURT_INVESTIGATION", "COURT_DEBATE"])
+def test_judge_api_accepts_key_and_returns_strict_response(monkeypatch, stage):
     monkeypatch.setattr(settings, "virtual_court_api_key", SecretStr(API_KEY))
     service = _FakeJudgeService()
 
     response = _client(service).post(
         ENDPOINT,
         headers=_auth_headers(),
-        json=_request_data(),
+        json={**_request_data(), "current_stage": stage},
     )
 
     assert response.status_code == 200
     assert response.json()["state_version"] == 18
     assert response.json()["action"]["type"] == "REQUEST_CLARIFICATION"
     assert len(service.requests) == 1
+    assert service.requests[0].current_stage == stage
+
+
+def test_judge_api_rejects_unsupported_stage_before_service(monkeypatch):
+    monkeypatch.setattr(settings, "virtual_court_api_key", SecretStr(API_KEY))
+    service = _FakeJudgeService()
+    response = _client(service).post(
+        ENDPOINT,
+        headers=_auth_headers(),
+        json={**_request_data(), "current_stage": "UNKNOWN_STAGE"},
+    )
+    assert response.status_code == 422
+    assert not service.requests
 
 
 def test_judge_api_rejects_missing_and_wrong_keys(monkeypatch):

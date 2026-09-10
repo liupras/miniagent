@@ -20,6 +20,11 @@ from .common import (
 )
 
 
+class JudgeStage(StrEnum):
+    COURT_INVESTIGATION = "COURT_INVESTIGATION"
+    COURT_DEBATE = "COURT_DEBATE"
+
+
 class TriggerType(StrEnum):
     LEGAL_QUESTION = "LEGAL_QUESTION"
     CLARIFICATION_NEEDED = "CLARIFICATION_NEEDED"
@@ -97,7 +102,7 @@ class CourtIssue(IntegrationModel):
 
 class JudgeDecisionRequest(IntegrationModel):
     state_version: int = Field(ge=0)
-    current_stage: str = Field(min_length=1, max_length=64)
+    current_stage: JudgeStage
     current_step: str = Field(
         min_length=2,
         max_length=64,
