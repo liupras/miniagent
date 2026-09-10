@@ -134,12 +134,6 @@ def test_decide_uses_dedicated_agent_and_injects_state_version(stage, agent_name
     assert factory.names == [agent_name]
     assert response.state_version == 18
     assert response.action.type.value == "REQUEST_CLARIFICATION"
-    if stage == "COURT_INVESTIGATION":
-        assert "不进行辩论争点评估" in runner.queries[0]
-        assert "需要继续查明时返回 CONTINUE_DEBATE" not in runner.queries[0]
-    else:
-        assert "需要继续查明时返回 CONTINUE_DEBATE" in runner.queries[0]
-        assert "不进行辩论争点评估" not in runner.queries[0]
 
 
 def test_decide_sends_reasoning_input_and_schema_without_state_version():
@@ -152,10 +146,12 @@ def test_decide_sends_reasoning_input_and_schema_without_state_version():
     assert '"current_stage": "COURT_INVESTIGATION"' in query
     assert '"task": "要求被告明确回答是否核验过商用授权。"' in query
     assert '"additionalProperties": false' in query
-    assert "trigger=LEGAL_QUESTION" in query
-    assert "必须先调用 intellectual_property_law_search" in query
-    assert "其他情况不检索" in query
-    assert "不得声称已修改 VirtualCourt 的权威状态" in query
+    payload, schema = query.split("\n\n输出 JSON Schema：\n")
+    assert json.loads(payload.removeprefix("庭审输入：\n")) == _request().model_dump(
+        mode="json", exclude={"state_version"}
+    )
+    from app.schemas.integrations.virtual_court import judge_agent_output_json_schema
+    assert json.loads(schema) == judge_agent_output_json_schema()
     assert "state_version" not in query
 
 
@@ -214,3 +210,22 @@ def test_decide_enforces_its_own_timeout():
 
     assert isinstance(caught.value.cause, TimeoutError)
     assert caught.value.params == {"timeout": 0.01}
+
+
+def test_consecutive_decisions_only_send_each_requests_context():
+    runner = _FakeRunner(_valid_output())
+    service = JudgeService(_FakeAgentFactory(runner))
+    first = _request()
+    second = JudgeDecisionRequest.model_validate(
+        {**first.model_dump(), "task": "第二次独立任务", "state_version": 19}
+    )
+
+    async def run():
+        await service.decide(first)
+        return await service.decide(second)
+
+    response = asyncio.run(run())
+    assert response.state_version == 19
+    assert len(runner.queries) == 2
+    assert first.task not in runner.queries[1]
+    assert second.task in runner.queries[1]
