@@ -27,6 +27,7 @@ from app.services.integration_auth import (
 )
 from app.services.virtual_court import (
     JudgeConfigurationError,
+    JudgeContextError,
     JudgeInvalidResponseError,
     JudgeServiceError,
     JudgeTimeoutError,
@@ -35,7 +36,7 @@ from app.services.virtual_court import (
 
 
 logger = get_logger(__name__)
-INTEGRATION_PATH_PREFIX = "/api/v1/integrations/"
+INTEGRATION_PATH_PREFIX = ("/api/v1/integrations/", "/api/v2/integrations/")
 
 
 def _request_log_context(request: Request) -> tuple[str, str, str, str]:
@@ -114,7 +115,10 @@ async def judge_service_error_handler(
     request: Request,
     exc: JudgeServiceError,
 ) -> JSONResponse:
-    if isinstance(exc, JudgeConfigurationError):
+    if isinstance(exc, JudgeContextError):
+        code = IntegrationErrorCode.INVALID_REQUEST
+        retryable = False
+    elif isinstance(exc, JudgeConfigurationError):
         code = IntegrationErrorCode.SERVICE_UNAVAILABLE
         retryable = False
     elif isinstance(exc, JudgeUnavailableError):
@@ -150,6 +154,7 @@ async def judge_service_error_handler(
         code=code,
         message=translate_domain_error(exc),
         retryable=retryable,
+        details={k: v for k, v in exc.params.items() if k in ("reason", "field")},
     )
 
 

@@ -54,6 +54,7 @@ judge:
   configuration_error: Judge service is not configured correctly
   unavailable: Judge service is temporarily unavailable
   timeout: "Judge decision timed out after {timeout} seconds"
+  context_too_large: Complete court context exceeds model capacity; reduce context explicitly before retrying.
   invalid_response: Judge agent returned an invalid response
 
 domain_plugin:

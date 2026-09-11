@@ -1,0 +1,84 @@
+{
+  "revision": "2026-09-12-legal-extension",
+  "status": "Frozen expectations only; execution awaits M1-E and client implementation",
+  "scenarios": [
+    {
+      "id": "explicit-law-question",
+      "phases": ["INVESTIGATION", "DEBATE"],
+      "request_fixtures": {"INVESTIGATION": "law-check-investigation", "DEBATE": "law-check-debate-single-party"},
+      "setup": "Latest party speech explicitly asks for legal basis or application; tool returns synthetic test article A.",
+      "expect": {"decision": "EXPLAIN_LAW", "tool": "intellectual_property_law_search", "minimum_tool_calls": 1, "speech_supported_by_tool_result": true, "fact_finding": false}
+    },
+    {
+      "id": "ordinary-statement",
+      "phases": ["INVESTIGATION", "DEBATE"],
+      "setup": "Confirmed latest speech: 我方维持此前意见，没有法律问题需要解释。",
+      "expect": {"decision": "NO_ACTION", "speech": "", "pending_points": [], "tts_calls": 0}
+    },
+    {
+      "id": "rhetorical-question",
+      "phases": ["INVESTIGATION", "DEBATE"],
+      "setup": "Confirmed speech in context is a rhetorical objection, not a request for legal explanation: 这难道不是我方一直表达的意见吗？我方没有新的问题。",
+      "expect": {"decision": "NO_ACTION", "tts_calls": 0}
+    },
+    {
+      "id": "already-answered",
+      "request_fixture": "law-check-completed-question-history",
+      "expect": {"decision": "NO_ACTION", "repeat_explanation": false}
+    },
+    {
+      "id": "retrieval-failure",
+      "request_fixtures": {"INVESTIGATION": "law-check-investigation", "DEBATE": "law-check-debate-single-party"},
+      "setup": "The legal question needs answering, but the tool fails or returns no supporting material.",
+      "expect": {"decision": "HANDOFF", "pending_points_min_items": 1, "fabricated_citation": false}
+    },
+    {
+      "id": "missing-tool",
+      "request_fixtures": {"INVESTIGATION": "law-check-investigation", "DEBATE": "law-check-debate-single-party"},
+      "setup": "The question requires legal explanation but the configured law-search tool is unavailable.",
+      "expect": {"decision": "HANDOFF", "no_action_used_to_hide_failure": false}
+    },
+    {
+      "id": "single-party-check",
+      "request_fixture": "law-check-debate-single-party",
+      "setup": "Only plaintiff has finished; defendant still has the right to speak.",
+      "expect": {"forbidden_decisions": ["COMPLETE", "CONTINUE", "ASK"], "after_explanation": "resume defendant speech", "round_delta": 0}
+    },
+    {
+      "id": "unfinished-answer-resume",
+      "setup": "A confirmed segment raises a legal question while the original answer is unfinished.",
+      "expect": {"after_explanation": "resume original unfinished answer", "parallel_tts_and_party_speech": false}
+    },
+    {
+      "id": "progress-explanation",
+      "request_fixture": "investigation-request",
+      "setup": "The progress decision returns EXPLAIN_LAW.",
+      "expect": {"after_playback": "new progress request with explanation in records", "next_request_excludes": ["NO_ACTION", "EXPLAIN_LAW"], "until": "new party speech", "round_delta": 0}
+    },
+    {
+      "id": "duplicate-callback",
+      "setup": "The same completed explanation playback callback is delivered twice.",
+      "expect": {"resume_count": 1, "judge_speech_retriggers_check": false}
+    },
+    {
+      "id": "playback-failure-or-takeover",
+      "setup": "Explanation playback fails, is cancelled, or manual takeover occurs.",
+      "expect": {"automatic_resume": false, "old_response_applied": false}
+    },
+    {
+      "id": "tool-context-budget",
+      "setup": "Tool metadata or result makes full context exceed the budget.",
+      "expect": {"silent_record_truncation": false, "blanket_tool_rejection": false, "explicit_failure_handling": true}
+    },
+    {
+      "id": "shared-deadline",
+      "setup": "Legal retrieval and an output repair both occur.",
+      "expect": {"server_total_seconds": 120, "max_repairs": 1, "retrieval_included_in_deadline": true}
+    },
+    {
+      "id": "idempotent-tool-restoration",
+      "setup": "Run the extension migration twice against initial M1 configuration.",
+      "expect": {"tool_bindings_per_judge": 1, "agent_id_preserved": true, "model_settings_preserved": true, "unrelated_agents_unchanged": true}
+    }
+  ]
+}

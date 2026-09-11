@@ -1,97 +1,26 @@
-#!/usr/bin/python
-# -*- coding:utf-8 -*-
-# @author  : Liu Lijun
-# @date    : 2026-08-29
-# @description: Strict parsing and request-aware validation for judge agent output.
-
-from __future__ import annotations
-
+"""Strict JSON and request-bound output validation; no silent repair/coercion."""
 from pydantic import ValidationError
-
-from app.schemas.integrations.virtual_court import (
-    ActionType,
-    IssueAssessmentResult,
-    JudgeAgentOutput,
-    JudgeDecisionRequest,
-    JudgeDecisionResponse,
-    JudgeStage,
+from app.schemas.integrations.virtual_court.judge import (
+    JudgeAgentOutput, JudgeDecisionResponse, RESPONSE_MAX_BYTES, strict_json,
 )
-
 from .exceptions import JudgeInvalidResponseError
 
-
-def validate_judge_agent_output(
-    raw_output: str,
-    request: JudgeDecisionRequest,
-) -> JudgeDecisionResponse:
-    """Parse exact JSON, enforce request permissions, and inject state_version.
-
-    The raw model output must be one JSON object matching ``JudgeAgentOutput``.
-    Markdown fences, prose, extra fields, missing fields, and type coercion are
-    rejected. The model never generates ``state_version``; it is copied from
-    the validated request after all output checks pass.
-    """
-
-    if not isinstance(raw_output, str) or not raw_output.strip():
-        raise JudgeInvalidResponseError(
-            params={"reason": "empty_output"},
-        )
-
+def validate_judge_agent_output(raw_output, request):
     try:
-        output = JudgeAgentOutput.model_validate_json(raw_output)
-    except (ValidationError, ValueError) as exc:
-        raise JudgeInvalidResponseError(
-            params={"reason": "schema_validation_failed"},
-            cause=exc,
-        ) from exc
-
-    action = output.action
-    if (
-        action.type != ActionType.NO_ACTION
-        and action.type not in request.allowed_actions
-    ):
-        raise JudgeInvalidResponseError(
-            params={
-                "reason": "action_not_allowed",
-                "action": action.type.value,
-            }
-        )
-
-    if (
-        action.target_role is not None
-        and action.target_role not in request.allowed_targets
-    ):
-        raise JudgeInvalidResponseError(
-            params={
-                "reason": "target_not_allowed",
-                "target": action.target_role.value,
-            }
-        )
-
-    assessment = output.issue_assessment
-    issue_ids = {issue.issue_id for issue in request.issues}
-    if (
-        request.current_stage == JudgeStage.COURT_INVESTIGATION
-        or request.current_issue_id is None
-    ):
-        if assessment.result != IssueAssessmentResult.NOT_APPLICABLE:
-            raise JudgeInvalidResponseError(
-                params={"reason": "unexpected_issue_assessment"}
-            )
-    elif assessment.assessed_issue_id != request.current_issue_id:
-        raise JudgeInvalidResponseError(
-            params={"reason": "assessed_issue_mismatch"}
-        )
-    if assessment.next_issue_id is not None:
-        if (
-            assessment.next_issue_id not in issue_ids
-            or assessment.next_issue_id == request.current_issue_id
-        ):
-            raise JudgeInvalidResponseError(
-                params={"reason": "invalid_next_issue"}
-            )
-
-    return JudgeDecisionResponse(
-        state_version=request.state_version,
-        **output.model_dump(),
-    )
+        if not isinstance(raw_output, str) or len(raw_output.encode('utf-8')) > RESPONSE_MAX_BYTES:
+            raise ValueError('output size')
+        output = JudgeAgentOutput.model_validate(strict_json(raw_output))
+    except (ValidationError, ValueError, UnicodeError, RecursionError) as exc:
+        field = 'response'
+        if isinstance(exc, ValidationError):
+            # Use schema location only, never echo submitted field values.
+            field = '.'.join(str(v) for v in exc.errors()[0]['loc']) or 'response'
+        raise JudgeInvalidResponseError(params={'reason':'schema_validation_failed', 'field':field}, cause=exc) from exc
+    if output.decision not in request.allowed_decisions:
+        raise JudgeInvalidResponseError(params={'reason':'decision_not_allowed','field':'decision'})
+    if output.target is not None and output.target not in request.allowed_targets:
+        raise JudgeInvalidResponseError(params={'reason':'target_not_allowed','field':'target'})
+    response = JudgeDecisionResponse(state_version=request.state_version, **output.model_dump())
+    if len(response.model_dump_json().encode('utf-8')) > RESPONSE_MAX_BYTES:
+        raise JudgeInvalidResponseError(params={'reason':'response_size','field':'response'})
+    return response

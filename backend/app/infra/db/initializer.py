@@ -487,40 +487,51 @@ class DatabaseManager:
                 logger.info(f"   + Create StrategyConfig: {row['config_id']}")
 
     def _seed_agent(self, db: Session, force: bool):
-        """
-        Seed Agent rows.
-        Resolves "_llm_provider_name" + "_llm_model_name" → llm.id.
-        """
-        logger.info("📝 Seeding agents...")
+        """Seed agents and migrate only legacy Judge protocol configuration once."""
+        logger.info("Seeding agents...")
         for raw in _load("agent.json"):
-            row = _strip_meta(raw)
+            self._seed_agent_row(db, raw, force)
 
+    def _seed_agent_row(self, db: Session, raw: dict, force: bool = False):
+        row = _strip_meta(raw)
+        existing = db.query(Agent).filter_by(name=row["name"]).first()
+        judge_names = {"virtual_court_investigation_judge", "virtual_court_debate_judge"}
+        if existing is None and row["name"] == "virtual_court_investigation_judge":
+            existing = db.query(Agent).filter_by(name="virtual_court_solo_judge").first()
+            if existing:
+                existing.name = row["name"]
+        # Existing tuned models do not depend on the seed's default LLM still existing.
+        if existing is None or force:
             llm_name = raw.get("_llm_name")
             if llm_name:
-                llm = db.query(LLM).filter_by(
-                    name=llm_name,
-                ).first()
-                if llm:
-                    row["llm_id"] = llm.id
-                else:
-                    logger.warning(
-                        f"   ⚠️ LLM '{llm_name}' not found "
-                        f"for Agent '{row['name']}', skipping"
-                    )
-                    continue
+                llm = db.query(LLM).filter_by(name=llm_name).first()
+                if llm is None:
+                    logger.warning("LLM '{}' missing for Agent '{}'; skipping", llm_name, row["name"])
+                    return
+                row["llm_id"] = llm.id
+        if existing:
+            if row["name"] in judge_names and "[JudgeAPI V2:2026-09-12-legal-extension]" not in (existing.system_prompt or ""):
+                existing.system_prompt = row["system_prompt"]
+                logger.info("Upgraded Judge protocol configuration: {}", row["name"])
+            if force:
+                for key, value in row.items():
+                    if key != "name":
+                        setattr(existing, key, value)
+        else:
+            existing = Agent(**row)
+            db.add(existing)
+        if row["name"] in judge_names:
+            db.flush()
+            self._restore_judge_law_tool(db, existing)
 
-            existing = db.query(Agent).filter_by(name=row["name"]).first()
-            if existing:
-                if force:
-                    for k, v in row.items():
-                        if k != "name":
-                            setattr(existing, k, v)
-                    logger.info(f"   ✓ Update Agent: {row['name']}")
-                else:
-                    logger.info(f"   - Skip Agent: {row['name']}")
-            else:
-                db.add(Agent(**row))
-                logger.info(f"   + Create Agent: {row['name']}")   
+    def _restore_judge_law_tool(self, db, agent):
+        tool = db.query(Tool).filter_by(name="intellectual_property_law_search").first()
+        if tool is None:
+            logger.warning("Judge law-search tool missing; binding cannot yet be restored")
+            return
+        if db.query(AgentToolRelation).filter_by(agent_id=agent.id, tool_id=tool.id).first() is None:
+            db.add(AgentToolRelation(agent_id=agent.id, tool_id=tool.id))
+            db.flush()
 
     def _seed_role(self, db: Session, force: bool):
         logger.info("📝 Seeding roles...")

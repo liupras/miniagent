@@ -1,0 +1,9 @@
+{
+  "state_version": 20,
+  "decision": "ASK",
+  "target": "WITNESS",
+  "speech": "被告，请说明下载涉案图片的平台名称及当时显示的授权范围。",
+  "pending_points": [
+    "图片取得来源及商用授权情况"
+  ]
+}

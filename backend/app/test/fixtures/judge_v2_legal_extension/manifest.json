@@ -1,0 +1,705 @@
+{
+  "revision": "2026-09-12-legal-extension",
+  "cases": [
+    {
+      "id": "investigation-request",
+      "kind": "request",
+      "file": "cases/investigation-request.json",
+      "valid": true
+    },
+    {
+      "id": "debate-request",
+      "kind": "request",
+      "file": "cases/debate-request.json",
+      "valid": true
+    },
+    {
+      "id": "ask-response",
+      "kind": "response",
+      "file": "cases/ask-response.json",
+      "valid": true,
+      "request": "contexts/ask-response.json"
+    },
+    {
+      "id": "ask-agent-output",
+      "kind": "agent-output",
+      "file": "cases/ask-agent-output.json",
+      "valid": true,
+      "request": "contexts/ask-agent-output.json"
+    },
+    {
+      "id": "investigation-complete-response",
+      "kind": "response",
+      "file": "cases/investigation-complete-response.json",
+      "valid": true,
+      "request": "contexts/investigation-complete-response.json"
+    },
+    {
+      "id": "investigation-complete-agent-output",
+      "kind": "agent-output",
+      "file": "cases/investigation-complete-agent-output.json",
+      "valid": true,
+      "request": "contexts/investigation-complete-agent-output.json"
+    },
+    {
+      "id": "continue-response",
+      "kind": "response",
+      "file": "cases/continue-response.json",
+      "valid": true,
+      "request": "contexts/continue-response.json"
+    },
+    {
+      "id": "continue-agent-output",
+      "kind": "agent-output",
+      "file": "cases/continue-agent-output.json",
+      "valid": true,
+      "request": "contexts/continue-agent-output.json"
+    },
+    {
+      "id": "debate-complete-response",
+      "kind": "response",
+      "file": "cases/debate-complete-response.json",
+      "valid": true,
+      "request": "contexts/debate-complete-response.json"
+    },
+    {
+      "id": "debate-complete-agent-output",
+      "kind": "agent-output",
+      "file": "cases/debate-complete-agent-output.json",
+      "valid": true,
+      "request": "contexts/debate-complete-agent-output.json"
+    },
+    {
+      "id": "handoff-response",
+      "kind": "response",
+      "file": "cases/handoff-response.json",
+      "valid": true,
+      "request": "contexts/handoff-response.json"
+    },
+    {
+      "id": "handoff-agent-output",
+      "kind": "agent-output",
+      "file": "cases/handoff-agent-output.json",
+      "valid": true,
+      "request": "contexts/handoff-agent-output.json"
+    },
+    {
+      "id": "empty-records",
+      "kind": "request",
+      "file": "cases/empty-records.json",
+      "valid": true
+    },
+    {
+      "id": "summary-and-speech",
+      "kind": "request",
+      "file": "cases/summary-and-speech.json",
+      "valid": true
+    },
+    {
+      "id": "over-thirty-records",
+      "kind": "request",
+      "file": "cases/over-thirty-records.json",
+      "valid": true
+    },
+    {
+      "id": "limit-reached",
+      "kind": "request",
+      "file": "cases/limit-reached.json",
+      "valid": true
+    },
+    {
+      "id": "extended-role",
+      "kind": "request",
+      "file": "cases/extended-role.json",
+      "valid": true
+    },
+    {
+      "id": "extended-role-response",
+      "kind": "response",
+      "file": "cases/extended-role-response.json",
+      "valid": true,
+      "request": "contexts/extended-role-response.json"
+    },
+    {
+      "id": "record-role-not-target",
+      "kind": "request",
+      "file": "cases/record-role-not-target.json",
+      "valid": true
+    },
+    {
+      "id": "missing-field",
+      "kind": "request",
+      "file": "cases/missing-field.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "legacy-task",
+      "kind": "request",
+      "file": "cases/legacy-task.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "cross-phase-request",
+      "kind": "request",
+      "file": "cases/cross-phase-request.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "missing-handoff",
+      "kind": "request",
+      "file": "cases/missing-handoff.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "duplicate-targets",
+      "kind": "request",
+      "file": "cases/duplicate-targets.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "ask-no-targets",
+      "kind": "request",
+      "file": "cases/ask-no-targets.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "debate-no-issue",
+      "kind": "request",
+      "file": "cases/debate-no-issue.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "debate-no-summary",
+      "kind": "request",
+      "file": "cases/debate-no-summary.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "investigation-summary-forbidden",
+      "kind": "request",
+      "file": "cases/investigation-summary-forbidden.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "evidence-summary-forbidden",
+      "kind": "request",
+      "file": "cases/evidence-summary-forbidden.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "summary-role-forbidden",
+      "kind": "request",
+      "file": "cases/summary-role-forbidden.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "unauthorized-target",
+      "kind": "response",
+      "file": "cases/unauthorized-target.json",
+      "valid": false,
+      "request": "contexts/unauthorized-target.json",
+      "reason": "target_not_allowed"
+    },
+    {
+      "id": "decision-not-allowed",
+      "kind": "response",
+      "file": "cases/decision-not-allowed.json",
+      "valid": false,
+      "request": "contexts/decision-not-allowed.json",
+      "reason": "decision_not_allowed"
+    },
+    {
+      "id": "cross-phase-response",
+      "kind": "response",
+      "file": "cases/cross-phase-response.json",
+      "valid": false,
+      "request": "contexts/cross-phase-response.json",
+      "reason": "decision_not_allowed"
+    },
+    {
+      "id": "stale-version",
+      "kind": "response",
+      "file": "cases/stale-version.json",
+      "valid": false,
+      "request": "contexts/stale-version.json",
+      "reason": "stale_state"
+    },
+    {
+      "id": "complete-target-forbidden",
+      "kind": "response",
+      "file": "cases/complete-target-forbidden.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "continue-no-points",
+      "kind": "response",
+      "file": "cases/continue-no-points.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "handoff-no-points",
+      "kind": "response",
+      "file": "cases/handoff-no-points.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "blank-speech",
+      "kind": "response",
+      "file": "cases/blank-speech.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "agent-generated-version",
+      "kind": "agent-output",
+      "file": "cases/agent-generated-version.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "speech-max",
+      "kind": "response",
+      "file": "cases/speech-max.json",
+      "valid": true
+    },
+    {
+      "id": "speech-over-max",
+      "kind": "response",
+      "file": "cases/speech-over-max.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "unicode-codepoints",
+      "kind": "response",
+      "file": "cases/unicode-codepoints.json",
+      "valid": true
+    },
+    {
+      "id": "records-max",
+      "kind": "request",
+      "file": "cases/records-max.json",
+      "valid": true
+    },
+    {
+      "id": "records-over-max",
+      "kind": "request",
+      "file": "cases/records-over-max.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "content-budget-64000",
+      "kind": "request",
+      "file": "cases/content-budget-64000.json",
+      "valid": true
+    },
+    {
+      "id": "content-budget-64001",
+      "kind": "request",
+      "file": "cases/content-budget-64001.json",
+      "valid": false,
+      "reason": "content_budget"
+    },
+    {
+      "id": "negative-version",
+      "kind": "request",
+      "file": "cases/negative-version.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "boolean-version",
+      "kind": "request",
+      "file": "cases/boolean-version.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "string-version",
+      "kind": "request",
+      "file": "cases/string-version.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "version-max",
+      "kind": "request",
+      "file": "cases/version-max.json",
+      "valid": true
+    },
+    {
+      "id": "version-over-max",
+      "kind": "request",
+      "file": "cases/version-over-max.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "body-bytes-max",
+      "kind": "request",
+      "file": "cases/body-bytes-max.json",
+      "valid": true
+    },
+    {
+      "id": "body-bytes-over-max",
+      "kind": "request",
+      "file": "cases/body-bytes-over-max.json",
+      "valid": false,
+      "reason": "body_size"
+    },
+    {
+      "id": "markdown-fence",
+      "kind": "request",
+      "file": "cases/markdown-fence.json",
+      "valid": false,
+      "reason": "invalid_json"
+    },
+    {
+      "id": "duplicate-key",
+      "kind": "request",
+      "file": "cases/duplicate-key.json",
+      "valid": false,
+      "reason": "invalid_json"
+    },
+    {
+      "id": "law-check-investigation",
+      "kind": "request",
+      "file": "cases/law-check-investigation.json",
+      "valid": true
+    },
+    {
+      "id": "law-check-debate-single-party",
+      "kind": "request",
+      "file": "cases/law-check-debate-single-party.json",
+      "valid": true
+    },
+    {
+      "id": "law-check-empty-targets",
+      "kind": "request",
+      "file": "cases/law-check-empty-targets.json",
+      "valid": true
+    },
+    {
+      "id": "law-check-reordered",
+      "kind": "request",
+      "file": "cases/law-check-reordered.json",
+      "valid": true
+    },
+    {
+      "id": "law-check-completed-question-history",
+      "kind": "request",
+      "file": "cases/law-check-completed-question-history.json",
+      "valid": true
+    },
+    {
+      "id": "investigation-explain-law",
+      "kind": "response",
+      "file": "cases/investigation-explain-law.json",
+      "valid": true,
+      "request": "contexts/investigation-explain-law.json"
+    },
+    {
+      "id": "investigation-explain-law-agent",
+      "kind": "agent-output",
+      "file": "cases/investigation-explain-law-agent.json",
+      "valid": true,
+      "request": "contexts/investigation-explain-law-agent.json"
+    },
+    {
+      "id": "investigation-no-action",
+      "kind": "response",
+      "file": "cases/investigation-no-action.json",
+      "valid": true,
+      "request": "contexts/investigation-no-action.json"
+    },
+    {
+      "id": "investigation-no-action-agent",
+      "kind": "agent-output",
+      "file": "cases/investigation-no-action-agent.json",
+      "valid": true,
+      "request": "contexts/investigation-no-action-agent.json"
+    },
+    {
+      "id": "debate-explain-law",
+      "kind": "response",
+      "file": "cases/debate-explain-law.json",
+      "valid": true,
+      "request": "contexts/debate-explain-law.json"
+    },
+    {
+      "id": "debate-explain-law-agent",
+      "kind": "agent-output",
+      "file": "cases/debate-explain-law-agent.json",
+      "valid": true,
+      "request": "contexts/debate-explain-law-agent.json"
+    },
+    {
+      "id": "debate-no-action",
+      "kind": "response",
+      "file": "cases/debate-no-action.json",
+      "valid": true,
+      "request": "contexts/debate-no-action.json"
+    },
+    {
+      "id": "debate-no-action-agent",
+      "kind": "agent-output",
+      "file": "cases/debate-no-action-agent.json",
+      "valid": true,
+      "request": "contexts/debate-no-action-agent.json"
+    },
+    {
+      "id": "explain-at-investigation-progress",
+      "kind": "response",
+      "file": "cases/explain-at-investigation-progress.json",
+      "valid": true,
+      "request": "contexts/explain-at-investigation-progress.json"
+    },
+    {
+      "id": "explain-at-debate-progress",
+      "kind": "response",
+      "file": "cases/explain-at-debate-progress.json",
+      "valid": true,
+      "request": "contexts/explain-at-debate-progress.json"
+    },
+    {
+      "id": "law-check-mixed-ask",
+      "kind": "request",
+      "file": "cases/law-check-mixed-ask.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "law-check-mixed-complete",
+      "kind": "request",
+      "file": "cases/law-check-mixed-complete.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "law-check-mixed-continue",
+      "kind": "request",
+      "file": "cases/law-check-mixed-continue.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "law-check-no-explain",
+      "kind": "request",
+      "file": "cases/law-check-no-explain.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "law-check-no-handoff",
+      "kind": "request",
+      "file": "cases/law-check-no-handoff.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "law-check-duplicate",
+      "kind": "request",
+      "file": "cases/law-check-duplicate.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "all-five-not-valid-check",
+      "kind": "request",
+      "file": "cases/all-five-not-valid-check.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "over-five-decisions",
+      "kind": "request",
+      "file": "cases/over-five-decisions.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "legal-question-field-forbidden",
+      "kind": "request",
+      "file": "cases/legal-question-field-forbidden.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "law-check-debate-no-issue",
+      "kind": "request",
+      "file": "cases/law-check-debate-no-issue.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "law-check-debate-no-investigation-summary",
+      "kind": "request",
+      "file": "cases/law-check-debate-no-investigation-summary.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "no-action-at-progress",
+      "kind": "response",
+      "file": "cases/no-action-at-progress.json",
+      "valid": false,
+      "request": "contexts/no-action-at-progress.json",
+      "reason": "decision_not_allowed"
+    },
+    {
+      "id": "explain-not-authorized",
+      "kind": "response",
+      "file": "cases/explain-not-authorized.json",
+      "valid": false,
+      "request": "contexts/explain-not-authorized.json",
+      "reason": "decision_not_allowed"
+    },
+    {
+      "id": "complete-during-law-check",
+      "kind": "response",
+      "file": "cases/complete-during-law-check.json",
+      "valid": false,
+      "request": "contexts/complete-during-law-check.json",
+      "reason": "decision_not_allowed"
+    },
+    {
+      "id": "ask-during-law-check",
+      "kind": "response",
+      "file": "cases/ask-during-law-check.json",
+      "valid": false,
+      "request": "contexts/ask-during-law-check.json",
+      "reason": "decision_not_allowed"
+    },
+    {
+      "id": "no-action-speech-nonempty",
+      "kind": "response",
+      "file": "cases/no-action-speech-nonempty.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "no-action-speech-space",
+      "kind": "response",
+      "file": "cases/no-action-speech-space.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "no-action-speech-null",
+      "kind": "response",
+      "file": "cases/no-action-speech-null.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "no-action-target-nonempty",
+      "kind": "response",
+      "file": "cases/no-action-target-nonempty.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "no-action-pending_points-nonempty",
+      "kind": "response",
+      "file": "cases/no-action-pending_points-nonempty.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "no-action-missing-speech",
+      "kind": "response",
+      "file": "cases/no-action-missing-speech.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "explain-empty",
+      "kind": "response",
+      "file": "cases/explain-empty.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "explain-space",
+      "kind": "response",
+      "file": "cases/explain-space.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "explain-target",
+      "kind": "response",
+      "file": "cases/explain-target.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "explain-max",
+      "kind": "response",
+      "file": "cases/explain-max.json",
+      "valid": true
+    },
+    {
+      "id": "explain-over-max",
+      "kind": "response",
+      "file": "cases/explain-over-max.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "explain-unicode-max",
+      "kind": "response",
+      "file": "cases/explain-unicode-max.json",
+      "valid": true
+    },
+    {
+      "id": "explain-with-pending",
+      "kind": "response",
+      "file": "cases/explain-with-pending.json",
+      "valid": true,
+      "request": "contexts/explain-with-pending.json"
+    },
+    {
+      "id": "no-action-stale",
+      "kind": "response",
+      "file": "cases/no-action-stale.json",
+      "valid": false,
+      "request": "contexts/no-action-stale.json",
+      "reason": "stale_state"
+    },
+    {
+      "id": "explain-agent-generated-version",
+      "kind": "agent-output",
+      "file": "cases/explain-agent-generated-version.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "post-explanation-progress",
+      "kind": "request",
+      "file": "cases/post-explanation-progress.json",
+      "valid": true
+    },
+    {
+      "id": "round-limit-can-explain",
+      "kind": "request",
+      "file": "cases/round-limit-can-explain.json",
+      "valid": true
+    }
+  ]
+}

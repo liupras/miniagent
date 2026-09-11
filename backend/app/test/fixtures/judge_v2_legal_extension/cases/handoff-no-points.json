@@ -1,0 +1,7 @@
+{
+  "state_version": 40,
+  "decision": "HANDOFF",
+  "target": null,
+  "speech": "已有记录中缺少被告对上一问题的实际回答，暂不能继续自动处理，请人工核对并补充记录。",
+  "pending_points": []
+}

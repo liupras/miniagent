@@ -5,6 +5,7 @@
 # @description: Agent LLM client
 
 import json
+import asyncio
 from typing import List, Dict, Any, Optional
 
 from .client import LLMClient
@@ -25,7 +26,9 @@ class AgentLLM:
         context_window_tokens: Optional[int] = None,
         max_output_tokens: Optional[int] = None,
         token_counter: Optional[TokenCounter] = None,
+        preserve_context: bool = False,
     ):
+        self.preserve_context = preserve_context
         self.client = client
         self.model = model
         self.context_window_tokens = context_window_tokens
@@ -68,10 +71,11 @@ class AgentLLM:
         tool_schema=None,
     ):
 
-        full_messages = self._build_messages(
-            messages,
-            tool_schema,
-        )
+        if self.preserve_context:
+            # A strict Judge deadline also covers potentially slow local tokenization.
+            full_messages = await asyncio.to_thread(self._build_messages, messages, tool_schema)
+        else:
+            full_messages = self._build_messages(messages, tool_schema)
 
         resp = await self.client.achat(
             model=self.model,
@@ -133,6 +137,10 @@ class AgentLLM:
         original_tokens = self._count_messages(messages, budget=input_budget)
         if original_tokens <= input_budget:
             return messages
+
+        if self.preserve_context:
+            from app.services.virtual_court.exceptions import JudgeContextError
+            raise JudgeContextError(params={"reason":"model_context_budget", "field":"records"})
 
         system_messages: List[Dict[str, Any]] = []
         body_start = 0

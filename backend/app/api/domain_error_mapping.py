@@ -19,6 +19,7 @@ from app.services.integration_auth import (
 )
 from app.services.virtual_court import (
     JudgeConfigurationError,
+    JudgeContextError,
     JudgeInvalidResponseError,
     JudgeServiceError,
     JudgeTimeoutError,
@@ -31,6 +32,7 @@ _HTTP_STATUS_BY_ERROR_TYPE: tuple[tuple[type[BaseDomainError], int], ...] = (
     (InvalidIntegrationCredentialsError, 401),
     (IntegrationNotConfiguredError, 503),
     (IntegrationAccessError, 500),
+    (JudgeContextError, 422),
     (JudgeTimeoutError, 504),
     (JudgeInvalidResponseError, 502),
     (JudgeConfigurationError, 503),

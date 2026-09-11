@@ -1,0 +1,12 @@
+{
+  "revision": "2026-09-12",
+  "request_body_max_bytes": 524288,
+  "response_body_max_bytes": 131072,
+  "request_content_max_codepoints": 64000,
+  "server_total_timeout_seconds": 120,
+  "client_timeout_seconds": 135,
+  "max_output_repair_attempts": 1,
+  "length_semantics": "Unicode code points before trimming; whitespace-only text is invalid.",
+  "content_budget_fields": "All string leaves in case_context and records, plus current_issue.question.",
+  "token_budget": "Deployment must additionally check the actual model context window, reserving prompt/schema/output tokens; do not truncate."
+}

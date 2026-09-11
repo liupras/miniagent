@@ -1,0 +1,26 @@
+# JudgeAPI V2 法律解释扩展（2026-09-12）
+
+仅提供 POST `/api/v2/integrations/virtual-court/judge/decide`；不保留 V1。
+鉴权 `X-Integration-Key`。请求七字段、HTTP 响应五字段、模型最终输出四字段，版本由服务回填。
+
+共享冻结样例：`app/test/fixtures/judge_v2_legal_extension/manifest.json`，102 个契约用例；同目录 integrity.json 校验冻结文件。初版样例保留为历史证据。
+完整协议源：VirtualCourt `Docs/judge_protocol_v2.md`。
+
+调查决策：ASK、COMPLETE、HANDOFF、EXPLAIN_LAW、NO_ACTION；辩论将 ASK 替换为 CONTINUE。
+包含 NO_ACTION 的 allowed_decisions 必须恰为 EXPLAIN_LAW、NO_ACTION、HANDOFF，不能混入推进决策。
+NO_ACTION 必须 target=null、speech=""、pending_points=[]；其他 speech 非空。法律问题由 records 提供，不新增 legal_question。
+
+EXPLAIN_LAW 先调用 intellectual_property_law_search，再依据结果解释。无本次有效检索的解释、检索异常或空资料转为 HTTP 200 HANDOFF。是否有待回答问题、资料是否相关和足够，由阶段 Agent 推理；不能用静态结构校验代替真实模型验收。
+Judge 使用独立完整上下文执行路径，不加载会话记忆，不复用上次检索状态。工具描述、调用、返回结果计入每次模型调用前的预算；超限返回 422，不截断记录。
+
+请求上限 512 KiB、累计内容 64000 码点，响应上限 128 KiB，不接受重复 JSON 字段。
+默认服务端总预算 120 秒，涵盖 Agent 加载、检索、生成、预算检查及最多一次格式纠错；客户端计划 135 秒。错误沿用统一 error 外壳。
+
+## 升级
+
+两个名称仍为 virtual_court_investigation_judge、virtual_court_debate_judge。
+扩展标记 `[JudgeAPI V2:2026-09-12-legal-extension]` 区分初版 M1，正常初始化和定向升级保留 ID、启用状态、模型及参数，幂等恢复缺失法律检索绑定，不删除其他绑定。
+重复初始化保留已有扩展提示词的人工微调。定向升级：`python -B scripts/upgrade_judge_v2.py`，事务内检查两个 Agent 的标记及工具绑定；缺失工具则回滚。
+升级后重启服务清除缓存。旧提示词 runner 会被 V2 执行路径拒绝，不能把数据库更新误认为运行缓存已更新。
+
+自动化测试包括 test_judge_legal_execution 以及协议、响应、Service、API、种子和迁移回归。检索执行测试使用确定性的模型和工具边界，真实模型、实际知识库质量及 Unity 播放恢复在后续联调验收。

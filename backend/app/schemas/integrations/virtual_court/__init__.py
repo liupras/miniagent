@@ -1,57 +1,6 @@
-"""Public VirtualCourt integration contracts."""
-
-from .common import (
-    ActorRole,
-    CaseContext,
-    CourtEvent,
-    IntegrationError,
-    IntegrationErrorCode,
-    IntegrationErrorResponse,
-    PartyRole,
-    StageSummary,
-)
+"""Public JudgeAPI V2 contracts and integration errors."""
+from .common import IntegrationError, IntegrationErrorCode, IntegrationErrorResponse
 from .judge import (
-    ActionType,
-    ConfidenceLevel,
-    JudgeActionProposal,
-    JudgeAgentOutput,
-    JudgeDecisionRequest,
-    JudgeDecisionResponse,
-    JudgeSpeech,
-    JudgeStage,
-    CourtIssue,
-    IssueAssessment,
-    IssueAssessmentResult,
-    IssueStatus,
-    LegalCitation,
-    SpeechType,
-    TriggerType,
-    judge_agent_output_json_schema,
+    JudgeDecisionRequest, JudgeDecisionResponse, JudgeAgentOutput,
+    JudgeCaseContext, JudgeIssue, JudgeRecord, judge_agent_output_json_schema,
 )
-
-__all__ = [
-    "ActionType",
-    "ActorRole",
-    "CaseContext",
-    "ConfidenceLevel",
-    "CourtEvent",
-    "CourtIssue",
-    "IntegrationError",
-    "IntegrationErrorCode",
-    "IntegrationErrorResponse",
-    "JudgeActionProposal",
-    "JudgeAgentOutput",
-    "JudgeDecisionRequest",
-    "JudgeDecisionResponse",
-    "JudgeSpeech",
-    "JudgeStage",
-    "IssueAssessment",
-    "IssueAssessmentResult",
-    "IssueStatus",
-    "LegalCitation",
-    "PartyRole",
-    "SpeechType",
-    "StageSummary",
-    "TriggerType",
-    "judge_agent_output_json_schema",
-]

@@ -148,6 +148,29 @@ class AgentRunner:
     # Public interface
     # ──────────────────────────────────────────────────────────────────────
 
+    def validate_complete_query(self, query: str) -> None:
+        """Fail before invoking rather than allowing truncation of a structured request."""
+        from app.services.virtual_court.exceptions import JudgeContextError, JudgeConfigurationError
+        from app.utils.tokens import TokenCounter
+        if hasattr(self._agent, "agent_llm"):
+            from copy import copy
+            llm = copy(self._agent.agent_llm)
+            llm.preserve_context = True
+            llm._build_messages([{"role":"system", "content":self._system_prompt},
+                                 {"role":"user", "content":query}], self._agent.tool_schemas)
+            return
+        budget = calculate_input_budget(context_window_tokens=self._context_window_tokens,
+                                        max_output_tokens=self._max_output_tokens)
+        messages = [{"role":"system", "content":self._system_prompt},
+                    {"role":"user", "content":query}]
+        if TokenCounter(model=self._model_name).count_messages(messages, budget=budget) > budget:
+            raise JudgeContextError(params={"reason":"model_context_budget", "field":"records"})
+
+    async def invoke_judge(self, *, query: str) -> str:
+        """Stateless strict-context execution; no shared runner mutation or DB history."""
+        from app.services.virtual_court.judge_execution import invoke_judge
+        return await invoke_judge(self, query)
+
     async def invoke(
         self,
         query: str,

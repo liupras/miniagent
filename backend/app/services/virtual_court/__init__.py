@@ -19,3 +19,5 @@ __all__ = [
     "JudgeUnavailableError",
     "validate_judge_agent_output",
 ]
+
+from .exceptions import JudgeContextError

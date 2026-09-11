@@ -1,0 +1,28 @@
+{
+  "state_version": 20,
+  "phase": "INVESTIGATION",
+  "allowed_decisions": [
+    "ASK",
+    "COMPLETE",
+    "HANDOFF"
+  ],
+  "allowed_targets": [
+    "PLAINTIFF",
+    "DEFENDANT"
+  ],
+  "case_context": {
+    "summary": "原告主张被告未经许可将其插画用于商业宣传；被告主张图片来自公开素材平台。",
+    "claims": [
+      "停止使用涉案图片并赔偿经济损失及维权支出。"
+    ],
+    "defenses": [
+      "图片来自公开素材平台，使用时间较短。"
+    ],
+    "dispute_focuses": [
+      "涉案使用行为是否构成侵权。",
+      "赔偿金额及维权费用是否合理。"
+    ]
+  },
+  "current_issue": null,
+  "records": []
+}

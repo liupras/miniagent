@@ -1,0 +1,9 @@
+{
+  "state_version": 35,
+  "decision": "CONTINUE",
+  "target": null,
+  "speech": "请双方围绕律师服务的具体内容、与本案的关联性和必要性补充发表意见，先由原告发言，再由被告回应。",
+  "pending_points": [
+    "律师服务的具体内容及其与本案的关系"
+  ]
+}

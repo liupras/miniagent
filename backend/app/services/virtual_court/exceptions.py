@@ -43,3 +43,8 @@ class JudgeInvalidResponseError(JudgeServiceError):
     """The model output cannot be exposed as a valid judge decision."""
 
     error_key = "judge.invalid_response"
+
+
+class JudgeContextError(JudgeServiceError):
+    """Complete input does not fit; never truncate courtroom records."""
+    error_key = "judge.context_too_large"

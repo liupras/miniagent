@@ -281,7 +281,7 @@ app.include_router(web_search_router,prefix="/api/v1/skill", tags=["Skill - Web 
 from app.api.integrations.virtual_court.judge import router as virtual_court_judge_router
 app.include_router(
     virtual_court_judge_router,
-    prefix="/api/v1/integrations/virtual-court",
+    prefix="/api/v2/integrations/virtual-court",
     tags=["Integration - VirtualCourt"],
 )
 
