@@ -11,7 +11,7 @@
 NO_ACTION 必须 target=null、speech=""、pending_points=[]；其他 speech 非空。法律问题由 records 提供，不新增 legal_question。
 
 EXPLAIN_LAW 先调用 intellectual_property_law_search，再依据结果解释。无本次有效检索的解释、检索异常或空资料转为 HTTP 200 HANDOFF。是否有待回答问题、资料是否相关和足够，由阶段 Agent 推理；不能用静态结构校验代替真实模型验收。
-Judge 使用独立完整上下文执行路径，不加载会话记忆，不复用上次检索状态。工具描述、调用、返回结果计入每次模型调用前的预算；超限返回 422，不截断记录。
+Judge 复用 AgentFactory → AgentRunner.execute → ToolReActAgent，通过 agent_tool_relations 和 tools 中的 smart_router 配置加载检索工具。execute(preserve_context=True) 不加载隐式会话记忆、不截断上下文，返回最终文本及本次工具轨迹；原 invoke() 保持文本返回和原有会话行为。JudgeService 使用 law_policy 检查检索轨迹，不在通用运行时处理 Judge 决策；工具观察回调在失败或空法律资料时中止执行并转 HANDOFF。没有 Judge 专用工具循环。工具描述、调用、返回结果计入每次模型调用前的预算；超限返回 422，不截断记录。
 
 请求上限 512 KiB、累计内容 64000 码点，响应上限 128 KiB，不接受重复 JSON 字段。
 默认服务端总预算 120 秒，涵盖 Agent 加载、检索、生成、预算检查及最多一次格式纠错；客户端计划 135 秒。错误沿用统一 error 外壳。

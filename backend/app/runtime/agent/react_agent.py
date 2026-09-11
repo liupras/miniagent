@@ -18,6 +18,7 @@ logger = get_logger(__name__)
 from app.runtime.llm.agent_client import AgentLLM
 from app.core.i18n.i18n import t
 from app.runtime.agent.exceptions import ToolExecutionError, ToolNotRegisteredError
+from app.runtime.agent.execution import ToolExecution
 from app.runtime.types import MessageRole
 from app.schemas.exceptions import BaseDomainError
 
@@ -55,6 +56,11 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
         # 1. Retrieving pure dictionary history messages
         messages, max_steps = self._prepare_context(input, config)
 
+        observer = input.get("tool_observer")
+        def notify(name, call_id, success, output=None, error=None):
+            if observer is not None:
+                observer(ToolExecution(name, call_id, success, output, error))
+
         # 2. ReAct Core Loop
         for step in range(max_steps):
             response_dict = await self.agent_llm.achat(messages, tool_schema=self.tool_schemas)
@@ -74,6 +80,7 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
   
                 success, tool_args = self._parse_tool_arguments(func_info.get("arguments", {}))
                 if not success:
+                    notify(tool_name, tool_call_id, False, error="invalid_arguments")
                     error_observation = t("agent_runner.tool_arg_error",tool_name=tool_name)
                     messages.append({
                         "role": MessageRole.TOOL,
@@ -83,7 +90,14 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
                     })
                     continue
 
-                observation = await self._execute_tool_async(tool_name, tool_args)
+                try:
+                    observation = await self._execute_tool_async(tool_name, tool_args)
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    notify(tool_name, tool_call_id, False, error="execution_failed")
+                    raise
+                notify(tool_name, tool_call_id, True, output=str(observation))
 
                 messages.append({
                     "role": MessageRole.TOOL,
@@ -95,7 +109,7 @@ class ToolReActAgent(Runnable[Dict[str, Any], Dict[str, Any]]):
             yield {"messages": messages}
         else:
             self._handle_max_steps_error(messages)            
-            yield {"messages": messages}
+            yield {"messages": messages, "stop_reason": "step_limit"}
 
     def invoke(self, input: Dict[str, Any], config: Optional[RunnableConfig] = None) -> Dict[str, Any]:
         """Pure synchronous execution loop"""

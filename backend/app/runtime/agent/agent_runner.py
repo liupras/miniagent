@@ -14,6 +14,8 @@ It is immutable after construction; tools and prompts are fixed at build time.
 from __future__ import annotations
 
 import json
+from copy import copy, deepcopy
+from app.runtime.agent.execution import AgentExecution, ToolObserver
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
 from langchain_core.runnables import Runnable
@@ -148,100 +150,74 @@ class AgentRunner:
     # Public interface
     # ──────────────────────────────────────────────────────────────────────
 
-    def validate_complete_query(self, query: str) -> None:
-        """Fail before invoking rather than allowing truncation of a structured request."""
-        from app.services.virtual_court.exceptions import JudgeContextError, JudgeConfigurationError
-        from app.utils.tokens import TokenCounter
-        if hasattr(self._agent, "agent_llm"):
-            from copy import copy
-            llm = copy(self._agent.agent_llm)
-            llm.preserve_context = True
-            llm._build_messages([{"role":"system", "content":self._system_prompt},
-                                 {"role":"user", "content":query}], self._agent.tool_schemas)
-            return
-        budget = calculate_input_budget(context_window_tokens=self._context_window_tokens,
-                                        max_output_tokens=self._max_output_tokens)
-        messages = [{"role":"system", "content":self._system_prompt},
-                    {"role":"user", "content":query}]
-        if TokenCounter(model=self._model_name).count_messages(messages, budget=budget) > budget:
-            raise JudgeContextError(params={"reason":"model_context_budget", "field":"records"})
-
-    async def invoke_judge(self, *, query: str) -> str:
-        """Stateless strict-context execution; no shared runner mutation or DB history."""
-        from app.services.virtual_court.judge_execution import invoke_judge
-        return await invoke_judge(self, query)
+    @property
+    def system_prompt(self) -> str:
+        """Read-only configuration for application-level revision checks."""
+        return self._system_prompt
 
     async def invoke(
-        self,
-        query: str,
-        history: Optional[List[Dict[str, str]]] = None,
-        *,
-        user_id: Optional[str] = None,
-        session_id: Optional[int] = None,
+        self, query: str, history: Optional[List[Dict[str, str]]] = None, *,
+        user_id: Optional[str] = None, session_id: Optional[int] = None,
     ) -> str:
+        """Compatibility entry point: existing memory behavior and text return value."""
+        result = await self.execute(query, history, user_id=user_id, session_id=session_id)
+        return result.text
+
+    async def execute(
+        self, query: str, history: Optional[List[Dict[str, str]]] = None, *,
+        user_id: Optional[str] = None, session_id: Optional[int] = None,
+        preserve_context: bool = False,
+        tool_observer: Optional[ToolObserver] = None,
+    ) -> AgentExecution:
+        """Run the configured agent and return text plus per-call tool executions.
+
+        preserve_context uses explicit history only and rejects overflow at every
+        model request. It cannot be combined with implicit database conversation
+        state. An observer can abort execution by raising; it must not block.
         """
-        Run the agent to completion and return the final answer as a string.
+        agent = self._agent
+        if preserve_context:
+            if user_id is not None or session_id is not None:
+                raise ValueError("Complete-context execution requires explicit history")
+            if not isinstance(agent, ToolReActAgent):
+                raise ValueError("This agent does not support complete-context execution")
+            # Policy belongs to this invocation, never to the factory's cached runner.
+            agent = copy(agent)
+            agent.agent_llm = copy(agent.agent_llm)
+            agent.agent_llm.preserve_context = True
+            messages = [{"role":"system", "content":self._system_prompt}]
+            messages.extend(deepcopy(history or []))
+            messages.append({"role":"user", "content":query})
+        else:
+            if user_id:
+                await self._conversation_service.save_message(
+                    user_id=user_id, agent_id=self.agent_id, session_id=session_id,
+                    role="user", content=query)
+            messages = await self._conversation_service.build_messages(
+                query=query, system_prompt=self._system_prompt,
+                context_window_tokens=self._context_window_tokens,
+                max_output_tokens=self._max_output_tokens, model_name=self._model_name,
+                history=history, user_id=user_id, session_id=session_id)
 
-        When user_id and session_id are both provided, conversation history is
-        automatically loaded from and saved to the database.
-
-        Args:
-            query       The user's current message.
-            history     Optional explicit prior conversation turns (role/content
-                        dicts).  Overrides DB history when both are present.
-            user_id     User identifier for persistent memory (optional).
-            session_id  Session identifier for persistent memory (optional).
-
-        Returns:
-            The agent's final text response.
-        """
-        use_db = bool(user_id)
-
-        # ── Persist user message ───────────────────────────────────────────
-        if use_db:
-            await self._conversation_service.save_message(
-                user_id=user_id,
-                agent_id = self.agent_id,
-                session_id=session_id,
-                role="user",
-                content=query,
-            )
-
-        messages = await self._conversation_service.build_messages(
-            query=query, 
-            system_prompt = self._system_prompt,
-            context_window_tokens=self._context_window_tokens,
-            max_output_tokens=self._max_output_tokens,
-            model_name=self._model_name,
-            history = history, 
-            user_id = user_id, 
-            session_id = session_id
-        )
-        logger.debug(
-            f"[AgentRunner:{self.agent_name}] invoke — "
-            f"{len(messages)} message(s) in context."
-        )
-
-        if hasattr(self._agent, "agent_llm"):
+        if hasattr(agent, "agent_llm"):
             messages = _ensure_dict_messages(messages)
-
-        result = await self._agent.ainvoke({"messages": messages})
-
-        # The final AI message is always the last element.
-        latest_msg = result["messages"][-1]
-        answer: str = _extract_content(latest_msg)
-
-        # ── Persist assistant reply ────────────────────────────────────────
-        if use_db:
+        executions = []
+        def observe(event):
+            executions.append(event)
+            if tool_observer is not None:
+                tool_observer(event)
+        payload = {"messages": messages}
+        if isinstance(agent, ToolReActAgent):
+            payload["tool_observer"] = observe
+        elif tool_observer is not None:
+            raise ValueError("This agent does not support tool observation")
+        result = await agent.ainvoke(payload)
+        answer = _extract_content(result["messages"][-1])
+        if user_id:
             await self._conversation_service.save_message(
-                user_id=user_id,
-                agent_id=self.agent_id,
-                session_id=session_id,
-                role="assistant",
-                content=answer,
-            )
-
-        return answer
+                user_id=user_id, agent_id=self.agent_id, session_id=session_id,
+                role="assistant", content=answer)
+        return AgentExecution(answer, tuple(executions), result.get("stop_reason", "completed"))
 
     async def stream(
         self,

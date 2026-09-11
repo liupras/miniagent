@@ -19,7 +19,7 @@ from app.utils.tokens import TokenCounter
 from app.runtime.agent.tool_builder import ToolBuildError
 from app.schemas.integrations.virtual_court import JudgeDecisionRequest
 from app.services.virtual_court import JudgeService, JudgeContextError, JudgeTimeoutError, JudgeConfigurationError
-from app.services.virtual_court.judge_execution import LAW_TOOL, REVISION
+from app.services.virtual_court.law_policy import LAW_TOOL, REVISION
 from app.test.judge_v2_helpers import ROOT, load
 
 @pytest.fixture

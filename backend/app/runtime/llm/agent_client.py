@@ -72,7 +72,7 @@ class AgentLLM:
     ):
 
         if self.preserve_context:
-            # A strict Judge deadline also covers potentially slow local tokenization.
+            # A strict execution deadline also covers potentially slow local tokenization.
             full_messages = await asyncio.to_thread(self._build_messages, messages, tool_schema)
         else:
             full_messages = self._build_messages(messages, tool_schema)
@@ -139,8 +139,8 @@ class AgentLLM:
             return messages
 
         if self.preserve_context:
-            from app.services.virtual_court.exceptions import JudgeContextError
-            raise JudgeContextError(params={"reason":"model_context_budget", "field":"records"})
+            from app.runtime.llm.exceptions import ContextBudgetExceeded
+            raise ContextBudgetExceeded("Complete context exceeds the model input budget")
 
         system_messages: List[Dict[str, Any]] = []
         body_start = 0

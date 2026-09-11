@@ -8,20 +8,24 @@ from app.services.virtual_court import JudgeUnavailableError, JudgeConfiguration
 from app.runtime.agent.agent_factory import AgentNotFoundError
 from app.runtime.llm.models import LLMClientError
 from app.test.judge_v2_helpers import request_data, output
+from app.runtime.agent.execution import AgentExecution
+from app.runtime.llm.exceptions import ContextBudgetExceeded
+from app.services.virtual_court.law_policy import REVISION
 
 @pytest.fixture
 def anyio_backend(): return 'asyncio'
 
 class Runner:
     def __init__(self, outputs, delay=0): self.outputs=iter(outputs); self.queries=[]; self.delay=delay
-    def validate_complete_query(self, query): pass
-    async def invoke_judge(self, **kwargs):
-        assert set(kwargs)=={'query'}
+    system_prompt = REVISION
+    async def execute(self, **kwargs):
+        assert set(kwargs)=={'query','preserve_context','tool_observer'}
+        assert kwargs['preserve_context'] is True
         self.queries.append(kwargs['query'])
         await asyncio.sleep(self.delay)
         result=next(self.outputs)
         if isinstance(result,Exception): raise result
-        return result
+        return AgentExecution(result)
 class Factory:
     def __init__(self, runner): self.runner=runner; self.names=[]
     async def get_runner_by_name(self,name): self.names.append(name); return self.runner
@@ -64,8 +68,8 @@ async def test_timeout_shared_across_repair():
 @pytest.mark.anyio
 async def test_context_overflow_does_not_invoke_or_repair():
     runner=Runner([])
-    def reject(query): raise JudgeContextError(params={'reason':'model_context_budget'})
-    runner.validate_complete_query=reject
+    async def reject(**kwargs): raise ContextBudgetExceeded('overflow')
+    runner.execute=reject
     with pytest.raises(JudgeContextError):
         await JudgeService(Factory(runner)).decide(JudgeDecisionRequest.model_validate(request_data()))
     assert not runner.queries
@@ -75,13 +79,6 @@ async def test_handoff_is_success_not_retry():
     runner=Runner([json.dumps({'decision':'HANDOFF','target':None,'speech':'请人工处理。','pending_points':['缺少回答']})])
     result=await JudgeService(Factory(runner)).decide(JudgeDecisionRequest.model_validate(request_data()))
     assert result.decision=='HANDOFF' and len(runner.queries)==1
-
-def test_real_runner_budget_rejects_without_truncation():
-    from app.runtime.agent.agent_runner import AgentRunner
-    runner=AgentRunner(agent_id=1,agent_name='test',agent=SimpleNamespace(),system_prompt='system',chat_service=None,
-        llm_config=SimpleNamespace(context_window_tokens=2048,max_output_tokens=512,model_name='qwen-plus'))
-    runner.validate_complete_query('短请求')
-    with pytest.raises(JudgeContextError): runner.validate_complete_query('内容'*10000)
 
 @pytest.mark.anyio
 async def test_unavailable_agent_no_retry():

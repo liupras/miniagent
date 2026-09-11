@@ -8,6 +8,10 @@ from app.runtime.llm.models import LLMClientError
 from app.schemas.integrations.virtual_court import judge_agent_output_json_schema
 from .exceptions import JudgeConfigurationError, JudgeTimeoutError, JudgeUnavailableError, JudgeInvalidResponseError
 from .response_validator import validate_judge_agent_output
+from .exceptions import JudgeContextError
+from app.runtime.llm.exceptions import ContextBudgetExceeded
+from .law_policy import (REVISION, handoff, check_law_observation,
+                         has_law_evidence, LawRetrievalUnavailable)
 
 logger = get_logger(__name__)
 
@@ -25,13 +29,19 @@ class JudgeService:
         try:
             async with asyncio.timeout(self._timeout_seconds):
                 runner = await self._agent_factory.get_runner_by_name(self.AGENT_BY_PHASE[request.phase])
+                if REVISION not in runner.system_prompt:
+                    raise JudgeConfigurationError(params={'reason':'judge_revision_mismatch'})
                 query = self._build_agent_query(request)
                 for attempt in range(2):
-                    # Checks the real model budget before ConversationService can truncate.
-                    await asyncio.to_thread(runner.validate_complete_query, query)
-                    raw = await runner.invoke_judge(query=query)
+                    result = await runner.execute(query=query, preserve_context=True,
+                                                  tool_observer=check_law_observation)
+                    if result.stop_reason != 'completed':
+                        raise JudgeInvalidResponseError(params={'reason':'tool_step_limit', 'field':'response'})
+                    raw = result.text
                     try:
                         response = validate_judge_agent_output(raw, request)
+                        if response.decision == 'EXPLAIN_LAW' and not has_law_evidence(result.tools):
+                            return validate_judge_agent_output(handoff('法律解释缺少本次有效检索依据。'), request)
                         logger.info('[JudgeV2] validated: phase={}, state_version={}, decision={}, attempts={}',
                                     request.phase, request.state_version, response.decision, attempt + 1)
                         return response
@@ -42,8 +52,11 @@ class JudgeService:
                         query = self._build_agent_query(request) + '\n上次输出校验失败，请重新生成。错误：' + json.dumps(exc.params, ensure_ascii=False)
         except TimeoutError as exc:
             raise JudgeTimeoutError(params={'timeout':self._timeout_seconds}, cause=exc) from exc
+        except ContextBudgetExceeded as exc:
+            raise JudgeContextError(params={'reason':'model_context_budget', 'field':'records'}, cause=exc) from exc
+        except LawRetrievalUnavailable as exc:
+            return validate_judge_agent_output(handoff(str(exc)), request)
         except ToolBuildError:
-            from .judge_execution import handoff
             return validate_judge_agent_output(handoff('法律检索工具加载失败，请人工处理。'), request)
         except (AgentNotFoundError, AgentInactiveError) as exc:
             raise JudgeConfigurationError(params={'reason':'agent_unavailable'}, cause=exc) from exc
