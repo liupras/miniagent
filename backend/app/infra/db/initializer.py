@@ -492,7 +492,7 @@ class DatabaseManager:
         for raw in _load("agent.json"):
             self._seed_agent_row(db, raw, force)
 
-    def _seed_agent_row(self, db: Session, raw: dict, force: bool = False):
+    def _seed_agent_row(self, db: Session, raw: dict, force: bool = False, *, refresh_prompt: bool = False):
         row = _strip_meta(raw)
         existing = db.query(Agent).filter_by(name=row["name"]).first()
         judge_names = {"virtual_court_investigation_judge", "virtual_court_debate_judge"}
@@ -510,7 +510,7 @@ class DatabaseManager:
                     return
                 row["llm_id"] = llm.id
         if existing:
-            if row["name"] in judge_names and "[JudgeAPI V2:2026-09-12-legal-extension]" not in (existing.system_prompt or ""):
+            if row["name"] in judge_names and refresh_prompt:
                 existing.system_prompt = row["system_prompt"]
                 logger.info("Upgraded Judge protocol configuration: {}", row["name"])
             if force:

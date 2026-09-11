@@ -19,8 +19,12 @@ Judge 复用 AgentFactory → AgentRunner.execute → ToolReActAgent，通过 ag
 ## 升级
 
 两个名称仍为 virtual_court_investigation_judge、virtual_court_debate_judge。
-扩展标记 `[JudgeAPI V2:2026-09-12-legal-extension]` 区分初版 M1，正常初始化和定向升级保留 ID、启用状态、模型及参数，幂等恢复缺失法律检索绑定，不删除其他绑定。
-重复初始化保留已有扩展提示词的人工微调。定向升级：`python -B scripts/upgrade_judge_v2.py`，事务内检查两个 Agent 的标记及工具绑定；缺失工具则回滚。
-升级后重启服务清除缓存。旧提示词 runner 会被 V2 执行路径拒绝，不能把数据库更新误认为运行缓存已更新。
+提示词不包含版本标记，运行时不检查文本版本。正常初始化保留已有提示词、ID、启用状态、模型及参数，幂等恢复缺失法律检索绑定，不删除其他绑定。
+重复初始化保留已有扩展提示词的人工微调。定向升级：`python -B scripts/upgrade_judge_v2.py`，显式同步两个 Agent 的种子提示词，事务内检查提示词内容及工具绑定；缺失工具则回滚。
+升级后重启服务清除缓存。运行时不再拒绝没有版本标记的提示词；数据库更新后仍需重启服务加载缓存。
 
 自动化测试包括 test_judge_legal_execution 以及协议、响应、Service、API、种子和迁移回归。检索执行测试使用确定性的模型和工具边界，真实模型、实际知识库质量及 Unity 播放恢复在后续联调验收。
+
+## 提示词维护
+
+输出格式、字段限制和阶段规则统一维护在两个 Agent 的系统提示词中。JudgeService._build_agent_query 仅序列化本次请求数据（按协议不向模型传入 state_version），不再附加输出 Schema 或固定输出指令；一次纠错仅追加校验诊断。种子和本地 SQLite 提示词已同步，服务重启后加载。普通初始化保留已有人工微调，不应以 force 全量覆盖模型参数。

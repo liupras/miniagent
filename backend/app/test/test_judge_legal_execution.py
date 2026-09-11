@@ -19,7 +19,7 @@ from app.utils.tokens import TokenCounter
 from app.runtime.agent.tool_builder import ToolBuildError
 from app.schemas.integrations.virtual_court import JudgeDecisionRequest
 from app.services.virtual_court import JudgeService, JudgeContextError, JudgeTimeoutError, JudgeConfigurationError
-from app.services.virtual_court.law_policy import LAW_TOOL, REVISION
+from app.services.virtual_court.law_policy import LAW_TOOL
 from app.test.judge_v2_helpers import ROOT, load
 
 @pytest.fixture
@@ -172,11 +172,11 @@ async def test_cached_runner_does_not_reuse_previous_evidence():
     assert len(calls)==1
 
 @pytest.mark.anyio
-async def test_old_prompt_requires_reload():
-    runner,provider,calls,req=setup([])
-    runner._system_prompt='[JudgeAPI V2:2026-09-12]'
-    with pytest.raises(JudgeConfigurationError): await JudgeService(Factory(runner)).decide(req)
-    assert not provider.messages
+async def test_prompt_without_version_marker_is_accepted():
+    runner,provider,calls,req=setup([answer()])
+    assert '[JudgeAPI V2:' not in runner.system_prompt
+    assert (await JudgeService(Factory(runner)).decide(req)).decision=='NO_ACTION'
+
 
 def test_extension_migration_restores_only_missing_binding_and_preserves_tuning():
     from app.infra.db.database import Base,Agent,LLM,Tool,AgentToolRelation
@@ -187,7 +187,7 @@ def test_extension_migration_restores_only_missing_binding_and_preserves_tuning(
         law=Tool(name=LAW_TOOL,tool_schema={});other=Tool(name='unrelated',tool_schema={})
         db.add_all([llm,law,other]);db.flush()
         names=JudgeService.AGENT_BY_PHASE.values()
-        agents=[Agent(name=n,system_prompt='[JudgeAPI V2:2026-09-12]',llm_id=llm.id,max_output_tokens=3000) for n in names]
+        agents=[Agent(name=n,system_prompt='已有人工提示词',llm_id=llm.id,max_output_tokens=3000) for n in names]
         unrelated=Agent(name='unrelated',system_prompt='keep',llm_id=llm.id)
         db.add_all(agents+[unrelated]);db.flush()
         db.add(AgentToolRelation(agent_id=agents[0].id,tool_id=other.id,config_override={'keep':True}));db.flush()
@@ -195,7 +195,7 @@ def test_extension_migration_restores_only_missing_binding_and_preserves_tuning(
         manager=object.__new__(DatabaseManager)
         manager._seed_agent(db,force=False);db.flush()
         for a in agents:
-            assert REVISION in a.system_prompt
+            assert a.system_prompt=='已有人工提示词'
             assert a.max_output_tokens==3000 and a.llm_id==llm.id
             assert db.query(AgentToolRelation).filter_by(agent_id=a.id,tool_id=law.id).count()==1
             a.system_prompt+='\n人工微调'

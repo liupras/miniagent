@@ -10,14 +10,12 @@ from app.runtime.llm.models import LLMClientError
 from app.test.judge_v2_helpers import request_data, output
 from app.runtime.agent.execution import AgentExecution
 from app.runtime.llm.exceptions import ContextBudgetExceeded
-from app.services.virtual_court.law_policy import REVISION
 
 @pytest.fixture
 def anyio_backend(): return 'asyncio'
 
 class Runner:
     def __init__(self, outputs, delay=0): self.outputs=iter(outputs); self.queries=[]; self.delay=delay
-    system_prompt = REVISION
     async def execute(self, **kwargs):
         assert set(kwargs)=={'query','preserve_context','tool_observer'}
         assert kwargs['preserve_context'] is True
@@ -101,3 +99,20 @@ async def test_request_permission_error_repaired_once():
     runner=Runner([json.dumps(bad),json.dumps(output())])
     await JudgeService(Factory(runner)).decide(JudgeDecisionRequest.model_validate(request_data()))
     assert 'target_not_allowed' in runner.queries[1]
+
+@pytest.mark.parametrize('phase',['INVESTIGATION','DEBATE'])
+def test_agent_query_is_only_request_data(phase):
+    req=JudgeDecisionRequest.model_validate(request_data(phase))
+    query=JudgeService._build_agent_query(req)
+    assert json.loads(query)==req.model_dump(mode='json',exclude={'state_version'},exclude_unset=True)
+    assert '输出 JSON Schema' not in query and '$defs' not in query
+
+@pytest.mark.anyio
+async def test_repair_keeps_request_data_and_only_appends_diagnostic():
+    req=JudgeDecisionRequest.model_validate(request_data())
+    runner=Runner(['{}',json.dumps(output())])
+    await JudgeService(Factory(runner)).decide(req)
+    prefix=JudgeService._build_agent_query(req)
+    assert runner.queries[0]==prefix
+    assert runner.queries[1].startswith(prefix+'\n上次输出校验失败')
+    assert '$defs' not in runner.queries[1]

@@ -4,7 +4,6 @@ from app.schemas.integrations.virtual_court import JudgeDecision
 from app.runtime.agent.execution import ToolExecution
 
 LAW_TOOL = 'intellectual_property_law_search'
-REVISION = '[JudgeAPI V2:2026-09-12-legal-extension]'
 
 def handoff(reason):
     return json.dumps({'decision':JudgeDecision.HANDOFF, 'target':None,

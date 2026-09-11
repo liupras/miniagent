@@ -17,10 +17,11 @@ def main():
         with manager.SessionLocal.begin() as db:
             for row in rows:
                 if row['name'] in names:
-                    manager._seed_agent_row(db, row)
+                    manager._seed_agent_row(db, row, refresh_prompt=True)
             db.flush()
             agents = db.query(Agent).filter(Agent.name.in_(names)).all()
-            if len(agents) != 2 or any('[JudgeAPI V2:2026-09-12-legal-extension]' not in a.system_prompt for a in agents):
+            prompts = {row['name']:row['system_prompt'] for row in rows if row['name'] in names}
+            if len(agents) != 2 or any(a.system_prompt != prompts[a.name] for a in agents):
                 raise RuntimeError('Judge upgrade incomplete; transaction rolled back')
             tool = db.query(Tool).filter_by(name='intellectual_property_law_search').one()
             for agent in agents:
