@@ -5,7 +5,7 @@ from app.core.logger_config import get_logger
 from app.runtime.agent.agent_factory import AgentInactiveError, AgentNotFoundError
 from app.runtime.agent.tool_builder import ToolBuildError
 from app.runtime.llm.models import LLMClientError
-from app.schemas.integrations.virtual_court import judge_agent_output_json_schema
+from app.schemas.integrations.virtual_court import judge_agent_output_json_schema, JudgePhase, JudgeDecision
 from .exceptions import JudgeConfigurationError, JudgeTimeoutError, JudgeUnavailableError, JudgeInvalidResponseError
 from .response_validator import validate_judge_agent_output
 from .exceptions import JudgeContextError
@@ -17,8 +17,8 @@ logger = get_logger(__name__)
 
 class JudgeService:
     AGENT_BY_PHASE = {
-        'INVESTIGATION':'virtual_court_investigation_judge',
-        'DEBATE':'virtual_court_debate_judge',
+        JudgePhase.INVESTIGATION:'virtual_court_investigation_judge',
+        JudgePhase.DEBATE:'virtual_court_debate_judge',
     }
 
     def __init__(self, agent_factory, *, timeout_seconds=120.0):
@@ -40,7 +40,7 @@ class JudgeService:
                     raw = result.text
                     try:
                         response = validate_judge_agent_output(raw, request)
-                        if response.decision == 'EXPLAIN_LAW' and not has_law_evidence(result.tools):
+                        if response.decision == JudgeDecision.EXPLAIN_LAW and not has_law_evidence(result.tools):
                             return validate_judge_agent_output(handoff('法律解释缺少本次有效检索依据。'), request)
                         logger.info('[JudgeV2] validated: phase={}, state_version={}, decision={}, attempts={}',
                                     request.phase, request.state_version, response.decision, attempt + 1)

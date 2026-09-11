@@ -1,12 +1,13 @@
 """Judge-specific retrieval requirements; no model or tool execution here."""
 import json
+from app.schemas.integrations.virtual_court import JudgeDecision
 from app.runtime.agent.execution import ToolExecution
 
 LAW_TOOL = 'intellectual_property_law_search'
 REVISION = '[JudgeAPI V2:2026-09-12-legal-extension]'
 
 def handoff(reason):
-    return json.dumps({'decision':'HANDOFF', 'target':None,
+    return json.dumps({'decision':JudgeDecision.HANDOFF, 'target':None,
         'speech':'当前无法提供有充分检索依据的法律解释，请人工处理。',
         'pending_points':[reason]}, ensure_ascii=False)
 
