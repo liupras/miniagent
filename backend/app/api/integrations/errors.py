@@ -36,7 +36,7 @@ from app.services.virtual_court import (
 
 
 logger = get_logger(__name__)
-INTEGRATION_PATH_PREFIX = ("/api/v1/integrations/", "/api/v2/integrations/")
+INTEGRATION_PATH_PREFIX = "/api/v2/integrations/"
 
 
 def _request_log_context(request: Request) -> tuple[str, str, str, str]:
