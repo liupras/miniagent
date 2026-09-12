@@ -244,7 +244,7 @@ def test_integration_and_standard_api_share_error_message_semantics(monkeypatch)
     async def render_responses():
         standard = await domain_error_handler(_request("/api/v1/test"), error)
         integration = await judge_service_error_handler(
-            _request("/api/v2/integrations/virtual-court/judge/decide"),
+            _request("/api/v2/integrations/virtual-court/judge/law-check"),
             error,
         )
         return standard, integration

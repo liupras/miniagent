@@ -185,6 +185,8 @@ def infer_request_action(method: str, path: str) -> str:
         return "DELETE"
     if method in {"PUT", "PATCH"}:
         return "UPDATE"
+    if "/integrations/virtual-court/judge/" in path.lower():
+        return "EXECUTE"
     execute_markers = ("execute", "run", "query", "search", "retrieve", "import")
     if any(marker in path.lower() for marker in execute_markers):
         return "EXECUTE"

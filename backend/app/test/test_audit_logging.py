@@ -1,13 +1,26 @@
 import asyncio
 from uuid import UUID
 
+import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.core.audit_context import begin_audit_context, reset_audit_context
 from app.infra.db.audit import install_audit_listeners, record_request_outcome
+from app.infra.db.audit import infer_request_action
 from app.infra.db.database import AuditLog, SystemSetting
 from app.repositories.async_audit_log import AsyncAuditLogDatabase
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/v2/integrations/virtual-court/judge/law-check",
+        "/api/v2/integrations/virtual-court/judge/next-action",
+    ],
+)
+def test_split_judge_calls_are_audited_as_execution(path):
+    assert infer_request_action("POST", path) == "EXECUTE"
 
 
 def test_orm_changes_are_audited_automatically():
