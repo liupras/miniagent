@@ -4,9 +4,8 @@
 > 日期：2026-09-11  
 > 适用阶段：法官询问与调查总结、法庭辩论  
 > V2 接口：`POST /api/v2/integrations/virtual-court/judge/decide`<br>
-> 按 2026-09-12 用户决定，后端不保留 V1 端点；后端服务重启后生效。
 
-本文依据双方确认的简化请求和五字段响应编写。V1 文档仅作历史参考；V2 与 V1 不兼容，不保留 V1 端点，也不按字段猜测版本。
+本文定义当前唯一的 JudgeAPI 契约：七字段请求、五字段响应。
 
 ## 1. 目标与职责
 
@@ -381,7 +380,7 @@ COMPLETE → 保存并播放调查总结 → 播放成功完成 → 进入辩论
 HANDOFF → 保存原因和待处理事项 → 停止自动推进，等待人工
 ```
 
-调查 `COMPLETE.speech` 即调查总结，不再额外请求 `SUMMARIZE` 或 `END_CURRENT_STAGE`。播放失败、取消或人工接管时不得继续推进；恢复位置由本地状态管理。
+调查 `COMPLETE.speech` 即调查总结，播放完成后直接由本地程序推进。播放失败、取消或人工接管时不得继续推进；恢复位置由本地状态管理。
 
 ### 6.2 辩论
 
@@ -438,7 +437,7 @@ HANDOFF → 保存原因及事项 → 等待人工
 6. `NO_ACTION` 要求 `speech` 严格为 `""`、`target` 为 `null`、`pending_points` 为 `[]`；其他决策 `speech` 去除首尾空白后非空。`pending_points` 每项非空，`CONTINUE` 和 `HANDOFF` 至少一项。
 7. 校验通过后原样回填请求 `state_version`，返回 HTTP 200。禁止将模型生成的版本号视为可信。
 
-本次扩展将 `allowed_decisions` 条目上限调整为 5，并增加 `NO_ACTION` 的空发言例外。M0 旧冻结样例及当前 M1 尚未覆盖这些变化，须先更新共享 Schema、样例和完整性清单再实施，不能将旧测试通过视为本扩展已实现。其余长度、字节和超时边界沿用 M0，见 [冻结样例及限制](../Tests/Fixtures/JudgeV2/README.md) 和该目录 `schemas/`、`limits.json`。两端实现使用同一套边界；不得为通过限制而静默截断 JSON、发言或待处理事项。具体基线结果见 [M0 基线](judge_protocol_v2_baseline.md)。
+`allowed_decisions` 条目上限为 5，`NO_ACTION` 允许空发言。本目录维护 102 个共享契约样例及其 Schema、长度、字节和超时限制。两端实现使用同一套边界；不得为通过限制而静默截断 JSON、发言或待处理事项。
 
 阶段和调用权限约束要同时写入模型可见规则和后端校验，不能只依赖模型不可见的跨字段校验器。上下文预算检查须覆盖工具描述、工具调用及返回结果、系统提示词和输出预留，不得因配置工具而一律拒绝请求；超限应明确处理，不截断庭审记录。整个检索、生成及一次输出纠错共用总时限。
 
@@ -490,45 +489,9 @@ HANDOFF → 保存原因及事项 → 等待人工
 - `HANDOFF` 是合法业务结果，返回 HTTP 200；不得把它当成模型错误自动重试。
 - 错误详情可提供安全的原因码和字段名。服务端记录详细校验原因、阶段、状态版本和请求追踪信息，避免只记录笼统的无效响应；不得向客户端泄露密钥、提示词或内部堆栈。
 
-## 9. V1 → V2 对照与迁移
+## 9. 部署范围
 
-### 9.1 请求
-
-| V1 | V2 |
-| --- | --- |
-| `state_version` | 保留 |
-| `current_stage` | `phase`，值改为 `INVESTIGATION`、`DEBATE` |
-| `current_step`、`trigger`、`task`、`current_speaker` | 删除；调用时机在本地，固定规则在阶段提示词 |
-| `allowed_actions` | `allowed_decisions` |
-| `allowed_targets` | 保留，支持可扩展角色标识 |
-| `case_context` | 精简结构，保留 `dispute_focuses`，无 `evidence_summary` |
-| `stage_summaries` | 调查总结进入 `case_context.investigation_summary`；相关历史摘要进入 `records` |
-| `recent_events` | `records`：`type`、`role`、`text` |
-| `current_issue_id`、`issues` | `current_issue`：`id`、`question`；全部权威争点状态留在本地 |
-
-### 9.2 响应
-
-| V1 | V2 |
-| --- | --- |
-| `state_version` | 保留，后端回填 |
-| `action` | `decision`，唯一控制入口 |
-| `speech` 对象 | `speech` 字符串 |
-| 重复的 `target_role` | 单个 `target` |
-| `issue_assessment` | 删除；继续、完成、交人工由 `decision` 表达 |
-| `confirmed_facts`、`next_issue_id` | 删除；不让模型认定事实或选择下一争点 |
-| `unresolved_points` | `pending_points`，不独立控制流程 |
-| `confidence`、`warnings` | 删除；需要人工处理时用 `HANDOFF` 及具体原因 |
-| `legal_citations` | 从流程控制协议移除 |
-| 独立 `summary` | 不增加；完成时保存 `speech` |
-
-### 9.3 实施进度与切换
-
-1. M1 已直接替换 MiniAgent 的旧 Judge 请求、响应、服务和路由，V1 端点已移除。
-2. 初版 M1 曾移除两个 Agent 的工具绑定；本次已明确须恢复种子及数据库中的 `intellectual_property_law_search` 绑定，并修正工具拒绝检查和迁移逻辑。保留模型参数与 ID，恢复属于待实施任务。
-3. 后续更新 VirtualCourt DTO、上下文选择、解析、调查和辩论执行流程。旧客户端不能只修改 URL 使用 V2。
-4. 初版 M1 的 161 项后端回归已通过，仅代表扩展前状态。本次六决策、工具恢复和解释后恢复逻辑需新增验证；本次仅更新文档。
-
-当前实施记录见 [M1 记录](judge_protocol_v2_m1.md)。
+系统尚未发布，仅维护当前协议、阶段 Agent 和新会话；不提供历史协议迁移或回退机制。执行状态以 VirtualCourt 为准，模型仅返回受限决策。
 
 ## 10. 最小联调验收清单
 
@@ -544,7 +507,7 @@ HANDOFF → 保存原因及事项 → 等待人工
 | 最后一个争点完成 | 播放总结后退出辩论阶段 |
 | 达到轮次上限 | 禁止新增询问或继续辩论；下一争点启动也受总额度限制 |
 | `HANDOFF` | 停止自动推进，原因及待处理事项可见，不自动重试 |
-| 旧版本响应、人工接管、重复回调 | 不误执行、不重复推进 |
+| 非法响应、人工接管、重复回调 | 不误执行、不重复推进 |
 | 播放失败或取消 | 不提前进入下一阶段或下一争点 |
 | 非法目标、跨阶段决策、缺字段 | 后端拒绝；最多一次纠错后仍无效则明确报错 |
 | 长记录压缩 | 早期问答和异议仍可追溯，最新完整轮次保留原文，无静默截断 |

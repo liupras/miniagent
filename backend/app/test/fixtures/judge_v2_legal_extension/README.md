@@ -1,6 +1,6 @@
 # JudgeAPI V2 法律解释扩展：冻结契约 M0-E
 
-修订标识：`2026-09-12-legal-extension`。本目录是下一阶段实现的共享契约源；原 `Tests/Fixtures/JudgeV2/` 和旧基线完整保留，不覆盖。
+修订标识：`2026-09-12-legal-extension`。本目录是下一阶段实现的共享契约源；原 `Tests/Fixtures/JudgeV2/` 继续用于当前契约校验。
 
 ## 内容与范围
 
@@ -12,7 +12,6 @@
 - `integrity.json`：本目录文件 SHA-256 冻结清单。
 - `verify_fixtures.py`：离线 Schema、请求权限、版本及完整性校验。
 - `probe_current_backend.py`：只读观察当前后端与新契约的差距，不调用模型、不修改数据库。
-- `capture_baseline.py`：显式重新采集配置和测试摘要，输出至独立的 `JudgeV2LegalBaseline` 结果目录。
 
 请求仍为七字段，HTTP 响应仍为五字段；不增加 `legal_question`，法律问题在 `records` 中。模型输出仍不含 `state_version`。
 

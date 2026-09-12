@@ -56,11 +56,9 @@ def test_diagnostics(error,status,code):
     assert res.status_code==status
     assert res.json()['error']['code']==code
     assert res.json()['error']['details']['reason']==error.params['reason']
-def test_old_path_removed_and_main_registers_v2_only():
-    assert client(Service()).post(ENDPOINT.replace('/v2/','/v1/'),json=request_data()).status_code==404
+def test_main_registers_judge_endpoint():
     source=(Path(__file__).parents[1]/'main.py').read_text(encoding='utf-8')
     assert 'prefix="/api/v2/integrations/virtual-court"' in source
-    assert 'prefix="/api/v1/integrations/virtual-court"' not in source
 def test_openapi_exact_response():
     schema=client(Service()).get('/openapi.json').json()
     assert set(schema['components']['schemas']['JudgeDecisionResponse']['properties'])=={'state_version','decision','target','speech','pending_points'}

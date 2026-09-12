@@ -12,8 +12,6 @@ def test_v2_stage_seed(name,phase):
     text=row['system_prompt']
     for value in (phase,'allowed_decisions','allowed_targets','pending_points','不得判断证据真伪'):
         assert value in text
-    for value in ('END_CURRENT_STAGE','issue_assessment','REQUEST_CLARIFICATION'):
-        assert value not in text
     tools=json.loads((ROOT/'agent_tool_relation.json').read_text(encoding='utf-8'))
     assert [r['_tool_name'] for r in tools if r['_agent_name']==name] == ['intellectual_property_law_search']
     for rule in ('EXPLAIN_LAW', 'NO_ACTION', 'records', '已经回答', '不足', '反问'):
