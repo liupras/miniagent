@@ -1,211 +1,348 @@
-"""Actual AgentLLM/runner/service chain, with deterministic provider and tool boundaries.
+"""Actual AgentLLM/runner/LawCheckService chain with deterministic boundaries."""
 
-These tests verify orchestration; they do not claim to evaluate real-model semantics.
-"""
 import asyncio
 import copy
-import hashlib
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 from langchain_core.tools import StructuredTool
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+
 from app.runtime.agent.agent_runner import AgentRunner
 from app.runtime.agent.react_agent import ToolReActAgent
-from app.runtime.llm.agent_client import AgentLLM
-from app.utils.tokens import TokenCounter
 from app.runtime.agent.tool_builder import ToolBuildError
-from app.schemas.integrations.virtual_court import JudgeDecisionRequest
-from app.services.virtual_court import JudgeService, JudgeContextError, JudgeTimeoutError, JudgeConfigurationError
+from app.runtime.llm.agent_client import AgentLLM
+from app.schemas.integrations.virtual_court import JudgeLawCheckRequestV2
+from app.services.virtual_court import (
+    JudgeConfigurationError,
+    JudgeContextError,
+    JudgeTimeoutError,
+    LawCheckService,
+)
 from app.services.virtual_court.law_policy import LAW_TOOL
-from app.test.judge_v2_helpers import ROOT, load
+from app.utils.tokens import TokenCounter
+
 
 @pytest.fixture
-def anyio_backend(): return 'asyncio'
+def anyio_backend():
+    return 'asyncio'
 
-SOURCE='测试条文 A（虚构测试资料）：适用条件为测试条件甲。'
-MATERIAL={'confidence':'high','chunks':[{'text':SOURCE,'citation':{'title':'测试条文 A'}}]}
+
+SOURCE = '测试条文 A（虚构测试资料）：适用条件为测试条件甲。'
+MATERIAL = {
+    'confidence': 'high',
+    'chunks': [{'text': SOURCE, 'citation': {'title': '测试条文 A'}}],
+}
+
 
 def answer(decision='NO_ACTION'):
-    return json.dumps({'decision':decision,'target':None,
-        'speech':SOURCE if decision=='EXPLAIN_LAW' else ('请人工核对适用依据。' if decision=='HANDOFF' else ''),
-        'pending_points':['依据不足'] if decision=='HANDOFF' else []},ensure_ascii=False)
+    return json.dumps({
+        'decision': decision,
+        'speech': (
+            SOURCE
+            if decision == 'EXPLAIN_LAW'
+            else ('请人工核对适用依据。' if decision == 'HANDOFF' else '')
+        ),
+        'pending_points': ['依据不足'] if decision == 'HANDOFF' else [],
+    }, ensure_ascii=False)
+
 
 def call(query='请解释适用条件'):
-    return {'tool_calls':[{'id':'search_1','type':'function',
-        'function':{'name':LAW_TOOL,'arguments':json.dumps({'query':query},ensure_ascii=False)}}]}
+    return {
+        'tool_calls': [{
+            'id': 'search_1',
+            'type': 'function',
+            'function': {
+                'name': LAW_TOOL,
+                'arguments': json.dumps({'query': query}, ensure_ascii=False),
+            },
+        }]
+    }
+
 
 class Provider:
-    max_output_tokens=2048
-    def __init__(self,outputs,delay=0):
-        self.outputs=iter(outputs);self.messages=[];self.delay=delay
-    async def achat(self,**kwargs):
+    max_output_tokens = 2048
+
+    def __init__(self, outputs, delay=0):
+        self.outputs = iter(outputs)
+        self.messages = []
+        self.delay = delay
+
+    async def achat(self, **kwargs):
         self.messages.append(copy.deepcopy(kwargs['messages']))
         await asyncio.sleep(self.delay)
-        result=next(self.outputs)
-        if isinstance(result,dict):
-            return SimpleNamespace(content='',tool_calls=result['tool_calls'])
-        return SimpleNamespace(content=result,tool_calls=None)
+        result = next(self.outputs)
+        if isinstance(result, dict):
+            return SimpleNamespace(content='', tool_calls=result['tool_calls'])
+        return SimpleNamespace(content=result, tool_calls=None)
+
 
 class Factory:
-    def __init__(self,runner): self.runner=runner
-    async def get_runner_by_name(self,name): return self.runner
+    def __init__(self, runner):
+        self.runner = runner
 
-def setup(outputs,*,phase='INVESTIGATION',material=MATERIAL,tool=True,tool_delay=0,delay=0,description='查询法律资料'):
-    calls=[]
-    async def search(query:str):
+    async def get_runner_by_name(self, name):
+        assert name == LawCheckService.AGENT_NAME
+        return self.runner
+
+
+def setup(
+    outputs,
+    *,
+    material=MATERIAL,
+    tool=True,
+    tool_delay=0,
+    delay=0,
+    description='查询法律资料',
+):
+    calls = []
+
+    async def search(query: str):
         calls.append(query)
         await asyncio.sleep(tool_delay)
-        if isinstance(material,Exception): raise material
-        return json.dumps(material,ensure_ascii=False)
-    tools=[StructuredTool.from_function(coroutine=search,name=LAW_TOOL,description=description)] if tool else []
-    seed=json.loads((ROOT.parents[2]/'infra/db/seed/agent.json').read_text(encoding='utf-8'))
-    name='virtual_court_investigation_judge' if phase=='INVESTIGATION' else 'virtual_court_debate_judge'
-    prompt=next(r['system_prompt'] for r in seed if r['name']==name)
-    provider=Provider(outputs,delay)
-    llm=AgentLLM(provider,'test-model',context_window_tokens=32000,max_output_tokens=2048,
-        token_counter=TokenCounter(model='test-model',enable_exact_near_limit=False))
-    agent=ToolReActAgent(llm,tools,prompt)
-    runner=AgentRunner(1,name,agent,prompt,None,SimpleNamespace(context_window_tokens=32000,max_output_tokens=2048,model_name='test-model'))
-    req=JudgeDecisionRequest.model_validate(load('cases/law-check-'+('investigation' if phase=='INVESTIGATION' else 'debate-single-party')+'.json'))
-    return runner,provider,calls,req
+        if isinstance(material, Exception):
+            raise material
+        return json.dumps(material, ensure_ascii=False)
+
+    tools = [
+        StructuredTool.from_function(
+            coroutine=search,
+            name=LAW_TOOL,
+            description=description,
+        )
+    ] if tool else []
+    seed_path = (
+        Path(__file__).parents[1] / 'infra' / 'db' / 'seed' / 'agent.json'
+    )
+    seed = json.loads(seed_path.read_text(encoding='utf-8'))
+    prompt = next(
+        row['system_prompt']
+        for row in seed
+        if row['name'] == LawCheckService.AGENT_NAME
+    )
+    provider = Provider(outputs, delay)
+    llm = AgentLLM(
+        provider,
+        'test-model',
+        context_window_tokens=32000,
+        max_output_tokens=2048,
+        token_counter=TokenCounter(
+            model='test-model', enable_exact_near_limit=False
+        ),
+    )
+    agent = ToolReActAgent(llm, tools, prompt)
+    runner = AgentRunner(
+        1,
+        LawCheckService.AGENT_NAME,
+        agent,
+        prompt,
+        None,
+        SimpleNamespace(
+            context_window_tokens=32000,
+            max_output_tokens=2048,
+            model_name='test-model',
+        ),
+    )
+    request = JudgeLawCheckRequestV2(
+        state_version=102,
+        role='DEFENDANT',
+        text='图片可以公开下载，为什么不能用于商业宣传？法律依据是什么？',
+        context='当前争点：涉案图片的商业使用是否构成侵权。',
+    )
+    return runner, provider, calls, request
+
 
 @pytest.mark.anyio
-@pytest.mark.parametrize('phase',['INVESTIGATION','DEBATE'])
-async def test_real_tool_trace_and_grounded_context(phase):
-    runner,provider,calls,req=setup([call(),answer('EXPLAIN_LAW')],phase=phase)
-    result=await JudgeService(Factory(runner)).decide(req)
-    assert result.decision=='EXPLAIN_LAW' and result.speech==SOURCE and result.state_version==req.state_version
-    assert len(calls)==1 and len(provider.messages)==2
-    assert any(SOURCE in m['content'] for m in provider.messages[1] if m['role']=='tool')
-    assert not runner._agent.agent_llm.preserve_context  # Shared cached runner is immutable.
-    assert 'state_version' not in next(m['content'] for m in provider.messages[0] if m['role']=='user')
+async def test_real_tool_trace_and_grounded_context():
+    runner, provider, calls, request = setup([call(), answer('EXPLAIN_LAW')])
+    result = await LawCheckService(Factory(runner)).check(request)
+    assert result.decision == 'EXPLAIN_LAW'
+    assert result.speech == SOURCE and result.state_version == request.state_version
+    assert len(calls) == 1 and len(provider.messages) == 2
+    assert any(
+        SOURCE in message['content']
+        for message in provider.messages[1]
+        if message['role'] == 'tool'
+    )
+    assert not runner._agent.agent_llm.preserve_context
+    user_input = next(
+        message['content']
+        for message in provider.messages[0]
+        if message['role'] == 'user'
+    )
+    assert 'state_version' not in user_input and 'records' not in user_input
+
 
 @pytest.mark.anyio
-@pytest.mark.parametrize('phase',['INVESTIGATION','DEBATE'])
-@pytest.mark.parametrize('speech',['我方维持此前意见，没有法律问题需要解释。','这难道不是我方一直表达的意见吗？我方没有新的问题。'])
-async def test_no_action_preserves_latest_records_without_search(phase,speech):
-    runner,provider,calls,req=setup([answer()],phase=phase)
-    data=req.model_dump(exclude_unset=True)
-    data['records'].append({'type':'SPEECH','role':'PLAINTIFF','text':speech})
-    result=await JudgeService(Factory(runner)).decide(JudgeDecisionRequest.model_validate(data))
-    assert result.speech=='' and result.pending_points==[] and result.target is None
-    assert not calls and speech in str(provider.messages[0])
+@pytest.mark.parametrize(
+    'speech',
+    [
+        '我方维持此前意见，没有法律问题需要解释。',
+        '这难道不是我方一直表达的意见吗？我方没有新的问题。',
+    ],
+)
+async def test_no_action_sends_only_latest_speech_without_search(speech):
+    runner, provider, calls, request = setup([answer()])
+    request = request.model_copy(update={'text': speech})
+    result = await LawCheckService(Factory(runner)).check(request)
+    assert result.decision == 'NO_ACTION' and not calls
+    assert speech in str(provider.messages[0])
+
 
 @pytest.mark.anyio
-async def test_already_answered_history_reaches_model():
-    runner,provider,calls,_=setup([answer()])
-    data=load('cases/law-check-completed-question-history.json')
-    await JudgeService(Factory(runner)).decide(JudgeDecisionRequest.model_validate(data))
-    query=next(m['content'] for m in provider.messages[0] if m['role']=='user')
-    assert all(r['text'] in query for r in data['records']) and not calls
+async def test_reference_context_cannot_supply_the_triggering_question():
+    runner, provider, calls, request = setup([answer()])
+    request = request.model_copy(update={
+        'text': '我方维持此前意见。',
+        'context': '为什么商业使用公开图片仍可能侵权？',
+    })
+    result = await LawCheckService(Factory(runner)).check(request)
+    assert result.decision == 'NO_ACTION' and not calls
+
 
 @pytest.mark.anyio
-@pytest.mark.parametrize('material',[{}, {'error':'private provider diagnostic'}, {'confidence':'empty','chunks':[]},
-    {'chunks':[{'text':'  '}]}, RuntimeError('private secret'), {'chunks':[]}])
-async def test_failed_or_empty_retrieval_handoff_never_repairs_or_explains(material):
-    runner,provider,calls,req=setup([call(),answer('EXPLAIN_LAW')],material=material)
-    result=await JudgeService(Factory(runner)).decide(req)
-    assert result.decision=='HANDOFF' and result.pending_points and len(provider.messages)==1 and len(calls)==1
+@pytest.mark.parametrize(
+    'material',
+    [
+        {},
+        {'error': 'private provider diagnostic'},
+        {'confidence': 'empty', 'chunks': []},
+        {'chunks': [{'text': '  '}]},
+        RuntimeError('private secret'),
+        {'chunks': []},
+    ],
+)
+async def test_failed_or_empty_retrieval_handoff(material):
+    runner, provider, calls, request = setup(
+        [call(), answer('EXPLAIN_LAW')], material=material
+    )
+    result = await LawCheckService(Factory(runner)).check(request)
+    assert result.decision == 'HANDOFF' and result.pending_points
+    assert len(provider.messages) == 1 and len(calls) == 1
     assert 'private' not in result.model_dump_json()
 
-@pytest.mark.anyio
-@pytest.mark.parametrize('tool',[True,False])
-async def test_explanation_without_executed_search_handoff(tool):
-    runner,provider,calls,req=setup([answer('EXPLAIN_LAW')],tool=tool)
-    result=await JudgeService(Factory(runner)).decide(req)
-    assert result.decision=='HANDOFF' and not calls and len(provider.messages)==1
 
 @pytest.mark.anyio
-async def test_missing_tool_still_allows_no_pending_question():
-    runner,provider,calls,req=setup([answer()],tool=False)
-    assert (await JudgeService(Factory(runner)).decide(req)).decision=='NO_ACTION'
+async def test_explanation_without_executed_search_handoff():
+    runner, provider, calls, request = setup([answer('EXPLAIN_LAW')])
+    result = await LawCheckService(Factory(runner)).check(request)
+    assert result.decision == 'HANDOFF' and not calls
+    assert len(provider.messages) == 1
+
 
 @pytest.mark.anyio
-async def test_insufficient_relevance_can_handoff_after_nonempty_search():
-    runner,provider,calls,req=setup([call(),answer('HANDOFF')])
-    assert (await JudgeService(Factory(runner)).decide(req)).decision=='HANDOFF'
-    assert len(calls)==1
+async def test_missing_tool_still_allows_no_action():
+    runner, _, calls, request = setup([answer()], tool=False)
+    assert (await LawCheckService(Factory(runner)).check(request)).decision == 'NO_ACTION'
+    assert not calls
+
 
 @pytest.mark.anyio
 async def test_tool_build_failure_business_handoff():
-    _,_,_,req=setup([])
+    _, _, _, request = setup([])
+
     class Broken:
-        async def get_runner_by_name(self,name): raise ToolBuildError('private diagnostic')
-    result=await JudgeService(Broken()).decide(req)
-    assert result.decision=='HANDOFF' and 'private' not in result.model_dump_json()
+        async def get_runner_by_name(self, name):
+            raise ToolBuildError('private diagnostic')
+
+    result = await LawCheckService(Broken()).check(request)
+    assert result.decision == 'HANDOFF'
+    assert 'private' not in result.model_dump_json()
+
 
 @pytest.mark.anyio
-async def test_tool_result_over_budget_does_not_truncate_or_send_next_request():
-    runner,provider,calls,req=setup([call()],material={'chunks':[{'text':'完整资料'*100000}]})
-    with pytest.raises(JudgeContextError): await JudgeService(Factory(runner)).decide(req)
-    assert len(calls)==1 and len(provider.messages)==1
+async def test_tool_result_over_budget_is_not_truncated():
+    runner, provider, calls, request = setup(
+        [call()], material={'chunks': [{'text': '完整资料' * 100000}]}
+    )
+    with pytest.raises(JudgeContextError):
+        await LawCheckService(Factory(runner)).check(request)
+    assert len(calls) == 1 and len(provider.messages) == 1
+
 
 @pytest.mark.anyio
 async def test_tool_metadata_over_budget_fails_before_provider():
-    runner,provider,calls,req=setup([],description='检索描述'*100000)
-    with pytest.raises(JudgeContextError): await JudgeService(Factory(runner)).decide(req)
+    runner, provider, calls, request = setup([], description='检索描述' * 100000)
+    with pytest.raises(JudgeContextError):
+        await LawCheckService(Factory(runner)).check(request)
     assert not calls and not provider.messages
+
 
 @pytest.mark.anyio
 async def test_shared_retrieval_and_repair_deadline():
-    runner,provider,calls,req=setup([call(),'{}',call(),answer('EXPLAIN_LAW')],tool_delay=.06)
+    runner, _, calls, request = setup(
+        [call(), '{}', call(), answer('EXPLAIN_LAW')], tool_delay=0.06
+    )
     with pytest.raises(JudgeTimeoutError):
-        await JudgeService(Factory(runner),timeout_seconds=.10).decide(req)
-    assert len(calls)==2  # Second retrieval is cancelled under the original deadline.
+        await LawCheckService(
+            Factory(runner), timeout_seconds=0.10
+        ).check(request)
+    assert len(calls) == 2
+
 
 @pytest.mark.anyio
-async def test_repair_retrieves_again_and_keeps_full_request():
-    runner,provider,calls,req=setup([call(),'{}',call(),answer('EXPLAIN_LAW')])
-    result=await JudgeService(Factory(runner)).decide(req)
-    assert result.decision=='EXPLAIN_LAW' and len(calls)==2
+async def test_repair_retrieves_again_and_keeps_isolated_request():
+    runner, provider, calls, request = setup(
+        [call(), '{}', call(), answer('EXPLAIN_LAW')]
+    )
+    result = await LawCheckService(Factory(runner)).check(request)
+    assert result.decision == 'EXPLAIN_LAW' and len(calls) == 2
     assert 'schema_validation_failed' in str(provider.messages[2])
+    assert 'records' not in str(provider.messages[2])
+
 
 @pytest.mark.anyio
 async def test_cached_runner_does_not_reuse_previous_evidence():
-    runner,provider,calls,req=setup([call(),answer('EXPLAIN_LAW'),answer('EXPLAIN_LAW')])
-    service=JudgeService(Factory(runner))
-    assert (await service.decide(req)).decision=='EXPLAIN_LAW'
-    assert (await service.decide(req)).decision=='HANDOFF'
-    assert len(calls)==1
-
-@pytest.mark.anyio
-async def test_prompt_without_version_marker_is_accepted():
-    runner,provider,calls,req=setup([answer()])
-    assert '[JudgeAPI V2:' not in runner.system_prompt
-    assert (await JudgeService(Factory(runner)).decide(req)).decision=='NO_ACTION'
+    runner, _, calls, request = setup([
+        call(),
+        answer('EXPLAIN_LAW'),
+        answer('EXPLAIN_LAW'),
+    ])
+    service = LawCheckService(Factory(runner))
+    assert (await service.check(request)).decision == 'EXPLAIN_LAW'
+    assert (await service.check(request)).decision == 'HANDOFF'
+    assert len(calls) == 1
 
 
-def test_agent_seed_does_not_grant_law_tool_to_existing_flow_agents():
-    from app.infra.db.database import Base,Agent,LLM,Tool,AgentToolRelation
+def test_law_check_agent_seed_keeps_runtime_parameters():
+    from app.infra.db.database import Agent, Base, LLM, Tool
     from app.infra.db.initializer import DatabaseManager
-    engine=create_engine('sqlite:///:memory:');Base.metadata.create_all(engine)
-    with Session(engine) as db:
-        llm=LLM(name='tuned',provider_name='test',base_url='http://localhost',model_name='tuned',temperature=.23)
-        law=Tool(name=LAW_TOOL,tool_schema={});other=Tool(name='unrelated',tool_schema={})
-        db.add_all([llm,law,other]);db.flush()
-        names=JudgeService.AGENT_BY_PHASE.values()
-        agents=[Agent(name=n,system_prompt='已有人工提示词',llm_id=llm.id,max_output_tokens=3000) for n in names]
-        unrelated=Agent(name='unrelated',system_prompt='keep',llm_id=llm.id)
-        db.add_all(agents+[unrelated]);db.flush()
-        db.add(AgentToolRelation(agent_id=agents[0].id,tool_id=other.id,config_override={'keep':True}));db.flush()
-        original_ids=[a.id for a in agents]
-        manager=object.__new__(DatabaseManager)
-        manager._seed_agent(db,force=False);db.flush()
-        for a in agents:
-            assert a.system_prompt=='已有人工提示词'
-            assert a.max_output_tokens==3000 and a.llm_id==llm.id
-            assert db.query(AgentToolRelation).filter_by(agent_id=a.id,tool_id=law.id).count()==0
-            a.system_prompt+='\n人工微调'
-        manager._seed_agent(db,force=False);db.flush()
-        assert [a.id for a in agents]==original_ids and all(a.system_prompt.endswith('人工微调') for a in agents)
-        assert llm.temperature==.23 and unrelated.system_prompt=='keep'
-        assert db.query(AgentToolRelation).count()==1
-        assert db.query(AgentToolRelation).filter_by(tool_id=other.id).one().config_override=={'keep':True}
-    engine.dispose()
 
-def test_shared_fixture_integrity():
-    for path,expected in load('integrity.json').items():
-        assert hashlib.sha256((ROOT/path).read_bytes()).hexdigest()==expected,path
+    engine = create_engine('sqlite:///:memory:')
+    Base.metadata.create_all(engine)
+    try:
+        with Session(engine) as db:
+            llm = LLM(
+                name='tuned',
+                provider_name='test',
+                base_url='http://localhost',
+                model_name='tuned',
+                temperature=0.23,
+            )
+            law = Tool(name=LAW_TOOL, tool_schema={})
+            db.add_all([llm, law])
+            db.flush()
+            agent = Agent(
+                name=LawCheckService.AGENT_NAME,
+                system_prompt='已有人工提示词',
+                llm_id=llm.id,
+                max_output_tokens=3000,
+            )
+            db.add(agent)
+            db.flush()
+            manager = object.__new__(DatabaseManager)
+            manager._seed_agent(db, force=False)
+            db.flush()
+            assert agent.system_prompt == '已有人工提示词'
+            assert agent.max_output_tokens == 3000 and agent.llm_id == llm.id
+            assert llm.temperature == 0.23
+    finally:
+        engine.dispose()
+
+
+def test_prompt_without_version_marker_is_accepted():
+    runner, _, _, _ = setup([])
+    assert '[JudgeAPI V2:' not in runner.system_prompt

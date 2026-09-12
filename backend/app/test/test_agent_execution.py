@@ -113,21 +113,20 @@ async def test_cancellation_is_not_a_tool_failure():
     assert not events
 
 @pytest.mark.anyio
-@pytest.mark.parametrize('phase',['INVESTIGATION','DEBATE'])
-async def test_database_config_to_factory_smart_router_and_judge(monkeypatch,phase):
+async def test_database_config_to_factory_smart_router_and_law_check(monkeypatch):
     from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
     from app.infra.db.database import Base,Agent,Tool,LLM,AgentToolRelation
     from app.runtime.llm.client import LLMClient
     import app.core.prompt_loader as prompt_module
     monkeypatch.setattr(prompt_module, 'prompt_loader', SimpleNamespace(get=lambda key: ''))
-    from app.services.virtual_court import JudgeService
+    from app.services.virtual_court import LawCheckService
     from app.test.test_judge_legal_execution import Provider
     seed_dir=Path(__file__).parents[1]/'infra/db/seed'
-    names=JudgeService.AGENT_BY_PHASE
-    agent_seed=next(r for r in json.loads((seed_dir/'agent.json').read_text(encoding='utf-8')) if r['name']==names[phase])
+    name=LawCheckService.AGENT_NAME
+    agent_seed=next(r for r in json.loads((seed_dir/'agent.json').read_text(encoding='utf-8')) if r['name']==name)
     tool_seed=next(r for r in json.loads((seed_dir/'tool.json').read_text(encoding='utf-8')) if r['name']=='intellectual_property_law_search')
-    _,_,_,request=setup([],phase=phase)
+    _,_,_,request=setup([])
     provider=Provider([call(),answer('EXPLAIN_LAW')])
     async def achat(self,**kwargs):return await provider.achat(**kwargs)
     monkeypatch.setattr(LLMClient,'achat',achat)
@@ -137,7 +136,7 @@ async def test_database_config_to_factory_smart_router_and_judge(monkeypatch,pha
             llm=LLM(name='test',provider_name='test',model_name='test-model',base_url='http://localhost',api_key='test-only',context_window_tokens=32000,max_output_tokens=2048)
             tool=Tool(**{k:v for k,v in tool_seed.items() if not k.startswith('_')})
             db.add_all([llm,tool]);db.flush()
-            agent=Agent(name=names[phase],system_prompt=agent_seed['system_prompt'],llm_id=llm.id,max_output_tokens=2048,is_active=True)
+            agent=Agent(name=name,system_prompt=agent_seed['system_prompt'],llm_id=llm.id,max_output_tokens=2048,is_active=True)
             db.add(agent);db.flush();db.add(AgentToolRelation(agent_id=agent.id,tool_id=tool.id));db.flush()
             async def relations(agent_id):
                 rows=db.query(AgentToolRelation).filter_by(agent_id=agent_id).all()
@@ -150,7 +149,7 @@ async def test_database_config_to_factory_smart_router_and_judge(monkeypatch,pha
                 agent_tool_relation_db=SimpleNamespace(get_relations_for_agent=relations),
                 conversation_service=None,router_factory=router_factory)
             factory=AgentFactory(container)
-            result=await JudgeService(factory).decide(request)
+            result=await LawCheckService(factory).check(request)
             assert result.decision=='EXPLAIN_LAW' and result.speech==SOURCE
             router.query.assert_awaited_once_with(query='请解释适用条件',kb_ids=tool.config['allowed_kb_ids'])
             container.tool_db.get_tools_as_map.assert_awaited_once_with([tool.name])
