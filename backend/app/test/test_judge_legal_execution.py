@@ -178,7 +178,7 @@ async def test_prompt_without_version_marker_is_accepted():
     assert (await JudgeService(Factory(runner)).decide(req)).decision=='NO_ACTION'
 
 
-def test_extension_migration_restores_only_missing_binding_and_preserves_tuning():
+def test_agent_seed_does_not_grant_law_tool_to_existing_flow_agents():
     from app.infra.db.database import Base,Agent,LLM,Tool,AgentToolRelation
     from app.infra.db.initializer import DatabaseManager
     engine=create_engine('sqlite:///:memory:');Base.metadata.create_all(engine)
@@ -197,12 +197,12 @@ def test_extension_migration_restores_only_missing_binding_and_preserves_tuning(
         for a in agents:
             assert a.system_prompt=='已有人工提示词'
             assert a.max_output_tokens==3000 and a.llm_id==llm.id
-            assert db.query(AgentToolRelation).filter_by(agent_id=a.id,tool_id=law.id).count()==1
+            assert db.query(AgentToolRelation).filter_by(agent_id=a.id,tool_id=law.id).count()==0
             a.system_prompt+='\n人工微调'
         manager._seed_agent(db,force=False);db.flush()
         assert [a.id for a in agents]==original_ids and all(a.system_prompt.endswith('人工微调') for a in agents)
         assert llm.temperature==.23 and unrelated.system_prompt=='keep'
-        assert db.query(AgentToolRelation).count()==3
+        assert db.query(AgentToolRelation).count()==1
         assert db.query(AgentToolRelation).filter_by(tool_id=other.id).one().config_override=={'keep':True}
     engine.dispose()
 

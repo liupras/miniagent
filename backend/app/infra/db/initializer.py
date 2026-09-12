@@ -495,7 +495,11 @@ class DatabaseManager:
     def _seed_agent_row(self, db: Session, raw: dict, force: bool = False, *, refresh_prompt: bool = False):
         row = _strip_meta(raw)
         existing = db.query(Agent).filter_by(name=row["name"]).first()
-        judge_names = {"virtual_court_investigation_judge", "virtual_court_debate_judge"}
+        judge_names = {
+            "virtual_court_law_check_judge",
+            "virtual_court_investigation_judge",
+            "virtual_court_debate_judge",
+        }
         if existing is None and row["name"] == "virtual_court_investigation_judge":
             existing = db.query(Agent).filter_by(name="virtual_court_solo_judge").first()
             if existing:
@@ -520,19 +524,6 @@ class DatabaseManager:
         else:
             existing = Agent(**row)
             db.add(existing)
-        if row["name"] in judge_names:
-            db.flush()
-            self._restore_judge_law_tool(db, existing)
-
-    def _restore_judge_law_tool(self, db, agent):
-        tool = db.query(Tool).filter_by(name="intellectual_property_law_search").first()
-        if tool is None:
-            logger.warning("Judge law-search tool missing; binding cannot yet be restored")
-            return
-        if db.query(AgentToolRelation).filter_by(agent_id=agent.id, tool_id=tool.id).first() is None:
-            db.add(AgentToolRelation(agent_id=agent.id, tool_id=tool.id))
-            db.flush()
-
     def _seed_role(self, db: Session, force: bool):
         logger.info("📝 Seeding roles...")
         for raw in _load("role.json"):
