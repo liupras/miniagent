@@ -4,6 +4,8 @@ from enum import StrEnum
 from typing import Annotated
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, model_validator
 
+from .common import PartyRole
+
 REQUEST_MAX_BYTES = 524288
 RESPONSE_MAX_BYTES = 131072
 CONTENT_MAX_CODEPOINTS = 64000
@@ -18,6 +20,17 @@ class JudgeDecision(StrEnum):
     HANDOFF = 'HANDOFF'
     EXPLAIN_LAW = 'EXPLAIN_LAW'
     NO_ACTION = 'NO_ACTION'
+
+class JudgeLawCheckDecision(StrEnum):
+    NO_ACTION = 'NO_ACTION'
+    EXPLAIN_LAW = 'EXPLAIN_LAW'
+    HANDOFF = 'HANDOFF'
+
+class JudgeNextAction(StrEnum):
+    ASK = 'ASK'
+    CONTINUE = 'CONTINUE'
+    COMPLETE = 'COMPLETE'
+    HANDOFF = 'HANDOFF'
 
 class JudgeRecordType(StrEnum):
     SPEECH = 'SPEECH'
@@ -35,13 +48,29 @@ def _enum_string(enum_type):
 
 Phase = Annotated[JudgePhase, _enum_string(JudgePhase)]
 Decision = Annotated[JudgeDecision, _enum_string(JudgeDecision)]
+LawCheckDecision = Annotated[JudgeLawCheckDecision, _enum_string(JudgeLawCheckDecision)]
+NextAction = Annotated[JudgeNextAction, _enum_string(JudgeNextAction)]
 RecordType = Annotated[JudgeRecordType, _enum_string(JudgeRecordType)]
+Party = Annotated[PartyRole, _enum_string(PartyRole)]
 
 PHASE_DECISIONS = {
     JudgePhase.INVESTIGATION: frozenset((JudgeDecision.ASK, JudgeDecision.COMPLETE,
         JudgeDecision.HANDOFF, JudgeDecision.EXPLAIN_LAW, JudgeDecision.NO_ACTION)),
     JudgePhase.DEBATE: frozenset((JudgeDecision.CONTINUE, JudgeDecision.COMPLETE,
         JudgeDecision.HANDOFF, JudgeDecision.EXPLAIN_LAW, JudgeDecision.NO_ACTION)),
+}
+
+PHASE_ACTIONS = {
+    JudgePhase.INVESTIGATION: frozenset((
+        JudgeNextAction.ASK,
+        JudgeNextAction.COMPLETE,
+        JudgeNextAction.HANDOFF,
+    )),
+    JudgePhase.DEBATE: frozenset((
+        JudgeNextAction.CONTINUE,
+        JudgeNextAction.COMPLETE,
+        JudgeNextAction.HANDOFF,
+    )),
 }
 
 def text_type(limit):
@@ -75,6 +104,33 @@ class JudgeRecord(StrictModel):
             raise ValueError('SPEECH requires a role and at most 8000 code points')
         if self.type == JudgeRecordType.SUMMARY and self.role is not None:
             raise ValueError('SUMMARY role must be null')
+        return self
+
+class JudgeLawCheckRequestV2(StrictModel):
+    """A single committed party speech to inspect for a legal question."""
+
+    state_version: Version
+    role: Party
+    text: text_type(8000)
+    context: Annotated[str, Field(max_length=16000)] = ''
+
+class JudgeLawCheckResponseV2(StrictModel):
+    """A legal check result. This model intentionally has no flow target."""
+
+    state_version: Version
+    decision: LawCheckDecision
+    speech: Annotated[str, Field(max_length=4000)]
+    pending_points: list[text_type(1000)] = Field(max_length=30)
+
+    @model_validator(mode='after')
+    def shape(self):
+        if self.decision == JudgeLawCheckDecision.NO_ACTION:
+            if self.speech != '' or self.pending_points:
+                raise ValueError('NO_ACTION requires empty speech and pending_points')
+        elif not self.speech.strip():
+            raise ValueError('EXPLAIN_LAW and HANDOFF require nonblank speech')
+        if self.decision == JudgeLawCheckDecision.HANDOFF and not self.pending_points:
+            raise ValueError('HANDOFF requires pending_points')
         return self
 
 def content_size(value):
@@ -118,6 +174,45 @@ class JudgeDecisionRequest(StrictModel):
             raise ValueError('content_budget exceeded')
         return self
 
+class JudgeNextActionRequestV2(StrictModel):
+    """A phase-only flow decision request, isolated from legal checking."""
+
+    state_version: Version
+    phase: Phase
+    allowed_actions: list[NextAction] = Field(min_length=1, max_length=3)
+    allowed_targets: list[Role] = Field(max_length=32)
+    case_context: JudgeCaseContext
+    current_issue: JudgeIssue | None
+    records: list[JudgeRecord] = Field(max_length=512)
+
+    @model_validator(mode='after')
+    def permissions_and_context(self):
+        actions = set(self.allowed_actions)
+        if len(actions) != len(self.allowed_actions):
+            raise ValueError('duplicate actions')
+        if not actions <= PHASE_ACTIONS[self.phase]:
+            raise ValueError('invalid action for phase')
+        if JudgeNextAction.HANDOFF not in actions:
+            raise ValueError('HANDOFF must be allowed')
+        if len(set(self.allowed_targets)) != len(self.allowed_targets):
+            raise ValueError('duplicate targets')
+        if JudgeNextAction.ASK in actions and not self.allowed_targets:
+            raise ValueError('ASK requires allowed_targets')
+
+        has_summary = 'investigation_summary' in self.case_context.model_fields_set
+        if self.phase == JudgePhase.INVESTIGATION:
+            if self.current_issue is not None or has_summary:
+                raise ValueError('investigation cannot include current_issue or investigation_summary')
+        elif self.current_issue is None or not has_summary:
+            raise ValueError('debate requires current_issue and investigation_summary')
+
+        size = content_size(self.case_context.model_dump(exclude_unset=True))
+        size += sum(content_size(record.model_dump()) for record in self.records)
+        size += len(self.current_issue.question) if self.current_issue else 0
+        if size > CONTENT_MAX_CODEPOINTS:
+            raise ValueError('content_budget exceeded')
+        return self
+
 class JudgeAgentOutput(StrictModel):
     decision: Decision
     target: Role | None
@@ -140,7 +235,33 @@ class JudgeAgentOutput(StrictModel):
 class JudgeDecisionResponse(JudgeAgentOutput):
     state_version: Version
 
-def strict_json(raw):
+class JudgeNextActionResponseV2(StrictModel):
+    """A phase-only flow result; legal decisions cannot be represented."""
+
+    state_version: Version
+    decision: NextAction
+    target: Role | None
+    speech: text_type(4000)
+    pending_points: list[text_type(1000)] = Field(max_length=30)
+
+    @model_validator(mode='after')
+    def shape(self):
+        if (self.target is not None) != (self.decision == JudgeNextAction.ASK):
+            raise ValueError('only ASK requires target; other targets must be null')
+        if self.decision in (JudgeNextAction.CONTINUE, JudgeNextAction.HANDOFF) and not self.pending_points:
+            raise ValueError('CONTINUE and HANDOFF require pending_points')
+        return self
+
+def strict_json(raw, *, max_bytes=None):
+    if isinstance(raw, bytes):
+        encoded = raw
+        raw = raw.decode('utf-8')
+    elif isinstance(raw, str):
+        encoded = raw.encode('utf-8')
+    else:
+        raise ValueError('JSON body must be str or bytes')
+    if max_bytes is not None and len(encoded) > max_bytes:
+        raise ValueError('body_size')
     def unique(pairs):
         result = {}
         for key, value in pairs:

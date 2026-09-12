@@ -1,0 +1,9 @@
+{
+  "state_version": 119,
+  "decision": "ASK",
+  "target": "DEFENDANT",
+  "speech": "被告，请说明平台展示的授权范围。",
+  "pending_points": [
+    "图片授权范围"
+  ]
+}

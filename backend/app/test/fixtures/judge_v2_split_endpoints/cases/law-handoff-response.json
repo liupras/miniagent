@@ -1,0 +1,8 @@
+{
+  "state_version": 102,
+  "decision": "HANDOFF",
+  "speech": "当前无法取得充分法律依据，请人工处理。",
+  "pending_points": [
+    "核对法律依据"
+  ]
+}

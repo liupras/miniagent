@@ -1,0 +1,12 @@
+{
+  "revision": "2026-09-13-split-endpoints",
+  "request_body_max_bytes": 524288,
+  "response_body_max_bytes": 131072,
+  "next_action_content_max_codepoints": 64000,
+  "server_total_timeout_seconds": 120,
+  "client_timeout_seconds": 135,
+  "max_output_repair_attempts": 1,
+  "length_semantics": "All lengths are Unicode code points before trimming.",
+  "state_version_rule": "One committed party speech per state_version until its law-check result is consumed; same-version retries must have identical bodies.",
+  "token_budget": "The implementation must also reserve model prompt, tool and output tokens and must not silently truncate records."
+}

@@ -1,0 +1,90 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "state_version": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9223372036854775807
+    },
+    "decision": {
+      "enum": [
+        "NO_ACTION",
+        "EXPLAIN_LAW",
+        "HANDOFF"
+      ]
+    },
+    "speech": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 4000
+    },
+    "pending_points": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1000,
+        "pattern": "\\S"
+      },
+      "minItems": 0,
+      "maxItems": 30
+    }
+  },
+  "required": [
+    "state_version",
+    "decision",
+    "speech",
+    "pending_points"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "NO_ACTION"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "speech": {
+            "const": ""
+          },
+          "pending_points": {
+            "maxItems": 0
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "speech": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "pattern": "\\S"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "HANDOFF"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "pending_points": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:virtual-court:judge-v2:law-check-response:2026-09-13-split-endpoints",
+  "title": "JudgeV2-law-check-response"
+}

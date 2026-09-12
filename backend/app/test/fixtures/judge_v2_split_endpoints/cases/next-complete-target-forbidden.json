@@ -1,0 +1,9 @@
+{
+  "state_version": 120,
+  "decision": "COMPLETE",
+  "target": "DEFENDANT",
+  "speech": "双方已说明图片来源和使用情况，对授权范围仍有分歧，调查阶段结束。",
+  "pending_points": [
+    "双方对授权范围仍有分歧"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "state_version": 120,
+  "decision": "HANDOFF",
+  "target": null,
+  "speech": "已有记录不足以安全继续，请人工处理。",
+  "pending_points": [
+    "补充上一轮回答"
+  ]
+}

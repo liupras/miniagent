@@ -1,0 +1,292 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "state_version": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9223372036854775807
+    },
+    "phase": {
+      "enum": [
+        "INVESTIGATION",
+        "DEBATE"
+      ]
+    },
+    "allowed_actions": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "ASK",
+          "CONTINUE",
+          "COMPLETE",
+          "HANDOFF"
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "contains": {
+        "const": "HANDOFF"
+      }
+    },
+    "allowed_targets": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "\\S"
+      },
+      "minItems": 0,
+      "maxItems": 32,
+      "uniqueItems": true
+    },
+    "case_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16000,
+          "pattern": "\\S"
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "pattern": "\\S"
+          },
+          "minItems": 0,
+          "maxItems": 30
+        },
+        "defenses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "pattern": "\\S"
+          },
+          "minItems": 0,
+          "maxItems": 30
+        },
+        "dispute_focuses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "pattern": "\\S"
+          },
+          "minItems": 0,
+          "maxItems": 20
+        },
+        "investigation_summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16000,
+          "pattern": "\\S"
+        }
+      },
+      "required": [
+        "summary",
+        "claims",
+        "defenses",
+        "dispute_focuses"
+      ]
+    },
+    "current_issue": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "\\S"
+            },
+            "question": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1000,
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "id",
+            "question"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "enum": [
+              "SPEECH",
+              "SUMMARY"
+            ]
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16000,
+            "pattern": "\\S"
+          }
+        },
+        "required": [
+          "type",
+          "role",
+          "text"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "SPEECH"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "role": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64,
+                  "pattern": "\\S"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 8000,
+                  "pattern": "\\S"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "role": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 512
+    }
+  },
+  "required": [
+    "state_version",
+    "phase",
+    "allowed_actions",
+    "allowed_targets",
+    "case_context",
+    "current_issue",
+    "records"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "phase": {
+            "const": "INVESTIGATION"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "enum": [
+                "ASK",
+                "COMPLETE",
+                "HANDOFF"
+              ]
+            }
+          },
+          "current_issue": {
+            "type": "null"
+          },
+          "case_context": {
+            "not": {
+              "required": [
+                "investigation_summary"
+              ]
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "enum": [
+                "CONTINUE",
+                "COMPLETE",
+                "HANDOFF"
+              ]
+            }
+          },
+          "current_issue": {
+            "type": "object"
+          },
+          "case_context": {
+            "required": [
+              "investigation_summary"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "allowed_actions": {
+            "contains": {
+              "const": "ASK"
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "allowed_targets": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:virtual-court:judge-v2:next-action-request:2026-09-13-split-endpoints",
+  "title": "JudgeV2-next-action-request"
+}

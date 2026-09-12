@@ -1,0 +1,128 @@
+{
+  "revision": "2026-09-13-split-endpoints",
+  "status": "Frozen expectations only; not proof that either endpoint is implemented",
+  "scenarios": [
+    {
+      "id": "ordinary-statement",
+      "request_fixture": "law-ordinary-request",
+      "expect": {
+        "decision": "NO_ACTION",
+        "law_tool_calls": 0,
+        "tts_calls": 0
+      }
+    },
+    {
+      "id": "context-cannot-trigger",
+      "setup": "text is an ordinary statement while context contains explicit legal questions",
+      "expect": {
+        "decision": "NO_ACTION",
+        "law_tool_calls": 0
+      }
+    },
+    {
+      "id": "explicit-law-question",
+      "request_fixture": "law-explicit-request",
+      "expect": {
+        "decision": "EXPLAIN_LAW",
+        "law_tool": "intellectual_property_law_search",
+        "minimum_tool_calls": 1,
+        "speech_supported_by_current_tool_result": true
+      }
+    },
+    {
+      "id": "retrieval-failure",
+      "request_fixture": "law-explicit-request",
+      "expect": {
+        "decision": "HANDOFF",
+        "pending_points_min_items": 1,
+        "fabricated_citation": false
+      }
+    },
+    {
+      "id": "no-action-must-not-search",
+      "expect": {
+        "decision": "NO_ACTION",
+        "maximum_tool_calls": 0
+      }
+    },
+    {
+      "id": "single-agent-law-chain",
+      "expect": {
+        "agent": "virtual_court_law_check_judge",
+        "separate_intent_agent": false
+      }
+    },
+    {
+      "id": "one-version-one-speech",
+      "expect": {
+        "same_version_different_body_rejected": true,
+        "duplicate_response_consumed_once": true
+      }
+    },
+    {
+      "id": "explanation-resume",
+      "expect": {
+        "save_before_play": true,
+        "round_delta": 0,
+        "resume_original_position": true,
+        "judge_explanation_retriggers_check": false
+      }
+    },
+    {
+      "id": "stale-or-takeover",
+      "expect": {
+        "stale_response_applied": false,
+        "manual_takeover_invalidates_callbacks": true
+      }
+    },
+    {
+      "id": "investigation-actions",
+      "request_fixture": "next-investigation-request",
+      "expect": {
+        "allowed": [
+          "ASK",
+          "COMPLETE",
+          "HANDOFF"
+        ],
+        "law_tool_calls": 0
+      }
+    },
+    {
+      "id": "debate-actions",
+      "request_fixture": "next-debate-request",
+      "expect": {
+        "allowed": [
+          "CONTINUE",
+          "COMPLETE",
+          "HANDOFF"
+        ],
+        "law_tool_calls": 0
+      }
+    },
+    {
+      "id": "debate-barrier",
+      "expect": {
+        "next_action_before_both_law_checks": false,
+        "party_order_preserved": true
+      }
+    },
+    {
+      "id": "split-tool-bindings",
+      "expect": {
+        "virtual_court_law_check_judge": [
+          "intellectual_property_law_search"
+        ],
+        "virtual_court_investigation_judge": [],
+        "virtual_court_debate_judge": []
+      }
+    },
+    {
+      "id": "shared-deadline",
+      "expect": {
+        "server_total_seconds": 120,
+        "maximum_repairs": 1,
+        "retrieval_included": true
+      }
+    }
+  ]
+}
