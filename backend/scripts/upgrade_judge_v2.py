@@ -1,35 +1,140 @@
-"""Upgrade just the two Judge Agents transactionally. Restart service after running.
+"""Migrate the split Judge V2 agents and law-tool binding transactionally.
 
-No schema rebuild, no force reseed, no unrelated Agent/LLM changes.
+The migration is intentionally narrow: it updates the three Judge prompts,
+creates the law-check Agent when absent, and moves the law-search binding from
+the two flow Agents to the law-check Agent. Agent runtime tuning and all
+unrelated rows are preserved.
 """
+
 import json
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from app.infra.db.initializer import DatabaseManager, SEED_DIR
-from app.infra.db.database import Agent, Tool, AgentToolRelation
 
-def main():
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from sqlalchemy.orm import Session
+
+from app.infra.db.database import Agent, AgentToolRelation, Tool
+from app.infra.db.initializer import DatabaseManager, SEED_DIR
+
+
+LAW_CHECK_AGENT = "virtual_court_law_check_judge"
+FLOW_AGENTS = (
+    "virtual_court_investigation_judge",
+    "virtual_court_debate_judge",
+)
+JUDGE_AGENTS = (LAW_CHECK_AGENT, *FLOW_AGENTS)
+LAW_TOOL = "intellectual_property_law_search"
+
+
+def _judge_seed_rows() -> dict[str, dict]:
+    rows = json.loads((SEED_DIR / "agent.json").read_text(encoding="utf-8"))
+    by_name = {row["name"]: row for row in rows if row.get("name") in JUDGE_AGENTS}
+    missing = set(JUDGE_AGENTS) - set(by_name)
+    if missing:
+        raise RuntimeError(f"Judge seed rows missing: {sorted(missing)}")
+    return by_name
+
+
+def migrate_judge_agents(db: Session) -> bool:
+    """Apply the migration inside the caller's transaction.
+
+    Returns ``True`` if the database changed. Any unmet prerequisite raises,
+    allowing the surrounding transaction to roll back completely.
+    """
+
+    seeds = _judge_seed_rows()
+    existing_flow = {
+        agent.name: agent
+        for agent in db.query(Agent).filter(Agent.name.in_(FLOW_AGENTS)).all()
+    }
+    missing_flow = set(FLOW_AGENTS) - set(existing_flow)
+    if missing_flow:
+        raise RuntimeError(f"Required Judge agents missing: {sorted(missing_flow)}")
+
+    law_tool = db.query(Tool).filter_by(name=LAW_TOOL).one_or_none()
+    if law_tool is None:
+        raise RuntimeError(f"Required tool missing: {LAW_TOOL}")
+
+    changed = False
+    law_agent = db.query(Agent).filter_by(name=LAW_CHECK_AGENT).one_or_none()
+    if law_agent is None:
+        source = existing_flow[FLOW_AGENTS[0]]
+        law_seed = seeds[LAW_CHECK_AGENT]
+        law_agent = Agent(
+            name=LAW_CHECK_AGENT,
+            description=law_seed["description"],
+            system_prompt=law_seed["system_prompt"],
+            llm_id=source.llm_id,
+            max_output_tokens=source.max_output_tokens,
+            is_active=source.is_active,
+        )
+        db.add(law_agent)
+        db.flush()
+        changed = True
+
+    agents = {**existing_flow, LAW_CHECK_AGENT: law_agent}
+    for name, agent in agents.items():
+        seed = seeds[name]
+        for field in ("description", "system_prompt"):
+            value = seed[field]
+            if getattr(agent, field) != value:
+                setattr(agent, field, value)
+                changed = True
+
+    removed = (
+        db.query(AgentToolRelation)
+        .filter(
+            AgentToolRelation.agent_id.in_(
+                [existing_flow[name].id for name in FLOW_AGENTS]
+            ),
+            AgentToolRelation.tool_id == law_tool.id,
+        )
+        .delete(synchronize_session=False)
+    )
+    changed = changed or bool(removed)
+
+    law_binding = db.query(AgentToolRelation).filter_by(
+        agent_id=law_agent.id,
+        tool_id=law_tool.id,
+    ).one_or_none()
+    if law_binding is None:
+        db.add(AgentToolRelation(agent_id=law_agent.id, tool_id=law_tool.id))
+        changed = True
+
+    db.flush()
+    loaded = db.query(Agent).filter(Agent.name.in_(JUDGE_AGENTS)).all()
+    if len(loaded) != len(JUDGE_AGENTS):
+        raise RuntimeError("Judge migration incomplete")
+    if any(agent.system_prompt != seeds[agent.name]["system_prompt"] for agent in loaded):
+        raise RuntimeError("Judge prompt verification failed")
+
+    binding_counts = {
+        agent.name: db.query(AgentToolRelation).filter_by(
+            agent_id=agent.id,
+            tool_id=law_tool.id,
+        ).count()
+        for agent in loaded
+    }
+    expected = {LAW_CHECK_AGENT: 1, **{name: 0 for name in FLOW_AGENTS}}
+    if binding_counts != expected:
+        raise RuntimeError(
+            f"Judge law-tool binding verification failed: {binding_counts}"
+        )
+    return changed
+
+
+def main() -> None:
     manager = DatabaseManager()
-    names = {'virtual_court_investigation_judge', 'virtual_court_debate_judge'}
-    rows = json.loads((SEED_DIR / 'agent.json').read_text(encoding='utf-8'))
     try:
         with manager.SessionLocal.begin() as db:
-            for row in rows:
-                if row['name'] in names:
-                    manager._seed_agent_row(db, row, refresh_prompt=True)
-            db.flush()
-            agents = db.query(Agent).filter(Agent.name.in_(names)).all()
-            prompts = {row['name']:row['system_prompt'] for row in rows if row['name'] in names}
-            if len(agents) != 2 or any(a.system_prompt != prompts[a.name] for a in agents):
-                raise RuntimeError('Judge upgrade incomplete; transaction rolled back')
-            tool = db.query(Tool).filter_by(name='intellectual_property_law_search').one()
-            for agent in agents:
-                if db.query(AgentToolRelation).filter_by(agent_id=agent.id, tool_id=tool.id).count() != 1:
-                    raise RuntimeError('Judge tool binding incomplete; transaction rolled back')
-        print('Both Judge Agents and law-search bindings upgraded. Restart service to discard cached runners.')
+            changed = migrate_judge_agents(db)
+        status = "updated" if changed else "already current"
+        print(f"Split Judge V2 migration complete ({status}).")
+        print("Restart the service to discard cached Agent runners.")
     finally:
         manager.engine.dispose()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
