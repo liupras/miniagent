@@ -41,7 +41,8 @@ class NextActionService:
                 runner = await self._agent_factory.get_runner_by_name(
                     self.AGENT_BY_PHASE[request.phase]
                 )
-                query = self._build_agent_query(request)
+                business_query = self._build_agent_query(request)
+                query = business_query
                 history = None
                 for attempt in range(2):
                     result = await runner.execute(
@@ -59,11 +60,12 @@ class NextActionService:
                             request,
                         )
                         logger.info(
-                            '[NextActionV2] validated: phase={}, state_version={}, decision={}, attempts={}',
+                            '[NextActionV2] validated: phase={}, state_version={}, decision={}, attempts={}, tool_calls={}',
                             request.phase,
                             request.state_version,
                             response.decision,
                             attempt + 1,
+                            len(result.tools),
                         )
                         return response
                     except JudgeInvalidResponseError as exc:
@@ -77,15 +79,13 @@ class NextActionService:
                         if attempt == 1:
                             raise
                         history = [
+                            {'role': 'user', 'content': business_query},
                             {'role': 'assistant', 'content': result.text},
-                            {
-                                'role': 'user',
-                                'content': (
-                                    '上次输出校验失败，请依据原始输入重新生成。错误：'
-                                    + json.dumps(exc.params, ensure_ascii=False)
-                                ),
-                            },
                         ]
+                        query = (
+                            '上次输出校验失败，请依据原始输入重新生成。错误：'
+                            + json.dumps(exc.params, ensure_ascii=False)
+                        )
         except TimeoutError as exc:
             raise JudgeTimeoutError(
                 params={'timeout': self._timeout_seconds}, cause=exc

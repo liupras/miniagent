@@ -21,7 +21,9 @@ from .law_policy import (
     LawRetrievalUnavailable,
     check_law_observation,
     has_law_evidence,
+    is_definitely_no_action,
     law_check_handoff,
+    law_check_no_action,
 )
 from .response_validator import validate_law_check_agent_output
 
@@ -39,10 +41,18 @@ class LawCheckService:
     async def check(self, request):
         """Check only the request's latest speech under one shared deadline."""
 
+        if is_definitely_no_action(request.text):
+            logger.info(
+                '[LawCheckV2] definite statement: state_version={}, decision=NO_ACTION, tool_calls=0',
+                request.state_version,
+            )
+            return validate_law_check_agent_output(law_check_no_action(), request)
+
         try:
             async with asyncio.timeout(self._timeout_seconds):
                 runner = await self._agent_factory.get_runner_by_name(self.AGENT_NAME)
-                query = self._build_agent_query(request)
+                business_query = self._build_agent_query(request)
+                query = business_query
                 history = None
                 for attempt in range(2):
                     result = await runner.execute(
@@ -76,10 +86,11 @@ class LawCheckService:
                                 '法律解释缺少本次有效检索依据。',
                             )
                         logger.info(
-                            '[LawCheckV2] validated: state_version={}, decision={}, attempts={}',
+                            '[LawCheckV2] validated: state_version={}, decision={}, attempts={}, tool_calls={}',
                             request.state_version,
                             response.decision,
                             attempt + 1,
+                            len(result.tools),
                         )
                         return response
                     except JudgeInvalidResponseError as exc:
@@ -92,15 +103,13 @@ class LawCheckService:
                         if attempt == 1:
                             raise
                         history = [
+                            {'role': 'user', 'content': business_query},
                             {'role': 'assistant', 'content': result.text},
-                            {
-                                'role': 'user',
-                                'content': (
-                                    '上次输出校验失败，请依据原始输入重新生成。错误：'
-                                    + json.dumps(exc.params, ensure_ascii=False)
-                                ),
-                            },
                         ]
+                        query = (
+                            '上次输出校验失败，请依据原始输入重新生成。错误：'
+                            + json.dumps(exc.params, ensure_ascii=False)
+                        )
         except TimeoutError as exc:
             raise JudgeTimeoutError(
                 params={'timeout': self._timeout_seconds}, cause=exc

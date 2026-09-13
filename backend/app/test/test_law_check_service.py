@@ -91,7 +91,7 @@ class Factory:
 async def test_no_action_uses_isolated_input_and_no_tool():
     runner = Runner([AgentExecution(output())])
     service = LawCheckService(Factory(runner))
-    response = await service.check(request(text='我方维持此前意见。'))
+    response = await service.check(request(text='我并不是在提出新的法律问题，对吗？'))
 
     assert response.state_version == 101
     assert response.decision == 'NO_ACTION'
@@ -102,7 +102,7 @@ async def test_no_action_uses_isolated_input_and_no_tool():
     assert json.loads(call['query']) == {
         'latest_speech': {
             'role': 'PLAINTIFF',
-            'text': '我方维持此前意见。',
+            'text': '我并不是在提出新的法律问题，对吗？',
         },
         'reference_context': '当前争点：图片商业使用是否构成侵权。',
     }
@@ -150,9 +150,24 @@ async def test_no_action_with_tool_call_is_rejected_and_repaired():
     response = await LawCheckService(Factory(runner)).check(request())
     assert response.decision == 'NO_ACTION'
     assert len(runner.calls) == 2
-    assert runner.calls[0]['query'] == runner.calls[1]['query']
+    assert runner.calls[0]['query'] != runner.calls[1]['query']
     assert runner.calls[0]['history'] is None
-    assert 'no_action_with_tool_call' in str(runner.calls[1]['history'])
+    assert runner.calls[1]['history'][0] == {
+        'role': 'user',
+        'content': runner.calls[0]['query'],
+    }
+    assert 'no_action_with_tool_call' in runner.calls[1]['query']
+
+
+@pytest.mark.anyio
+async def test_question_in_context_cannot_trigger_agent_or_tool_for_plain_statement():
+    runner = Runner([])
+    response = await LawCheckService(Factory(runner)).check(request(
+        text='我方维持此前陈述。',
+        context='公开下载的图片为何不能商用，法律依据是什么？',
+    ))
+    assert response.decision == 'NO_ACTION'
+    assert runner.calls == []
 
 
 @pytest.mark.anyio

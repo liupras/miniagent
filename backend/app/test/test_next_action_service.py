@@ -127,7 +127,7 @@ async def test_cross_phase_and_law_decisions_are_rejected(
     response = await NextActionService(Factory(runner)).decide(request(phase))
     assert response.decision == replacement
     assert len(runner.calls) == 2
-    assert reason in str(runner.calls[1]['history'])
+    assert reason in runner.calls[1]['query']
 
 
 @pytest.mark.anyio
@@ -143,7 +143,7 @@ async def test_action_must_be_in_request_allowed_actions():
     ])
     response = await NextActionService(Factory(runner)).decide(req)
     assert response.decision == 'COMPLETE'
-    assert 'decision_not_allowed' in str(runner.calls[1]['history'])
+    assert 'decision_not_allowed' in runner.calls[1]['query']
 
 
 @pytest.mark.anyio
@@ -155,7 +155,7 @@ async def test_ask_target_must_be_in_allowed_targets():
     ])
     response = await NextActionService(Factory(runner)).decide(req)
     assert response.target == 'PLAINTIFF'
-    assert 'target_not_allowed' in str(runner.calls[1]['history'])
+    assert 'target_not_allowed' in runner.calls[1]['query']
 
 
 @pytest.mark.anyio
@@ -188,7 +188,12 @@ async def test_invalid_output_is_repaired_only_once():
     with pytest.raises(JudgeInvalidResponseError):
         await NextActionService(Factory(runner)).decide(request())
     assert len(runner.calls) == 2
-    assert runner.calls[0]['query'] == runner.calls[1]['query']
+    assert runner.calls[0]['query'] != runner.calls[1]['query']
+    assert runner.calls[1]['history'][0] == {
+        'role': 'user',
+        'content': runner.calls[0]['query'],
+    }
+    assert 'schema_validation_failed' in runner.calls[1]['query']
 
 
 @pytest.mark.anyio
