@@ -49,7 +49,13 @@ def test_investigation_agent_prompt_contains_only_investigation_rules():
     prompt = row["system_prompt"]
 
     assert row["is_active"] and row["max_output_tokens"] == 2048
-    assert "不得判断证据真伪" in prompt
+    for rule in (
+        "不得判断证据的真伪",
+        "证据实际上能否证明相关法律事实",
+        "视为其已就该事实完成表达",
+        "不得继续询问证据内容",
+    ):
+        assert rule in prompt
     for rule in (
         "ASK",
         "COMPLETE",
