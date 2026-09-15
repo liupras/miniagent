@@ -106,7 +106,7 @@ async def law_check(
     '/judge/next-action',
     response_model=JudgeNextActionResponseV2,
     responses=ERROR_RESPONSES,
-    summary='Choose one constrained investigation or debate action',
+    summary='Choose one constrained investigation action',
 )
 async def next_action(
     body: JudgeNextActionRequestV2,
@@ -115,8 +115,7 @@ async def next_action(
 ) -> JudgeNextActionResponseV2:
     started = perf_counter()
     logger.info(
-        '[NextActionV2] accepted: phase={}, state_version={}, actions={}, targets={}, records={}',
-        body.phase,
+        '[NextActionV2] accepted: state_version={}, actions={}, targets={}, records={}',
         body.state_version,
         len(body.allowed_actions),
         len(body.allowed_targets),
@@ -124,8 +123,7 @@ async def next_action(
     )
     response = await service.decide(body)
     logger.info(
-        '[NextActionV2] completed: phase={}, state_version={}, decision={}, elapsed_ms={:.1f}',
-        body.phase,
+        '[NextActionV2] completed: state_version={}, decision={}, elapsed_ms={:.1f}',
         response.state_version,
         response.decision,
         (perf_counter() - started) * 1000,

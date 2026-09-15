@@ -1,6 +1,5 @@
 {
   "state_version": 120,
-  "phase": "INVESTIGATION",
   "allowed_actions": [
     "ASK",
     "ASK",
@@ -23,7 +22,6 @@
       "赔偿金额及维权费用是否合理。"
     ]
   },
-  "current_issue": null,
   "records": [
     {
       "type": "SPEECH",

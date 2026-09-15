@@ -337,12 +337,13 @@
       "valid": true
     },
     {
-      "id": "next-debate-request",
+      "id": "next-phase-forbidden",
       "endpoint": "next-action",
       "kind": "request",
       "schema": "next-action-request",
-      "file": "cases/next-debate-request.json",
-      "valid": true
+      "file": "cases/next-phase-forbidden.json",
+      "valid": false,
+      "reason": "schema"
     },
     {
       "id": "next-investigation-complete-only",
@@ -422,15 +423,6 @@
       "reason": "schema"
     },
     {
-      "id": "next-debate-ask",
-      "endpoint": "next-action",
-      "kind": "request",
-      "schema": "next-action-request",
-      "file": "cases/next-debate-ask.json",
-      "valid": false,
-      "reason": "schema"
-    },
-    {
       "id": "next-ask-no-targets",
       "endpoint": "next-action",
       "kind": "request",
@@ -449,20 +441,11 @@
       "reason": "schema"
     },
     {
-      "id": "next-debate-no-issue",
+      "id": "next-current-issue-forbidden",
       "endpoint": "next-action",
       "kind": "request",
       "schema": "next-action-request",
-      "file": "cases/next-debate-no-issue.json",
-      "valid": false,
-      "reason": "schema"
-    },
-    {
-      "id": "next-debate-no-summary",
-      "endpoint": "next-action",
-      "kind": "request",
-      "schema": "next-action-request",
-      "file": "cases/next-debate-no-summary.json",
+      "file": "cases/next-current-issue-forbidden.json",
       "valid": false,
       "reason": "schema"
     },
@@ -548,15 +531,6 @@
       "request": "contexts/next-complete-response.request.json"
     },
     {
-      "id": "next-continue-response",
-      "endpoint": "next-action",
-      "kind": "response",
-      "schema": "next-action-response",
-      "file": "cases/next-continue-response.json",
-      "valid": true,
-      "request": "contexts/next-continue-response.request.json"
-    },
-    {
       "id": "next-handoff-response",
       "endpoint": "next-action",
       "kind": "response",
@@ -623,11 +597,11 @@
       "reason": "schema"
     },
     {
-      "id": "next-continue-no-points",
+      "id": "next-continue-response-forbidden",
       "endpoint": "next-action",
       "kind": "response",
       "schema": "next-action-response",
-      "file": "cases/next-continue-no-points.json",
+      "file": "cases/next-continue-response-forbidden.json",
       "valid": false,
       "reason": "schema"
     },

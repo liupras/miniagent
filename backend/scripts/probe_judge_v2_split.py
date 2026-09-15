@@ -117,11 +117,6 @@ def main():
         next_path,
         fixture('cases/next-investigation-request.json'),
     )
-    results['debate_action'] = post(
-        args.base_url,
-        next_path,
-        fixture('cases/next-debate-request.json'),
-    )
     results['overlong_text'] = post(
         args.base_url,
         law_path,

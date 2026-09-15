@@ -30,13 +30,8 @@ def fixture(path):
     return json.loads((ROOT / path).read_text(encoding='utf-8'))
 
 
-def request(phase='INVESTIGATION', **changes):
-    filename = (
-        'cases/next-investigation-request.json'
-        if phase == 'INVESTIGATION'
-        else 'cases/next-debate-request.json'
-    )
-    data = fixture(filename)
+def request(**changes):
+    data = fixture('cases/next-investigation-request.json')
     data.update(changes)
     return JudgeNextActionRequestV2.model_validate(data)
 
@@ -47,7 +42,7 @@ def output(decision='COMPLETE', **changes):
         'target': 'DEFENDANT' if decision == 'ASK' else None,
         'speech': '请围绕当前事项继续说明。',
         'pending_points': (
-            ['尚待说明的事项'] if decision in {'CONTINUE', 'HANDOFF'} else []
+            ['尚待说明的事项'] if decision == 'HANDOFF' else []
         ),
     }
     data.update(changes)
@@ -82,22 +77,15 @@ class Factory:
 
 
 @pytest.mark.anyio
-@pytest.mark.parametrize(
-    'phase, decision, agent_name',
-    [
-        ('INVESTIGATION', 'ASK', 'virtual_court_investigation_judge'),
-        ('DEBATE', 'CONTINUE', 'virtual_court_debate_judge'),
-    ],
-)
-async def test_phase_routes_to_isolated_flow_agent(phase, decision, agent_name):
-    req = request(phase)
-    runner = Runner([AgentExecution(output(decision))])
+async def test_next_action_uses_the_investigation_agent():
+    req = request()
+    runner = Runner([AgentExecution(output('ASK'))])
     factory = Factory(runner)
     response = await NextActionService(factory).decide(req)
 
     assert response.state_version == req.state_version
-    assert response.decision == decision
-    assert factory.names == [agent_name]
+    assert response.decision == 'ASK'
+    assert factory.names == ['virtual_court_investigation_judge']
     call = runner.calls[0]
     assert call['history'] is None and call['preserve_context'] is True
     assert json.loads(call['query']) == req.model_dump(
@@ -109,22 +97,21 @@ async def test_phase_routes_to_isolated_flow_agent(phase, decision, agent_name):
 
 @pytest.mark.anyio
 @pytest.mark.parametrize(
-    'phase, forbidden, replacement, reason',
+    'forbidden, replacement, reason',
     [
-        ('INVESTIGATION', 'CONTINUE', 'ASK', 'decision_not_allowed'),
-        ('DEBATE', 'ASK', 'CONTINUE', 'decision_not_allowed'),
-        ('INVESTIGATION', 'EXPLAIN_LAW', 'COMPLETE', 'schema_validation_failed'),
-        ('DEBATE', 'NO_ACTION', 'COMPLETE', 'schema_validation_failed'),
+        ('CONTINUE', 'ASK', 'schema_validation_failed'),
+        ('EXPLAIN_LAW', 'COMPLETE', 'schema_validation_failed'),
+        ('NO_ACTION', 'COMPLETE', 'schema_validation_failed'),
     ],
 )
-async def test_cross_phase_and_law_decisions_are_rejected(
-    phase, forbidden, replacement, reason
+async def test_non_investigation_decisions_are_rejected(
+    forbidden, replacement, reason
 ):
     runner = Runner([
         AgentExecution(output(forbidden)),
         AgentExecution(output(replacement)),
     ])
-    response = await NextActionService(Factory(runner)).decide(request(phase))
+    response = await NextActionService(Factory(runner)).decide(request())
     assert response.decision == replacement
     assert len(runner.calls) == 2
     assert reason in runner.calls[1]['query']
@@ -133,7 +120,6 @@ async def test_cross_phase_and_law_decisions_are_rejected(
 @pytest.mark.anyio
 async def test_action_must_be_in_request_allowed_actions():
     req = request(
-        'INVESTIGATION',
         allowed_actions=['COMPLETE', 'HANDOFF'],
         allowed_targets=[],
     )
@@ -148,7 +134,7 @@ async def test_action_must_be_in_request_allowed_actions():
 
 @pytest.mark.anyio
 async def test_ask_target_must_be_in_allowed_targets():
-    req = request('INVESTIGATION', allowed_targets=['PLAINTIFF'])
+    req = request(allowed_targets=['PLAINTIFF'])
     runner = Runner([
         AgentExecution(output('ASK', target='DEFENDANT')),
         AgentExecution(output('ASK', target='PLAINTIFF')),

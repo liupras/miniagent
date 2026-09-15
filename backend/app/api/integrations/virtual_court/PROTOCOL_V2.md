@@ -17,14 +17,13 @@
 
 ## 下一步动作
 
-下一步动作请求包含阶段、允许动作、允许目标、案件上下文、当前争点和相关记录。
+下一步动作接口只在调查阶段调用。请求包含允许动作、允许目标、案件上下文和相关记录，不再携带 `phase`。
 
 - 调查阶段仅允许 `ASK`、`COMPLETE`、`HANDOFF`。
-- 辩论阶段仅允许 `CONTINUE`、`COMPLETE`、`HANDOFF`。
 - 不允许 `NO_ACTION` 或 `EXPLAIN_LAW`。
 - `ASK.target` 必须属于请求的 `allowed_targets`，其他动作的 `target` 必须为 `null`。
 
-流程 Agent 不绑定法律检索工具。
+该接口固定使用 `virtual_court_investigation_judge`，且不绑定法律检索工具。
 
 ## 响应与错误
 

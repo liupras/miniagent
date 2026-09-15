@@ -71,7 +71,6 @@ def main() -> int:
             elif item["schema"] == "next-action-request":
                 size = content_size(data["case_context"])
                 size += content_size(data["records"])
-                size += len((data["current_issue"] or {}).get("question", ""))
                 if size > limits["next_action_content_max_codepoints"]:
                     reason = "content_budget"
 

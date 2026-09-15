@@ -102,11 +102,8 @@ CASE_CONTEXT = obj(
         "claims": array(string(4000), 30),
         "defenses": array(string(4000), 30),
         "dispute_focuses": array(string(1000), 20),
-        "investigation_summary": string(16000),
-    },
-    ["summary", "claims", "defenses", "dispute_focuses"],
+    }
 )
-ISSUE = obj({"id": string(64), "question": string(1000)})
 RECORD = obj(
     {
         "type": {"enum": ["SPEECH", "SUMMARY"]},
@@ -122,43 +119,20 @@ RECORD["allOf"] = [
     }
 ]
 ALLOWED_ACTIONS = {
-    **array({"enum": ["ASK", "CONTINUE", "COMPLETE", "HANDOFF"]}, 3, 1),
+    **array({"enum": ["ASK", "COMPLETE", "HANDOFF"]}, 3, 1),
     "uniqueItems": True,
     "contains": {"const": "HANDOFF"},
 }
 NEXT_REQUEST = obj(
     {
         "state_version": VERSION,
-        "phase": {"enum": ["INVESTIGATION", "DEBATE"]},
         "allowed_actions": ALLOWED_ACTIONS,
         "allowed_targets": {**array(ROLE, 32), "uniqueItems": True},
         "case_context": CASE_CONTEXT,
-        "current_issue": nullable(ISSUE),
         "records": array(RECORD, 512),
     }
 )
 NEXT_REQUEST["allOf"] = [
-    {
-        "if": {"properties": {"phase": {"const": "INVESTIGATION"}}},
-        "then": {
-            "properties": {
-                "allowed_actions": {
-                    "items": {"enum": ["ASK", "COMPLETE", "HANDOFF"]}
-                },
-                "current_issue": {"type": "null"},
-                "case_context": {"not": {"required": ["investigation_summary"]}},
-            }
-        },
-        "else": {
-            "properties": {
-                "allowed_actions": {
-                    "items": {"enum": ["CONTINUE", "COMPLETE", "HANDOFF"]}
-                },
-                "current_issue": {"type": "object"},
-                "case_context": {"required": ["investigation_summary"]},
-            }
-        },
-    },
     {
         "if": {
             "properties": {
@@ -172,7 +146,7 @@ NEXT_REQUEST["allOf"] = [
 NEXT_RESPONSE = obj(
     {
         "state_version": VERSION,
-        "decision": {"enum": ["ASK", "CONTINUE", "COMPLETE", "HANDOFF"]},
+        "decision": {"enum": ["ASK", "COMPLETE", "HANDOFF"]},
         "target": nullable(ROLE),
         "speech": string(4000),
         "pending_points": POINTS,
@@ -187,7 +161,7 @@ NEXT_RESPONSE["allOf"] = [
     {
         "if": {
             "properties": {
-                "decision": {"enum": ["CONTINUE", "HANDOFF"]}
+                "decision": {"const": "HANDOFF"}
             }
         },
         "then": {"properties": {"pending_points": {"minItems": 1}}},
@@ -218,29 +192,12 @@ BASE_CONTEXT = {
 }
 INVESTIGATION_REQUEST = {
     "state_version": 120,
-    "phase": "INVESTIGATION",
     "allowed_actions": ["ASK", "COMPLETE", "HANDOFF"],
     "allowed_targets": ["PLAINTIFF", "DEFENDANT"],
     "case_context": BASE_CONTEXT,
-    "current_issue": None,
     "records": [
         {"type": "SPEECH", "role": "JUDGE", "text": "被告，请说明图片来源和授权范围。"},
         {"type": "SPEECH", "role": "DEFENDANT", "text": "图片来自公开素材平台，没有另行取得授权。"},
-    ],
-}
-DEBATE_REQUEST = {
-    "state_version": 220,
-    "phase": "DEBATE",
-    "allowed_actions": ["CONTINUE", "COMPLETE", "HANDOFF"],
-    "allowed_targets": ["PLAINTIFF", "DEFENDANT"],
-    "case_context": {
-        **BASE_CONTEXT,
-        "investigation_summary": "双方已说明作品来源、使用方式和授权主张，对责任与赔偿仍有分歧。",
-    },
-    "current_issue": {"id": "FOCUS-02", "question": "赔偿金额及维权费用是否合理。"},
-    "records": [
-        {"type": "SPEECH", "role": "PLAINTIFF", "text": "律师费属于为本案支出的合理维权费用。"},
-        {"type": "SPEECH", "role": "DEFENDANT", "text": "我方对费用的关联性和必要性有异议。"},
     ],
 }
 LAW_ORDINARY = {
@@ -353,7 +310,7 @@ def write_cases() -> None:
     raw_case("law-response-body-over-max", "law-check", "response", encoded_response + " " * (131073 - len(encoded_response.encode("utf-8"))), False, "body_size")
 
     case("next-investigation-request", "next-action", "request", INVESTIGATION_REQUEST)
-    case("next-debate-request", "next-action", "request", DEBATE_REQUEST)
+    case("next-phase-forbidden", "next-action", "request", {**INVESTIGATION_REQUEST, "phase": "INVESTIGATION"}, False, reason="schema")
     case("next-investigation-complete-only", "next-action", "request", changed(INVESTIGATION_REQUEST, "allowed_actions", ["COMPLETE", "HANDOFF"]))
     case("next-empty-records", "next-action", "request", changed(INVESTIGATION_REQUEST, "records", []))
     case("next-summary-record", "next-action", "request", changed(INVESTIGATION_REQUEST, "records", [{"type": "SUMMARY", "role": None, "text": "双方已说明图片来源，尚未说明平台授权范围。"}]))
@@ -363,12 +320,10 @@ def write_cases() -> None:
     case("next-missing-handoff", "next-action", "request", changed(INVESTIGATION_REQUEST, "allowed_actions", ["ASK", "COMPLETE"]), False, reason="schema")
     case("next-duplicate-actions", "next-action", "request", changed(INVESTIGATION_REQUEST, "allowed_actions", ["ASK", "ASK", "HANDOFF"]), False, reason="schema")
     case("next-investigation-continue", "next-action", "request", changed(INVESTIGATION_REQUEST, "allowed_actions", ["CONTINUE", "HANDOFF"]), False, reason="schema")
-    case("next-debate-ask", "next-action", "request", changed(DEBATE_REQUEST, "allowed_actions", ["ASK", "HANDOFF"]), False, reason="schema")
     case("next-ask-no-targets", "next-action", "request", changed(INVESTIGATION_REQUEST, "allowed_targets", []), False, reason="schema")
     case("next-duplicate-targets", "next-action", "request", changed(INVESTIGATION_REQUEST, "allowed_targets", ["PLAINTIFF", "PLAINTIFF"]), False, reason="schema")
-    case("next-debate-no-issue", "next-action", "request", changed(DEBATE_REQUEST, "current_issue", None), False, reason="schema")
-    case("next-debate-no-summary", "next-action", "request", changed(DEBATE_REQUEST, "case_context", BASE_CONTEXT), False, reason="schema")
-    case("next-investigation-summary-forbidden", "next-action", "request", changed(INVESTIGATION_REQUEST, "case_context", DEBATE_REQUEST["case_context"]), False, reason="schema")
+    case("next-current-issue-forbidden", "next-action", "request", {**INVESTIGATION_REQUEST, "current_issue": {"id": "FOCUS-02", "question": "赔偿金额是否合理。"}}, False, reason="schema")
+    case("next-investigation-summary-forbidden", "next-action", "request", changed(INVESTIGATION_REQUEST, "case_context", {**BASE_CONTEXT, "investigation_summary": "旧辩论字段。"}), False, reason="schema")
     case("next-summary-role-forbidden", "next-action", "request", changed(INVESTIGATION_REQUEST, "records", [{"type": "SUMMARY", "role": "JUDGE", "text": "摘要"}]), False, reason="schema")
     case("next-records-over-max", "next-action", "request", changed(INVESTIGATION_REQUEST, "records", [{"type": "SPEECH", "role": "DEFENDANT", "text": "回答"}] * 513), False, reason="schema")
     case("next-missing-records", "next-action", "request", {key: value for key, value in INVESTIGATION_REQUEST.items() if key != "records"}, False, reason="schema")
@@ -382,11 +337,9 @@ def write_cases() -> None:
 
     ask = {"state_version": 120, "decision": "ASK", "target": "DEFENDANT", "speech": "被告，请说明平台展示的授权范围。", "pending_points": ["图片授权范围"]}
     complete = {"state_version": 120, "decision": "COMPLETE", "target": None, "speech": "双方已说明图片来源和使用情况，对授权范围仍有分歧，调查阶段结束。", "pending_points": ["双方对授权范围仍有分歧"]}
-    cont = {"state_version": 220, "decision": "CONTINUE", "target": None, "speech": "请双方围绕律师费与本案的关联性和必要性补充意见。", "pending_points": ["律师费关联性和必要性"]}
     action_handoff = {"state_version": 120, "decision": "HANDOFF", "target": None, "speech": "已有记录不足以安全继续，请人工处理。", "pending_points": ["补充上一轮回答"]}
     case("next-ask-response", "next-action", "response", ask, request=INVESTIGATION_REQUEST)
     case("next-complete-response", "next-action", "response", complete, request=INVESTIGATION_REQUEST)
-    case("next-continue-response", "next-action", "response", cont, request=DEBATE_REQUEST)
     case("next-handoff-response", "next-action", "response", action_handoff, request=INVESTIGATION_REQUEST)
     case("next-response-explain-forbidden", "next-action", "response", changed(complete, "decision", "EXPLAIN_LAW"), False, reason="schema")
     case("next-response-no-action-forbidden", "next-action", "response", changed(complete, "decision", "NO_ACTION"), False, reason="schema")
@@ -394,7 +347,7 @@ def write_cases() -> None:
     case("next-response-target-not-allowed", "next-action", "response", changed(ask, "target", "WITNESS"), False, INVESTIGATION_REQUEST, "target_not_allowed")
     case("next-response-stale", "next-action", "response", changed(ask, "state_version", 119), False, INVESTIGATION_REQUEST, "stale_state")
     case("next-complete-target-forbidden", "next-action", "response", changed(complete, "target", "DEFENDANT"), False, reason="schema")
-    case("next-continue-no-points", "next-action", "response", changed(cont, "pending_points", []), False, reason="schema")
+    case("next-continue-response-forbidden", "next-action", "response", changed(complete, "decision", "CONTINUE"), False, reason="schema")
     case("next-handoff-no-points", "next-action", "response", changed(action_handoff, "pending_points", []), False, reason="schema")
     case("next-response-blank-speech", "next-action", "response", changed(ask, "speech", "   "), False, reason="schema")
     case("next-response-speech-max", "next-action", "response", changed(ask, "speech", "述" * 4000))
@@ -439,9 +392,7 @@ def write_metadata(protocol: Path) -> None:
                 {"id": "explanation-resume", "expect": {"save_before_play": True, "round_delta": 0, "resume_original_position": True, "judge_explanation_retriggers_check": False}},
                 {"id": "stale-or-takeover", "expect": {"stale_response_applied": False, "manual_takeover_invalidates_callbacks": True}},
                 {"id": "investigation-actions", "request_fixture": "next-investigation-request", "expect": {"allowed": ["ASK", "COMPLETE", "HANDOFF"], "law_tool_calls": 0}},
-                {"id": "debate-actions", "request_fixture": "next-debate-request", "expect": {"allowed": ["CONTINUE", "COMPLETE", "HANDOFF"], "law_tool_calls": 0}},
-                {"id": "debate-barrier", "expect": {"next_action_before_both_law_checks": False, "party_order_preserved": True}},
-                {"id": "split-tool-bindings", "expect": {"virtual_court_law_check_judge": ["intellectual_property_law_search"], "virtual_court_investigation_judge": [], "virtual_court_debate_judge": []}},
+                {"id": "split-tool-bindings", "expect": {"virtual_court_law_check_judge": ["intellectual_property_law_search"], "virtual_court_investigation_judge": []}},
                 {"id": "shared-deadline", "expect": {"server_total_seconds": 120, "maximum_repairs": 1, "retrieval_included": True}},
             ],
         },
@@ -471,7 +422,7 @@ def write_readme() -> None:
 | 端点 | 请求重点 | 响应决策 |
 | --- | --- | --- |
 | `{LAW_PATH}` | `state_version`、`role`、`text`、可选 `context` | `NO_ACTION`、`EXPLAIN_LAW`、`HANDOFF` |
-| `{ACTION_PATH}` | 阶段、允许动作、案件上下文、当前争点、完整相关记录 | 调查：`ASK/COMPLETE/HANDOFF`；辩论：`CONTINUE/COMPLETE/HANDOFF` |
+| `{ACTION_PATH}` | 允许动作、案件上下文、完整相关记录 | `ASK/COMPLETE/HANDOFF` |
 
 法律检查请求禁止完整 `records`，响应没有 `target`。流程请求和响应禁止 `EXPLAIN_LAW`、`NO_ACTION`。
 

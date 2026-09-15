@@ -1,6 +1,5 @@
 {
   "state_version": 120,
-  "phase": "INVESTIGATION",
   "allowed_actions": [
     "ASK",
     "COMPLETE",
@@ -16,7 +15,6 @@
     "defenses": [],
     "dispute_focuses": []
   },
-  "current_issue": null,
   "records": [
     {
       "type": "SPEECH",

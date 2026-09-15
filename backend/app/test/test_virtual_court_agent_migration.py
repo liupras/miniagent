@@ -4,10 +4,11 @@ from sqlalchemy.orm import Session
 
 from app.infra.db.database import Agent, AgentToolRelation, Base, LLM, Tool
 from scripts.upgrade_judge_v2 import (
-    FLOW_AGENTS,
+    FLOW_AGENT,
     JUDGE_AGENTS,
     LAW_CHECK_AGENT,
     LAW_TOOL,
+    RETIRED_AGENT,
     migrate_judge_agents,
 )
 
@@ -25,16 +26,17 @@ def make_database(*, missing_agent=None, include_tool=True, include_law_agent=Fa
         )
         db.add(llm)
         db.flush()
-        for index, name in enumerate(FLOW_AGENTS):
-            if name != missing_agent:
-                db.add(Agent(
-                    name=name,
-                    description="旧描述",
-                    system_prompt="旧提示词",
-                    llm_id=llm.id,
-                    max_output_tokens=3000 + index,
-                    is_active=index == 0,
-                ))
+        for name in (FLOW_AGENT, RETIRED_AGENT):
+            if name == missing_agent:
+                continue
+            db.add(Agent(
+                name=name,
+                description="旧描述",
+                system_prompt="旧提示词",
+                llm_id=llm.id,
+                max_output_tokens=3000,
+                is_active=True,
+            ))
         if include_law_agent:
             db.add(Agent(
                 name=LAW_CHECK_AGENT,
@@ -56,7 +58,9 @@ def make_database(*, missing_agent=None, include_tool=True, include_law_agent=Fa
             law_tool = Tool(name=LAW_TOOL, tool_schema={})
             db.add(law_tool)
             db.flush()
-            for agent in db.query(Agent).filter(Agent.name.in_(FLOW_AGENTS)).all():
+            for agent in db.query(Agent).filter(
+                Agent.name.in_((FLOW_AGENT, RETIRED_AGENT))
+            ).all():
                 db.add(AgentToolRelation(agent_id=agent.id, tool_id=law_tool.id))
         db.commit()
     return engine
@@ -91,10 +95,8 @@ def test_migration_creates_law_agent_moves_binding_and_preserves_tuning():
     engine = make_database()
     try:
         with Session(engine) as db, db.begin():
-            flow_before = {
-                agent.name: (agent.id, agent.llm_id, agent.max_output_tokens, agent.is_active)
-                for agent in db.query(Agent).filter(Agent.name.in_(FLOW_AGENTS)).all()
-            }
+            flow = db.query(Agent).filter_by(name=FLOW_AGENT).one()
+            flow_before = (flow.id, flow.llm_id, flow.max_output_tokens, flow.is_active)
             llm_before = db.query(LLM).one()
             llm_values = (
                 llm_before.id,
@@ -106,22 +108,21 @@ def test_migration_creates_law_agent_moves_binding_and_preserves_tuning():
         with Session(engine) as db:
             agents = {agent.name: agent for agent in db.query(Agent).all()}
             assert set(JUDGE_AGENTS) <= set(agents)
-            for name in FLOW_AGENTS:
-                agent = agents[name]
-                assert (
-                    agent.id,
-                    agent.llm_id,
-                    agent.max_output_tokens,
-                    agent.is_active,
-                ) == flow_before[name]
+            assert RETIRED_AGENT not in agents
+            flow = agents[FLOW_AGENT]
+            assert (
+                flow.id,
+                flow.llm_id,
+                flow.max_output_tokens,
+                flow.is_active,
+            ) == flow_before
 
-            source = agents[FLOW_AGENTS[0]]
             law_agent = agents[LAW_CHECK_AGENT]
             assert (
                 law_agent.llm_id,
                 law_agent.max_output_tokens,
                 law_agent.is_active,
-            ) == (source.llm_id, source.max_output_tokens, source.is_active)
+            ) == (flow.llm_id, flow.max_output_tokens, flow.is_active)
 
             tool = db.query(Tool).filter_by(name=LAW_TOOL).one()
             counts = {
@@ -133,8 +134,7 @@ def test_migration_creates_law_agent_moves_binding_and_preserves_tuning():
             }
             assert counts == {
                 LAW_CHECK_AGENT: 1,
-                FLOW_AGENTS[0]: 0,
-                FLOW_AGENTS[1]: 0,
+                FLOW_AGENT: 0,
             }
             unrelated = agents["unrelated"]
             assert (
@@ -180,7 +180,7 @@ def test_existing_law_agent_keeps_its_runtime_tuning():
 
 @pytest.mark.parametrize(
     "missing_agent, include_tool",
-    [(FLOW_AGENTS[0], True), (FLOW_AGENTS[1], True), (None, False)],
+    [(FLOW_AGENT, True), (None, False)],
 )
 def test_missing_prerequisite_rolls_back_everything(missing_agent, include_tool):
     engine = make_database(missing_agent=missing_agent, include_tool=include_tool)

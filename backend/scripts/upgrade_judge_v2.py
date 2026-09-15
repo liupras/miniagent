@@ -1,9 +1,8 @@
-"""Migrate the split Judge V2 agents and law-tool binding transactionally.
+"""Migrate the Judge V2 agents and law-tool binding transactionally.
 
-The migration is intentionally narrow: it updates the three Judge prompts,
-creates the law-check Agent when absent, and moves the law-search binding from
-the two flow Agents to the law-check Agent. Agent runtime tuning and all
-unrelated rows are preserved.
+The migration updates the two active Judge prompts, creates the law-check Agent
+when absent, moves the law-search binding to it, and removes the retired debate
+Agent. Active Agent runtime tuning and all unrelated rows are preserved.
 """
 
 import json
@@ -14,16 +13,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from sqlalchemy.orm import Session
 
-from app.infra.db.database import Agent, AgentToolRelation, Tool
+from app.infra.db.database import (
+    Agent,
+    AgentToolRelation,
+    ChatSession,
+    Tool,
+    UserAgentRelation,
+)
 from app.infra.db.initializer import DatabaseManager, SEED_DIR
 
 
 LAW_CHECK_AGENT = "virtual_court_law_check_judge"
-FLOW_AGENTS = (
-    "virtual_court_investigation_judge",
-    "virtual_court_debate_judge",
-)
-JUDGE_AGENTS = (LAW_CHECK_AGENT, *FLOW_AGENTS)
+FLOW_AGENT = "virtual_court_investigation_judge"
+RETIRED_AGENT = "virtual_court_debate_judge"
+JUDGE_AGENTS = (LAW_CHECK_AGENT, FLOW_AGENT)
 LAW_TOOL = "intellectual_property_law_search"
 
 
@@ -44,13 +47,9 @@ def migrate_judge_agents(db: Session) -> bool:
     """
 
     seeds = _judge_seed_rows()
-    existing_flow = {
-        agent.name: agent
-        for agent in db.query(Agent).filter(Agent.name.in_(FLOW_AGENTS)).all()
-    }
-    missing_flow = set(FLOW_AGENTS) - set(existing_flow)
-    if missing_flow:
-        raise RuntimeError(f"Required Judge agents missing: {sorted(missing_flow)}")
+    flow_agent = db.query(Agent).filter_by(name=FLOW_AGENT).one_or_none()
+    if flow_agent is None:
+        raise RuntimeError(f"Required Judge agent missing: {FLOW_AGENT}")
 
     law_tool = db.query(Tool).filter_by(name=LAW_TOOL).one_or_none()
     if law_tool is None:
@@ -59,21 +58,20 @@ def migrate_judge_agents(db: Session) -> bool:
     changed = False
     law_agent = db.query(Agent).filter_by(name=LAW_CHECK_AGENT).one_or_none()
     if law_agent is None:
-        source = existing_flow[FLOW_AGENTS[0]]
         law_seed = seeds[LAW_CHECK_AGENT]
         law_agent = Agent(
             name=LAW_CHECK_AGENT,
             description=law_seed["description"],
             system_prompt=law_seed["system_prompt"],
-            llm_id=source.llm_id,
-            max_output_tokens=source.max_output_tokens,
-            is_active=source.is_active,
+            llm_id=flow_agent.llm_id,
+            max_output_tokens=flow_agent.max_output_tokens,
+            is_active=flow_agent.is_active,
         )
         db.add(law_agent)
         db.flush()
         changed = True
 
-    agents = {**existing_flow, LAW_CHECK_AGENT: law_agent}
+    agents = {FLOW_AGENT: flow_agent, LAW_CHECK_AGENT: law_agent}
     for name, agent in agents.items():
         seed = seeds[name]
         for field in ("description", "system_prompt"):
@@ -86,7 +84,7 @@ def migrate_judge_agents(db: Session) -> bool:
         db.query(AgentToolRelation)
         .filter(
             AgentToolRelation.agent_id.in_(
-                [existing_flow[name].id for name in FLOW_AGENTS]
+                [flow_agent.id]
             ),
             AgentToolRelation.tool_id == law_tool.id,
         )
@@ -102,10 +100,26 @@ def migrate_judge_agents(db: Session) -> bool:
         db.add(AgentToolRelation(agent_id=law_agent.id, tool_id=law_tool.id))
         changed = True
 
+    retired = db.query(Agent).filter_by(name=RETIRED_AGENT).one_or_none()
+    if retired is not None:
+        db.query(AgentToolRelation).filter_by(agent_id=retired.id).delete(
+            synchronize_session=False
+        )
+        db.query(UserAgentRelation).filter_by(agent_id=retired.id).delete(
+            synchronize_session=False
+        )
+        db.query(ChatSession).filter_by(agent_id=retired.id).update(
+            {ChatSession.agent_id: None}, synchronize_session=False
+        )
+        db.delete(retired)
+        changed = True
+
     db.flush()
     loaded = db.query(Agent).filter(Agent.name.in_(JUDGE_AGENTS)).all()
     if len(loaded) != len(JUDGE_AGENTS):
         raise RuntimeError("Judge migration incomplete")
+    if db.query(Agent).filter_by(name=RETIRED_AGENT).count():
+        raise RuntimeError("Retired debate Judge was not removed")
     if any(agent.system_prompt != seeds[agent.name]["system_prompt"] for agent in loaded):
         raise RuntimeError("Judge prompt verification failed")
 
@@ -116,7 +130,7 @@ def migrate_judge_agents(db: Session) -> bool:
         ).count()
         for agent in loaded
     }
-    expected = {LAW_CHECK_AGENT: 1, **{name: 0 for name in FLOW_AGENTS}}
+    expected = {LAW_CHECK_AGENT: 1, FLOW_AGENT: 0}
     if binding_counts != expected:
         raise RuntimeError(
             f"Judge law-tool binding verification failed: {binding_counts}"

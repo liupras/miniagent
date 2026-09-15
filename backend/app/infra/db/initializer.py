@@ -498,7 +498,6 @@ class DatabaseManager:
         judge_names = {
             "virtual_court_law_check_judge",
             "virtual_court_investigation_judge",
-            "virtual_court_debate_judge",
         }
         if existing is None and row["name"] == "virtual_court_investigation_judge":
             existing = db.query(Agent).filter_by(name="virtual_court_solo_judge").first()

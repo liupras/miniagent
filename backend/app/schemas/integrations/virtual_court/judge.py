@@ -9,10 +9,6 @@ from .common import PartyRole
 REQUEST_MAX_BYTES = 524288
 RESPONSE_MAX_BYTES = 131072
 CONTENT_MAX_CODEPOINTS = 64000
-class JudgePhase(StrEnum):
-    INVESTIGATION = 'INVESTIGATION'
-    DEBATE = 'DEBATE'
-
 class JudgeLawCheckDecision(StrEnum):
     NO_ACTION = 'NO_ACTION'
     EXPLAIN_LAW = 'EXPLAIN_LAW'
@@ -20,7 +16,6 @@ class JudgeLawCheckDecision(StrEnum):
 
 class JudgeNextAction(StrEnum):
     ASK = 'ASK'
-    CONTINUE = 'CONTINUE'
     COMPLETE = 'COMPLETE'
     HANDOFF = 'HANDOFF'
 
@@ -38,24 +33,16 @@ def _enum_string(enum_type):
         raise ValueError('expected a protocol string or matching enum member')
     return BeforeValidator(parse)
 
-Phase = Annotated[JudgePhase, _enum_string(JudgePhase)]
 LawCheckDecision = Annotated[JudgeLawCheckDecision, _enum_string(JudgeLawCheckDecision)]
 NextAction = Annotated[JudgeNextAction, _enum_string(JudgeNextAction)]
 RecordType = Annotated[JudgeRecordType, _enum_string(JudgeRecordType)]
 Party = Annotated[PartyRole, _enum_string(PartyRole)]
 
-PHASE_ACTIONS = {
-    JudgePhase.INVESTIGATION: frozenset((
-        JudgeNextAction.ASK,
-        JudgeNextAction.COMPLETE,
-        JudgeNextAction.HANDOFF,
-    )),
-    JudgePhase.DEBATE: frozenset((
-        JudgeNextAction.CONTINUE,
-        JudgeNextAction.COMPLETE,
-        JudgeNextAction.HANDOFF,
-    )),
-}
+INVESTIGATION_ACTIONS = frozenset((
+    JudgeNextAction.ASK,
+    JudgeNextAction.COMPLETE,
+    JudgeNextAction.HANDOFF,
+))
 
 def text_type(limit):
     return Annotated[str, Field(min_length=1, max_length=limit, pattern=r'\S')]
@@ -70,12 +57,6 @@ class JudgeCaseContext(StrictModel):
     claims: list[text_type(4000)] = Field(max_length=30)
     defenses: list[text_type(4000)] = Field(max_length=30)
     dispute_focuses: list[text_type(1000)] = Field(max_length=20)
-    # Omission is valid only for investigation; explicit null is never valid.
-    investigation_summary: text_type(16000) = None
-
-class JudgeIssue(StrictModel):
-    id: text_type(64)
-    question: text_type(1000)
 
 class JudgeRecord(StrictModel):
     type: RecordType
@@ -124,14 +105,12 @@ def content_size(value):
     return 0
 
 class JudgeNextActionRequestV2(StrictModel):
-    """A phase-only flow decision request, isolated from legal checking."""
+    """An investigation decision request, isolated from legal checking."""
 
     state_version: Version
-    phase: Phase
     allowed_actions: list[NextAction] = Field(min_length=1, max_length=3)
     allowed_targets: list[Role] = Field(max_length=32)
     case_context: JudgeCaseContext
-    current_issue: JudgeIssue | None
     records: list[JudgeRecord] = Field(max_length=512)
 
     @model_validator(mode='after')
@@ -139,8 +118,8 @@ class JudgeNextActionRequestV2(StrictModel):
         actions = set(self.allowed_actions)
         if len(actions) != len(self.allowed_actions):
             raise ValueError('duplicate actions')
-        if not actions <= PHASE_ACTIONS[self.phase]:
-            raise ValueError('invalid action for phase')
+        if not actions <= INVESTIGATION_ACTIONS:
+            raise ValueError('invalid investigation action')
         if JudgeNextAction.HANDOFF not in actions:
             raise ValueError('HANDOFF must be allowed')
         if len(set(self.allowed_targets)) != len(self.allowed_targets):
@@ -148,22 +127,14 @@ class JudgeNextActionRequestV2(StrictModel):
         if JudgeNextAction.ASK in actions and not self.allowed_targets:
             raise ValueError('ASK requires allowed_targets')
 
-        has_summary = 'investigation_summary' in self.case_context.model_fields_set
-        if self.phase == JudgePhase.INVESTIGATION:
-            if self.current_issue is not None or has_summary:
-                raise ValueError('investigation cannot include current_issue or investigation_summary')
-        elif self.current_issue is None or not has_summary:
-            raise ValueError('debate requires current_issue and investigation_summary')
-
         size = content_size(self.case_context.model_dump(exclude_unset=True))
         size += sum(content_size(record.model_dump()) for record in self.records)
-        size += len(self.current_issue.question) if self.current_issue else 0
         if size > CONTENT_MAX_CODEPOINTS:
             raise ValueError('content_budget exceeded')
         return self
 
 class JudgeNextActionResponseV2(StrictModel):
-    """A phase-only flow result; legal decisions cannot be represented."""
+    """An investigation result; legal decisions cannot be represented."""
 
     state_version: Version
     decision: NextAction
@@ -175,8 +146,8 @@ class JudgeNextActionResponseV2(StrictModel):
     def shape(self):
         if (self.target is not None) != (self.decision == JudgeNextAction.ASK):
             raise ValueError('only ASK requires target; other targets must be null')
-        if self.decision in (JudgeNextAction.CONTINUE, JudgeNextAction.HANDOFF) and not self.pending_points:
-            raise ValueError('CONTINUE and HANDOFF require pending_points')
+        if self.decision == JudgeNextAction.HANDOFF and not self.pending_points:
+            raise ValueError('HANDOFF requires pending_points')
         return self
 
 def strict_json(raw, *, max_bytes=None):

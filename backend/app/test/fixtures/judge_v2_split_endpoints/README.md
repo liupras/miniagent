@@ -19,7 +19,7 @@
 | 端点 | 请求重点 | 响应决策 |
 | --- | --- | --- |
 | `/api/v2/integrations/virtual-court/judge/law-check` | `state_version`、`role`、`text`、可选 `context` | `NO_ACTION`、`EXPLAIN_LAW`、`HANDOFF` |
-| `/api/v2/integrations/virtual-court/judge/next-action` | 阶段、允许动作、案件上下文、当前争点、完整相关记录 | 调查：`ASK/COMPLETE/HANDOFF`；辩论：`CONTINUE/COMPLETE/HANDOFF` |
+| `/api/v2/integrations/virtual-court/judge/next-action` | 允许动作、案件上下文、完整相关记录 | `ASK/COMPLETE/HANDOFF` |
 
 法律检查请求禁止完整 `records`，响应没有 `target`。流程请求和响应禁止 `EXPLAIN_LAW`、`NO_ACTION`。
 

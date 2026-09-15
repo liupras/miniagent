@@ -74,8 +74,8 @@ def test_split_models_have_exact_wire_fields():
         "state_version", "decision", "speech", "pending_points"
     }
     assert set(JudgeNextActionRequestV2.model_fields) == {
-        "state_version", "phase", "allowed_actions", "allowed_targets",
-        "case_context", "current_issue", "records",
+        "state_version", "allowed_actions", "allowed_targets",
+        "case_context", "records",
     }
     assert set(JudgeNextActionResponseV2.model_fields) == {
         "state_version", "decision", "target", "speech", "pending_points"

@@ -45,3 +45,8 @@ def test_next_action_contract_excludes_law_decisions():
     response_values = response["properties"]["decision"]["enum"]
     assert "NO_ACTION" not in action_values + response_values
     assert "EXPLAIN_LAW" not in action_values + response_values
+    assert "phase" not in request["properties"]
+    assert action_values == ["ASK", "COMPLETE", "HANDOFF"]
+    assert response_values == ["ASK", "COMPLETE", "HANDOFF"]
+    assert "current_issue" not in request["properties"]
+    assert "investigation_summary" not in request["properties"]["case_context"]["properties"]

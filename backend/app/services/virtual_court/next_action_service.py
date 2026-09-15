@@ -1,4 +1,4 @@
-"""Stateless, phase-specific courtroom flow decisions."""
+"""Stateless courtroom flow decisions."""
 
 import asyncio
 import json
@@ -8,8 +8,6 @@ from app.runtime.agent.agent_factory import AgentInactiveError, AgentNotFoundErr
 from app.runtime.agent.tool_builder import ToolBuildError
 from app.runtime.llm.exceptions import ContextBudgetExceeded
 from app.runtime.llm.models import LLMClientError
-from app.schemas.integrations.virtual_court import JudgePhase
-
 from .exceptions import (
     JudgeConfigurationError,
     JudgeContextError,
@@ -24,10 +22,7 @@ logger = get_logger(__name__)
 
 
 class NextActionService:
-    AGENT_BY_PHASE = {
-        JudgePhase.INVESTIGATION: 'virtual_court_investigation_judge',
-        JudgePhase.DEBATE: 'virtual_court_debate_judge',
-    }
+    AGENT_NAME = 'virtual_court_investigation_judge'
 
     def __init__(self, agent_factory, *, timeout_seconds=120.0):
         self._agent_factory = agent_factory
@@ -39,7 +34,7 @@ class NextActionService:
         try:
             async with asyncio.timeout(self._timeout_seconds):
                 runner = await self._agent_factory.get_runner_by_name(
-                    self.AGENT_BY_PHASE[request.phase]
+                    self.AGENT_NAME
                 )
                 business_query = self._build_agent_query(request)
                 query = business_query
@@ -60,8 +55,7 @@ class NextActionService:
                             request,
                         )
                         logger.info(
-                            '[NextActionV2] validated: phase={}, state_version={}, decision={}, attempts={}, tool_calls={}',
-                            request.phase,
+                            '[NextActionV2] validated: state_version={}, decision={}, attempts={}, tool_calls={}',
                             request.state_version,
                             response.decision,
                             attempt + 1,
@@ -70,8 +64,7 @@ class NextActionService:
                         return response
                     except JudgeInvalidResponseError as exc:
                         logger.warning(
-                            '[NextActionV2] output rejected: phase={}, state_version={}, attempt={}, diagnostic={}',
-                            request.phase,
+                            '[NextActionV2] output rejected: state_version={}, attempt={}, diagnostic={}',
                             request.state_version,
                             attempt + 1,
                             exc.params,

@@ -88,32 +88,12 @@
       }
     },
     {
-      "id": "debate-actions",
-      "request_fixture": "next-debate-request",
-      "expect": {
-        "allowed": [
-          "CONTINUE",
-          "COMPLETE",
-          "HANDOFF"
-        ],
-        "law_tool_calls": 0
-      }
-    },
-    {
-      "id": "debate-barrier",
-      "expect": {
-        "next_action_before_both_law_checks": false,
-        "party_order_preserved": true
-      }
-    },
-    {
       "id": "split-tool-bindings",
       "expect": {
         "virtual_court_law_check_judge": [
           "intellectual_property_law_search"
         ],
-        "virtual_court_investigation_judge": [],
-        "virtual_court_debate_judge": []
+        "virtual_court_investigation_judge": []
       }
     },
     {

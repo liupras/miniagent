@@ -10,7 +10,6 @@
     "decision": {
       "enum": [
         "ASK",
-        "CONTINUE",
         "COMPLETE",
         "HANDOFF"
       ]
@@ -84,10 +83,7 @@
       "if": {
         "properties": {
           "decision": {
-            "enum": [
-              "CONTINUE",
-              "HANDOFF"
-            ]
+            "const": "HANDOFF"
           }
         }
       },

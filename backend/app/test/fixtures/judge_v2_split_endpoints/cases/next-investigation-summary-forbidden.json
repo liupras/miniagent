@@ -1,6 +1,5 @@
 {
   "state_version": 120,
-  "phase": "INVESTIGATION",
   "allowed_actions": [
     "ASK",
     "COMPLETE",
@@ -22,9 +21,8 @@
       "涉案使用行为是否构成侵权。",
       "赔偿金额及维权费用是否合理。"
     ],
-    "investigation_summary": "双方已说明作品来源、使用方式和授权主张，对责任与赔偿仍有分歧。"
+    "investigation_summary": "旧辩论字段。"
   },
-  "current_issue": null,
   "records": [
     {
       "type": "SPEECH",
