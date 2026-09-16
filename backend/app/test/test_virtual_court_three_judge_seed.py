@@ -51,9 +51,10 @@ def test_investigation_agent_prompt_contains_only_investigation_rules():
     assert row["is_active"] and row["max_output_tokens"] == 2048
     for rule in (
         "不得判断证据的真伪",
-        "证据实际上能否证明相关法律事实",
-        "视为其已就该事实完成表达",
-        "不得继续询问证据内容",
+        "COMPLETE → ASK → HANDOFF",
+        "该项证据的证明目的即视为完成表达并立即关闭",
+        "对同一事项最多追问一次",
+        "ASK 和 COMPLETE 的 pending_points 必须为 []",
     ):
         assert rule in prompt
     for rule in (
