@@ -1,8 +1,8 @@
-"""Migrate the Judge V2 agents and law-tool binding transactionally.
+"""Migrate the active Judge V2 agents and law-tool binding transactionally.
 
 The migration updates the two active Judge prompts, creates the law-check Agent
-when absent, moves the law-search binding to it, and removes the retired debate
-Agent. Active Agent runtime tuning and all unrelated rows are preserved.
+when absent, and moves the law-search binding to it. Active Agent runtime tuning
+and all unrelated rows are preserved.
 """
 
 import json
@@ -16,16 +16,13 @@ from sqlalchemy.orm import Session
 from app.infra.db.database import (
     Agent,
     AgentToolRelation,
-    ChatSession,
     Tool,
-    UserAgentRelation,
 )
 from app.infra.db.initializer import DatabaseManager, SEED_DIR
 
 
 LAW_CHECK_AGENT = "virtual_court_law_check_judge"
 FLOW_AGENT = "virtual_court_investigation_judge"
-RETIRED_AGENT = "virtual_court_debate_judge"
 JUDGE_AGENTS = (LAW_CHECK_AGENT, FLOW_AGENT)
 LAW_TOOL = "intellectual_property_law_search"
 
@@ -100,26 +97,10 @@ def migrate_judge_agents(db: Session) -> bool:
         db.add(AgentToolRelation(agent_id=law_agent.id, tool_id=law_tool.id))
         changed = True
 
-    retired = db.query(Agent).filter_by(name=RETIRED_AGENT).one_or_none()
-    if retired is not None:
-        db.query(AgentToolRelation).filter_by(agent_id=retired.id).delete(
-            synchronize_session=False
-        )
-        db.query(UserAgentRelation).filter_by(agent_id=retired.id).delete(
-            synchronize_session=False
-        )
-        db.query(ChatSession).filter_by(agent_id=retired.id).update(
-            {ChatSession.agent_id: None}, synchronize_session=False
-        )
-        db.delete(retired)
-        changed = True
-
     db.flush()
     loaded = db.query(Agent).filter(Agent.name.in_(JUDGE_AGENTS)).all()
     if len(loaded) != len(JUDGE_AGENTS):
         raise RuntimeError("Judge migration incomplete")
-    if db.query(Agent).filter_by(name=RETIRED_AGENT).count():
-        raise RuntimeError("Retired debate Judge was not removed")
     if any(agent.system_prompt != seeds[agent.name]["system_prompt"] for agent in loaded):
         raise RuntimeError("Judge prompt verification failed")
 

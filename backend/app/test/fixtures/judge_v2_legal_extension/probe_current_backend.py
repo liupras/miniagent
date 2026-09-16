@@ -28,7 +28,7 @@ for name, kind in [
 
 guard = (BACKEND/'app/runtime/agent/agent_runner.py').read_text(encoding='utf-8')
 seed = json.loads((BACKEND/'app/infra/db/seed/agent_tool_relation.json').read_text(encoding='utf-8'))
-names = {'virtual_court_investigation_judge','virtual_court_debate_judge'}
+names = {'virtual_court_investigation_judge'}
 result = {
     'note':'Current implementation probes only; no LLM, HTTP service or database writes.',
     'schema_observations':observations,

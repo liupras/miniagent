@@ -8,7 +8,6 @@ from scripts.upgrade_judge_v2 import (
     JUDGE_AGENTS,
     LAW_CHECK_AGENT,
     LAW_TOOL,
-    RETIRED_AGENT,
     migrate_judge_agents,
 )
 
@@ -26,11 +25,9 @@ def make_database(*, missing_agent=None, include_tool=True, include_law_agent=Fa
         )
         db.add(llm)
         db.flush()
-        for name in (FLOW_AGENT, RETIRED_AGENT):
-            if name == missing_agent:
-                continue
+        if FLOW_AGENT != missing_agent:
             db.add(Agent(
-                name=name,
+                name=FLOW_AGENT,
                 description="旧描述",
                 system_prompt="旧提示词",
                 llm_id=llm.id,
@@ -58,10 +55,9 @@ def make_database(*, missing_agent=None, include_tool=True, include_law_agent=Fa
             law_tool = Tool(name=LAW_TOOL, tool_schema={})
             db.add(law_tool)
             db.flush()
-            for agent in db.query(Agent).filter(
-                Agent.name.in_((FLOW_AGENT, RETIRED_AGENT))
-            ).all():
-                db.add(AgentToolRelation(agent_id=agent.id, tool_id=law_tool.id))
+            flow_agent = db.query(Agent).filter_by(name=FLOW_AGENT).one_or_none()
+            if flow_agent is not None:
+                db.add(AgentToolRelation(agent_id=flow_agent.id, tool_id=law_tool.id))
         db.commit()
     return engine
 
@@ -108,7 +104,6 @@ def test_migration_creates_law_agent_moves_binding_and_preserves_tuning():
         with Session(engine) as db:
             agents = {agent.name: agent for agent in db.query(Agent).all()}
             assert set(JUDGE_AGENTS) <= set(agents)
-            assert RETIRED_AGENT not in agents
             flow = agents[FLOW_AGENT]
             assert (
                 flow.id,

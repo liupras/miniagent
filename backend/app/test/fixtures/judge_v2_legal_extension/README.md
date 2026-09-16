@@ -52,6 +52,6 @@ D:/miniagent/backend/.venv/Scripts/python.exe -B Tests/Fixtures/JudgeV2LegalExte
 
 ## 基线说明
 
-本次现有后端 161 项、Unity 191 项测试通过，只代表扩展前状态。5 个新契约合法输入的只读探测均被现有后端拒绝；当前还存在拒绝配置工具的检查，两个 Judge 的种子和数据库工具绑定均为空。
+本次现有后端 161 项、Unity 191 项测试通过，只代表扩展前状态。5 个新契约合法输入的只读探测均被现有后端拒绝；当前还存在拒绝配置工具的检查，流程 Judge 的种子和数据库工具绑定均为空。
 
 详情见 `Docs/judge_protocol_v2_legal_baseline.md`。工具恢复、业务代码修改、真实模型和 Unity 法律解释联调均未在 M0-E 执行。

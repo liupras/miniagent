@@ -88,7 +88,7 @@
   "contexts/next-response-target-not-allowed.request.json": "32a97213adcf8dcddc15bcf254705f6b40725d2c00d41a4e3ef2fa51b8f60dfa",
   "limits.json": "9a56e8739fdad11cb6c7248e5eb929ca9d89daf369e75e85a5924512922eb404",
   "manifest.json": "968c6a67bc38159cc87fa373bc47b116c1eb5f3bb45a70da2e6f6d36cc7996a0",
-  "protocol-frozen.md": "63c0d14bbeece73cfe837771840ed6b943e84dcc29ccdf8b3289268b1062aea9",
+  "protocol-frozen.md": "25de9432a527a3dce58046f421b6520fda96e6d005162814a500d888edde175f",
   "README.md": "cde7f6f3fae3f1760a6cdf4bf4c68e9ac3760d78567d881465cef2527208bd1d",
   "schemas/law-check-request.schema.json": "16ba127fe043269e2f8c1d16c4d8e890ecf8ea1de4b749802b66461e43c9a689",
   "schemas/law-check-response.schema.json": "b6a05ae8508359c2972961b81e63e24a46247932b16b9c0cc77113f09957c831",
