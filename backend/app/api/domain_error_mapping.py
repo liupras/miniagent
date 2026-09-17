@@ -24,6 +24,12 @@ from app.services.virtual_court import (
     JudgeServiceError,
     JudgeTimeoutError,
     JudgeUnavailableError,
+    TranscriptConfigurationError,
+    TranscriptContextError,
+    TranscriptInvalidResponseError,
+    TranscriptServiceError,
+    TranscriptTimeoutError,
+    TranscriptUnavailableError,
 )
 
 
@@ -38,6 +44,12 @@ _HTTP_STATUS_BY_ERROR_TYPE: tuple[tuple[type[BaseDomainError], int], ...] = (
     (JudgeConfigurationError, 503),
     (JudgeUnavailableError, 503),
     (JudgeServiceError, 500),
+    (TranscriptContextError, 422),
+    (TranscriptTimeoutError, 504),
+    (TranscriptInvalidResponseError, 502),
+    (TranscriptConfigurationError, 503),
+    (TranscriptUnavailableError, 503),
+    (TranscriptServiceError, 500),
     (NotFoundError, 404),
     (AlreadyExistsError, 409),
     (UnsupportedMediaTypeError, 415),

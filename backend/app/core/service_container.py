@@ -66,7 +66,11 @@ from app.services.admin.prompt import PromptService
 from app.services.admin.audit_log import AuditLogService
 from app.services.admin.login_log import LoginLogAdminService
 from app.services.auth.login_log import LoginLogService
-from app.services.virtual_court import LawCheckService, NextActionService
+from app.services.virtual_court import (
+    LawCheckService,
+    NextActionService,
+    TranscriptService,
+)
 from app.services.workplace_agent import WorkplaceAgentService
 
 from app.runtime.conversation.service_conversation import ConversationService
@@ -161,6 +165,10 @@ class ServiceContainer:
         self.next_action_service = NextActionService(
             self.agent_factory,
             timeout_seconds=settings.virtual_court_judge_timeout_seconds,
+        )
+        self.transcript_service = TranscriptService(
+            self.agent_factory,
+            timeout_seconds=settings.virtual_court_transcript_timeout_seconds,
         )
 
         # ── Service singletons ──────────────────────────────────────────

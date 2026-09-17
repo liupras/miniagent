@@ -32,6 +32,12 @@ from app.services.virtual_court import (
     JudgeServiceError,
     JudgeTimeoutError,
     JudgeUnavailableError,
+    TranscriptConfigurationError,
+    TranscriptContextError,
+    TranscriptInvalidResponseError,
+    TranscriptServiceError,
+    TranscriptTimeoutError,
+    TranscriptUnavailableError,
 )
 
 
@@ -158,6 +164,53 @@ async def judge_service_error_handler(
     )
 
 
+async def transcript_service_error_handler(
+    request: Request,
+    exc: TranscriptServiceError,
+) -> JSONResponse:
+    if isinstance(exc, TranscriptContextError):
+        code = IntegrationErrorCode.INVALID_REQUEST
+        retryable = False
+    elif isinstance(exc, TranscriptConfigurationError):
+        code = IntegrationErrorCode.SERVICE_UNAVAILABLE
+        retryable = False
+    elif isinstance(exc, TranscriptUnavailableError):
+        code = IntegrationErrorCode.SERVICE_UNAVAILABLE
+        retryable = True
+    elif isinstance(exc, TranscriptTimeoutError):
+        code = IntegrationErrorCode.UPSTREAM_TIMEOUT
+        retryable = True
+    elif isinstance(exc, TranscriptInvalidResponseError):
+        code = IntegrationErrorCode.MODEL_RESPONSE_INVALID
+        retryable = True
+    else:
+        code = IntegrationErrorCode.INTERNAL_ERROR
+        retryable = False
+
+    method, path, client, request_id = _request_log_context(request)
+    logger.warning(
+        "[VirtualCourt] transcript request failed: method={}, path={}, status={}, "
+        "error_code={}, exception={}, diagnostic_params={}, cause_type={}, "
+        "client={}, request_id={}",
+        method,
+        path,
+        domain_error_http_status(exc),
+        code,
+        type(exc).__name__,
+        exc.params,
+        type(exc.cause).__name__ if exc.cause is not None else "-",
+        client,
+        request_id,
+    )
+    return integration_error_response(
+        status_code=domain_error_http_status(exc),
+        code=code,
+        message=translate_domain_error(exc),
+        retryable=retryable,
+        details={k: v for k, v in exc.params.items() if k in ("reason", "field")},
+    )
+
+
 async def integration_request_validation_handler(
     request: Request,
     exc: RequestValidationError,
@@ -191,6 +244,10 @@ def register_integration_exception_handlers(app: FastAPI) -> None:
         integration_access_error_handler,
     )
     app.add_exception_handler(JudgeServiceError, judge_service_error_handler)
+    app.add_exception_handler(
+        TranscriptServiceError,
+        transcript_service_error_handler,
+    )
     app.add_exception_handler(
         RequestValidationError,
         integration_request_validation_handler,
