@@ -6,3 +6,7 @@ from .judge import (
     JudgeNextActionRequestV2, JudgeNextActionResponseV2,
     JudgeCaseContext, JudgeRecord,
 )
+from .transcript import (
+    TranscriptGenerateRequestV2,
+    TranscriptGenerateResponseV2,
+)
