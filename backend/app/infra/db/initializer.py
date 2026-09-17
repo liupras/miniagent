@@ -487,7 +487,7 @@ class DatabaseManager:
                 logger.info(f"   + Create StrategyConfig: {row['config_id']}")
 
     def _seed_agent(self, db: Session, force: bool):
-        """Seed agents and migrate only legacy Judge protocol configuration once."""
+        """Seed agents and migrate only legacy VirtualCourt configuration once."""
         logger.info("Seeding agents...")
         for raw in _load("agent.json"):
             self._seed_agent_row(db, raw, force)
@@ -495,9 +495,10 @@ class DatabaseManager:
     def _seed_agent_row(self, db: Session, raw: dict, force: bool = False, *, refresh_prompt: bool = False):
         row = _strip_meta(raw)
         existing = db.query(Agent).filter_by(name=row["name"]).first()
-        judge_names = {
+        managed_virtual_court_names = {
             "virtual_court_law_check_judge",
             "virtual_court_investigation_judge",
+            "virtual_court_transcript_writer",
         }
         if existing is None and row["name"] == "virtual_court_investigation_judge":
             existing = db.query(Agent).filter_by(name="virtual_court_solo_judge").first()
@@ -513,7 +514,7 @@ class DatabaseManager:
                     return
                 row["llm_id"] = llm.id
         if existing:
-            if row["name"] in judge_names and refresh_prompt:
+            if row["name"] in managed_virtual_court_names and refresh_prompt:
                 existing.system_prompt = row["system_prompt"]
                 logger.info("Upgraded Judge protocol configuration: {}", row["name"])
             if force:
