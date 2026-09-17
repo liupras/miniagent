@@ -57,6 +57,14 @@ judge:
   context_too_large: 完整庭审上下文超过模型容量，请整理记录后重试。
   invalid_response: 独任审判员智能体返回了无效响应
 
+transcript:
+  failed: 庭审笔录生成失败
+  configuration_error: 庭审笔录生成服务配置错误
+  unavailable: 庭审笔录生成服务暂时不可用
+  timeout: "庭审笔录生成超时（{timeout} 秒）"
+  context_too_large: 完整庭审笔录素材超过模型容量，请整理记录后重试。
+  invalid_response: 庭审笔录智能体返回了无效响应
+
 domain_plugin:
   error: 知识领域插件初始化失败
   none_configured: 没有配置任何知识领域插件

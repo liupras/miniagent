@@ -57,6 +57,14 @@ judge:
   context_too_large: Complete court context exceeds model capacity; reduce context explicitly before retrying.
   invalid_response: Judge agent returned an invalid response
 
+transcript:
+  failed: Transcript generation failed
+  configuration_error: Transcript generation service is configured incorrectly
+  unavailable: Transcript generation service is temporarily unavailable
+  timeout: "Transcript generation timed out after {timeout} seconds"
+  context_too_large: Complete transcript material exceeds model capacity; reduce it explicitly before retrying.
+  invalid_response: Transcript agent returned an invalid response
+
 domain_plugin:
   error: Knowledge-domain plugin initialization failed
   none_configured: No knowledge-domain plugins are configured
