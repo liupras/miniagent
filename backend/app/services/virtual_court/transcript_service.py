@@ -9,6 +9,7 @@ import json
 
 from app.core.logger_config import get_logger
 from app.runtime.agent.agent_factory import AgentInactiveError, AgentNotFoundError
+from app.runtime.agent.exceptions import ToolNotRegisteredError
 from app.runtime.agent.tool_builder import ToolBuildError
 from app.runtime.llm.exceptions import ContextBudgetExceeded
 from app.runtime.llm.models import LLMClientError
@@ -45,11 +46,34 @@ class TranscriptService:
                 query = business_query
                 history = None
                 for attempt in range(2):
-                    result = await runner.execute(
-                        query=query,
-                        history=history,
-                        preserve_context=True,
-                    )
+                    try:
+                        result = await runner.execute(
+                            query=query,
+                            history=history,
+                            preserve_context=True,
+                        )
+                    except ToolNotRegisteredError as exc:
+                        invalid = TranscriptInvalidResponseError(
+                            params={
+                                "reason": "unexpected_tool_call",
+                                "field": "response",
+                            },
+                            cause=exc,
+                        )
+                        logger.warning(
+                            "[TranscriptV2] output rejected: state_version={}, attempt={}, diagnostic={}",
+                            request.state_version,
+                            attempt + 1,
+                            invalid.params,
+                        )
+                        if attempt == 1:
+                            raise invalid from exc
+                        history = [
+                            {"role": "user", "content": business_query},
+                            {"role": "assistant", "content": ""},
+                        ]
+                        query = self._repair_query(invalid)
+                        continue
                     if result.stop_reason != "completed":
                         raise TranscriptInvalidResponseError(
                             params={
@@ -90,10 +114,7 @@ class TranscriptService:
                             {"role": "user", "content": business_query},
                             {"role": "assistant", "content": result.text},
                         ]
-                        query = (
-                            "上次输出校验失败，请依据原始输入重新生成。错误："
-                            + json.dumps(exc.params, ensure_ascii=False)
-                        )
+                        query = self._repair_query(exc)
         except TimeoutError as exc:
             raise TranscriptTimeoutError(
                 params={"timeout": self._timeout_seconds},
@@ -125,3 +146,10 @@ class TranscriptService:
             exclude_unset=True,
         )
         return json.dumps(data, ensure_ascii=False)
+
+    @staticmethod
+    def _repair_query(error):
+        return (
+            "上次输出校验失败，请依据原始输入重新生成。错误："
+            + json.dumps(error.params, ensure_ascii=False)
+        )
