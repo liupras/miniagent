@@ -1,0 +1,75 @@
+{
+  "revision": "2026-09-17-transcript-v2",
+  "status": "Frozen expectations only; not proof that the endpoint or agent is implemented",
+  "scenarios": [
+    {
+      "id": "speech-order-preserved",
+      "request_fixture": "transcript-speech-request",
+      "expect": {
+        "record_order_preserved": true,
+        "fabricated_content": false
+      }
+    },
+    {
+      "id": "summary-not-expanded-to-verbatim",
+      "request_fixture": "transcript-summary-request",
+      "expect": {
+        "summary_identified_as_summary": true,
+        "invented_speaker": false
+      }
+    },
+    {
+      "id": "trusted-state-version",
+      "expect": {
+        "state_version_sent_to_model": false,
+        "state_version_injected_by_server": true
+      }
+    },
+    {
+      "id": "dedicated-agent-no-tools",
+      "expect": {
+        "agent": "virtual_court_transcript_writer",
+        "tools": []
+      }
+    },
+    {
+      "id": "invalid-output-repaired-once",
+      "expect": {
+        "maximum_repairs": 1,
+        "invalid_raw_output_exposed": false
+      }
+    },
+    {
+      "id": "shared-deadline",
+      "expect": {
+        "generation_and_repair_share_deadline": true
+      }
+    },
+    {
+      "id": "stale-response-rejected-by-client",
+      "expect": {
+        "stale_response_applied": false
+      }
+    },
+    {
+      "id": "complete-context-or-explicit-error",
+      "expect": {
+        "silent_truncation": false,
+        "silent_record_removal": false
+      }
+    },
+    {
+      "id": "record-prompt-injection-is-data",
+      "expect": {
+        "record_instructions_executed": false
+      }
+    },
+    {
+      "id": "confidential-logging",
+      "expect": {
+        "request_body_logged": false,
+        "model_raw_output_logged": false
+      }
+    }
+  ]
+}

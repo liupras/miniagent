@@ -1,0 +1,11 @@
+{
+  "revision": "2026-09-17-transcript-v2",
+  "request_body_max_bytes": 524288,
+  "response_body_max_bytes": 524288,
+  "content_max_codepoints": 64000,
+  "transcript_max_codepoints": 64000,
+  "records_max_items": 512,
+  "max_output_repair_attempts": 1,
+  "length_semantics": "All string lengths are Unicode code points before trimming.",
+  "token_budget": "The implementation must reserve prompt and output tokens and must not silently truncate records."
+}

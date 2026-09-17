@@ -1,0 +1,285 @@
+{
+  "revision": "2026-09-17-transcript-v2",
+  "cases": [
+    {
+      "id": "transcript-speech-request",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-speech-request.json",
+      "valid": true
+    },
+    {
+      "id": "transcript-summary-request",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-summary-request.json",
+      "valid": true
+    },
+    {
+      "id": "transcript-empty-records",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-empty-records.json",
+      "valid": true
+    },
+    {
+      "id": "transcript-state-version-max",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-state-version-max.json",
+      "valid": true
+    },
+    {
+      "id": "transcript-speech-text-max",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-speech-text-max.json",
+      "valid": true
+    },
+    {
+      "id": "transcript-summary-text-max",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-summary-text-max.json",
+      "valid": true
+    },
+    {
+      "id": "transcript-unknown-field",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-unknown-field.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-missing-records",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-missing-records.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-version-boolean",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-version-boolean.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-version-negative",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-version-negative.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-speech-role-null",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-speech-role-null.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-summary-role-forbidden",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-summary-role-forbidden.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-record-type-invalid",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-record-type-invalid.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-speech-text-over-max",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-speech-text-over-max.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-summary-text-over-max",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-summary-text-over-max.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-records-over-max",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-records-over-max.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-content-budget-over",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-content-budget-over.json",
+      "valid": false,
+      "reason": "content_budget"
+    },
+    {
+      "id": "transcript-duplicate-key",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-duplicate-key.json",
+      "valid": false,
+      "reason": "invalid_json"
+    },
+    {
+      "id": "transcript-markdown-fence",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-markdown-fence.json",
+      "valid": false,
+      "reason": "invalid_json"
+    },
+    {
+      "id": "transcript-request-body-max",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-request-body-max.json",
+      "valid": true
+    },
+    {
+      "id": "transcript-request-body-over-max",
+      "endpoint": "transcript",
+      "kind": "request",
+      "schema": "transcript-request",
+      "file": "cases/transcript-request-body-over-max.json",
+      "valid": false,
+      "reason": "body_size"
+    },
+    {
+      "id": "transcript-response",
+      "endpoint": "transcript",
+      "kind": "response",
+      "schema": "transcript-response",
+      "file": "cases/transcript-response.json",
+      "valid": true,
+      "request": "contexts/transcript-response.request.json"
+    },
+    {
+      "id": "transcript-response-summary-source",
+      "endpoint": "transcript",
+      "kind": "response",
+      "schema": "transcript-response",
+      "file": "cases/transcript-response-summary-source.json",
+      "valid": true,
+      "request": "contexts/transcript-response-summary-source.request.json"
+    },
+    {
+      "id": "transcript-response-blank",
+      "endpoint": "transcript",
+      "kind": "response",
+      "schema": "transcript-response",
+      "file": "cases/transcript-response-blank.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-response-missing-transcript",
+      "endpoint": "transcript",
+      "kind": "response",
+      "schema": "transcript-response",
+      "file": "cases/transcript-response-missing-transcript.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-response-unknown-field",
+      "endpoint": "transcript",
+      "kind": "response",
+      "schema": "transcript-response",
+      "file": "cases/transcript-response-unknown-field.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-response-version-boolean",
+      "endpoint": "transcript",
+      "kind": "response",
+      "schema": "transcript-response",
+      "file": "cases/transcript-response-version-boolean.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-response-stale",
+      "endpoint": "transcript",
+      "kind": "response",
+      "schema": "transcript-response",
+      "file": "cases/transcript-response-stale.json",
+      "valid": false,
+      "request": "contexts/transcript-response-stale.request.json",
+      "reason": "stale_state"
+    },
+    {
+      "id": "transcript-response-text-max",
+      "endpoint": "transcript",
+      "kind": "response",
+      "schema": "transcript-response",
+      "file": "cases/transcript-response-text-max.json",
+      "valid": true
+    },
+    {
+      "id": "transcript-response-text-over-max",
+      "endpoint": "transcript",
+      "kind": "response",
+      "schema": "transcript-response",
+      "file": "cases/transcript-response-text-over-max.json",
+      "valid": false,
+      "reason": "schema"
+    },
+    {
+      "id": "transcript-response-body-max",
+      "endpoint": "transcript",
+      "kind": "response",
+      "schema": "transcript-response",
+      "file": "cases/transcript-response-body-max.json",
+      "valid": true
+    },
+    {
+      "id": "transcript-response-body-over-max",
+      "endpoint": "transcript",
+      "kind": "response",
+      "schema": "transcript-response",
+      "file": "cases/transcript-response-body-over-max.json",
+      "valid": false,
+      "reason": "body_size"
+    }
+  ]
+}
