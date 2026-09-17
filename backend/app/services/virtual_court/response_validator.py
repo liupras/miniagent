@@ -1,10 +1,15 @@
-"""Strict JSON and request-bound output validation; no silent repair/coercion."""
+#!/usr/bin/python
+# -*- coding:utf-8 -*-
+# @author  : Liu Lijun
+# @date    : 2026-09-17
+# @description: Strict JSON and request-bound output validation; no silent repair/coercion.
+
 from pydantic import ValidationError
+from app.schemas.integrations.strict_json import strict_json
 from app.schemas.integrations.virtual_court.judge import (
     JudgeLawCheckResponseV2,
     JudgeNextActionResponseV2,
     RESPONSE_MAX_BYTES,
-    strict_json,
 )
 from .exceptions import JudgeInvalidResponseError
 

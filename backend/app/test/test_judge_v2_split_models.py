@@ -4,6 +4,8 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from app.api.integrations.strict_json_route import REQUEST_MAX_BYTES
+from app.schemas.integrations.strict_json import strict_json
 from app.schemas.integrations.virtual_court import (
     JudgeLawCheckRequestV2,
     JudgeLawCheckResponseV2,
@@ -11,9 +13,7 @@ from app.schemas.integrations.virtual_court import (
     JudgeNextActionResponseV2,
 )
 from app.schemas.integrations.virtual_court.judge import (
-    REQUEST_MAX_BYTES,
     RESPONSE_MAX_BYTES,
-    strict_json,
 )
 
 
