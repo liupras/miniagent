@@ -42,7 +42,14 @@ from app.services.virtual_court import (
 
 
 logger = get_logger(__name__)
-INTEGRATION_PATH_PREFIX = "/api/v2/integrations/"
+INTEGRATION_PATH_PREFIXES = (
+    "/api/v2/integrations/",
+    "/api/v3/integrations/",
+)
+
+
+def is_integration_path(path: str) -> bool:
+    return path.startswith(INTEGRATION_PATH_PREFIXES)
 
 
 def _request_log_context(request: Request) -> tuple[str, str, str, str]:
@@ -215,7 +222,7 @@ async def integration_request_validation_handler(
     request: Request,
     exc: RequestValidationError,
 ):
-    if not request.url.path.startswith(INTEGRATION_PATH_PREFIX):
+    if not is_integration_path(request.url.path):
         return await request_validation_exception_handler(request, exc)
 
     method, path, client, request_id = _request_log_context(request)

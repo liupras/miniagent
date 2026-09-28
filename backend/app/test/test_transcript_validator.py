@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from app.schemas.integrations.virtual_court import TranscriptGenerateRequestV2
+from app.schemas.integrations.virtual_court import TranscriptGenerateRequestV3
 from app.services.virtual_court import (
     TranscriptInvalidResponseError,
     validate_transcript_agent_output,
@@ -12,7 +12,7 @@ from app.services.virtual_court import (
 
 
 def request():
-    return TranscriptGenerateRequestV2.model_validate({
+    return TranscriptGenerateRequestV3.model_validate({
         "state_version": 42,
         "case_info": {
             "case_id": "case-01",

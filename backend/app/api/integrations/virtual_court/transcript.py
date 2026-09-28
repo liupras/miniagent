@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 # @author  : Liu Lijun
 # @date    : 2026-09-17
-# @description:TranscriptAPI V2 route for stateless speech-text organization.
+# @description:TranscriptAPI V3 route for stateless speech-text organization.
 
 from time import perf_counter
 
@@ -13,8 +13,8 @@ from app.api.integrations.strict_json_route import StrictIntegrationRoute
 from app.core.logger_config import get_logger
 from app.schemas.integrations.virtual_court import (
     IntegrationErrorResponse,
-    TranscriptGenerateRequestV2,
-    TranscriptGenerateResponseV2,
+    TranscriptGenerateRequestV3,
+    TranscriptGenerateResponseV3,
 )
 from app.schemas.integrations.virtual_court.judge import content_size
 from app.services.virtual_court import TranscriptService
@@ -35,15 +35,15 @@ def get_transcript_service(request: Request):
 
 @router.post(
     "/transcript/generate",
-    response_model=TranscriptGenerateResponseV2,
+    response_model=TranscriptGenerateResponseV3,
     responses=ERROR_RESPONSES,
     summary="Organize complete committed VirtualCourt speech records",
 )
 async def generate_transcript(
-    body: TranscriptGenerateRequestV2,
+    body: TranscriptGenerateRequestV3,
     _authenticated: None = Security(require_virtual_court_api_key),
     service: TranscriptService = Depends(get_transcript_service),
-) -> TranscriptGenerateResponseV2:
+) -> TranscriptGenerateResponseV3:
     started = perf_counter()
     material_codepoints = content_size(body.case_info.model_dump())
     material_codepoints += sum(
@@ -53,14 +53,14 @@ async def generate_transcript(
         content_size(record.model_dump()) for record in body.records
     )
     logger.info(
-        "[TranscriptV2] accepted: state_version={}, records={}, material_codepoints={}",
+        "[TranscriptV3] accepted: state_version={}, records={}, material_codepoints={}",
         body.state_version,
         len(body.records),
         material_codepoints,
     )
     response = await service.generate(body)
     logger.info(
-        "[TranscriptV2] completed: state_version={}, transcript_codepoints={}, elapsed_ms={:.1f}",
+        "[TranscriptV3] completed: state_version={}, transcript_codepoints={}, elapsed_ms={:.1f}",
         response.state_version,
         sum(len(record.text) for record in response.records),
         (perf_counter() - started) * 1000,

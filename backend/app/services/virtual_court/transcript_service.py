@@ -61,7 +61,7 @@ class TranscriptService:
                             cause=exc,
                         )
                         logger.warning(
-                            "[TranscriptV2] output rejected: state_version={}, attempt={}, diagnostic={}",
+                            "[TranscriptV3] output rejected: state_version={}, attempt={}, diagnostic={}",
                             request.state_version,
                             attempt + 1,
                             invalid.params,
@@ -94,7 +94,7 @@ class TranscriptService:
                             request,
                         )
                         logger.info(
-                            "[TranscriptV2] validated: state_version={}, attempts={}, records={}, organized_codepoints={}",
+                            "[TranscriptV3] validated: state_version={}, attempts={}, records={}, organized_codepoints={}",
                             request.state_version,
                             attempt + 1,
                             len(request.records),
@@ -103,7 +103,7 @@ class TranscriptService:
                         return response
                     except TranscriptInvalidResponseError as exc:
                         logger.warning(
-                            "[TranscriptV2] output rejected: state_version={}, attempt={}, diagnostic={}",
+                            "[TranscriptV3] output rejected: state_version={}, attempt={}, diagnostic={}",
                             request.state_version,
                             attempt + 1,
                             exc.params,

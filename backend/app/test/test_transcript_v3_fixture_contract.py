@@ -1,4 +1,4 @@
-"""Frozen TranscriptAPI V2 contract checks.
+"""Frozen TranscriptAPI V3 contract checks.
 
 These tests validate schemas and fixture integrity. They do not claim that the
 endpoint, dedicated agent, or model semantics are implemented.
@@ -8,10 +8,10 @@ import json
 from pathlib import Path
 
 
-ROOT = Path(__file__).parent / "fixtures/transcript_v2"
+ROOT = Path(__file__).parent / "fixtures/transcript_v3"
 PROTOCOL = (
     Path(__file__).parents[1]
-    / "api/integrations/virtual_court/TRANSCRIPT_PROTOCOL_V2.md"
+    / "api/integrations/virtual_court/TRANSCRIPT_PROTOCOL_V3.md"
 )
 
 
@@ -21,7 +21,7 @@ def load(path: str):
 
 def test_transcript_fixture_oracle():
     spec = importlib.util.spec_from_file_location(
-        "transcript_v2_fixture_oracle", ROOT / "verify_fixtures.py"
+        "transcript_v3_fixture_oracle", ROOT / "verify_fixtures.py"
     )
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None

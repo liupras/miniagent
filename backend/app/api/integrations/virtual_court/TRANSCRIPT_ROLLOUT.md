@@ -1,6 +1,6 @@
-# TranscriptAPI V2 集成测试与灰度接入
+# TranscriptAPI V3 集成测试与灰度接入
 
-本说明用于 `/api/v2/integrations/virtual-court/transcript/generate` 的部署验收和灰度放量，不修改已冻结的 V2 请求、响应协议。
+本说明用于 `/api/v3/integrations/virtual-court/transcript/generate` 的部署验收和灰度放量，协议基线为 Transcript V3。
 
 ## 1. 灰度边界
 
@@ -18,8 +18,8 @@
 在代码根目录执行：
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest app/test/test_transcript_v2_fixture_contract.py `
-  app/test/test_transcript_v2_models.py `
+.\.venv\Scripts\python.exe -m pytest app/test/test_transcript_v3_fixture_contract.py `
+  app/test/test_transcript_v3_models.py `
   app/test/test_transcript_validator.py `
   app/test/test_transcript_service.py `
   app/test/test_virtual_court_transcript_seed.py `
@@ -38,7 +38,7 @@
 
 ## 3. 灰度顺序
 
-1. 先在测试环境开启，使用 `SPEECH`、`SUMMARY`、空记录、长输入和提示注入样例验收。
+1. 先在测试环境开启，使用完整 `TrialSpeechRecord`、空记录、长输入、sequence 乱序和提示注入样例验收。
 2. 将新版本部署到独立灰度实例池，确认 JudgeAPI 回归正常，生产流量仍访问旧实例池。
 3. 只允许内部测试调用方进入灰度实例池；先观察错误率、P95/P99 延迟、超时率、纠错率和输出长度。
 4. 按调用方或可信流量比例逐批扩大灰度实例池流量。每批至少覆盖一个完整业务观察窗口，再决定下一批。
@@ -46,8 +46,8 @@
 
 ## 4. 验收与回退
 
-业务验收需人工抽检笔录是否保持记录顺序、是否把 `SUMMARY` 标成摘要、是否出现输入之外的事实，以及旧 `state_version` 响应是否被 VirtualCourt 丢弃。
+业务验收需人工抽检整理结果是否逐条保持记录顺序、是否只调整发言文字、是否出现输入之外的事实，以及旧 `state_version` 响应是否被 VirtualCourt 丢弃。
 
-出现以下任一情况应停止放量：持续 5xx/超时上升、模型无效响应或纠错率异常、疑似素材截断、顺序错乱、摘要伪造成逐字发言、敏感正文进入日志。
+出现以下任一情况应停止放量：持续 5xx/超时上升、模型无效响应或纠错率异常、疑似素材截断、sequence 缺失或乱序、AI 修改固定信息、敏感正文进入日志。
 
 回退时由网关摘除灰度实例池，并把流量恢复到旧版本实例池。该操作不需要修改应用配置、冻结协议或数据库数据。

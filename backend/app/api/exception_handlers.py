@@ -14,8 +14,8 @@ from fastapi.responses import JSONResponse
 
 from app.api.domain_error_mapping import domain_error_http_status
 from app.api.integrations.errors import (
-    INTEGRATION_PATH_PREFIX,
     integration_error_response,
+    is_integration_path,
 )
 from app.core.i18n.i18n import t
 from app.core.i18n.error_translation import translate_domain_error
@@ -63,7 +63,7 @@ async def domain_error_handler(
     """Translate stable application errors into the standard API envelope."""
     status_code = domain_error_http_status(exc)
 
-    if request.url.path.startswith(INTEGRATION_PATH_PREFIX):
+    if is_integration_path(request.url.path):
         logger.warning(
             "Unhandled integration domain error {}: {}",
             type(exc).__name__,
@@ -91,7 +91,7 @@ async def unhandled_exception_handler(
     """Return a safe response for unexpected failures and log diagnostics."""
     logger.exception("Unhandled exception: {}", exc)
 
-    if request.url.path.startswith(INTEGRATION_PATH_PREFIX):
+    if is_integration_path(request.url.path):
         response = integration_error_response(
             status_code=500,
             code=IntegrationErrorCode.INTERNAL_ERROR,

@@ -1,4 +1,4 @@
-"""TranscriptAPI V2 HTTP contract and integration-boundary behavior."""
+"""TranscriptAPI V3 HTTP contract and integration-boundary behavior."""
 
 import json
 from pathlib import Path
@@ -13,7 +13,7 @@ from app.api.exception_handlers import register_global_exception_handlers
 from app.api.integrations.errors import register_integration_exception_handlers
 from app.api.integrations.virtual_court.transcript import router
 from app.core.config import settings
-from app.schemas.integrations.virtual_court import TranscriptGenerateResponseV2
+from app.schemas.integrations.virtual_court import TranscriptGenerateResponseV3
 from app.services.virtual_court import (
     TranscriptConfigurationError,
     TranscriptContextError,
@@ -23,8 +23,8 @@ from app.services.virtual_court import (
 )
 
 
-ROOT = Path(__file__).parent / "fixtures" / "transcript_v2"
-PREFIX = "/api/v2/integrations/virtual-court"
+ROOT = Path(__file__).parent / "fixtures" / "transcript_v3"
+PREFIX = "/api/v3/integrations/virtual-court"
 ENDPOINT = PREFIX + "/transcript/generate"
 HEADERS = {
     "X-Integration-Key": "test-only",
@@ -45,7 +45,7 @@ class TranscriptServiceStub:
         self.requests.append(body)
         if self.error:
             raise self.error
-        return TranscriptGenerateResponseV2(
+        return TranscriptGenerateResponseV3(
             state_version=body.state_version,
             records=[
                 {"sequence": record.sequence, "text": record.text}
@@ -169,13 +169,13 @@ def test_openapi_has_minimal_transcript_contract():
     schema = client().get("/openapi.json").json()
     assert ENDPOINT in schema["paths"]
     components = schema["components"]["schemas"]
-    assert set(components["TranscriptGenerateRequestV2"]["properties"]) == {
+    assert set(components["TranscriptGenerateRequestV3"]["properties"]) == {
         "state_version",
         "case_info",
         "participants",
         "records",
     }
-    assert set(components["TranscriptGenerateResponseV2"]["properties"]) == {
+    assert set(components["TranscriptGenerateResponseV3"]["properties"]) == {
         "state_version",
         "records",
     }
@@ -196,6 +196,6 @@ def test_route_logs_metadata_but_not_payloads():
         Path(__file__).parents[1]
         / "api/integrations/virtual_court/transcript.py"
     ).read_text(encoding="utf-8")
-    assert "[TranscriptV2]" in source
+    assert "[TranscriptV3]" in source
     assert "material_codepoints" in source
     assert "model_dump_json" not in source

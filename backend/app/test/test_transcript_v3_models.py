@@ -1,4 +1,4 @@
-"""TranscriptAPI V2 Pydantic models against the frozen fixture contract."""
+"""TranscriptAPI V3 Pydantic models against the frozen fixture contract."""
 
 import json
 from pathlib import Path
@@ -7,8 +7,8 @@ import pytest
 from pydantic import ValidationError
 
 from app.schemas.integrations.virtual_court import (
-    TranscriptGenerateRequestV2,
-    TranscriptGenerateResponseV2,
+    TranscriptGenerateRequestV3,
+    TranscriptGenerateResponseV3,
 )
 from app.schemas.integrations.virtual_court.transcript import (
     TRANSCRIPT_MAX_CODEPOINTS,
@@ -16,7 +16,7 @@ from app.schemas.integrations.virtual_court.transcript import (
 )
 
 
-ROOT = Path(__file__).parent / "fixtures" / "transcript_v2"
+ROOT = Path(__file__).parent / "fixtures" / "transcript_v3"
 
 
 def load(path: str):
@@ -47,39 +47,39 @@ RESPONSE_CASES = [
 def test_request_model_matches_frozen_schema_and_content_cases(case):
     data = load(case["file"])
     if case["valid"]:
-        request = TranscriptGenerateRequestV2.model_validate(data)
+        request = TranscriptGenerateRequestV3.model_validate(data)
         assert request.model_dump(mode="json") == data
     else:
         with pytest.raises(ValidationError):
-            TranscriptGenerateRequestV2.model_validate(data)
+            TranscriptGenerateRequestV3.model_validate(data)
 
 
 @pytest.mark.parametrize("case", RESPONSE_CASES, ids=lambda case: case["id"])
 def test_response_model_matches_frozen_schema_cases(case):
     data = load(case["file"])
     if case["valid"]:
-        response = TranscriptGenerateResponseV2.model_validate(data)
+        response = TranscriptGenerateResponseV3.model_validate(data)
         assert response.model_dump(mode="json") == data
     else:
         with pytest.raises(ValidationError):
-            TranscriptGenerateResponseV2.model_validate(data)
+            TranscriptGenerateResponseV3.model_validate(data)
 
 
 def test_request_uses_virtual_court_transcript_domain_names():
-    fields = TranscriptGenerateRequestV2.model_fields
+    fields = TranscriptGenerateRequestV3.model_fields
     assert set(fields) == {
         "state_version", "case_info", "participants", "records",
     }
 
 
 def test_contract_exports_only_the_minimal_top_level_fields():
-    assert set(TranscriptGenerateRequestV2.model_fields) == {
+    assert set(TranscriptGenerateRequestV3.model_fields) == {
         "state_version",
         "case_info",
         "participants",
         "records",
     }
-    assert set(TranscriptGenerateResponseV2.model_fields) == {
+    assert set(TranscriptGenerateResponseV3.model_fields) == {
         "state_version",
         "records",
     }

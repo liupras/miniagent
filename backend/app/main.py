@@ -288,7 +288,7 @@ app.include_router(
 from app.api.integrations.virtual_court.transcript import router as virtual_court_transcript_router
 app.include_router(
     virtual_court_transcript_router,
-    prefix="/api/v2/integrations/virtual-court",
+    prefix="/api/v3/integrations/virtual-court",
     tags=["Integration - VirtualCourt"],
 )
 

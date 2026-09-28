@@ -7,6 +7,6 @@ from .judge import (
     JudgeCaseContext, JudgeRecord,
 )
 from .transcript import (
-    TranscriptGenerateRequestV2,
-    TranscriptGenerateResponseV2,
+    TranscriptGenerateRequestV3,
+    TranscriptGenerateResponseV3,
 )

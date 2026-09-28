@@ -10,7 +10,7 @@ from app.runtime.agent.execution import AgentExecution, ToolExecution
 from app.runtime.agent.tool_builder import ToolBuildError
 from app.runtime.llm.exceptions import ContextBudgetExceeded
 from app.runtime.llm.models import LLMClientError
-from app.schemas.integrations.virtual_court import TranscriptGenerateRequestV2
+from app.schemas.integrations.virtual_court import TranscriptGenerateRequestV3
 from app.services.virtual_court import (
     TranscriptConfigurationError,
     TranscriptContextError,
@@ -51,7 +51,7 @@ def request(**changes):
         ],
     }
     data.update(changes)
-    return TranscriptGenerateRequestV2.model_validate(data)
+    return TranscriptGenerateRequestV3.model_validate(data)
 
 
 def output(first="现在开庭。", second="请求停止侵权。"):

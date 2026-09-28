@@ -1,8 +1,8 @@
-# VirtualCourt 发言整理接口协议 V2
+# VirtualCourt 发言整理接口协议 V3
 
 ## 1. 职责边界
 
-`POST /api/v2/integrations/virtual-court/transcript/generate` 不再让 AI 生成整份庭审笔录。
+`POST /api/v3/integrations/virtual-court/transcript/generate` 不再让 AI 生成整份庭审笔录。
 
 - VirtualCourt 负责案件基本信息、到庭人员、发言人、阶段、步骤、顺序、章节和最终文本渲染。
 - MiniAgent 只整理每条已提交发言的 `text`。
@@ -75,4 +75,4 @@ AI 只可整理标点、明显语气词、口吃和不改变原意的口语重�
 
 Agent 最终只能输出 `records`。MiniAgent 校验 JSON 结构、文本长度以及 sequence 的完整性和顺序，第一次失败时在同一总超时内纠正一次。仍失败则返回 `MODEL_RESPONSE_INVALID`。
 
-鉴权、限流、超时、状态版本、日志脱敏和错误响应继续沿用既有 V2 集成边界。
+鉴权、限流、超时、状态版本、日志脱敏和错误响应属于 V3 集成边界。

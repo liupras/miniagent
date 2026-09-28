@@ -7,7 +7,7 @@
 from pydantic import ValidationError
 
 from app.schemas.integrations.strict_json import strict_json
-from app.schemas.integrations.virtual_court import TranscriptGenerateResponseV2
+from app.schemas.integrations.virtual_court import TranscriptGenerateResponseV3
 from app.schemas.integrations.virtual_court.transcript import (
     TRANSCRIPT_RESPONSE_MAX_BYTES,
 )
@@ -24,7 +24,7 @@ def validate_transcript_agent_output(raw_output, request):
         data = strict_json(raw_output, max_bytes=TRANSCRIPT_RESPONSE_MAX_BYTES)
         if not isinstance(data, dict) or "state_version" in data:
             raise ValueError("agent must not provide state_version")
-        response = TranscriptGenerateResponseV2(
+        response = TranscriptGenerateResponseV3(
             state_version=request.state_version,
             **data,
         )

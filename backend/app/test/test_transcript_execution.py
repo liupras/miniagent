@@ -10,7 +10,7 @@ import pytest
 from app.runtime.agent.agent_runner import AgentRunner
 from app.runtime.agent.react_agent import ToolReActAgent
 from app.runtime.llm.agent_client import AgentLLM
-from app.schemas.integrations.virtual_court import TranscriptGenerateRequestV2
+from app.schemas.integrations.virtual_court import TranscriptGenerateRequestV3
 from app.services.virtual_court import (
     TranscriptContextError,
     TranscriptService,
@@ -18,7 +18,7 @@ from app.services.virtual_court import (
 from app.utils.tokens import TokenCounter
 
 
-FIXTURES = Path(__file__).parent / "fixtures" / "transcript_v2"
+FIXTURES = Path(__file__).parent / "fixtures" / "transcript_v3"
 SEED = Path(__file__).parents[1] / "infra" / "db" / "seed" / "agent.json"
 
 
@@ -31,7 +31,7 @@ def load_request(name="transcript-speech-request"):
     data = json.loads(
         (FIXTURES / "cases" / f"{name}.json").read_text(encoding="utf-8")
     )
-    return TranscriptGenerateRequestV2.model_validate(data)
+    return TranscriptGenerateRequestV3.model_validate(data)
 
 
 def output(records=None):

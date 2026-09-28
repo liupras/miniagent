@@ -1,4 +1,4 @@
-"""TranscriptAPI V2 contracts using VirtualCourt domain names."""
+"""TranscriptAPI V3 contracts using VirtualCourt domain names."""
 
 from typing import Literal
 
@@ -62,7 +62,7 @@ class TranscriptOrganizedRecord(StrictModel):
     text: text_type(8000)
 
 
-class TranscriptGenerateRequestV2(StrictModel):
+class TranscriptGenerateRequestV3(StrictModel):
     """Authoritative VirtualCourt metadata plus complete committed speeches."""
 
     state_version: Version
@@ -86,7 +86,7 @@ class TranscriptGenerateRequestV2(StrictModel):
         return self
 
 
-class TranscriptGenerateResponseV2(StrictModel):
+class TranscriptGenerateResponseV3(StrictModel):
     """One organized text result for every authoritative input record."""
 
     state_version: Version

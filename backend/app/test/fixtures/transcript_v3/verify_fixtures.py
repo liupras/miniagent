@@ -1,4 +1,4 @@
-"""Offline oracle for the frozen VirtualCourt TranscriptAPI V2 contract."""
+"""Offline oracle for the frozen VirtualCourt TranscriptAPI V3 contract."""
 from __future__ import annotations
 
 import hashlib
