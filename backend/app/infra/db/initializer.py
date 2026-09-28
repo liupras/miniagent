@@ -490,7 +490,14 @@ class DatabaseManager:
         """Seed agents and migrate only legacy VirtualCourt configuration once."""
         logger.info("Seeding agents...")
         for raw in _load("agent.json"):
-            self._seed_agent_row(db, raw, force)
+            self._seed_agent_row(
+                db,
+                raw,
+                force,
+                refresh_prompt=(
+                    raw.get("name") == "virtual_court_transcript_writer"
+                ),
+            )
 
     def _seed_agent_row(self, db: Session, raw: dict, force: bool = False, *, refresh_prompt: bool = False):
         row = _strip_meta(raw)
@@ -516,7 +523,7 @@ class DatabaseManager:
         if existing:
             if row["name"] in managed_virtual_court_names and refresh_prompt:
                 existing.system_prompt = row["system_prompt"]
-                logger.info("Upgraded Judge protocol configuration: {}", row["name"])
+                logger.info("Upgraded VirtualCourt protocol configuration: {}", row["name"])
             if force:
                 for key, value in row.items():
                     if key != "name":

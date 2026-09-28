@@ -35,24 +35,23 @@ def test_transcript_contract_has_minimal_top_level_shape():
 
     assert set(request["properties"]) == {
         "state_version",
-        "case_context",
+        "case_info",
+        "participants",
         "records",
     }
     assert set(request["required"]) == set(request["properties"])
-    assert set(response["properties"]) == {"state_version", "transcript"}
+    assert set(response["properties"]) == {"state_version", "records"}
     assert set(response["required"]) == set(response["properties"])
     assert request["additionalProperties"] is False
     assert response["additionalProperties"] is False
 
 
-def test_transcript_material_shape_matches_frozen_judge_shape():
+def test_transcript_contract_is_independent_from_judge_context():
     transcript = load("schemas/transcript-request.schema.json")
-    judge = load(
-        "../judge_v2_split_endpoints/schemas/next-action-request.schema.json"
-    )
-
-    assert transcript["properties"]["case_context"] == judge["properties"]["case_context"]
-    assert transcript["properties"]["records"] == judge["properties"]["records"]
+    assert "case_context" not in transcript["properties"]
+    assert set(transcript["properties"]["records"]["items"]["properties"]) == {
+        "sequence", "step_id", "phase", "role", "text", "is_intervention",
+    }
 
 
 def test_fixture_matrix_covers_required_protocol_edges():
@@ -60,17 +59,11 @@ def test_fixture_matrix_covers_required_protocol_edges():
     ids = {case["id"] for case in manifest["cases"]}
     required = {
         "transcript-speech-request",
-        "transcript-summary-request",
         "transcript-duplicate-key",
-        "transcript-request-body-max",
-        "transcript-request-body-over-max",
         "transcript-content-budget-over",
         "transcript-response",
         "transcript-response-stale",
-        "transcript-response-text-max",
-        "transcript-response-text-over-max",
-        "transcript-response-body-max",
-        "transcript-response-body-over-max",
+        "transcript-response-record-mismatch",
     }
     assert required <= ids
 

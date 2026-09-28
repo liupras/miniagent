@@ -1,18 +1,40 @@
 {
   "state_version": 42,
-  "case_context": {
-    "summary": "原告主张被告未经许可使用涉案作品，被告主张已经获得授权。",
-    "claims": [
-      "停止侵权",
-      "赔偿经济损失"
-    ],
-    "defenses": [
-      "被告主张使用行为已经获得授权"
-    ],
-    "dispute_focuses": [
-      "被告是否获得授权",
-      "被诉行为是否构成侵权"
-    ]
+  "case_info": {
+    "case_id": "demo-copyright-shanhai-luming-001",
+    "case_number": "（2026）虚法民初01号",
+    "court_name": "虚拟人民法院",
+    "procedure": "民事一审简易程序、独任审理、公开模拟庭审",
+    "cause_of_action": "侵害作品信息网络传播权、著作权侵权责任纠纷",
+    "subject_matter": "原创国风插画《山海鹿鸣》",
+    "is_simulated": true,
+    "legal_effect_disclaimer": "完全虚构的教学演示案件，不产生司法效力。"
   },
+  "participants": [
+    {
+      "participant_id": "judge-01",
+      "role": "judge",
+      "display_name": "张某某",
+      "description": "独任审判员"
+    },
+    {
+      "participant_id": "clerk-01",
+      "role": "clerk",
+      "display_name": "陆某某",
+      "description": "书记员"
+    },
+    {
+      "participant_id": "plaintiff-01",
+      "role": "plaintiff",
+      "display_name": "林某",
+      "description": "原告"
+    },
+    {
+      "participant_id": "defendant-01",
+      "role": "defendant",
+      "display_name": "虚拟文创商贸有限公司",
+      "description": "被告"
+    }
+  ],
   "records": []
 }

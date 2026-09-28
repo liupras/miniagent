@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 # @author  : Liu Lijun
 # @date    : 2026-08-29
-# @description: Stateless generation of a transcript draft from complete court material.
+# @description: Stateless organization of complete committed court speeches.
 
 import asyncio
 import json
@@ -35,7 +35,7 @@ class TranscriptService:
         self._timeout_seconds = timeout_seconds
 
     async def generate(self, request):
-        """Generate and validate one transcript under a shared deadline."""
+        """Organize and validate one result per speech under a shared deadline."""
 
         try:
             async with asyncio.timeout(self._timeout_seconds):
@@ -94,11 +94,11 @@ class TranscriptService:
                             request,
                         )
                         logger.info(
-                            "[TranscriptV2] validated: state_version={}, attempts={}, records={}, transcript_codepoints={}",
+                            "[TranscriptV2] validated: state_version={}, attempts={}, records={}, organized_codepoints={}",
                             request.state_version,
                             attempt + 1,
                             len(request.records),
-                            len(response.transcript),
+                            sum(len(record.text) for record in response.records),
                         )
                         return response
                     except TranscriptInvalidResponseError as exc:
@@ -140,11 +140,17 @@ class TranscriptService:
 
     @staticmethod
     def _build_agent_query(request):
-        data = request.model_dump(
-            mode="json",
-            exclude={"state_version"},
-            exclude_unset=True,
-        )
+        # Fixed case metadata, participants, roles, phases and ordering remain
+        # authoritative in VirtualCourt. The model receives only speeches to edit.
+        data = {
+            "records": [
+                {
+                    "sequence": record.sequence,
+                    "text": record.text,
+                }
+                for record in request.records
+            ]
+        }
         return json.dumps(data, ensure_ascii=False)
 
     @staticmethod

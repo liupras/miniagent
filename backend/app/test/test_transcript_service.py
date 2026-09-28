@@ -29,18 +29,24 @@ def anyio_backend():
 def request(**changes):
     data = {
         "state_version": 42,
-        "case_context": {
-            "summary": "原告主张被告未经许可使用涉案作品。",
-            "claims": ["停止侵权"],
-            "defenses": ["已经获得授权"],
-            "dispute_focuses": ["是否获得授权"],
+        "case_info": {
+            "case_id": "case-01", "case_number": "（2026）虚法民初01号",
+            "court_name": "虚拟人民法院", "procedure": "民事一审简易程序",
+            "cause_of_action": "著作权侵权纠纷", "subject_matter": "《山海鹿鸣》",
+            "is_simulated": True, "legal_effect_disclaimer": "模拟案件。",
         },
+        "participants": [{
+            "participant_id": "judge-01", "role": "judge",
+            "display_name": "张某某", "description": "独任审判员",
+        }],
         "records": [
-            {"type": "SPEECH", "role": "JUDGE", "text": "现在开庭。"},
             {
-                "type": "SPEECH",
-                "role": "PLAINTIFF",
-                "text": "请求停止侵权。",
+                "sequence": 1, "step_id": "OPEN-02", "phase": "court_opening",
+                "role": "judge", "text": "现在开庭。", "is_intervention": False,
+            },
+            {
+                "sequence": 2, "step_id": "CLAIM-A", "phase": "claims_and_defence",
+                "role": "plaintiff", "text": "请求停止侵权。", "is_intervention": False,
             },
         ],
     }
@@ -48,8 +54,11 @@ def request(**changes):
     return TranscriptGenerateRequestV2.model_validate(data)
 
 
-def output(text="庭审笔录\n\n审判员：现在开庭。"):
-    return json.dumps({"transcript": text}, ensure_ascii=False)
+def output(first="现在开庭。", second="请求停止侵权。"):
+    return json.dumps({"records": [
+        {"sequence": 1, "text": first},
+        {"sequence": 2, "text": second},
+    ]}, ensure_ascii=False)
 
 
 class Runner:
@@ -88,17 +97,18 @@ async def test_generate_uses_dedicated_agent_and_complete_material():
     response = await TranscriptService(factory).generate(req)
 
     assert response.state_version == req.state_version
-    assert response.transcript.startswith("庭审笔录")
+    assert [record.sequence for record in response.records] == [1, 2]
     assert factory.names == ["virtual_court_transcript_writer"]
     call = runner.calls[0]
     assert call["history"] is None
     assert call["preserve_context"] is True
     assert "tool_observer" not in call
-    assert json.loads(call["query"]) == req.model_dump(
-        mode="json",
-        exclude={"state_version"},
-        exclude_unset=True,
-    )
+    assert json.loads(call["query"]) == {"records": [
+        {"sequence": 1, "text": "现在开庭。"},
+        {"sequence": 2, "text": "请求停止侵权。"},
+    ]}
+    assert "case_info" not in call["query"]
+    assert "participants" not in call["query"]
     assert "state_version" not in call["query"]
 
 
@@ -141,7 +151,7 @@ async def test_generation_and_repair_share_one_deadline():
 @pytest.mark.anyio
 async def test_agent_cannot_supply_state_version_or_extra_fields():
     invalid = json.dumps(
-        {"state_version": 999, "transcript": "伪造版本"},
+        {"state_version": 999, "records": []},
         ensure_ascii=False,
     )
     runner = Runner([AgentExecution(invalid), AgentExecution(output())])

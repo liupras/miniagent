@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 # @author  : Liu Lijun
 # @date    : 2026-09-17
-# @description:TranscriptAPI V2 route for stateless court-record generation.
+# @description:TranscriptAPI V2 route for stateless speech-text organization.
 
 from time import perf_counter
 
@@ -37,7 +37,7 @@ def get_transcript_service(request: Request):
     "/transcript/generate",
     response_model=TranscriptGenerateResponseV2,
     responses=ERROR_RESPONSES,
-    summary="Generate a transcript draft from complete court material",
+    summary="Organize complete committed VirtualCourt speech records",
 )
 async def generate_transcript(
     body: TranscriptGenerateRequestV2,
@@ -45,7 +45,10 @@ async def generate_transcript(
     service: TranscriptService = Depends(get_transcript_service),
 ) -> TranscriptGenerateResponseV2:
     started = perf_counter()
-    material_codepoints = content_size(body.case_context.model_dump())
+    material_codepoints = content_size(body.case_info.model_dump())
+    material_codepoints += sum(
+        content_size(participant.model_dump()) for participant in body.participants
+    )
     material_codepoints += sum(
         content_size(record.model_dump()) for record in body.records
     )
@@ -59,7 +62,7 @@ async def generate_transcript(
     logger.info(
         "[TranscriptV2] completed: state_version={}, transcript_codepoints={}, elapsed_ms={:.1f}",
         response.state_version,
-        len(response.transcript),
+        sum(len(record.text) for record in response.records),
         (perf_counter() - started) * 1000,
     )
     return response

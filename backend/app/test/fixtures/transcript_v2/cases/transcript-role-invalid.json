@@ -35,5 +35,31 @@
       "display_name": "虚拟文创商贸有限公司",
       "description": "被告"
     }
+  ],
+  "records": [
+    {
+      "sequence": 1,
+      "step_id": "OPEN-02",
+      "phase": "court_opening",
+      "role": "JUDGE",
+      "text": "现在，嗯，开庭。",
+      "is_intervention": false
+    },
+    {
+      "sequence": 2,
+      "step_id": "CLAIM-A",
+      "phase": "claims_and_defence",
+      "role": "plaintiff",
+      "text": "请求判令被告停止侵权并赔偿经济损失。",
+      "is_intervention": false
+    },
+    {
+      "sequence": 3,
+      "step_id": "DEFENCE-A",
+      "phase": "claims_and_defence",
+      "role": "defendant",
+      "text": "我方认为已经获得相关授权。",
+      "is_intervention": false
+    }
   ]
 }

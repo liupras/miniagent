@@ -7,56 +7,107 @@
       "minimum": 0,
       "maximum": 9223372036854775807
     },
-    "case_context": {
+    "case_info": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "summary": {
+        "case_id": {
           "type": "string",
           "minLength": 1,
-          "maxLength": 16000,
+          "maxLength": 256,
           "pattern": "\\S"
         },
-        "claims": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 4000,
-            "pattern": "\\S"
-          },
-          "minItems": 0,
-          "maxItems": 30
+        "case_number": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
         },
-        "defenses": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 4000,
-            "pattern": "\\S"
-          },
-          "minItems": 0,
-          "maxItems": 30
+        "court_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
         },
-        "dispute_focuses": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 1000,
-            "pattern": "\\S"
-          },
-          "minItems": 0,
-          "maxItems": 20
+        "procedure": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "\\S"
+        },
+        "cause_of_action": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512,
+          "pattern": "\\S"
+        },
+        "subject_matter": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000,
+          "pattern": "\\S"
+        },
+        "is_simulated": {
+          "type": "boolean"
+        },
+        "legal_effect_disclaimer": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1000
         }
       },
       "required": [
-        "summary",
-        "claims",
-        "defenses",
-        "dispute_focuses"
+        "case_id",
+        "case_number",
+        "court_name",
+        "procedure",
+        "cause_of_action",
+        "subject_matter",
+        "is_simulated",
+        "legal_effect_disclaimer"
       ]
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "participant_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "\\S"
+          },
+          "role": {
+            "enum": [
+              "judge",
+              "clerk",
+              "plaintiff",
+              "defendant",
+              "system"
+            ]
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "\\S"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "participant_id",
+          "role",
+          "display_name",
+          "description"
+        ]
+      },
+      "maxItems": 32
     },
     "records": {
       "type": "array",
@@ -64,82 +115,68 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "type": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9223372036854775807
+          },
+          "step_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "\\S"
+          },
+          "phase": {
             "enum": [
-              "SPEECH",
-              "SUMMARY"
+              "waiting",
+              "court_discipline",
+              "court_opening",
+              "identity_verification",
+              "rights_and_recusal",
+              "claims_and_defence",
+              "court_investigation",
+              "evidence_presentation",
+              "final_statements",
+              "adjournment"
             ]
           },
           "role": {
-            "anyOf": [
-              {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 64,
-                "pattern": "\\S"
-              },
-              {
-                "type": "null"
-              }
+            "enum": [
+              "judge",
+              "clerk",
+              "plaintiff",
+              "defendant",
+              "system"
             ]
           },
           "text": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 16000,
+            "maxLength": 8000,
             "pattern": "\\S"
+          },
+          "is_intervention": {
+            "type": "boolean"
           }
         },
         "required": [
-          "type",
+          "sequence",
+          "step_id",
+          "phase",
           "role",
-          "text"
-        ],
-        "allOf": [
-          {
-            "if": {
-              "properties": {
-                "type": {
-                  "const": "SPEECH"
-                }
-              }
-            },
-            "then": {
-              "properties": {
-                "role": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 64,
-                  "pattern": "\\S"
-                },
-                "text": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 8000,
-                  "pattern": "\\S"
-                }
-              }
-            },
-            "else": {
-              "properties": {
-                "role": {
-                  "type": "null"
-                }
-              }
-            }
-          }
+          "text",
+          "is_intervention"
         ]
       },
-      "minItems": 0,
       "maxItems": 512
     }
   },
   "required": [
     "state_version",
-    "case_context",
+    "case_info",
+    "participants",
     "records"
   ],
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:virtual-court:transcript-v2:transcript-request:2026-09-17-transcript-v2",
-  "title": "TranscriptV2-transcript-request"
+  "$id": "urn:virtual-court:transcript-v2:transcript-request:2026-09-28-transcript-v2-speech-organization"
 }

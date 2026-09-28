@@ -7,8 +7,6 @@ import pytest
 from pydantic import ValidationError
 
 from app.schemas.integrations.virtual_court import (
-    JudgeCaseContext,
-    JudgeRecord,
     TranscriptGenerateRequestV2,
     TranscriptGenerateResponseV2,
 )
@@ -67,21 +65,23 @@ def test_response_model_matches_frozen_schema_cases(case):
             TranscriptGenerateResponseV2.model_validate(data)
 
 
-def test_request_reuses_judge_material_models():
+def test_request_uses_virtual_court_transcript_domain_names():
     fields = TranscriptGenerateRequestV2.model_fields
-    assert fields["case_context"].annotation is JudgeCaseContext
-    assert fields["records"].annotation == list[JudgeRecord]
+    assert set(fields) == {
+        "state_version", "case_info", "participants", "records",
+    }
 
 
 def test_contract_exports_only_the_minimal_top_level_fields():
     assert set(TranscriptGenerateRequestV2.model_fields) == {
         "state_version",
-        "case_context",
+        "case_info",
+        "participants",
         "records",
     }
     assert set(TranscriptGenerateResponseV2.model_fields) == {
         "state_version",
-        "transcript",
+        "records",
     }
 
 

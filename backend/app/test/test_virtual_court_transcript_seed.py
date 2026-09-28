@@ -30,18 +30,16 @@ def test_transcript_agent_prompt_and_runtime_limits_are_frozen():
     assert row["max_output_tokens"] == 16384
 
     for rule in (
-        "case_context",
         "records",
-        "SPEECH",
-        "SUMMARY",
-        "必须保持该顺序",
-        "不得伪造成某个角色的逐字发言",
+        "sequence",
+        "数量、sequence 和顺序必须与输入完全一致",
+        "VirtualCourt 负责案件信息",
         "不得补充输入中不存在",
         "不得把当事人主张改写为已经查明的事实",
-        "只包含 transcript 字段",
+        "只包含 records 字段",
         "不得输出 Markdown",
         "state_version",
-        "最多 64000 个 Unicode 码点",
+        "最多 8000 个 Unicode 码点",
     ):
         assert rule in prompt
 
@@ -119,11 +117,16 @@ def test_existing_database_is_supplemented_idempotently_without_tools():
                 == 0
             )
 
+            agent.system_prompt = "legacy transcript prompt"
+            db.flush()
+
             manager._seed_agent(db, force=False)
             manager._seed_agent_tool_relation(db, force=False)
             db.flush()
 
             assert db.query(Agent).filter_by(name=AGENT_NAME).count() == 1
+            assert "只包含 records 字段" in agent.system_prompt
+            assert "legacy transcript prompt" not in agent.system_prompt
             assert (
                 db.query(AgentToolRelation).filter_by(agent_id=agent.id).count()
                 == 0

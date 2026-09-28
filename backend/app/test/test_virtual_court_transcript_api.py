@@ -47,7 +47,10 @@ class TranscriptServiceStub:
             raise self.error
         return TranscriptGenerateResponseV2(
             state_version=body.state_version,
-            transcript="庭审笔录\n\n本响应由测试服务生成。",
+            records=[
+                {"sequence": record.sequence, "text": record.text}
+                for record in body.records
+            ],
         )
 
 
@@ -168,12 +171,13 @@ def test_openapi_has_minimal_transcript_contract():
     components = schema["components"]["schemas"]
     assert set(components["TranscriptGenerateRequestV2"]["properties"]) == {
         "state_version",
-        "case_context",
+        "case_info",
+        "participants",
         "records",
     }
     assert set(components["TranscriptGenerateResponseV2"]["properties"]) == {
         "state_version",
-        "transcript",
+        "records",
     }
 
 

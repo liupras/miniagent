@@ -64,7 +64,8 @@ def main() -> int:
             if path.stat().st_size > body_limit:
                 reason = "body_size"
             elif item["kind"] == "request":
-                size = content_size(data["case_context"])
+                size = content_size(data["case_info"])
+                size += content_size(data["participants"])
                 size += content_size(data["records"])
                 if size > limits["content_max_codepoints"]:
                     reason = "content_budget"
@@ -73,6 +74,10 @@ def main() -> int:
             request = read(ROOT / item["request"])
             if data["state_version"] != request["state_version"]:
                 reason = "stale_state"
+            elif item["kind"] == "response" and [
+                record["sequence"] for record in data["records"]
+            ] != [record["sequence"] for record in request["records"]]:
+                reason = "record_mismatch"
 
         expected_reason = item.get("reason", "")
         ok = (not reason) == item["valid"] and (

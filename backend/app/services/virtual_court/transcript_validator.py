@@ -28,6 +28,10 @@ def validate_transcript_agent_output(raw_output, request):
             state_version=request.state_version,
             **data,
         )
+        requested_sequences = [record.sequence for record in request.records]
+        response_sequences = [record.sequence for record in response.records]
+        if response_sequences != requested_sequences:
+            raise ValueError("records must preserve every sequence in request order")
     except (ValidationError, TypeError, ValueError, UnicodeError, RecursionError) as exc:
         field = "response"
         if isinstance(exc, ValidationError):
