@@ -1,0 +1,15 @@
+{
+  "state_version": 23,
+  "role": "DEFENDANT",
+  "question": "下载涉案图片时是否核验过页面展示的授权范围？",
+  "case_context": {
+    "summary": "本案系著作权侵权纠纷。",
+    "claims": ["原告请求被告停止侵权并赔偿损失。"],
+    "defenses": ["被告主张图片来自公开素材平台。"],
+    "dispute_focuses": ["被告是否尽到合理审查义务。"]
+  },
+  "records": [
+    { "type": "SPEECH", "role": "DEFENDANT", "text": "涉案图片由工作人员从网络素材平台下载。" },
+    { "type": "SUMMARY", "role": null, "text": "双方对图片使用事实无异议，对责任范围存在争议。" }
+  ]
+}

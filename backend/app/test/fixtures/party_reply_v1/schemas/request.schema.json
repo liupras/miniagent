@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:virtual-court:party-reply-v1:request:2026-10-01-party-reply-v1",
+  "title": "PartyReplyV1-request",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "state_version": { "type": "integer", "minimum": 0, "maximum": 9223372036854775807 },
+    "role": { "enum": ["PLAINTIFF", "DEFENDANT"] },
+    "question": { "type": "string", "minLength": 1, "maxLength": 1000, "pattern": "\\S" },
+    "case_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "summary": { "type": "string", "minLength": 1, "maxLength": 16000, "pattern": "\\S" },
+        "claims": {
+          "type": "array", "maxItems": 30,
+          "items": { "type": "string", "minLength": 1, "maxLength": 4000, "pattern": "\\S" }
+        },
+        "defenses": {
+          "type": "array", "maxItems": 30,
+          "items": { "type": "string", "minLength": 1, "maxLength": 4000, "pattern": "\\S" }
+        },
+        "dispute_focuses": {
+          "type": "array", "maxItems": 20,
+          "items": { "type": "string", "minLength": 1, "maxLength": 1000, "pattern": "\\S" }
+        }
+      },
+      "required": ["summary", "claims", "defenses", "dispute_focuses"]
+    },
+    "records": {
+      "type": "array",
+      "maxItems": 512,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": { "enum": ["SPEECH", "SUMMARY"] },
+          "role": {
+            "anyOf": [
+              { "enum": ["JUDGE", "PLAINTIFF", "DEFENDANT"] },
+              { "type": "null" }
+            ]
+          },
+          "text": { "type": "string", "minLength": 1, "maxLength": 16000, "pattern": "\\S" }
+        },
+        "required": ["type", "role", "text"],
+        "allOf": [
+          {
+            "if": { "properties": { "type": { "const": "SPEECH" } } },
+            "then": {
+              "properties": {
+                "role": { "enum": ["JUDGE", "PLAINTIFF", "DEFENDANT"] },
+                "text": { "type": "string", "minLength": 1, "maxLength": 8000, "pattern": "\\S" }
+              }
+            },
+            "else": { "properties": { "role": { "type": "null" } } }
+          }
+        ]
+      }
+    }
+  },
+  "required": ["state_version", "role", "question", "case_context", "records"]
+}

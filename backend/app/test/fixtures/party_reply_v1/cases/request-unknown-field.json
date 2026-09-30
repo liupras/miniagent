@@ -1,0 +1,13 @@
+{
+  "state_version": 23,
+  "role": "DEFENDANT",
+  "question": "是否核验过授权范围？",
+  "case_context": {
+    "summary": "本案系著作权侵权纠纷。",
+    "claims": [],
+    "defenses": [],
+    "dispute_focuses": []
+  },
+  "records": [],
+  "answer_policy": {}
+}

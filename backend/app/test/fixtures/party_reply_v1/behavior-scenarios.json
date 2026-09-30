@@ -1,0 +1,45 @@
+{
+  "revision": "2026-10-01-party-reply-v1",
+  "scenarios": [
+    {
+      "id": "automatic-preset-match",
+      "given": "The current party is automatic and MatchInquiry returns a preset answer.",
+      "then": "Server submits the preset and Party Reply API call count remains zero."
+    },
+    {
+      "id": "automatic-preset-miss",
+      "given": "The current party is automatic and MatchInquiry returns null.",
+      "then": "Server creates at most one Party Reply job for the step run."
+    },
+    {
+      "id": "manual-no-call",
+      "given": "The current party is manual.",
+      "then": "Server neither matches nor calls Party Reply automatically."
+    },
+    {
+      "id": "manual-to-automatic",
+      "given": "The unanswered current party changes from manual to automatic.",
+      "then": "Server immediately re-evaluates preset-first automatic reply."
+    },
+    {
+      "id": "automatic-to-manual",
+      "given": "A Party Reply request is pending and the party changes to manual.",
+      "then": "The response is discarded as stale and is not committed."
+    },
+    {
+      "id": "human-answer-wins",
+      "given": "A human answer is committed before the Party Reply response.",
+      "then": "The API response is discarded as stale and cannot overwrite speech."
+    },
+    {
+      "id": "authority-context-changed",
+      "given": "room_epoch, state_version or step_run_id changes while the call is pending.",
+      "then": "The response is discarded as stale."
+    },
+    {
+      "id": "answer-quality",
+      "given": "The API is called with case context, records and one question.",
+      "then": "The response clearly answers the concrete question, stays close to the case and remains consistent with the party records without random polarity."
+    }
+  ]
+}

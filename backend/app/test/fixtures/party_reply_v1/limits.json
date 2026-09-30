@@ -1,0 +1,13 @@
+{
+  "revision": "2026-10-01-party-reply-v1",
+  "request_body_max_bytes": 524288,
+  "response_body_max_bytes": 131072,
+  "content_max_codepoints": 64000,
+  "question_max_codepoints": 1000,
+  "response_speech_max_codepoints": 1000,
+  "records_max_items": 512,
+  "server_total_timeout_seconds": 120,
+  "max_output_repair_attempts": 1,
+  "length_semantics": "All lengths are Unicode code points before trimming.",
+  "token_budget": "The implementation must reserve prompt and output tokens and must not silently truncate records."
+}

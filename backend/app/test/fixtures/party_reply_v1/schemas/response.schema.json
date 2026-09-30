@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:virtual-court:party-reply-v1:response:2026-10-01-party-reply-v1",
+  "title": "PartyReplyV1-response",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "state_version": { "type": "integer", "minimum": 0, "maximum": 9223372036854775807 },
+    "speech": { "type": "string", "minLength": 1, "maxLength": 1000, "pattern": "\\S" }
+  },
+  "required": ["state_version", "speech"]
+}

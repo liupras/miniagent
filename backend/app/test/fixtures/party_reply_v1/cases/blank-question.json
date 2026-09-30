@@ -1,0 +1,12 @@
+{
+  "state_version": 23,
+  "role": "DEFENDANT",
+  "question": "   ",
+  "case_context": {
+    "summary": "本案系著作权侵权纠纷。",
+    "claims": [],
+    "defenses": [],
+    "dispute_focuses": []
+  },
+  "records": []
+}

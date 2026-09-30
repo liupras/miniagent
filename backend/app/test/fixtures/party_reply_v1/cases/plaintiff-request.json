@@ -1,0 +1,12 @@
+{
+  "state_version": 31,
+  "role": "PLAINTIFF",
+  "question": "您为制止侵权实际支付了多少律师费和公证费？",
+  "case_context": {
+    "summary": "原告主张被告未经许可使用其美术作品。",
+    "claims": ["原告请求赔偿律师费六千元、公证费二千元。"],
+    "defenses": ["被告认为维权费用过高。"],
+    "dispute_focuses": ["合理维权费用的范围。"]
+  },
+  "records": []
+}

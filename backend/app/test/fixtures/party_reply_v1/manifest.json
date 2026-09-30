@@ -1,0 +1,17 @@
+{
+  "revision": "2026-10-01-party-reply-v1",
+  "cases": [
+    { "id": "defendant-request", "kind": "request", "schema": "request", "file": "cases/defendant-request.json", "valid": true },
+    { "id": "plaintiff-request", "kind": "request", "schema": "request", "file": "cases/plaintiff-request.json", "valid": true },
+    { "id": "invalid-role", "kind": "request", "schema": "request", "file": "cases/invalid-role.json", "valid": false, "reason": "schema" },
+    { "id": "blank-question", "kind": "request", "schema": "request", "file": "cases/blank-question.json", "valid": false, "reason": "schema" },
+    { "id": "request-unknown-field", "kind": "request", "schema": "request", "file": "cases/request-unknown-field.json", "valid": false, "reason": "schema" },
+    { "id": "summary-role-invalid", "kind": "request", "schema": "request", "file": "cases/summary-role-invalid.json", "valid": false, "reason": "schema" },
+    { "id": "request-duplicate-key", "kind": "request", "schema": "request", "file": "cases/request-duplicate-key.json", "valid": false, "reason": "invalid_json" },
+    { "id": "response-valid", "kind": "response", "schema": "response", "file": "cases/response-valid.json", "request": "contexts/response.request.json", "valid": true },
+    { "id": "response-stale", "kind": "response", "schema": "response", "file": "cases/response-stale.json", "request": "contexts/response.request.json", "valid": false, "reason": "stale_state" },
+    { "id": "response-blank", "kind": "response", "schema": "response", "file": "cases/response-blank.json", "valid": false, "reason": "schema" },
+    { "id": "response-unknown-field", "kind": "response", "schema": "response", "file": "cases/response-unknown-field.json", "valid": false, "reason": "schema" },
+    { "id": "response-duplicate-key", "kind": "response", "schema": "response", "file": "cases/response-duplicate-key.json", "valid": false, "reason": "invalid_json" }
+  ]
+}
