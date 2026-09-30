@@ -7,7 +7,7 @@
 
 旧接口 `POST /api/v2/integrations/virtual-court/judge/decide` 已删除，不提供兼容入口。
 
-两个接口均使用 `X-Integration-Key` 鉴权，接受 UTF-8 JSON。请求体上限为 512 KiB，拒绝未知字段、重复 JSON 字段、非法枚举和超长内容。服务端总超时预算默认为 120 秒。
+两个接口均使用 `Authorization: Bearer <token>` 鉴权，接受 UTF-8 JSON。请求体上限为 512 KiB，拒绝未知字段、重复 JSON 字段、非法枚举和超长内容。服务端总超时预算默认为 120 秒。
 
 ## 法律检查
 

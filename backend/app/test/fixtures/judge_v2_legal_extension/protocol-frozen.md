@@ -26,7 +26,7 @@
 | 方法 | `POST` |
 | V2 路径 | `/api/v2/integrations/virtual-court/judge/decide` |
 | 请求、响应编码 | UTF-8 JSON，`Content-Type: application/json` |
-| 鉴权 | `X-Integration-Key`，服务端使用 `VIRTUAL_COURT_API_KEY` 配置 |
+| 鉴权 | `Authorization: Bearer <token>`，服务端使用 `VIRTUAL_COURT_INTERNAL_SERVICE_TOKEN` 配置 |
 | 追踪 | 可使用 `X-Request-ID`；仅用于 HTTP 和日志，不进入推理上下文 |
 | 成功状态 | `200` |
 

@@ -33,7 +33,7 @@
 
 1. SQLite 中 `virtual_court_transcript_writer` 存在、启用且无工具绑定。
 2. 该 Agent 对应的 LLM 可用，输出上限符合部署配置。
-3. `VIRTUAL_COURT_API_KEY` 已配置，日志中不打印密钥、庭审正文或模型原文。
+3. `VIRTUAL_COURT_INTERNAL_SERVICE_TOKEN` 已配置，日志中不打印令牌、庭审正文或模型原文。
 4. 网关已配置灰度实例池、可信流量选择条件和快速摘流方案。
 
 ## 3. 灰度顺序

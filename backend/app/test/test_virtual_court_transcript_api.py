@@ -27,7 +27,7 @@ ROOT = Path(__file__).parent / "fixtures" / "transcript_v3"
 PREFIX = "/api/v3/integrations/virtual-court"
 ENDPOINT = PREFIX + "/transcript/generate"
 HEADERS = {
-    "X-Integration-Key": "test-only",
+    "Authorization": "Bearer test-only",
     "Content-Type": "application/json",
 }
 
@@ -69,7 +69,7 @@ def client(service=None):
 def key(monkeypatch):
     monkeypatch.setattr(
         settings,
-        "virtual_court_api_key",
+        "virtual_court_internal_service_token",
         SecretStr("test-only"),
     )
 
@@ -98,16 +98,18 @@ def test_frozen_requests_through_http_route(case):
         assert response.json()["error"]["code"] == "INVALID_REQUEST"
 
 
-def test_route_requires_integration_key():
+def test_route_requires_internal_service_token():
     body = load("cases/transcript-speech-request.json")
-    for headers in ({}, {"X-Integration-Key": "wrong"}):
+    for headers in ({}, {"Authorization": "Bearer wrong"}):
         response = client().post(ENDPOINT, headers=headers, json=body)
         assert response.status_code == 401
         assert response.json()["error"]["code"] == "AUTHENTICATION_FAILED"
 
 
-def test_unconfigured_integration_key_is_503(monkeypatch):
-    monkeypatch.setattr(settings, "virtual_court_api_key", SecretStr(""))
+def test_unconfigured_internal_service_token_is_503(monkeypatch):
+    monkeypatch.setattr(
+        settings, "virtual_court_internal_service_token", SecretStr("")
+    )
     response = client().post(
         ENDPOINT,
         headers=HEADERS,

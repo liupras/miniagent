@@ -39,7 +39,10 @@ def post(base_url, path, payload, *, timeout=140):
         method='POST',
         headers={
             'Content-Type': 'application/json',
-            'X-Integration-Key': settings.virtual_court_api_key.get_secret_value(),
+            'Authorization': (
+                'Bearer '
+                + settings.virtual_court_internal_service_token.get_secret_value()
+            ),
         },
     )
     started = time.perf_counter()

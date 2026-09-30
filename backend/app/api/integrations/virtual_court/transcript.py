@@ -8,7 +8,7 @@ from time import perf_counter
 
 from fastapi import APIRouter, Depends, Request, Security
 
-from app.api.integrations.auth import require_virtual_court_api_key
+from app.api.integrations.auth import require_internal_service_token
 from app.api.integrations.strict_json_route import StrictIntegrationRoute
 from app.core.logger_config import get_logger
 from app.schemas.integrations.virtual_court import (
@@ -41,7 +41,7 @@ def get_transcript_service(request: Request):
 )
 async def generate_transcript(
     body: TranscriptGenerateRequestV3,
-    _authenticated: None = Security(require_virtual_court_api_key),
+    _authenticated: None = Security(require_internal_service_token),
     service: TranscriptService = Depends(get_transcript_service),
 ) -> TranscriptGenerateResponseV3:
     started = perf_counter()

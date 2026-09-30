@@ -2,31 +2,39 @@
 # -*- coding:utf-8 -*-
 # @author  : Liu Lijun
 # @date    : 2026-08-29
-# @description: API-key authentication for VirtualCourt integration endpoints.
+# @description: Bearer authentication for VirtualCourt integration endpoints.
 
 from __future__ import annotations
 
 from typing import Annotated
 
 from fastapi import Security
-from fastapi.security import APIKeyHeader
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.config import settings
-from app.services.integration_auth import authenticate_integration_api_key
+from app.services.integration_auth import authenticate_internal_service_token
 
 
-INTEGRATION_KEY_HEADER = "X-Integration-Key"
-integration_key_header = APIKeyHeader(
-    name=INTEGRATION_KEY_HEADER,
+internal_service_bearer = HTTPBearer(
     auto_error=False,
-    description="Static API key configured for the VirtualCourt integration.",
+    description="Bearer token shared by VirtualCourt internal services.",
 )
 
 
-def require_virtual_court_api_key(
-    provided_key: Annotated[str | None, Security(integration_key_header)],
+def require_internal_service_token(
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None,
+        Security(internal_service_bearer),
+    ],
 ) -> None:
-    authenticate_integration_api_key(
-        provided_key=provided_key,
-        expected_key=settings.virtual_court_api_key.get_secret_value(),
+    provided_token = (
+        credentials.credentials
+        if credentials is not None and credentials.scheme.casefold() == "bearer"
+        else None
+    )
+    authenticate_internal_service_token(
+        provided_token=provided_token,
+        expected_token=(
+            settings.virtual_court_internal_service_token.get_secret_value()
+        ).strip(),
     )

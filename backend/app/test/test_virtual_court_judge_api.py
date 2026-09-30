@@ -29,7 +29,7 @@ PREFIX = '/api/v2/integrations/virtual-court'
 LAW_ENDPOINT = PREFIX + '/judge/law-check'
 NEXT_ENDPOINT = PREFIX + '/judge/next-action'
 OLD_ENDPOINT = PREFIX + '/judge/decide'
-HEADERS = {'X-Integration-Key': 'test-only', 'Content-Type': 'application/json'}
+HEADERS = {'Authorization': 'Bearer test-only', 'Content-Type': 'application/json'}
 
 
 def load(path):
@@ -87,7 +87,7 @@ def client(law_service=None, next_service=None):
 def key(monkeypatch):
     monkeypatch.setattr(
         settings,
-        'virtual_court_api_key',
+        'virtual_court_internal_service_token',
         SecretStr('test-only'),
     )
 
@@ -124,15 +124,17 @@ def test_frozen_requests_through_split_http_routes(case):
         (NEXT_ENDPOINT, load('cases/next-investigation-request.json')),
     ],
 )
-def test_both_routes_require_integration_key(endpoint, body):
-    for headers in ({}, {'X-Integration-Key': 'wrong'}):
+def test_both_routes_require_internal_service_token(endpoint, body):
+    for headers in ({}, {'Authorization': 'Bearer wrong'}):
         response = client().post(endpoint, headers=headers, json=body)
         assert response.status_code == 401
         assert response.json()['error']['code'] == 'AUTHENTICATION_FAILED'
 
 
-def test_unconfigured_integration_key_is_503(monkeypatch):
-    monkeypatch.setattr(settings, 'virtual_court_api_key', SecretStr(''))
+def test_unconfigured_internal_service_token_is_503(monkeypatch):
+    monkeypatch.setattr(
+        settings, 'virtual_court_internal_service_token', SecretStr('')
+    )
     response = client().post(
         LAW_ENDPOINT,
         headers=HEADERS,

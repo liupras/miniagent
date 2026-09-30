@@ -21,10 +21,10 @@ class Settings(BaseSettings):
     # ==================== API configuration ====================
     api_host: str = Field(default="0.0.0.0", description="API host")
     api_port: int = Field(default=8088, description="API port")
-    virtual_court_api_key: SecretStr = Field(
+    virtual_court_internal_service_token: SecretStr = Field(
         default=SecretStr(""),
         repr=False,
-        description="API key accepted from the VirtualCourt integration",
+        description="Bearer token shared by VirtualCourt internal services",
     )
     virtual_court_judge_timeout_seconds: float = Field(
         default=120.0,

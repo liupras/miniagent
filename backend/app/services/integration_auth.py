@@ -19,7 +19,7 @@ class IntegrationNotConfiguredError(IntegrationAccessError):
     error_key = "integration.not_configured"
 
     def __init__(self) -> None:
-        super().__init__(message="Integration API key is not configured")
+        super().__init__(message="Internal service token is not configured")
 
 
 class InvalidIntegrationCredentialsError(IntegrationAccessError):
@@ -29,17 +29,17 @@ class InvalidIntegrationCredentialsError(IntegrationAccessError):
         super().__init__(message="Invalid integration credentials")
 
 
-def authenticate_integration_api_key(
+def authenticate_internal_service_token(
     *,
-    provided_key: str | None,
-    expected_key: str,
+    provided_token: str | None,
+    expected_token: str,
 ) -> None:
-    """Validate a fixed integration API key using constant-time comparison."""
-    if not expected_key:
+    """Validate the shared internal service token in constant time."""
+    if not expected_token:
         raise IntegrationNotConfiguredError()
 
-    if provided_key is None or not secrets.compare_digest(
-        provided_key,
-        expected_key,
+    if provided_token is None or not secrets.compare_digest(
+        provided_token,
+        expected_token,
     ):
         raise InvalidIntegrationCredentialsError()

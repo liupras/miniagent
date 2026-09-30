@@ -8,7 +8,7 @@ from time import perf_counter
 
 from fastapi import APIRouter, Depends, Request, Security
 
-from app.api.integrations.auth import require_virtual_court_api_key
+from app.api.integrations.auth import require_internal_service_token
 from app.api.integrations.strict_json_route import StrictIntegrationRoute
 from app.core.logger_config import get_logger
 from app.schemas.integrations.virtual_court import (
@@ -47,7 +47,7 @@ def get_next_action_service(request: Request):
 )
 async def law_check(
     body: JudgeLawCheckRequestV2,
-    _authenticated: None = Security(require_virtual_court_api_key),
+    _authenticated: None = Security(require_internal_service_token),
     service: LawCheckService = Depends(get_law_check_service),
 ) -> JudgeLawCheckResponseV2:
     started = perf_counter()
@@ -76,7 +76,7 @@ async def law_check(
 )
 async def next_action(
     body: JudgeNextActionRequestV2,
-    _authenticated: None = Security(require_virtual_court_api_key),
+    _authenticated: None = Security(require_internal_service_token),
     service: NextActionService = Depends(get_next_action_service),
 ) -> JudgeNextActionResponseV2:
     started = perf_counter()
