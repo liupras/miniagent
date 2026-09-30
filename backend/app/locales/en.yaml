@@ -65,6 +65,14 @@ transcript:
   context_too_large: Complete transcript material exceeds model capacity; reduce it explicitly before retrying.
   invalid_response: Transcript agent returned an invalid response
 
+party_reply:
+  failed: Party reply generation failed
+  configuration_error: Party reply service is configured incorrectly
+  unavailable: Party reply service is temporarily unavailable
+  timeout: "Party reply generation timed out after {timeout} seconds"
+  context_too_large: Complete party reply context exceeds model capacity; reduce it explicitly before retrying.
+  invalid_response: Party reply agent returned an invalid response
+
 domain_plugin:
   error: Knowledge-domain plugin initialization failed
   none_configured: No knowledge-domain plugins are configured

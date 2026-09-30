@@ -495,7 +495,11 @@ class DatabaseManager:
                 raw,
                 force,
                 refresh_prompt=(
-                    raw.get("name") == "virtual_court_transcript_writer"
+                    raw.get("name")
+                    in {
+                        "virtual_court_transcript_writer",
+                        "virtual_court_party_responder",
+                    }
                 ),
             )
 
@@ -506,6 +510,7 @@ class DatabaseManager:
             "virtual_court_law_check_judge",
             "virtual_court_investigation_judge",
             "virtual_court_transcript_writer",
+            "virtual_court_party_responder",
         }
         if existing is None and row["name"] == "virtual_court_investigation_judge":
             existing = db.query(Agent).filter_by(name="virtual_court_solo_judge").first()

@@ -18,6 +18,7 @@ from app.repositories.async_audit_log import AsyncAuditLogDatabase
         "/api/v2/integrations/virtual-court/judge/law-check",
         "/api/v2/integrations/virtual-court/judge/next-action",
         "/api/v3/integrations/virtual-court/transcript/generate",
+        "/api/v2/integrations/virtual-court/party/reply",
     ],
 )
 def test_split_judge_calls_are_audited_as_execution(path):

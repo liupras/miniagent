@@ -70,6 +70,7 @@ from app.services.virtual_court import (
     LawCheckService,
     NextActionService,
     TranscriptService,
+    PartyReplyService,
 )
 from app.services.workplace_agent import WorkplaceAgentService
 
@@ -169,6 +170,10 @@ class ServiceContainer:
         self.transcript_service = TranscriptService(
             self.agent_factory,
             timeout_seconds=settings.virtual_court_transcript_timeout_seconds,
+        )
+        self.party_reply_service = PartyReplyService(
+            self.agent_factory,
+            timeout_seconds=settings.virtual_court_party_reply_timeout_seconds,
         )
 
         # ── Service singletons ──────────────────────────────────────────

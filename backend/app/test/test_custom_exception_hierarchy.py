@@ -47,6 +47,12 @@ from app.services.virtual_court import (
     JudgeServiceError,
     JudgeTimeoutError,
     JudgeUnavailableError,
+    PartyReplyConfigurationError,
+    PartyReplyContextError,
+    PartyReplyInvalidResponseError,
+    PartyReplyServiceError,
+    PartyReplyTimeoutError,
+    PartyReplyUnavailableError,
 )
 from app.services.workplace_agent import (
     AgentAccessDeniedError,
@@ -81,6 +87,15 @@ from app.services.workplace_agent import (
         (JudgeUnavailableError(), "judge.unavailable"),
         (JudgeTimeoutError(params={"timeout": 30}), "judge.timeout"),
         (JudgeInvalidResponseError(), "judge.invalid_response"),
+        (PartyReplyServiceError(), "party_reply.failed"),
+        (PartyReplyConfigurationError(), "party_reply.configuration_error"),
+        (PartyReplyUnavailableError(), "party_reply.unavailable"),
+        (
+            PartyReplyTimeoutError(params={"timeout": 120}),
+            "party_reply.timeout",
+        ),
+        (PartyReplyInvalidResponseError(), "party_reply.invalid_response"),
+        (PartyReplyContextError(), "party_reply.context_too_large"),
         (DatabaseInitializationError(), "database.initialization_failed"),
         (
             DomainPluginRegistrationError("law_cn"),

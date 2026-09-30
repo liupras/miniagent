@@ -65,6 +65,14 @@ transcript:
   context_too_large: 完整庭审笔录素材超过模型容量，请整理记录后重试。
   invalid_response: 庭审笔录智能体返回了无效响应
 
+party_reply:
+  failed: 当事人自动回复生成失败
+  configuration_error: 当事人自动回复服务配置错误
+  unavailable: 当事人自动回复服务暂时不可用
+  timeout: "当事人自动回复生成超时（{timeout} 秒）"
+  context_too_large: 完整回答上下文超过模型容量，请整理记录后重试。
+  invalid_response: 当事人自动回复智能体返回了无效响应
+
 domain_plugin:
   error: 知识领域插件初始化失败
   none_configured: 没有配置任何知识领域插件

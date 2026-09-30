@@ -38,6 +38,12 @@ class Settings(BaseSettings):
         le=600,
         description="Maximum duration of one VirtualCourt transcript generation",
     )
+    virtual_court_party_reply_timeout_seconds: float = Field(
+        default=120.0,
+        gt=0,
+        le=600,
+        description="Maximum duration of one VirtualCourt party reply",
+    )
     
     # ==================== Database configuration ====================
     sqlite_db_path: str = Field(default="db", description="SQLite database path")

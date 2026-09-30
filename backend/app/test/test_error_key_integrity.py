@@ -33,6 +33,12 @@ from app.services.virtual_court import (
     JudgeServiceError,
     JudgeTimeoutError,
     JudgeUnavailableError,
+    PartyReplyConfigurationError,
+    PartyReplyContextError,
+    PartyReplyInvalidResponseError,
+    PartyReplyServiceError,
+    PartyReplyTimeoutError,
+    PartyReplyUnavailableError,
 )
 
 
@@ -278,6 +284,12 @@ def test_integration_and_standard_api_share_error_message_semantics(monkeypatch)
         (JudgeTimeoutError(params={"timeout": 30}), 504),
         (JudgeInvalidResponseError(), 502),
         (JudgeServiceError(), 500),
+        (PartyReplyContextError(), 422),
+        (PartyReplyTimeoutError(params={"timeout": 120}), 504),
+        (PartyReplyInvalidResponseError(), 502),
+        (PartyReplyConfigurationError(), 503),
+        (PartyReplyUnavailableError(), 503),
+        (PartyReplyServiceError(), 500),
     ],
 )
 def test_domain_error_http_status_is_mapped_only_at_api_boundary(

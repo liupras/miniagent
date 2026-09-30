@@ -292,6 +292,13 @@ app.include_router(
     tags=["Integration - VirtualCourt"],
 )
 
+from app.api.integrations.virtual_court.party import router as virtual_court_party_router
+app.include_router(
+    virtual_court_party_router,
+    prefix="/api/v2/integrations/virtual-court",
+    tags=["Integration - VirtualCourt"],
+)
+
 from app.api.auth.login import router as auth_router
 app.include_router(auth_router,prefix="/api/v1",tags=["Security"])
 

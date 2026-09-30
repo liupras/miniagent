@@ -92,3 +92,47 @@ class TranscriptContextError(TranscriptServiceError):
     """Complete transcript input does not fit and must not be truncated."""
 
     error_key = "transcript.context_too_large"
+
+
+class PartyReplyServiceError(BaseDomainError):
+    """Base class for expected party-reply failures."""
+
+    error_key = "party_reply.failed"
+
+    def __init__(
+        self,
+        *,
+        params: dict | None = None,
+        cause: BaseException | None = None,
+    ) -> None:
+        super().__init__(params=params, cause=cause)
+
+
+class PartyReplyConfigurationError(PartyReplyServiceError):
+    """The dedicated party responder is missing or misconfigured."""
+
+    error_key = "party_reply.configuration_error"
+
+
+class PartyReplyUnavailableError(PartyReplyServiceError):
+    """The party-reply model provider is temporarily unavailable."""
+
+    error_key = "party_reply.unavailable"
+
+
+class PartyReplyTimeoutError(PartyReplyServiceError):
+    """Party reply generation exceeded its shared deadline."""
+
+    error_key = "party_reply.timeout"
+
+
+class PartyReplyInvalidResponseError(PartyReplyServiceError):
+    """The model output cannot be exposed as a valid party reply."""
+
+    error_key = "party_reply.invalid_response"
+
+
+class PartyReplyContextError(PartyReplyServiceError):
+    """Complete party-reply input does not fit and must not be truncated."""
+
+    error_key = "party_reply.context_too_large"

@@ -189,6 +189,7 @@ def infer_request_action(method: str, path: str) -> str:
     if (
         "/integrations/virtual-court/judge/" in normalized_path
         or "/integrations/virtual-court/transcript/" in normalized_path
+        or "/integrations/virtual-court/party/" in normalized_path
     ):
         return "EXECUTE"
     execute_markers = ("execute", "run", "query", "search", "retrieve", "import")
