@@ -28,7 +28,7 @@ def test_party_responder_prompt_and_runtime_limits_are_frozen():
         "正面回答法官提出的具体问题",
         "符合 role 所代表一方的诉讼立场",
         "同一方已经作出的陈述保持一致",
-        "不得随机选择肯定或否定答案",
+        "先给出明确答案",
         "不得编造",
         "现有记录中没有该信息",
         "只包含 speech 字段",

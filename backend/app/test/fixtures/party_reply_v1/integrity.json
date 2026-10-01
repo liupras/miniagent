@@ -16,7 +16,7 @@
   "limits.json": "2c9bd65e241d322b8f9ba40e93fb9aa492b77c285837c0779a18fff76c721160",
   "manifest.json": "76b4eba44c1f1876adcded4fb7e7b23b13afed9ad36753048d18eca64f38cd68",
   "protocol-frozen.md": "b523fc6b23bbdc4166ce6bc998931a238c36f73bbbeefe2e13385ad76dd23159",
-  "README.md": "adee928f7718b6044e2c156f4bab6308d88326f2bc799471d12bba0f2dbca829",
+  "README.md": "71535aee8f9ec2b3e0ccdaac796225a22d0c69a1053bebec7e56fdb0d7d3a98b",
   "schemas/request.schema.json": "583a1fbc689e9acb733a48046d98fbad114a1a235150df07c841f76eebe828cd",
   "schemas/response.schema.json": "54822660a8624b752683e7f93bf86cb584545a155ab6f28c949af38bc5644bdc",
   "verify_fixtures.py": "b8e4e7f156d8e6828b0de36972b9267b661b21696928cb3e294461d29e034d42"
