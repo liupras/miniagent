@@ -44,6 +44,12 @@ from app.services.virtual_court import (
     PartyReplyServiceError,
     PartyReplyTimeoutError,
     PartyReplyUnavailableError,
+    CivilDraftConfigurationError,
+    CivilDraftContextError,
+    CivilDraftInvalidResponseError,
+    CivilDraftServiceError,
+    CivilDraftTimeoutError,
+    CivilDraftUnavailableError,
 )
 
 
@@ -271,6 +277,47 @@ async def party_reply_service_error_handler(
     )
 
 
+async def civil_draft_service_error_handler(
+    request: Request,
+    exc: CivilDraftServiceError,
+) -> JSONResponse:
+    if isinstance(exc, CivilDraftContextError):
+        code, retryable = IntegrationErrorCode.INVALID_REQUEST, False
+    elif isinstance(exc, CivilDraftConfigurationError):
+        code, retryable = IntegrationErrorCode.SERVICE_UNAVAILABLE, False
+    elif isinstance(exc, CivilDraftUnavailableError):
+        code, retryable = IntegrationErrorCode.SERVICE_UNAVAILABLE, True
+    elif isinstance(exc, CivilDraftTimeoutError):
+        code, retryable = IntegrationErrorCode.UPSTREAM_TIMEOUT, True
+    elif isinstance(exc, CivilDraftInvalidResponseError):
+        code, retryable = IntegrationErrorCode.MODEL_RESPONSE_INVALID, True
+    else:
+        code, retryable = IntegrationErrorCode.INTERNAL_ERROR, False
+
+    method, path, client, request_id = _request_log_context(request)
+    logger.warning(
+        "[VirtualCourt] civil draft request failed: method={}, path={}, status={}, "
+        "error_code={}, exception={}, diagnostic_params={}, cause_type={}, "
+        "client={}, request_id={}",
+        method,
+        path,
+        domain_error_http_status(exc),
+        code,
+        type(exc).__name__,
+        exc.params,
+        type(exc.cause).__name__ if exc.cause is not None else "-",
+        client,
+        request_id,
+    )
+    return integration_error_response(
+        status_code=domain_error_http_status(exc),
+        code=code,
+        message=translate_domain_error(exc),
+        retryable=retryable,
+        details={k: v for k, v in exc.params.items() if k in ("reason", "field")},
+    )
+
+
 async def integration_request_validation_handler(
     request: Request,
     exc: RequestValidationError,
@@ -311,6 +358,10 @@ def register_integration_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         PartyReplyServiceError,
         party_reply_service_error_handler,
+    )
+    app.add_exception_handler(
+        CivilDraftServiceError,
+        civil_draft_service_error_handler,
     )
     app.add_exception_handler(
         RequestValidationError,

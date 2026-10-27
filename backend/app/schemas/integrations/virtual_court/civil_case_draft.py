@@ -10,6 +10,9 @@ from pydantic import Field, model_validator
 from .judge import StrictModel, text_type
 
 
+CIVIL_DRAFT_RESPONSE_MAX_BYTES = 524288
+
+
 Side = Literal["plaintiff", "defendant"]
 EntityType = Literal["natural_person", "legal_entity"]
 SourceKey = Annotated[

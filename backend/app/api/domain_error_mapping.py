@@ -36,6 +36,12 @@ from app.services.virtual_court import (
     PartyReplyServiceError,
     PartyReplyTimeoutError,
     PartyReplyUnavailableError,
+    CivilDraftConfigurationError,
+    CivilDraftContextError,
+    CivilDraftInvalidResponseError,
+    CivilDraftServiceError,
+    CivilDraftTimeoutError,
+    CivilDraftUnavailableError,
 )
 
 
@@ -62,6 +68,12 @@ _HTTP_STATUS_BY_ERROR_TYPE: tuple[tuple[type[BaseDomainError], int], ...] = (
     (PartyReplyConfigurationError, 503),
     (PartyReplyUnavailableError, 503),
     (PartyReplyServiceError, 500),
+    (CivilDraftContextError, 422),
+    (CivilDraftTimeoutError, 504),
+    (CivilDraftInvalidResponseError, 502),
+    (CivilDraftConfigurationError, 503),
+    (CivilDraftUnavailableError, 503),
+    (CivilDraftServiceError, 500),
     (NotFoundError, 404),
     (AlreadyExistsError, 409),
     (UnsupportedMediaTypeError, 415),

@@ -499,6 +499,7 @@ class DatabaseManager:
                     in {
                         "virtual_court_transcript_writer",
                         "virtual_court_party_responder",
+                        "virtual_court_civil_draft_generator",
                     }
                 ),
             )
@@ -511,6 +512,7 @@ class DatabaseManager:
             "virtual_court_investigation_judge",
             "virtual_court_transcript_writer",
             "virtual_court_party_responder",
+            "virtual_court_civil_draft_generator",
         }
         if existing is None and row["name"] == "virtual_court_investigation_judge":
             existing = db.query(Agent).filter_by(name="virtual_court_solo_judge").first()

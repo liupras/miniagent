@@ -136,3 +136,32 @@ class PartyReplyContextError(PartyReplyServiceError):
     """Complete party-reply input does not fit and must not be truncated."""
 
     error_key = "party_reply.context_too_large"
+
+
+class CivilDraftServiceError(BaseDomainError):
+    """Base class for expected civil draft generation failures."""
+
+    error_key = "civil_draft.failed"
+
+    def __init__(self, *, params: dict | None = None, cause: BaseException | None = None) -> None:
+        super().__init__(params=params, cause=cause)
+
+
+class CivilDraftConfigurationError(CivilDraftServiceError):
+    error_key = "civil_draft.configuration_error"
+
+
+class CivilDraftUnavailableError(CivilDraftServiceError):
+    error_key = "civil_draft.unavailable"
+
+
+class CivilDraftTimeoutError(CivilDraftServiceError):
+    error_key = "civil_draft.timeout"
+
+
+class CivilDraftInvalidResponseError(CivilDraftServiceError):
+    error_key = "civil_draft.invalid_response"
+
+
+class CivilDraftContextError(CivilDraftServiceError):
+    error_key = "civil_draft.context_too_large"
