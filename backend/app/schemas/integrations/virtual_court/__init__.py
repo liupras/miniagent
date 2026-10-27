@@ -11,3 +11,4 @@ from .transcript import (
     TranscriptGenerateResponseV3,
 )
 from .party_reply import PartyReplyRequestV1, PartyReplyResponseV1
+from .civil_case_draft import CivilCaseDraftGenerateRequestV1, CivilCaseDraftGenerateResponseV1
