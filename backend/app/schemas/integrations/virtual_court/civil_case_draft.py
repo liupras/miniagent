@@ -3,7 +3,7 @@
 This is an offline contract. No API route or model execution is registered here.
 """
 
-from typing import Annotated, Literal
+from typing import Literal
 
 from pydantic import Field, model_validator
 
@@ -15,10 +15,6 @@ CIVIL_DRAFT_RESPONSE_MAX_BYTES = 524288
 
 Side = Literal["plaintiff", "defendant"]
 EntityType = Literal["natural_person", "legal_entity"]
-SourceKey = Annotated[
-    str,
-    Field(max_length=64, pattern=r"^(plaintiffComplaint|defendantAnswer|otherMaterials\[(0|[1-9][0-9]*)\])$"),
-]
 ClaimCategory = Literal[
     "cease_infringement", "public_apology", "monetary_compensation", "litigation_costs"
 ]
@@ -33,15 +29,6 @@ class CivilCaseDraftGenerateRequestV1(StrictModel):
     plaintiffComplaint: text_type(60000)
     defendantAnswer: text_type(60000)
     otherMaterials: list[CivilOtherMaterialV1] = Field(max_length=20)
-
-
-class CivilSourceRefV1(StrictModel):
-    sourceKey: SourceKey
-    quote: text_type(1000)
-
-
-class CivilFieldSourceV1(CivilSourceRefV1):
-    fieldPath: Annotated[str, Field(min_length=2, max_length=256, pattern=r"^/")]
 
 
 class CivilPartyV1(StrictModel):
@@ -119,10 +106,8 @@ class CivilGenerationIssueV1(StrictModel):
     severity: Literal["blocking", "warning"]
     code: text_type(64)
     message: text_type(1000)
-    sources: list[CivilSourceRefV1] = Field(max_length=10)
 
 
 class CivilCaseDraftGenerateResponseV1(StrictModel):
     draft: CivilCaseDraftV1
     issues: list[CivilGenerationIssueV1] = Field(max_length=100)
-    sourceRefs: list[CivilFieldSourceV1] = Field(max_length=300)

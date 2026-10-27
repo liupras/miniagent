@@ -54,12 +54,6 @@ RESPONSE = {
         "severity": "blocking",
         "code": "DEFENDANT_NAME_MISSING",
         "message": "答辩状未写明被告名称。",
-        "sources": [{"sourceKey": "defendantAnswer", "quote": "被告认为赔偿过高。"}],
-    }],
-    "sourceRefs": [{
-        "fieldPath": "/claims/0/text",
-        "sourceKey": "plaintiffComplaint",
-        "quote": "经济损失20000元",
     }],
 }
 
@@ -90,9 +84,9 @@ def test_v1_rejects_inconsistent_amount():
         CivilCaseDraftGenerateResponseV1.model_validate(payload)
 
 
-def test_v1_rejects_invalid_source_key_and_dynamic_script():
+def test_v1_rejects_unrequested_fields_and_dynamic_script():
     payload = copy.deepcopy(RESPONSE)
-    payload["sourceRefs"][0]["sourceKey"] = "materialDbId-42"
+    payload["sourceRefs"] = []
     with pytest.raises(ValidationError):
         CivilCaseDraftGenerateResponseV1.model_validate(payload)
     payload = copy.deepcopy(RESPONSE)

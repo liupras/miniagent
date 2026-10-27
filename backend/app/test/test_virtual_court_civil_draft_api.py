@@ -85,13 +85,7 @@ RESPONSE = {
         "severity": "blocking",
         "code": "DEFENDANT_NAME_MISSING",
         "message": "答辩材料未写明被告名称。",
-        "sources": [],
     }],
-    "sourceRefs": [
-        {"fieldPath": "/claims/0/text", "sourceKey": "plaintiffComplaint", "quote": "经济损失20000元"},
-        {"fieldPath": "/defenses/0", "sourceKey": "defendantAnswer", "quote": "赔偿过高"},
-        {"fieldPath": "/evidenceGroups/0/materials/0/displayText", "sourceKey": "otherMaterials[0]", "quote": "律师费票据金额6000元。"},
-    ],
 }
 
 
@@ -152,7 +146,7 @@ def test_http_rejects_duplicate_json_keys_and_exposes_v1_schema():
         "plaintiffComplaint", "defendantAnswer", "otherMaterials"
     }
     assert set(schema["components"]["schemas"]["CivilCaseDraftGenerateResponseV1"]["properties"]) == {
-        "draft", "issues", "sourceRefs"
+        "draft", "issues"
     }
 
 
@@ -170,21 +164,13 @@ def test_http_error_mapping(error, status, code, retryable):
     assert response.json()["error"]["retryable"] is retryable
 
 
-def test_validator_checks_exact_quotes_and_citation_coverage():
-    request = CivilCaseDraftGenerateRequestV1.model_validate(REQUEST)
-    assert validate_civil_draft_agent_output(json.dumps(RESPONSE, ensure_ascii=False), request).draft.claims
-    for mutation in ("bad_quote", "bad_index", "missing_citation", "bad_path"):
+def test_validator_checks_contract_without_source_refs():
+    assert validate_civil_draft_agent_output(json.dumps(RESPONSE, ensure_ascii=False)).draft.claims
+    for extra in ({"sourceRefs": []}, {"issues": [{**RESPONSE["issues"][0], "sources": []}]}):
         output = copy.deepcopy(RESPONSE)
-        if mutation == "bad_quote":
-            output["sourceRefs"][0]["quote"] = "材料没有的内容"
-        elif mutation == "bad_index":
-            output["sourceRefs"][2]["sourceKey"] = "otherMaterials[99]"
-        elif mutation == "missing_citation":
-            output["sourceRefs"].pop()
-        else:
-            output["sourceRefs"][0]["fieldPath"] = "/claims/99/text"
+        output.update(extra)
         with pytest.raises(CivilDraftInvalidResponseError):
-            validate_civil_draft_agent_output(json.dumps(output, ensure_ascii=False), request)
+            validate_civil_draft_agent_output(json.dumps(output, ensure_ascii=False))
 
 
 class Runner:
@@ -243,7 +229,7 @@ def test_seed_adds_agent_without_overwriting_tuned_model():
     rows = json.loads((Path(__file__).parents[1] / "infra/db/seed/agent.json").read_text(encoding="utf-8"))
     row = next(item for item in rows if item["name"] == CivilDraftService.AGENT_NAME)
     assert row["is_active"] is True
-    assert "每项诉请 text" in row["system_prompt"]
+    assert "只输出包含 draft 和 issues" in row["system_prompt"]
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     try:
@@ -262,6 +248,6 @@ def test_seed_adds_agent_without_overwriting_tuned_model():
             db.flush()
             assert db.query(Agent).filter_by(name=CivilDraftService.AGENT_NAME).count() == 1
             assert agent.llm_id == llm.id
-            assert "每项诉请 text" in agent.system_prompt
+            assert "只输出包含 draft 和 issues" in agent.system_prompt
     finally:
         engine.dispose()

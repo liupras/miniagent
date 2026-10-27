@@ -46,7 +46,7 @@ class CivilDraftService:
                             raise CivilDraftInvalidResponseError(
                                 params={"reason": "incomplete_or_tool_output", "field": "response"}
                             )
-                        return validate_civil_draft_agent_output(result.text, request)
+                        return validate_civil_draft_agent_output(result.text)
                     except ToolNotRegisteredError as exc:
                         invalid = CivilDraftInvalidResponseError(
                             params={"reason": "unexpected_tool_call", "field": "response"},
@@ -68,8 +68,8 @@ class CivilDraftService:
                         {"role": "assistant", "content": raw},
                     ]
                     query = (
-                        "上次输出未通过契约或来源校验。请重新核对原始材料、完整输出 JSON，"
-                        "为每项诉请、答辩要点和证据摘录提供可定位的原文引文。"
+                        "上次输出未通过 JSON 契约校验。请核对原始材料，"
+                        "只输出包含 draft 和 issues 的完整 JSON。"
                     )
         except TimeoutError as exc:
             raise CivilDraftTimeoutError(
