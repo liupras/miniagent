@@ -39,11 +39,10 @@ async def generate_civil_draft(
     service: CivilDraftService = Depends(get_civil_draft_service),
 ) -> CivilCaseDraftGenerateResponseV1:
     started = perf_counter()
-    source_codepoints = len(body.plaintiffComplaint) + len(body.defendantAnswer)
-    source_codepoints += sum(len(item.text) for item in body.otherMaterials)
+    source_codepoints = sum(len(item.text) for item in body.documents)
     logger.info(
         "[CivilDraftV1] accepted: documents={}, source_codepoints={}",
-        2 + len(body.otherMaterials),
+        len(body.documents),
         source_codepoints,
     )
     response = await service.generate(body)

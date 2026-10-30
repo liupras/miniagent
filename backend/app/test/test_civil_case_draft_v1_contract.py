@@ -12,9 +12,11 @@ from app.schemas.integrations.virtual_court import (
 
 
 REQUEST = {
-    "plaintiffComplaint": "原告林某请求赔偿经济损失20000元。",
-    "defendantAnswer": "被告认为赔偿过高。",
-    "otherMaterials": [{"name": "原告证据.md", "text": "律师费票据金额6000元。"}],
+    "documents": [
+        {"name": "起诉材料.pdf", "text": "【PDF 第1页】\n原告林某请求赔偿经济损失20000元。"},
+        {"name": "答辩材料.docx", "text": "被告认为赔偿过高。"},
+        {"name": "原告证据.md", "text": "律师费票据金额6000元。"},
+    ],
 }
 
 RESPONSE = {
@@ -59,7 +61,7 @@ RESPONSE = {
 
 
 def test_v1_accepts_text_inputs_and_partial_review_draft():
-    assert CivilCaseDraftGenerateRequestV1.model_validate(REQUEST).otherMaterials[0].name == "原告证据.md"
+    assert CivilCaseDraftGenerateRequestV1.model_validate(REQUEST).documents[2].name == "原告证据.md"
     response = CivilCaseDraftGenerateResponseV1.model_validate(RESPONSE)
     assert response.draft.defendant.name == ""
     assert response.issues[0].severity == "blocking"
@@ -82,6 +84,18 @@ def test_v1_rejects_inconsistent_amount():
     payload["draft"]["claims"][0]["amount"]["totalAmountFen"] = 2800000
     with pytest.raises(ValidationError):
         CivilCaseDraftGenerateResponseV1.model_validate(payload)
+
+
+def test_v1_requires_nonempty_documents_with_only_name_and_text():
+    for documents in ([], [{"name": "", "text": "正文"}],
+                      [{"name": "材料.pdf", "text": ""}],
+                      [{"name": "材料.pdf", "text": "正文", "category": "other"}],
+                      [{"name": "材料.md", "text": "正文"}] * 23):
+        with pytest.raises(ValidationError):
+            CivilCaseDraftGenerateRequestV1.model_validate({"documents": documents})
+    assert CivilCaseDraftGenerateRequestV1.model_validate({
+        "documents": [{"name": "未分类材料.pdf", "text": "单份材料也可提交。"}]
+    }).documents[0].name == "未分类材料.pdf"
 
 
 def test_v1_rejects_unrequested_fields_and_dynamic_script():

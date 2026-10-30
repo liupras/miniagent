@@ -2,7 +2,7 @@
 
 `POST /api/v2/integrations/virtual-court/cases/civil/draft/generate`
 
-只供 VirtualCourt.Server 使用，沿用 VirtualCourt 集成接口的内部 Bearer Token。请求体为 UTF-8 JSON：`plaintiffComplaint`、`defendantAnswer` 是已解析的正文；`otherMaterials` 为零到多份 `{name, text}`。MiniAgent 不接收上传原件、案件 ID、材料数据库 ID 或流程标识。请求与响应的准确字段见 `CivilCaseDraftGenerateRequestV1`、`CivilCaseDraftGenerateResponseV1`。
+只供 VirtualCourt.Server 使用，沿用 VirtualCourt 集成接口的内部 Bearer Token。请求体为 UTF-8 JSON：`documents` 是 1～22 份 `{name, text}`，按上传顺序排列。`name` 是原文件名，`text` 是已解析正文；PDF 在各页前带 `【PDF 第N页】` 标记。MiniAgent 根据正文判断材料用途，不要求调用方标注起诉状、答辩状或证据。MiniAgent 不接收上传原件、案件 ID、材料数据库 ID 或流程标识。请求与响应的准确字段见 `CivilCaseDraftGenerateRequestV1`、`CivilCaseDraftGenerateResponseV1`。
 
 响应仅有 `draft`（待审阅的民事语义草稿）和 `issues`（`blocking`/`warning` 缺失或矛盾提示）。服务端校验结构和金额分项合计；材料与草稿的对应关系由审核者结合上传文件审阅。生成结果不含系统 ID、法官固定台词或动态问答，也不能直接发布或开庭。VirtualCourt 后续负责草稿编译、人工审阅、批准和发布。
 
@@ -17,4 +17,4 @@ cd D:\miniagent\backend
 .\.venv\Scripts\python.exe -m pytest -q app/test/test_civil_case_draft_v1_contract.py app/test/test_virtual_court_civil_draft_api.py
 ```
 
-本阶段没有接通 VirtualCourt 管理端；四份演示材料的完整 AI 生成质量仍需在配置真实模型后按 `D:\project\VirtualCourt\Tests\Fixtures\CivilCaseGeneration\acceptance-v1.json` 人工验收。
+VirtualCourt 管理端上传时无需指定材料类别，由 Server 解析材料并发送 `documents`。四份演示材料的完整 AI 生成质量仍需在配置真实模型后按 `D:\project\VirtualCourt\Tests\Fixtures\CivilCaseGeneration\acceptance-v1.json` 人工验收。

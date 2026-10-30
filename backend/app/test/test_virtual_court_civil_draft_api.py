@@ -40,9 +40,11 @@ from app.services.virtual_court import (
 ENDPOINT = "/api/v2/integrations/virtual-court/cases/civil/draft/generate"
 HEADERS = {"Authorization": "Bearer test-only"}
 REQUEST = {
-    "plaintiffComplaint": "原告林某请求赔偿经济损失20000元。",
-    "defendantAnswer": "被告认为赔偿过高。",
-    "otherMaterials": [{"name": "费用.md", "text": "律师费票据金额6000元。"}],
+    "documents": [
+        {"name": "起诉材料.pdf", "text": "【PDF 第1页】\n原告林某请求赔偿经济损失20000元。"},
+        {"name": "答辩材料.docx", "text": "被告认为赔偿过高。"},
+        {"name": "费用.md", "text": "律师费票据金额6000元。"},
+    ],
 }
 RESPONSE = {
     "draft": {
@@ -127,7 +129,7 @@ def test_http_contract_and_internal_authentication():
     assert response.status_code == 200, response.text
     assert response.json()["issues"][0]["severity"] == "blocking"
     assert len(service.calls) == 1
-    assert service.calls[0].otherMaterials[0].name == "费用.md"
+    assert service.calls[0].documents[2].name == "费用.md"
 
     invalid = dict(REQUEST, caseId="system-owned")
     assert client(service).post(ENDPOINT, headers=HEADERS, json=invalid).status_code == 422
@@ -138,12 +140,12 @@ def test_http_rejects_duplicate_json_keys_and_exposes_v1_schema():
     response = client().post(
         ENDPOINT,
         headers=HEADERS,
-        content='{"plaintiffComplaint":"a","plaintiffComplaint":"b"}',
+        content='{"documents":[],"documents":[]}',
     )
     assert response.status_code == 422
     schema = client().get("/openapi.json").json()
     assert set(schema["components"]["schemas"]["CivilCaseDraftGenerateRequestV1"]["properties"]) == {
-        "plaintiffComplaint", "defendantAnswer", "otherMaterials"
+        "documents"
     }
     assert set(schema["components"]["schemas"]["CivilCaseDraftGenerateResponseV1"]["properties"]) == {
         "draft", "issues"
@@ -229,6 +231,7 @@ def test_seed_adds_agent_without_overwriting_tuned_model():
     rows = json.loads((Path(__file__).parents[1] / "infra/db/seed/agent.json").read_text(encoding="utf-8"))
     row = next(item for item in rows if item["name"] == CivilDraftService.AGENT_NAME)
     assert row["is_active"] is True
+    assert "documents 数组" in row["system_prompt"]
     assert "只输出包含 draft 和 issues" in row["system_prompt"]
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
@@ -249,5 +252,6 @@ def test_seed_adds_agent_without_overwriting_tuned_model():
             assert db.query(Agent).filter_by(name=CivilDraftService.AGENT_NAME).count() == 1
             assert agent.llm_id == llm.id
             assert "只输出包含 draft 和 issues" in agent.system_prompt
+            assert "documents 数组" in agent.system_prompt
     finally:
         engine.dispose()

@@ -1,4 +1,4 @@
-"""Generate a reviewable civil case draft from pleading and evidence text."""
+"""Generate a reviewable civil case draft from uploaded document text."""
 
 import asyncio
 import json

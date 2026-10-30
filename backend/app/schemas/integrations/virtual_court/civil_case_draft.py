@@ -1,7 +1,4 @@
-"""Civil case draft generation V1: source text in, reviewable semantics out.
-
-This is an offline contract. No API route or model execution is registered here.
-"""
+"""Civil case draft generation V1: uploaded document text in, reviewable semantics out."""
 
 from typing import Literal
 
@@ -20,15 +17,13 @@ ClaimCategory = Literal[
 ]
 
 
-class CivilOtherMaterialV1(StrictModel):
+class CivilSourceDocumentV1(StrictModel):
     name: text_type(256)
     text: text_type(60000)
 
 
 class CivilCaseDraftGenerateRequestV1(StrictModel):
-    plaintiffComplaint: text_type(60000)
-    defendantAnswer: text_type(60000)
-    otherMaterials: list[CivilOtherMaterialV1] = Field(max_length=20)
+    documents: list[CivilSourceDocumentV1] = Field(min_length=1, max_length=22)
 
 
 class CivilPartyV1(StrictModel):
