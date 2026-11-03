@@ -46,7 +46,7 @@ class CivilDraftService:
                             raise CivilDraftInvalidResponseError(
                                 params={"reason": "incomplete_or_tool_output", "field": "response"}
                             )
-                        return validate_civil_draft_agent_output(result.text)
+                        return validate_civil_draft_agent_output(result.text, request)
                     except ToolNotRegisteredError as exc:
                         invalid = CivilDraftInvalidResponseError(
                             params={"reason": "unexpected_tool_call", "field": "response"},
@@ -57,7 +57,7 @@ class CivilDraftService:
                         invalid = exc
                         raw = result.text
                     logger.warning(
-                        "[CivilDraftV1] output rejected: attempt={}, diagnostic={}",
+                        "[CivilDraftV2] output rejected: attempt={}, diagnostic={}",
                         attempt + 1,
                         invalid.params,
                     )
@@ -69,7 +69,8 @@ class CivilDraftService:
                     ]
                     query = (
                         "上次输出未通过 JSON 契约校验。请核对原始材料，"
-                        "只输出包含 draft 和 issues 的完整 JSON。"
+                        "只输出包含 draft 和 issues 的完整 JSON。校验错误："
+                        + json.dumps(invalid.params, ensure_ascii=False)
                     )
         except TimeoutError as exc:
             raise CivilDraftTimeoutError(

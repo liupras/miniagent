@@ -1,4 +1,4 @@
-"""Civil case draft generation V1: uploaded document text in, reviewable semantics out."""
+"""Civil case draft generation V2: uploaded document text in, reviewable semantics out."""
 
 from typing import Literal
 
@@ -17,29 +17,82 @@ ClaimCategory = Literal[
 ]
 
 
-class CivilSourceDocumentV1(StrictModel):
+class CivilSourceDocumentV2(StrictModel):
     name: text_type(256)
     text: text_type(60000)
 
 
-class CivilCaseDraftGenerateRequestV1(StrictModel):
-    documents: list[CivilSourceDocumentV1] = Field(min_length=1, max_length=22)
+class CivilSegmentRequirementV2(StrictModel):
+    name: text_type(256)
+    speakerRole: Literal["judge", "clerk", "plaintiff", "defendant", "offeringParty", "opposingParty"]
+    contentSource: Literal["case", "caseEvidence"]
+    instruction: text_type(4000)
 
 
-class CivilPartyV1(StrictModel):
+class CivilProcedureStepV2(StrictModel):
+    name: text_type(256)
+    type: Literal["sequence", "evidenceGroupLoop"]
+    segments: list[CivilSegmentRequirementV2] = Field(min_length=1, max_length=100)
+
+    @model_validator(mode="after")
+    def validate_segments(self):
+        names = [item.name for item in self.segments]
+        if len(names) != len(set(names)):
+            raise ValueError("duplicate segment name")
+        for item in self.segments:
+            name = item.name
+            if self.type == "sequence":
+                if item.contentSource != "case" or item.speakerRole in ("offeringParty", "opposingParty"):
+                    raise ValueError("sequence segment source or role")
+            else:
+                if item.contentSource != "caseEvidence":
+                    raise ValueError("evidence segment source")
+                name = name.replace("{举证方}", "").replace("{质证方}", "").replace("{证据组名称}", "")
+            if " / " in name or "{" in name or "}" in name:
+                raise ValueError("reserved name characters")
+        return self
+
+
+class CivilProcedurePhaseV2(StrictModel):
+    name: text_type(256)
+    steps: list[CivilProcedureStepV2] = Field(min_length=1, max_length=100)
+
+
+class CivilProcedureV2(StrictModel):
+    phases: list[CivilProcedurePhaseV2] = Field(min_length=1, max_length=100)
+
+    @model_validator(mode="after")
+    def unique_names(self):
+        phases = [item.name for item in self.phases]
+        steps = [step.name for phase in self.phases for step in phase.steps]
+        if len(phases) != len(set(phases)) or len(steps) != len(set(steps)):
+            raise ValueError("duplicate phase or step name")
+        if any(" / " in name or "{" in name or "}" in name for name in phases + steps):
+            raise ValueError("reserved name characters")
+        if sum(len(step.segments) for phase in self.phases for step in phase.steps) > 200:
+            raise ValueError("too many segment requirements")
+        return self
+
+
+class CivilCaseDraftGenerateRequestV2(StrictModel):
+    documents: list[CivilSourceDocumentV2] = Field(min_length=1, max_length=22)
+    procedure: CivilProcedureV2
+
+
+class CivilPartyV2(StrictModel):
     name: str = Field(max_length=256)
     entityType: EntityType | None
     description: str = Field(max_length=1000)
 
 
-class CivilMoneyComponentV1(StrictModel):
+class CivilMoneyComponentV2(StrictModel):
     name: text_type(128)
     amountFen: int = Field(ge=0)
 
 
-class CivilMoneyV1(StrictModel):
+class CivilMoneyV2(StrictModel):
     totalAmountFen: int = Field(ge=0)
-    components: list[CivilMoneyComponentV1] = Field(max_length=20)
+    components: list[CivilMoneyComponentV2] = Field(max_length=20)
 
     @model_validator(mode="after")
     def components_match_total(self):
@@ -48,10 +101,10 @@ class CivilMoneyV1(StrictModel):
         return self
 
 
-class CivilClaimV1(StrictModel):
+class CivilClaimV2(StrictModel):
     category: ClaimCategory
     text: text_type(2000)
-    amount: CivilMoneyV1 | None
+    amount: CivilMoneyV2 | None
 
     @model_validator(mode="after")
     def monetary_shape(self):
@@ -60,49 +113,45 @@ class CivilClaimV1(StrictModel):
         return self
 
 
-class CivilEvidenceMaterialV1(StrictModel):
+class CivilEvidenceMaterialV2(StrictModel):
     name: text_type(256)
     source: str = Field(max_length=512)
     displayText: text_type(4000)
 
 
-class CivilEvidenceGroupV1(StrictModel):
+class CivilEvidenceGroupV2(StrictModel):
     side: Side
     name: text_type(256)
     proofPurpose: text_type(1000)
-    materials: list[CivilEvidenceMaterialV1] = Field(min_length=1, max_length=30)
-    offerSpeech: str = Field(max_length=4000)
-    crossSpeech: str = Field(max_length=4000)
+    materials: list[CivilEvidenceMaterialV2] = Field(min_length=1, max_length=30)
 
 
-class CivilFixedSpeechesV1(StrictModel):
-    plaintiffClaim: str = Field(max_length=4000)
-    defendantAnswer: str = Field(max_length=4000)
-    plaintiffFocus: str = Field(max_length=4000)
-    defendantFocus: str = Field(max_length=4000)
-    plaintiffFinal: str = Field(max_length=4000)
-    defendantFinal: str = Field(max_length=4000)
+class CivilSegmentContentV2(StrictModel):
+    stepName: text_type(256)
+    segmentName: text_type(1024)
+    speakerRole: Literal["judge", "clerk", "plaintiff", "defendant"]
+    text: str = Field(max_length=8000)
 
 
-class CivilCaseDraftV1(StrictModel):
+class CivilCaseDraftV2(StrictModel):
     causeOfAction: str = Field(max_length=512)
     subjectMatter: str = Field(max_length=1000)
     summary: str = Field(max_length=4000)
-    plaintiff: CivilPartyV1
-    defendant: CivilPartyV1
-    claims: list[CivilClaimV1] = Field(max_length=30)
+    plaintiff: CivilPartyV2
+    defendant: CivilPartyV2
+    claims: list[CivilClaimV2] = Field(max_length=30)
     defenses: list[text_type(2000)] = Field(max_length=30)
     disputeFocuses: list[text_type(1000)] = Field(max_length=20)
-    evidenceGroups: list[CivilEvidenceGroupV1] = Field(max_length=30)
-    fixedSpeeches: CivilFixedSpeechesV1
+    evidenceGroups: list[CivilEvidenceGroupV2] = Field(max_length=30)
+    segmentContents: list[CivilSegmentContentV2] = Field(max_length=2000)
 
 
-class CivilGenerationIssueV1(StrictModel):
+class CivilGenerationIssueV2(StrictModel):
     severity: Literal["blocking", "warning"]
     code: text_type(64)
     message: text_type(1000)
 
 
-class CivilCaseDraftGenerateResponseV1(StrictModel):
-    draft: CivilCaseDraftV1
-    issues: list[CivilGenerationIssueV1] = Field(max_length=100)
+class CivilCaseDraftGenerateResponseV2(StrictModel):
+    draft: CivilCaseDraftV2
+    issues: list[CivilGenerationIssueV2] = Field(max_length=100)

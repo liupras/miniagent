@@ -23,8 +23,8 @@ from app.runtime.agent.agent_factory import AgentNotFoundError
 from app.runtime.agent.execution import AgentExecution
 from app.runtime.llm.exceptions import ContextBudgetExceeded
 from app.schemas.integrations.virtual_court import (
-    CivilCaseDraftGenerateRequestV1,
-    CivilCaseDraftGenerateResponseV1,
+    CivilCaseDraftGenerateRequestV2,
+    CivilCaseDraftGenerateResponseV2,
 )
 from app.services.virtual_court import (
     CivilDraftConfigurationError,
@@ -39,56 +39,9 @@ from app.services.virtual_court import (
 
 ENDPOINT = "/api/v2/integrations/virtual-court/cases/civil/draft/generate"
 HEADERS = {"Authorization": "Bearer test-only"}
-REQUEST = {
-    "documents": [
-        {"name": "起诉材料.pdf", "text": "【PDF 第1页】\n原告林某请求赔偿经济损失20000元。"},
-        {"name": "答辩材料.docx", "text": "被告认为赔偿过高。"},
-        {"name": "费用.md", "text": "律师费票据金额6000元。"},
-    ],
-}
-RESPONSE = {
-    "draft": {
-        "causeOfAction": "著作权侵权纠纷",
-        "subjectMatter": "《山海鹿鸣》",
-        "summary": "原告请求赔偿，被告对金额有异议。",
-        "plaintiff": {"name": "林某", "entityType": "natural_person", "description": ""},
-        "defendant": {"name": "", "entityType": None, "description": ""},
-        "claims": [{
-            "category": "monetary_compensation",
-            "text": "赔偿经济损失20000元。",
-            "amount": {"totalAmountFen": 2000000, "components": [
-                {"name": "经济损失", "amountFen": 2000000}
-            ]},
-        }],
-        "defenses": ["赔偿过高"],
-        "disputeFocuses": ["赔偿金额"],
-        "evidenceGroups": [{
-            "side": "plaintiff",
-            "name": "费用摘录",
-            "proofPurpose": "证明律师费",
-            "materials": [{
-                "name": "律师费票据摘录",
-                "source": "原告提供",
-                "displayText": "律师费票据金额6000元。",
-            }],
-            "offerSpeech": "原告提交费用摘录。",
-            "crossSpeech": "被告请求核对原件。",
-        }],
-        "fixedSpeeches": {
-            "plaintiffClaim": "原告请求赔偿。",
-            "defendantAnswer": "被告认为赔偿过高。",
-            "plaintiffFocus": "原告坚持赔偿诉请。",
-            "defendantFocus": "被告争议赔偿金额。",
-            "plaintiffFinal": "请支持诉请。",
-            "defendantFinal": "请酌情认定。",
-        },
-    },
-    "issues": [{
-        "severity": "blocking",
-        "code": "DEFENDANT_NAME_MISSING",
-        "message": "答辩材料未写明被告名称。",
-    }],
-}
+FIXTURE = json.loads((Path(__file__).parent / "fixtures/civil_draft_v2/contract.json").read_text(encoding="utf-8"))
+REQUEST = FIXTURE["request"]
+RESPONSE = FIXTURE["response"]
 
 
 @pytest.fixture(autouse=True)
@@ -110,7 +63,7 @@ class ServiceStub:
         self.calls.append(body)
         if self.error:
             raise self.error
-        return CivilCaseDraftGenerateResponseV1.model_validate(RESPONSE)
+        return CivilCaseDraftGenerateResponseV2.model_validate(RESPONSE)
 
 
 def client(service=None):
@@ -144,10 +97,10 @@ def test_http_rejects_duplicate_json_keys_and_exposes_v1_schema():
     )
     assert response.status_code == 422
     schema = client().get("/openapi.json").json()
-    assert set(schema["components"]["schemas"]["CivilCaseDraftGenerateRequestV1"]["properties"]) == {
-        "documents"
+    assert set(schema["components"]["schemas"]["CivilCaseDraftGenerateRequestV2"]["properties"]) == {
+        "documents", "procedure"
     }
-    assert set(schema["components"]["schemas"]["CivilCaseDraftGenerateResponseV1"]["properties"]) == {
+    assert set(schema["components"]["schemas"]["CivilCaseDraftGenerateResponseV2"]["properties"]) == {
         "draft", "issues"
     }
 
@@ -204,7 +157,7 @@ class Factory:
 
 @pytest.mark.anyio
 async def test_service_uses_dedicated_agent_and_repairs_once():
-    request = CivilCaseDraftGenerateRequestV1.model_validate(REQUEST)
+    request = CivilCaseDraftGenerateRequestV2.model_validate(REQUEST)
     runner = Runner(["{}", json.dumps(RESPONSE, ensure_ascii=False)])
     factory = Factory(runner)
     result = await CivilDraftService(factory).generate(request)
@@ -218,7 +171,7 @@ async def test_service_uses_dedicated_agent_and_repairs_once():
 
 @pytest.mark.anyio
 async def test_service_timeout_context_and_missing_agent():
-    request = CivilCaseDraftGenerateRequestV1.model_validate(REQUEST)
+    request = CivilCaseDraftGenerateRequestV2.model_validate(REQUEST)
     with pytest.raises(CivilDraftTimeoutError):
         await CivilDraftService(Factory(Runner(["{}", "{}"], delay=0.03)), timeout_seconds=0.045).generate(request)
     with pytest.raises(CivilDraftContextError):
