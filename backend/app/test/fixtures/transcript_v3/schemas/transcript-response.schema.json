@@ -38,5 +38,5 @@
     "records"
   ],
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:virtual-court:transcript-v3:transcript-response:2026-09-28-transcript-v3-speech-organization"
+  "$id": "urn:virtual-court:transcript-v3:transcript-response:2026-11-04-transcript-v3-configured-names"
 }

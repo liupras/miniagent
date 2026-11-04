@@ -39,24 +39,21 @@
   "records": [
     {
       "sequence": 1,
-      "step_id": "OPEN-02",
-      "phase": "court_opening",
+      "stage_name": "开庭", "step_name": "开庭仪式", "segment_name": "宣布开庭",
       "role": "judge",
       "text": "现在，嗯，开庭。",
       "is_intervention": false
     },
     {
       "sequence": 2,
-      "step_id": "CLAIM-A",
-      "phase": "claims_and_defence",
+      "stage_name": "法庭调查", "step_name": "诉辩陈述", "segment_name": "原告诉讼请求与理由",
       "role": "plaintiff",
       "text": "请求判令被告停止侵权并赔偿经济损失。",
       "is_intervention": false
     },
     {
       "sequence": 3,
-      "step_id": "DEFENCE-A",
-      "phase": "claims_and_defence",
+      "stage_name": "法庭调查", "step_name": "诉辩陈述", "segment_name": "被告答辩",
       "role": "defendant",
       "text": "我方认为已经获得相关授权。",
       "is_intervention": false

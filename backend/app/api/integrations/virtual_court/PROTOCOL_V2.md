@@ -32,3 +32,7 @@
 错误使用统一 `IntegrationErrorResponse`：请求契约错误为 422，模型输出无效为 502，配置或上游不可用为 503，上游超时为 504。日志和审计记录使用不同的 `LawCheckV2`、`NextActionV2` 或路由名称区分调用，且不记录请求正文、模型原文、工具私密诊断、密钥或系统提示词。
 
 冻结 Schema 和样例位于 `app/test/fixtures/judge_v2_split_endpoints/`。
+
+## VirtualCourt 配置流程边界
+
+VirtualCourt 依据数据库中的环节类型决定何时调用调查接口，并负责阶段、步骤、环节的归属与推进。`next-action` 请求不携带固定步骤 ID 或阶段枚举；MiniAgent 仅根据当前请求中的案情、记录和允许动作返回建议。配置改名不改变接口契约。笔录单独使用 V3 名称字段协议。

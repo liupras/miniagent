@@ -34,6 +34,8 @@ def test_transcript_agent_prompt_and_runtime_limits_are_frozen():
         "sequence",
         "数量、sequence 和顺序必须与输入完全一致",
         "VirtualCourt 负责案件信息",
+        "数据库配置的庭审阶段、步骤、环节",
+        "不得套用内置民事阶段表",
         "不得补充输入中不存在",
         "不得把当事人主张改写为已经查明的事实",
         "只包含 records 字段",

@@ -89,3 +89,35 @@ def test_transcript_limits_match_frozen_metadata():
     limits = load("limits.json")
     assert TRANSCRIPT_MAX_CODEPOINTS == limits["transcript_max_codepoints"]
     assert TRANSCRIPT_RESPONSE_MAX_BYTES == limits["response_body_max_bytes"]
+
+
+@pytest.mark.parametrize("field,limit", [("stage_name", 256), ("step_name", 256), ("segment_name", 1024)])
+def test_record_names_are_required_nonblank_and_bounded(field, limit):
+    data = load("cases/transcript-speech-request.json")
+    record = data["records"][0]
+    for invalid in (None, "", "  ", "字" * (limit + 1)):
+        record[field] = invalid
+        with pytest.raises(ValidationError):
+            TranscriptGenerateRequestV3.model_validate(data)
+    record[field] = "😀" * limit
+    assert getattr(TranscriptGenerateRequestV3.model_validate(data).records[0], field) == record[field]
+    del record[field]
+    with pytest.raises(ValidationError):
+        TranscriptGenerateRequestV3.model_validate(data)
+
+
+def test_configured_names_are_not_civil_phase_enums_or_segment_ids():
+    data = load("cases/transcript-speech-request.json")
+    for index, record in enumerate(data["records"]):
+        record.update(stage_name="自定义调查阶段", step_name=f"自定义步骤{index}", segment_name="共同环节")
+    request = TranscriptGenerateRequestV3.model_validate(data)
+    assert all(record.segment_name == "共同环节" for record in request.records)
+    assert request.model_dump(mode="json") == data
+
+
+@pytest.mark.parametrize("legacy", [{"phase": "court_opening"}, {"step_id": "OPEN-02"}])
+def test_legacy_record_fields_are_rejected(legacy):
+    data = load("cases/transcript-speech-request.json")
+    data["records"][0].update(legacy)
+    with pytest.raises(ValidationError):
+        TranscriptGenerateRequestV3.model_validate(data)

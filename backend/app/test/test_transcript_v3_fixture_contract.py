@@ -50,7 +50,7 @@ def test_transcript_contract_is_independent_from_judge_context():
     transcript = load("schemas/transcript-request.schema.json")
     assert "case_context" not in transcript["properties"]
     assert set(transcript["properties"]["records"]["items"]["properties"]) == {
-        "sequence", "step_id", "phase", "role", "text", "is_intervention",
+        "sequence", "stage_name", "step_name", "segment_name", "role", "text", "is_intervention",
     }
 
 

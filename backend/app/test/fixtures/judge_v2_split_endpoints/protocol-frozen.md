@@ -7,7 +7,7 @@
 
 旧接口 `POST /api/v2/integrations/virtual-court/judge/decide` 已删除，不提供兼容入口。
 
-两个接口均使用 `Authorization: Bearer <token>` 鉴权，接受 UTF-8 JSON。请求体上限为 512 KiB，拒绝未知字段、重复 JSON 字段、非法枚举和超长内容。服务端总超时预算默认为 120 秒。
+两个接口均使用 `Authorization: Bearer <token>` 鉴权，令牌来自 `VIRTUAL_COURT_INTERNAL_SERVICE_TOKEN`，接受 UTF-8 JSON。请求体上限为 512 KiB，拒绝未知字段、重复 JSON 字段、非法枚举和超长内容。服务端总超时预算默认为 120 秒。
 
 ## 法律检查
 
@@ -20,7 +20,7 @@
 下一步动作接口只在调查阶段调用。请求包含允许动作、允许目标、案件上下文和相关记录，不再携带 `phase`。
 
 - 调查阶段仅允许 `ASK`、`COMPLETE`、`HANDOFF`。
-- 不允许 `NO_ACTION`、`EXPLAIN_LAW` 或其他阶段动作。
+- 不允许 `NO_ACTION` 或 `EXPLAIN_LAW`。
 - `ASK.target` 必须属于请求的 `allowed_targets`，其他动作的 `target` 必须为 `null`。
 
 该接口固定使用 `virtual_court_investigation_judge`，且不绑定法律检索工具。
@@ -31,4 +31,8 @@
 
 错误使用统一 `IntegrationErrorResponse`：请求契约错误为 422，模型输出无效为 502，配置或上游不可用为 503，上游超时为 504。日志和审计记录使用不同的 `LawCheckV2`、`NextActionV2` 或路由名称区分调用，且不记录请求正文、模型原文、工具私密诊断、密钥或系统提示词。
 
-冻结 Schema 和样例位于当前目录。
+冻结 Schema 和样例位于 `app/test/fixtures/judge_v2_split_endpoints/`。
+
+## VirtualCourt 配置流程边界
+
+VirtualCourt 依据数据库中的环节类型决定何时调用调查接口，并负责阶段、步骤、环节的归属与推进。`next-action` 请求不携带固定步骤 ID 或阶段枚举；MiniAgent 仅根据当前请求中的案情、记录和允许动作返回建议。配置改名不改变接口契约。笔录单独使用 V3 名称字段协议。

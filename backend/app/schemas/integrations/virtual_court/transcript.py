@@ -16,18 +16,6 @@ from .judge import (
 TRANSCRIPT_MAX_CODEPOINTS = 64000
 TRANSCRIPT_RESPONSE_MAX_BYTES = 524288
 TranscriptRole = Literal["judge", "clerk", "plaintiff", "defendant", "system"]
-TranscriptPhase = Literal[
-    "waiting",
-    "court_discipline",
-    "court_opening",
-    "identity_verification",
-    "rights_and_recusal",
-    "claims_and_defence",
-    "court_investigation",
-    "evidence_presentation",
-    "final_statements",
-    "adjournment",
-]
 
 
 class TranscriptCaseInfo(StrictModel):
@@ -50,8 +38,9 @@ class TranscriptParticipant(StrictModel):
 
 class TranscriptRecord(StrictModel):
     sequence: int = Field(ge=1, le=9223372036854775807)
-    step_id: text_type(128)
-    phase: TranscriptPhase
+    stage_name: text_type(256)
+    step_name: text_type(256)
+    segment_name: text_type(1024)
     role: TranscriptRole
     text: text_type(8000)
     is_intervention: bool

@@ -50,3 +50,8 @@ def test_next_action_contract_excludes_law_decisions():
     assert response_values == ["ASK", "COMPLETE", "HANDOFF"]
     assert "current_issue" not in request["properties"]
     assert "investigation_summary" not in request["properties"]["case_context"]["properties"]
+
+
+def test_protocol_snapshot_matches_the_current_document():
+    protocol = Path(__file__).parents[1] / "api/integrations/virtual_court/PROTOCOL_V2.md"
+    assert (ROOT / "protocol-frozen.md").read_bytes() == protocol.read_bytes()

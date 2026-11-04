@@ -140,7 +140,7 @@ class TranscriptService:
 
     @staticmethod
     def _build_agent_query(request):
-        # Fixed case metadata, participants, roles, phases and ordering remain
+        # Fixed case metadata, participants, roles, configured stage/step/segment names and ordering remain
         # authoritative in VirtualCourt. The model receives only speeches to edit.
         data = {
             "records": [

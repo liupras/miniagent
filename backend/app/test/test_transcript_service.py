@@ -41,11 +41,11 @@ def request(**changes):
         }],
         "records": [
             {
-                "sequence": 1, "step_id": "OPEN-02", "phase": "court_opening",
+                "sequence": 1, "stage_name": "开庭", "step_name": "开庭仪式", "segment_name": "宣布开庭",
                 "role": "judge", "text": "现在开庭。", "is_intervention": False,
             },
             {
-                "sequence": 2, "step_id": "CLAIM-A", "phase": "claims_and_defence",
+                "sequence": 2, "stage_name": "法庭调查", "step_name": "诉辩陈述", "segment_name": "原告诉讼请求与理由",
                 "role": "plaintiff", "text": "请求停止侵权。", "is_intervention": False,
             },
         ],

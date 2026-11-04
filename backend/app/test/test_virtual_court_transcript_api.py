@@ -201,3 +201,25 @@ def test_route_logs_metadata_but_not_payloads():
     assert "[TranscriptV3]" in source
     assert "material_codepoints" in source
     assert "model_dump_json" not in source
+
+
+@pytest.mark.parametrize("legacy_field", ["phase", "step_id"])
+def test_legacy_record_fields_are_rejected_before_generation(legacy_field):
+    service = TranscriptServiceStub()
+    body = load("cases/transcript-speech-request.json")
+    body["records"][0][legacy_field] = "legacy"
+    response = client(service).post(ENDPOINT, headers=HEADERS, json=body)
+    assert response.status_code == 422
+    assert service.requests == []
+
+
+def test_arbitrary_configured_names_pass_through_without_regrouping():
+    service = TranscriptServiceStub()
+    body = load("cases/transcript-speech-request.json")
+    for index, record in enumerate(body["records"]):
+        record.update(stage_name="自定义阶段", step_name=f"步骤{index}", segment_name="同名环节")
+    response = client(service).post(ENDPOINT, headers=HEADERS, json=body)
+    assert response.status_code == 200
+    assert [item.sequence for item in service.requests[0].records] == [1, 2, 3]
+    assert all(item.stage_name == "自定义阶段" for item in service.requests[0].records)
+    assert all(item.segment_name == "同名环节" for item in service.requests[0].records)

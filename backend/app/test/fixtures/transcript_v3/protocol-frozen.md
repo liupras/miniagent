@@ -4,7 +4,7 @@
 
 `POST /api/v3/integrations/virtual-court/transcript/generate` 不再让 AI 生成整份庭审笔录。
 
-- VirtualCourt 负责案件基本信息、到庭人员、发言人、阶段、步骤、顺序、章节和最终文本渲染。
+- VirtualCourt 负责案件基本信息、到庭人员、发言人、阶段、步骤、环节、顺序、章节和最终文本渲染。
 - MiniAgent 只整理每条已提交发言的 `text`。
 - AI 不接收 `case_info` 和 `participants`；它只接收从请求提取的 `sequence + text`。
 - 返回记录必须与请求逐条、同序对应，不能增加、遗漏、合并、拆分或改写 `sequence`。
@@ -34,11 +34,14 @@
 `records` 沿用 `TrialSpeechRecord` 命名：
 
 - `sequence`：严格递增的正整数；
-- `step_id`：VirtualCourt 步骤 ID；
-- `phase`：VirtualCourt 庭审阶段稳定值；
+- `stage_name`：数据库配置的阶段名称，非空，最多 256 个 Unicode 码点；
+- `step_name`：步骤名称，非空，最多 256 个 Unicode 码点；
+- `segment_name`：环节名称，非空，最多 1024 个 Unicode 码点；
 - `role`：`judge`、`clerk`、`plaintiff`、`defendant` 或 `system`；
 - `text`：非空，最多 8000 个 Unicode 码点；
 - `is_intervention`：是否为临时插问。
+
+名称按当前流程原样传递，不设阶段枚举。不同步骤可以包含同名环节，以“步骤名称 + 环节名称”定位。旧字段 `phase`、`step_id` 和其他未知字段一律返回 422，不作兼容转换。
 
 请求最多 512 条记录，全部字符串内容总量最多 64000 个 Unicode 码点，请求体最多 512 KiB。不得以摘要替换最终笔录所需的原始发言。
 
@@ -59,7 +62,7 @@
 
 ## 4. AI 整理规则
 
-AI 只可整理标点、明显语气词、口吃和不改变原意的口语重复。不得生成固定笔录信息，不得改变发言人、阶段、顺序或事实含义，不得新增主张、证据、法律依据或结论。
+AI 只可整理标点、明显语气词、口吃和不改变原意的口语重复。不得生成固定笔录信息，不得改变发言人、阶段、步骤、环节、顺序或事实含义，不得新增主张、证据、法律依据或结论。
 
 固定案件信息和人员信息由接口严格校验，但在调用 Agent 前剔除。模型输入只包含：
 

@@ -29,7 +29,7 @@ def request():
             "display_name": "张某某", "description": "独任审判员",
         }],
         "records": [{
-            "sequence": 1, "step_id": "OPEN-02", "phase": "court_opening",
+            "sequence": 1, "stage_name": "开庭", "step_name": "开庭仪式", "segment_name": "宣布开庭",
             "role": "judge", "text": "现在，嗯，开庭。", "is_intervention": False,
         }],
     })
