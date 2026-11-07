@@ -17,10 +17,10 @@
     "procedure": {
       "phases": [
         {
-          "name": "身份核对",
+          "name": "开庭",
           "steps": [
             {
-              "name": "核对身份与案件",
+              "name": "开庭程序",
               "type": "sequence",
               "segments": [
                 {
@@ -28,18 +28,7 @@
                   "speakerRole": "judge",
                   "contentSource": "case",
                   "instruction": "根据案件当事人、案由和法院信息生成核对到庭及宣布审理的台词。"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "权利告知",
-          "steps": [
-            {
-              "name": "诉讼权利告知",
-              "type": "sequence",
-              "segments": [
+                },
                 {
                   "name": "宣布审判人员和诉讼权利",
                   "speakerRole": "judge",
@@ -51,10 +40,10 @@
           ]
         },
         {
-          "name": "诉辩陈述",
+          "name": "法庭调查",
           "steps": [
             {
-              "name": "诉辩陈述",
+              "name": "诉辩与焦点",
               "type": "sequence",
               "segments": [
                 {
@@ -68,46 +57,12 @@
                   "speakerRole": "defendant",
                   "contentSource": "case",
                   "instruction": "根据答辩状和证据，按被告立场陈述答辩意见；材料未提供的立场不得补造。"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "争议焦点",
-          "steps": [
-            {
-              "name": "争议焦点确认",
-              "type": "sequence",
-              "segments": [
+                },
                 {
                   "name": "归纳争议焦点",
                   "speakerRole": "judge",
                   "contentSource": "case",
                   "instruction": "根据诉请和答辩意见归纳本案争议焦点，并询问双方是否听清。"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "举证质证",
-          "steps": [
-            {
-              "name": "举证与质证",
-              "type": "evidenceGroupLoop",
-              "segments": [
-                {
-                  "name": "{举证方}举证：{证据组名称}",
-                  "speakerRole": "offeringParty",
-                  "contentSource": "caseEvidence",
-                  "instruction": "说明本组证据材料和证明目的。"
-                },
-                {
-                  "name": "{质证方}质证：{证据组名称}",
-                  "speakerRole": "opposingParty",
-                  "contentSource": "caseEvidence",
-                  "instruction": "针对本组证据说明认可或异议及理由。"
                 }
               ]
             }
@@ -191,46 +146,34 @@
       ],
       "segmentContents": [
         {
-          "stepName": "核对身份与案件",
+          "stepName": "开庭程序",
           "segmentName": "核对到庭与案件",
           "speakerRole": "judge",
           "text": "现在根据案件材料核对本环节。"
         },
         {
-          "stepName": "诉讼权利告知",
+          "stepName": "开庭程序",
           "segmentName": "宣布审判人员和诉讼权利",
           "speakerRole": "judge",
           "text": "现在根据案件材料核对本环节。"
         },
         {
-          "stepName": "诉辩陈述",
+          "stepName": "诉辩与焦点",
           "segmentName": "原告诉讼请求与理由",
           "speakerRole": "plaintiff",
           "text": "原告请求赔偿。"
         },
         {
-          "stepName": "诉辩陈述",
+          "stepName": "诉辩与焦点",
           "segmentName": "被告答辩",
           "speakerRole": "defendant",
           "text": "被告认为赔偿过高。"
         },
         {
-          "stepName": "争议焦点确认",
+          "stepName": "诉辩与焦点",
           "segmentName": "归纳争议焦点",
           "speakerRole": "judge",
           "text": "现在根据案件材料核对本环节。"
-        },
-        {
-          "stepName": "举证与质证",
-          "segmentName": "原告举证：费用摘录",
-          "speakerRole": "plaintiff",
-          "text": "原告提交费用摘录。"
-        },
-        {
-          "stepName": "举证与质证",
-          "segmentName": "被告质证：费用摘录",
-          "speakerRole": "defendant",
-          "text": "被告请求核对原件。"
         },
         {
           "stepName": "最后陈述",

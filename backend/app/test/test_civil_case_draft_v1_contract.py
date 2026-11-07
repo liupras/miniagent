@@ -1,4 +1,4 @@
-"""Civil draft V2: configurable named segment contract (no V1 compatibility)."""
+"""Civil draft contract: fixed segments and reviewable evidence materials."""
 import copy
 import json
 from pathlib import Path
@@ -16,8 +16,9 @@ def validate(payload):
 
 def test_named_segments_cover_requested_procedure():
     result = validate(RESPONSE)
-    assert len(result.draft.segmentContents) == 9
+    assert len(result.draft.segmentContents) == 7
     assert result.draft.segmentContents[-1].speakerRole == "defendant"
+    assert result.draft.evidenceGroups[0].materials[0].displayText
 
 @pytest.mark.parametrize("mutation", ["missing", "duplicate", "extra", "role", "rename"])
 def test_rejects_wrong_segment_association(mutation):
@@ -46,15 +47,21 @@ def test_duplicate_group_and_old_speech_fields_are_rejected():
     payload = copy.deepcopy(RESPONSE)
     payload["draft"]["evidenceGroups"] *= 2
     with pytest.raises(CivilDraftInvalidResponseError): validate(payload)
-    for key in ("fixedSpeeches", "inquiryAnswers"):
+    for key in ("fixedSpeeches", "inquiryAnswers", "demoScript"):
         payload = copy.deepcopy(RESPONSE)
         payload["draft"][key] = {}
         with pytest.raises(ValidationError): CivilCaseDraftGenerateResponseV2.model_validate(payload)
     payload = copy.deepcopy(RESPONSE)
     payload["draft"]["evidenceGroups"][0]["offerSpeech"] = "old"
     with pytest.raises(ValidationError): CivilCaseDraftGenerateResponseV2.model_validate(payload)
+    payload = copy.deepcopy(RESPONSE)
+    payload["draft"]["evidenceGroups"][0]["materials"][0]["displayText"] = ""
+    with pytest.raises(ValidationError): CivilCaseDraftGenerateResponseV2.model_validate(payload)
+    payload = copy.deepcopy(RESPONSE)
+    payload["draft"]["evidenceGroups"][0]["materials"][0]["source"] = ""
+    with pytest.raises(ValidationError): CivilCaseDraftGenerateResponseV2.model_validate(payload)
 
-@pytest.mark.parametrize("mutation", ["no_procedure", "duplicate_step", "duplicate_segment", "bad_role", "bad_source", "bad_template"])
+@pytest.mark.parametrize("mutation", ["no_procedure", "duplicate_step", "duplicate_segment", "bad_role", "bad_source", "bad_template", "evidence_loop"])
 def test_request_configuration_is_validated(mutation):
     payload = copy.deepcopy(REQUEST)
     step = payload["procedure"]["phases"][0]["steps"][0]
@@ -63,6 +70,7 @@ def test_request_configuration_is_validated(mutation):
     elif mutation == "duplicate_segment": step["segments"].append(copy.deepcopy(step["segments"][0]))
     elif mutation == "bad_role": step["segments"][0]["speakerRole"] = "offeringParty"
     elif mutation == "bad_source": step["segments"][0]["contentSource"] = "caseEvidence"
+    elif mutation == "evidence_loop": step["type"] = "evidenceGroupLoop"
     else: step["segments"][0]["name"] = "{未知模板}"
     with pytest.raises(ValidationError): CivilCaseDraftGenerateRequestV2.model_validate(payload)
 

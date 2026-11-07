@@ -24,14 +24,14 @@ class CivilSourceDocumentV2(StrictModel):
 
 class CivilSegmentRequirementV2(StrictModel):
     name: text_type(256)
-    speakerRole: Literal["judge", "clerk", "plaintiff", "defendant", "offeringParty", "opposingParty"]
-    contentSource: Literal["case", "caseEvidence"]
+    speakerRole: Literal["judge", "plaintiff", "defendant"]
+    contentSource: Literal["case"]
     instruction: text_type(4000)
 
 
 class CivilProcedureStepV2(StrictModel):
     name: text_type(256)
-    type: Literal["sequence", "evidenceGroupLoop"]
+    type: Literal["sequence"]
     segments: list[CivilSegmentRequirementV2] = Field(min_length=1, max_length=100)
 
     @model_validator(mode="after")
@@ -40,15 +40,7 @@ class CivilProcedureStepV2(StrictModel):
         if len(names) != len(set(names)):
             raise ValueError("duplicate segment name")
         for item in self.segments:
-            name = item.name
-            if self.type == "sequence":
-                if item.contentSource != "case" or item.speakerRole in ("offeringParty", "opposingParty"):
-                    raise ValueError("sequence segment source or role")
-            else:
-                if item.contentSource != "caseEvidence":
-                    raise ValueError("evidence segment source")
-                name = name.replace("{举证方}", "").replace("{质证方}", "").replace("{证据组名称}", "")
-            if " / " in name or "{" in name or "}" in name:
+            if " / " in item.name or "{" in item.name or "}" in item.name:
                 raise ValueError("reserved name characters")
         return self
 
@@ -115,7 +107,7 @@ class CivilClaimV2(StrictModel):
 
 class CivilEvidenceMaterialV2(StrictModel):
     name: text_type(256)
-    source: str = Field(max_length=512)
+    source: text_type(512)
     displayText: text_type(4000)
 
 
@@ -129,7 +121,7 @@ class CivilEvidenceGroupV2(StrictModel):
 class CivilSegmentContentV2(StrictModel):
     stepName: text_type(256)
     segmentName: text_type(1024)
-    speakerRole: Literal["judge", "clerk", "plaintiff", "defendant"]
+    speakerRole: Literal["judge", "plaintiff", "defendant"]
     text: str = Field(max_length=8000)
 
 

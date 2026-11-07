@@ -30,7 +30,7 @@ def validate_civil_draft_agent_output(raw_output, request=None):
 
 
 def validate_segment_coverage(response, request):
-    """Match the expanded requested names and roles, without positional guesses."""
+    """Match requested fixed-step names and roles, without positional guesses."""
     expected = {}
     groups = response.draft.evidenceGroups
     group_keys = [(item.side, item.name) for item in groups]
@@ -39,22 +39,10 @@ def validate_segment_coverage(response, request):
     for phase in request.procedure.phases:
         for step in phase.steps:
             for segment in step.segments:
-                targets = groups if step.type == "evidenceGroupLoop" else [None]
-                for group in targets:
-                    name, role = segment.name, segment.speakerRole
-                    if group is not None:
-                        offering = group.side
-                        opposing = "defendant" if offering == "plaintiff" else "plaintiff"
-                        name = name.replace("{举证方}", "原告" if offering == "plaintiff" else "被告")
-                        name = name.replace("{质证方}", "原告" if opposing == "plaintiff" else "被告")
-                        name = name.replace("{证据组名称}", group.name)
-                        role = offering if role == "offeringParty" else opposing if role == "opposingParty" else role
-                    if " / " in name or "{" in name or "}" in name:
-                        raise ValueError("expanded segment name contains reserved characters")
-                    key = (step.name, name)
-                    if key in expected:
-                        raise ValueError("expanded segment names collide")
-                    expected[key] = role
+                key = (step.name, segment.name)
+                if key in expected:
+                    raise ValueError("segment names collide")
+                expected[key] = segment.speakerRole
     seen = set()
     blocking = any(item.severity == "blocking" for item in response.issues)
     for item in response.draft.segmentContents:

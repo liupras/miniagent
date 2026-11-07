@@ -89,7 +89,7 @@ def test_http_contract_and_internal_authentication():
     assert len(service.calls) == 1
 
 
-def test_http_rejects_duplicate_json_keys_and_exposes_v1_schema():
+def test_http_rejects_duplicate_json_keys_and_exposes_current_schema():
     response = client().post(
         ENDPOINT,
         headers=HEADERS,
@@ -103,6 +103,10 @@ def test_http_rejects_duplicate_json_keys_and_exposes_v1_schema():
     assert set(schema["components"]["schemas"]["CivilCaseDraftGenerateResponseV2"]["properties"]) == {
         "draft", "issues"
     }
+
+    legacy = copy.deepcopy(REQUEST)
+    legacy["procedure"]["phases"][0]["steps"][0]["type"] = "evidenceGroupLoop"
+    assert client().post(ENDPOINT, headers=HEADERS, json=legacy).status_code == 422
 
 
 @pytest.mark.parametrize("error,status,code,retryable", [
