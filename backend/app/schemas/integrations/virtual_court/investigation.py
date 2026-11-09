@@ -165,8 +165,16 @@ class ParticipantIntentRequest(InvestigationInput):
             raise ValueError("decision_revision mismatch")
         if self.participant_id not in {item.participantId for item in self.case_context.participants}:
             raise ValueError("participant_id not found")
-        if self.investigation.status != "ready":
-            raise ValueError("intent requires ready state")
+        if self.investigation.status == "completed":
+            raise ValueError("intent requires active investigation")
+        turn = self.investigation.activeTurn
+        if turn is not None:
+            if turn.kind == "summary":
+                raise ValueError("intent is closed after summary submission")
+            if turn.speakerId == self.participant_id:
+                raise ValueError("current speaker must use speech endpoint")
+            if turn.kind == "question" and turn.targetParticipantId == self.participant_id:
+                raise ValueError("question target already has a reserved answer turn")
         return self
 
 

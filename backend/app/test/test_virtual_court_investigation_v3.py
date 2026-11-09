@@ -76,6 +76,19 @@ def intent_request():
     return ParticipantIntentRequest.model_validate(data)
 
 
+def active_intent_request(status="presenting"):
+    data = base() | {"decision_revision": 2, "participant_id": "d"}
+    data["investigation"] = data["investigation"] | {
+        "status": status,
+        "activeTurn": {
+            "turnId": "turn_1", "speakerId": "p", "kind": "present_evidence",
+            "taskText": "出示图片记录。", "topicId": "t", "evidenceGroupId": "e",
+            "replyToTurnId": None, "targetParticipantId": None,
+        },
+    }
+    return data
+
+
 def speech_request():
     data = base() | {"turn_id": "turn_2", "participant_id": "d"}
     data["investigation"] = data["investigation"] | {
@@ -136,6 +149,41 @@ def test_frozen_shapes_and_reference_validation():
         }), duplicate_request)
 
 
+def test_intent_can_follow_committed_speech_without_taking_the_floor():
+    for status in ("presenting", "awaiting_speech"):
+        request = ParticipantIntentRequest.model_validate(active_intent_request(status))
+        assert request.participant_id == "d"
+        assert request.investigation.activeTurn.speakerId == "p"
+        assert request.records[-1].turnId == "turn_1"
+    with pytest.raises(ValidationError):
+        ParticipantIntentRequest.model_validate(active_intent_request() | {"participant_id": "p"})
+
+    question = active_intent_request()
+    question["investigation"]["activeTurn"] = {
+        "turnId": "turn_2", "speakerId": "judge", "kind": "question",
+        "taskText": "请说明图片来源。", "topicId": "t", "evidenceGroupId": "e",
+        "replyToTurnId": None, "targetParticipantId": "d",
+    }
+    question["records"].append({
+        "sequence": 2, "speakerId": "judge", "turnId": "turn_2",
+        "kind": "question", "text": "请说明图片来源。",
+        "topicId": "t", "evidenceGroupId": "e",
+    })
+    with pytest.raises(ValidationError):
+        ParticipantIntentRequest.model_validate(question)
+    question["participant_id"] = "p"
+    assert ParticipantIntentRequest.model_validate(question).participant_id == "p"
+
+    summary = active_intent_request()
+    summary["investigation"]["activeTurn"]["kind"] = "summary"
+    with pytest.raises(ValidationError):
+        ParticipantIntentRequest.model_validate(summary)
+    completed = base() | {"decision_revision": 2, "participant_id": "d"}
+    completed["investigation"]["status"] = "completed"
+    with pytest.raises(ValidationError):
+        ParticipantIntentRequest.model_validate(completed)
+
+
 def test_new_agents_have_separate_prompts_and_no_tools():
     seed = Path(__file__).parents[1] / "infra/db/seed"
     agents = json.loads((seed / "agent.json").read_text(encoding="utf-8"))
@@ -144,6 +192,9 @@ def test_new_agents_have_separate_prompts_and_no_tools():
     rows = [item for item in agents if item["name"] in names]
     assert len(rows) == 3
     assert len({item["system_prompt"] for item in rows}) == 3
+    intent_prompt = next(item["system_prompt"] for item in rows if item["name"].endswith("participant_intent"))
+    assert "awaiting_speech" in intent_prompt and "presenting" in intent_prompt
+    assert "末项是最新已提交的公共发言" in intent_prompt
     assert all(item["is_active"] for item in rows)
     assert not any(item["_agent_name"] in names for item in relations)
     assert {"virtual_court_investigation_judge", "virtual_court_party_responder"} <= {
@@ -231,6 +282,7 @@ def client():
 def test_http_routes_auth_body_and_response_shapes():
     calls = (
         ("participant/intent", intent_request().model_dump(mode="json"), "pass"),
+        ("participant/intent", active_intent_request(), "pass"),
         ("participant/speech", speech_request().model_dump(mode="json"), None),
         ("judge/next-action", judge_request().model_dump(mode="json"), "handoff"),
     )
