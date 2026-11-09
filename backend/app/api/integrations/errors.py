@@ -44,17 +44,18 @@ from app.services.virtual_court import (
     PartyReplyServiceError,
     PartyReplyTimeoutError,
     PartyReplyUnavailableError,
-    CivilDraftConfigurationError,
-    CivilDraftContextError,
-    CivilDraftInvalidResponseError,
-    CivilDraftServiceError,
-    CivilDraftTimeoutError,
-    CivilDraftUnavailableError,
+    CaseDraftConfigurationError,
+    CaseDraftContextError,
+    CaseDraftInvalidResponseError,
+    CaseDraftServiceError,
+    CaseDraftTimeoutError,
+    CaseDraftUnavailableError,
 )
 
 
 logger = get_logger(__name__)
 INTEGRATION_PATH_PREFIXES = (
+    "/api/v1/integrations/",
     "/api/v2/integrations/",
     "/api/v3/integrations/",
 )
@@ -277,26 +278,26 @@ async def party_reply_service_error_handler(
     )
 
 
-async def civil_draft_service_error_handler(
+async def case_draft_service_error_handler(
     request: Request,
-    exc: CivilDraftServiceError,
+    exc: CaseDraftServiceError,
 ) -> JSONResponse:
-    if isinstance(exc, CivilDraftContextError):
+    if isinstance(exc, CaseDraftContextError):
         code, retryable = IntegrationErrorCode.INVALID_REQUEST, False
-    elif isinstance(exc, CivilDraftConfigurationError):
+    elif isinstance(exc, CaseDraftConfigurationError):
         code, retryable = IntegrationErrorCode.SERVICE_UNAVAILABLE, False
-    elif isinstance(exc, CivilDraftUnavailableError):
+    elif isinstance(exc, CaseDraftUnavailableError):
         code, retryable = IntegrationErrorCode.SERVICE_UNAVAILABLE, True
-    elif isinstance(exc, CivilDraftTimeoutError):
+    elif isinstance(exc, CaseDraftTimeoutError):
         code, retryable = IntegrationErrorCode.UPSTREAM_TIMEOUT, True
-    elif isinstance(exc, CivilDraftInvalidResponseError):
+    elif isinstance(exc, CaseDraftInvalidResponseError):
         code, retryable = IntegrationErrorCode.MODEL_RESPONSE_INVALID, True
     else:
         code, retryable = IntegrationErrorCode.INTERNAL_ERROR, False
 
     method, path, client, request_id = _request_log_context(request)
     logger.warning(
-        "[VirtualCourt] civil draft request failed: method={}, path={}, status={}, "
+        "[VirtualCourt] case draft request failed: method={}, path={}, status={}, "
         "error_code={}, exception={}, diagnostic_params={}, cause_type={}, "
         "client={}, request_id={}",
         method,
@@ -360,8 +361,8 @@ def register_integration_exception_handlers(app: FastAPI) -> None:
         party_reply_service_error_handler,
     )
     app.add_exception_handler(
-        CivilDraftServiceError,
-        civil_draft_service_error_handler,
+        CaseDraftServiceError,
+        case_draft_service_error_handler,
     )
     app.add_exception_handler(
         RequestValidationError,

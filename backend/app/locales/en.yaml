@@ -73,13 +73,13 @@ party_reply:
   context_too_large: Complete party reply context exceeds model capacity; reduce it explicitly before retrying.
   invalid_response: Party reply agent returned an invalid response
 
-civil_draft:
-  failed: Civil case draft generation failed
-  configuration_error: Civil case draft service is configured incorrectly
-  unavailable: Civil case draft service is temporarily unavailable
-  timeout: "Civil case draft generation timed out after {timeout} seconds"
-  context_too_large: Source materials exceed model capacity; reduce the materials and retry.
-  invalid_response: Civil case draft agent returned an invalid response
+case_draft:
+  failed: Case draft generation failed
+  configuration_error: Case draft service is configured incorrectly
+  unavailable: Case draft service is temporarily unavailable
+  timeout: "Case draft generation timed out after {timeout} seconds"
+  context_too_large: Source materials and contract exceed model capacity; reduce them and retry.
+  invalid_response: Case draft agent returned an invalid response
 
 domain_plugin:
   error: Knowledge-domain plugin initialization failed

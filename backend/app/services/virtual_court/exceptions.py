@@ -138,30 +138,30 @@ class PartyReplyContextError(PartyReplyServiceError):
     error_key = "party_reply.context_too_large"
 
 
-class CivilDraftServiceError(BaseDomainError):
-    """Base class for expected civil draft generation failures."""
+class CaseDraftServiceError(BaseDomainError):
+    """Base class for expected case draft generation failures."""
 
-    error_key = "civil_draft.failed"
+    error_key = "case_draft.failed"
 
     def __init__(self, *, params: dict | None = None, cause: BaseException | None = None) -> None:
         super().__init__(params=params, cause=cause)
 
 
-class CivilDraftConfigurationError(CivilDraftServiceError):
-    error_key = "civil_draft.configuration_error"
+class CaseDraftConfigurationError(CaseDraftServiceError):
+    error_key = "case_draft.configuration_error"
 
 
-class CivilDraftUnavailableError(CivilDraftServiceError):
-    error_key = "civil_draft.unavailable"
+class CaseDraftUnavailableError(CaseDraftServiceError):
+    error_key = "case_draft.unavailable"
 
 
-class CivilDraftTimeoutError(CivilDraftServiceError):
-    error_key = "civil_draft.timeout"
+class CaseDraftTimeoutError(CaseDraftServiceError):
+    error_key = "case_draft.timeout"
 
 
-class CivilDraftInvalidResponseError(CivilDraftServiceError):
-    error_key = "civil_draft.invalid_response"
+class CaseDraftInvalidResponseError(CaseDraftServiceError):
+    error_key = "case_draft.invalid_response"
 
 
-class CivilDraftContextError(CivilDraftServiceError):
-    error_key = "civil_draft.context_too_large"
+class CaseDraftContextError(CaseDraftServiceError):
+    error_key = "case_draft.context_too_large"
