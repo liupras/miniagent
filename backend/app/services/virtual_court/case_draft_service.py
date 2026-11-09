@@ -68,7 +68,8 @@ class CaseDraftService:
                     ]
                     query = (
                         "上次输出未通过 JSON 契约校验。请核对原始材料，"
-                        "只输出包含 draft 和 issues 的完整 JSON。校验错误："
+                        "只输出包含 draft 和 issues 的完整 JSON。issues 每项仅含 severity、code、message；"
+                        "code 必须匹配 ^[A-Z][A-Z0-9_]{0,63}$，不要使用中文或小写字母。校验错误："
                         + json.dumps(invalid.params, ensure_ascii=False)
                     )
         except TimeoutError as exc:

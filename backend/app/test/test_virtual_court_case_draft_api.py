@@ -174,6 +174,7 @@ async def test_service_uses_generic_agent_and_repairs_once():
     assert runner.calls[0]["preserve_context"] is True
     assert json.loads(runner.calls[0]["query"]) == REQUEST
     assert runner.calls[1]["history"][0]["content"] == runner.calls[0]["query"]
+    assert "^[A-Z][A-Z0-9_]{0,63}$" in runner.calls[1]["query"]
 
 
 @pytest.mark.anyio
@@ -202,6 +203,7 @@ def test_seed_adds_generic_agent_without_overwriting_tuned_model():
     assert row["is_active"] is True
     assert "draftContract" in row["system_prompt"]
     assert "只输出包含 draft 和 issues" in row["system_prompt"]
+    assert "^[A-Z][A-Z0-9_]{0,63}$" in row["system_prompt"]
     engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     try:
