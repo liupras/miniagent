@@ -12,3 +12,8 @@ from .transcript import (
 )
 from .party_reply import PartyReplyRequestV1, PartyReplyResponseV1
 from .case_draft import CaseDraftGenerateRequestV1, CaseDraftGenerateResponseV1
+from .investigation import (
+    ParticipantIntentRequest, ParticipantIntentResponse,
+    ParticipantSpeechRequest, ParticipantSpeechResponse,
+    JudgeNextActionRequest, JudgeNextActionResponse,
+)

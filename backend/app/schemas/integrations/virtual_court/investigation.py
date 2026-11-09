@@ -238,7 +238,7 @@ class InviteParticipant(StrictModel):
     type: Literal["invite_participant"]
     participantId: Id
     speechKind: SpeechKind
-    taskText: Text
+    taskText: Annotated[str, Field(min_length=1, max_length=1000, pattern=r"\S")]
     topicId: Id | None
     evidenceGroupId: Id | None
     replyToTurnId: Id | None = None

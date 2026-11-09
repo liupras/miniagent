@@ -165,3 +165,32 @@ class CaseDraftInvalidResponseError(CaseDraftServiceError):
 
 class CaseDraftContextError(CaseDraftServiceError):
     error_key = "case_draft.context_too_large"
+
+
+class InvestigationServiceError(BaseDomainError):
+    """Expected failure of a unified investigation Agent call."""
+
+    error_key = "investigation.failed"
+
+    def __init__(self, *, params: dict | None = None, cause: BaseException | None = None) -> None:
+        super().__init__(params=params, cause=cause)
+
+
+class InvestigationConfigurationError(InvestigationServiceError):
+    error_key = "investigation.configuration_error"
+
+
+class InvestigationUnavailableError(InvestigationServiceError):
+    error_key = "investigation.unavailable"
+
+
+class InvestigationTimeoutError(InvestigationServiceError):
+    error_key = "investigation.timeout"
+
+
+class InvestigationInvalidResponseError(InvestigationServiceError):
+    error_key = "investigation.invalid_response"
+
+
+class InvestigationContextError(InvestigationServiceError):
+    error_key = "investigation.context_too_large"

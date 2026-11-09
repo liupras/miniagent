@@ -42,6 +42,12 @@ from app.services.virtual_court import (
     CaseDraftServiceError,
     CaseDraftTimeoutError,
     CaseDraftUnavailableError,
+    InvestigationServiceError,
+    InvestigationConfigurationError,
+    InvestigationContextError,
+    InvestigationInvalidResponseError,
+    InvestigationTimeoutError,
+    InvestigationUnavailableError,
 )
 
 
@@ -74,6 +80,12 @@ _HTTP_STATUS_BY_ERROR_TYPE: tuple[tuple[type[BaseDomainError], int], ...] = (
     (CaseDraftConfigurationError, 503),
     (CaseDraftUnavailableError, 503),
     (CaseDraftServiceError, 500),
+    (InvestigationContextError, 422),
+    (InvestigationTimeoutError, 504),
+    (InvestigationInvalidResponseError, 502),
+    (InvestigationConfigurationError, 503),
+    (InvestigationUnavailableError, 503),
+    (InvestigationServiceError, 500),
     (NotFoundError, 404),
     (AlreadyExistsError, 409),
     (UnsupportedMediaTypeError, 415),

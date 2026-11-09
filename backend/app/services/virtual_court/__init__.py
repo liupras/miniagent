@@ -31,6 +31,12 @@ from .next_action_service import NextActionService
 from .transcript_service import TranscriptService
 from .party_reply_service import PartyReplyService
 from .case_draft_service import CaseDraftService
+from .investigation_service import InvestigationAgentService
+from .exceptions import (
+    InvestigationServiceError, InvestigationConfigurationError,
+    InvestigationUnavailableError, InvestigationTimeoutError,
+    InvestigationInvalidResponseError, InvestigationContextError,
+)
 from .response_validator import (
     validate_law_check_agent_output,
     validate_next_action_agent_output,
@@ -74,4 +80,11 @@ __all__ = [
     "validate_next_action_agent_output",
     "validate_transcript_agent_output",
     "validate_party_reply_agent_output",
+    "InvestigationAgentService",
+    "InvestigationServiceError",
+    "InvestigationConfigurationError",
+    "InvestigationUnavailableError",
+    "InvestigationTimeoutError",
+    "InvestigationInvalidResponseError",
+    "InvestigationContextError",
 ]

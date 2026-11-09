@@ -500,6 +500,9 @@ class DatabaseManager:
                         "virtual_court_transcript_writer",
                         "virtual_court_party_responder",
                         "virtual_court_case_draft_generator",
+                        "virtual_court_investigation_participant_intent",
+                        "virtual_court_investigation_participant_speech",
+                        "virtual_court_investigation_judge_dispatch",
                     }
                 ),
             )
@@ -513,6 +516,9 @@ class DatabaseManager:
             "virtual_court_transcript_writer",
             "virtual_court_party_responder",
             "virtual_court_case_draft_generator",
+            "virtual_court_investigation_participant_intent",
+            "virtual_court_investigation_participant_speech",
+            "virtual_court_investigation_judge_dispatch",
         }
         if existing is None and row["name"] == "virtual_court_investigation_judge":
             existing = db.query(Agent).filter_by(name="virtual_court_solo_judge").first()
