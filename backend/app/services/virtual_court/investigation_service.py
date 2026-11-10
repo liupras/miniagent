@@ -49,7 +49,10 @@ class InvestigationAgentService:
 
     async def _run(self, operation, request):
         agent_name, validator = self.AGENTS[operation]
-        business_query = json.dumps(request.model_dump(mode="json"), ensure_ascii=False)
+        business_query = json.dumps(
+            request.model_dump(mode="json", exclude_unset=operation == "judge"),
+            ensure_ascii=False,
+        )
         try:
             async with asyncio.timeout(self._timeout_seconds):
                 runner = await self._agent_factory.get_runner_by_name(agent_name)

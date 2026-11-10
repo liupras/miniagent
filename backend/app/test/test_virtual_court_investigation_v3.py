@@ -137,7 +137,7 @@ def test_frozen_shapes_and_reference_validation():
         validate_judge_output('{"investigation_id":"inv_1","decision_revision":2,"decision":"action","action":{"type":"close_investigation","text":"总结。"}}', judge_request())
     with pytest.raises(ValidationError):
         ParticipantIntentRequest.model_validate(base() | {"decision_revision": 1, "participant_id": "d"})
-    pending = judge_request().model_dump(mode="json")
+    pending = judge_request().model_dump(mode="json", exclude_unset=True)
     pending["participant_id"] = "d"
     duplicate_request = ParticipantIntentRequest.model_validate(pending)
     with pytest.raises(InvestigationInvalidResponseError):
@@ -147,6 +147,59 @@ def test_frozen_shapes_and_reference_validation():
             "reason": "回应图片来源。", "topic_id": "t", "evidence_group_id": "e",
             "reply_to_turn_id": "turn_1",
         }), duplicate_request)
+
+
+def test_judge_consultation_uses_same_contract_and_agent():
+    assert InvestigationAgentService.AGENTS["judge"][0] == "virtual_court_investigation_judge_dispatch"
+    request = judge_request().model_dump(mode="json", exclude_unset=True) | {"scope": "request", "request_id": "req_1"}
+    selected = JudgeNextActionRequest.model_validate(request)
+    advice = validate_judge_output(json.dumps({
+        "investigation_id": "inv_1", "decision_revision": 2, "scope": "request",
+        "decision": "action", "action": {"type": "grant_request", "requestId": "req_1"},
+    }), selected)
+    assert advice.action.requestId == "req_1"
+    assert validate_judge_output(json.dumps({
+        "investigation_id": "inv_1", "decision_revision": 2, "scope": "request",
+        "decision": "defer", "reason": "先核对记录。",
+    }), selected).decision == "defer"
+    for bad in (
+        {"scope": "next", "decision": "action", "action": {"type": "grant_request", "requestId": "req_1"}},
+        {"scope": "request", "decision": "action", "action": {"type": "grant_request", "requestId": "req_other"}},
+        {"scope": "request", "decision": "action", "action": {"type": "close_investigation", "text": "总结。"}},
+        {"scope": "next", "decision": "defer", "reason": "稍后。"},
+        {"decision": "handoff", "reason": "稍后。"},
+    ):
+        with pytest.raises(InvestigationInvalidResponseError):
+            validate_judge_output(json.dumps({
+                "investigation_id": "inv_1", "decision_revision": 2, **bad,
+            }), selected)
+    with pytest.raises(ValidationError):
+        JudgeNextActionRequest.model_validate(request | {"request_id": "missing"})
+    with pytest.raises(ValidationError):
+        JudgeNextActionRequest.model_validate(request | {"scope": "next"})
+    with pytest.raises(InvestigationInvalidResponseError):
+        validate_judge_output(json.dumps({
+            "investigation_id": "inv_1", "decision_revision": 2, "scope": "request",
+            "decision": "handoff", "reason": "稍后。",
+        }), judge_request())
+    next_request = JudgeNextActionRequest.model_validate(
+        judge_request().model_dump(mode="json", exclude_unset=True) | {"scope": "next"}
+    )
+    assert validate_judge_output(json.dumps({
+        "investigation_id": "inv_1", "decision_revision": 2, "scope": "next",
+        "decision": "action", "action": {
+            "type": "ask_participant", "participantId": "d", "text": "请说明来源。",
+            "topicId": "t", "evidenceGroupId": "e",
+        },
+    }), next_request).action.participantId == "d"
+    summary = base() | {"decision_revision": 2, "scope": "summary"}
+    summary_request = JudgeNextActionRequest.model_validate(summary)
+    assert validate_judge_output(json.dumps({
+        "investigation_id": "inv_1", "decision_revision": 2, "scope": "summary",
+        "decision": "action", "action": {"type": "close_investigation", "text": "双方对来源仍有争议。"},
+    }), summary_request).action.type == "close_investigation"
+    with pytest.raises(ValidationError):
+        JudgeNextActionRequest.model_validate(summary | {"investigation": request["investigation"]})
 
 
 def test_intent_can_follow_committed_speech_without_taking_the_floor():
@@ -195,6 +248,9 @@ def test_new_agents_have_separate_prompts_and_no_tools():
     intent_prompt = next(item["system_prompt"] for item in rows if item["name"].endswith("participant_intent"))
     assert "awaiting_speech" in intent_prompt and "presenting" in intent_prompt
     assert "末项是最新已提交的公共发言" in intent_prompt
+    judge_prompt = next(item["system_prompt"] for item in rows if item["name"].endswith("judge_dispatch"))
+    assert "scope=request" in judge_prompt and "scope=next" in judge_prompt
+    assert "scope=summary" in judge_prompt and "AI 自动主持" in judge_prompt
     assert all(item["is_active"] for item in rows)
     assert not any(item["_agent_name"] in names for item in relations)
     assert {"virtual_court_investigation_judge", "virtual_court_party_responder"} <= {
@@ -267,6 +323,7 @@ class Stub:
     async def next_action(self, body):
         return JudgeNextActionResponse(investigation_id=body.investigation_id,
                                        decision_revision=body.decision_revision,
+                                       **({"scope": body.scope} if body.scope else {}),
                                        decision="handoff", reason="需要人工核对。")
 
 
@@ -284,7 +341,9 @@ def test_http_routes_auth_body_and_response_shapes():
         ("participant/intent", intent_request().model_dump(mode="json"), "pass"),
         ("participant/intent", active_intent_request(), "pass"),
         ("participant/speech", speech_request().model_dump(mode="json"), None),
-        ("judge/next-action", judge_request().model_dump(mode="json"), "handoff"),
+        ("judge/next-action", judge_request().model_dump(mode="json", exclude_unset=True), "handoff"),
+        ("judge/next-action", judge_request().model_dump(mode="json", exclude_unset=True) |
+         {"scope": "request", "request_id": "req_1"}, "handoff"),
     )
     with client() as http:
         for path, body, decision in calls:
@@ -298,6 +357,10 @@ def test_http_routes_auth_body_and_response_shapes():
                 assert set(response.json()) == {"investigation_id", "decision_revision", "decision"}
             if decision == "handoff":
                 assert "action" not in response.json()
+                if "scope" in body:
+                    assert response.json()["scope"] == body["scope"]
+                else:
+                    assert "scope" not in response.json()
         duplicate = b'{"investigation_id":"inv_1","investigation_id":"inv_1"}'
         response = http.post(PREFIX + "/investigation/participant/intent", headers=HEADERS, content=duplicate)
         assert response.status_code == 422

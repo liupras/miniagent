@@ -94,9 +94,25 @@ def validate_judge_output(raw, request):
     if (response.investigation_id != request.investigation_id or
             response.decision_revision != request.decision_revision):
         _invalid("decision_revision")
+    if request.scope is None:
+        if "scope" in response.model_fields_set or response.decision == "defer":
+            _invalid("scope")
+    elif response.scope != request.scope or "scope" not in response.model_fields_set:
+        _invalid("scope")
     if response.decision == "handoff":
         return response
+    if response.decision == "defer":
+        return response
     action = response.action
+    allowed = {
+        "request": ("grant_request", "reject_request"),
+        "next": ("invite_participant", "ask_participant"),
+        "summary": ("close_investigation",),
+    }
+    if request.scope is not None and action.type not in allowed[request.scope]:
+        _invalid("action.type")
+    if request.scope == "request" and action.requestId != request.request_id:
+        _invalid("action.requestId")
     context = request.case_context
     participants = {item.participantId for item in context.participants}
     pending = {item.requestId for item in request.investigation.pendingRequests}

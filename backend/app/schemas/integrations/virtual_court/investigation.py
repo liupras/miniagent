@@ -194,11 +194,24 @@ class ParticipantSpeechRequest(InvestigationInput):
 
 class JudgeNextActionRequest(InvestigationInput):
     decision_revision: Revision
+    scope: Literal["request", "next", "summary"] | None = None
+    request_id: Id | None = None
 
     @model_validator(mode="after")
     def judge_state(self):
         if self.decision_revision != self.investigation.decisionRevision or self.investigation.status != "ready":
             raise ValueError("judge decision requires current ready revision")
+        if self.scope is None and "scope" in self.model_fields_set:
+            raise ValueError("automatic judge request must omit scope")
+        if self.scope == "request":
+            if self.request_id is None or self.request_id not in {
+                item.requestId for item in self.investigation.pendingRequests
+            }:
+                raise ValueError("consultation requires selected pending request")
+        elif "request_id" in self.model_fields_set:
+            raise ValueError("request_id requires request scope")
+        if self.scope == "summary" and self.investigation.pendingRequests:
+            raise ValueError("summary requires empty pending requests")
         return self
 
 
@@ -283,7 +296,8 @@ JudgeAction = Annotated[Union[GrantRequest, RejectRequest, InviteParticipant, As
 class JudgeNextActionResponse(StrictModel):
     investigation_id: Id
     decision_revision: Revision
-    decision: Literal["action", "handoff"]
+    scope: Literal["request", "next", "summary"] | None = None
+    decision: Literal["action", "defer", "handoff"]
     action: JudgeAction | None = None
     reason: Reason | None = None
 
@@ -294,4 +308,6 @@ class JudgeNextActionResponse(StrictModel):
             raise ValueError("action decision requires action only")
         if self.decision == "handoff" and (self.reason is None or "action" in supplied):
             raise ValueError("handoff requires reason only")
+        if self.decision == "defer" and (self.scope != "request" or self.reason is None or "action" in supplied):
+            raise ValueError("defer requires request scope and reason only")
         return self
