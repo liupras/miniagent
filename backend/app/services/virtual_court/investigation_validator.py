@@ -117,7 +117,8 @@ def validate_judge_output(raw, request):
     participants = {item.participantId for item in context.participants}
     pending = {item.requestId for item in request.investigation.pendingRequests}
     topics = {item.topicId for item in context.topics}
-    groups = {item.evidenceGroupId for item in context.evidenceGroups}
+    group_order = [item.evidenceGroupId for item in context.evidenceGroups]
+    groups = set(group_order)
     if action.type in ("grant_request", "reject_request"):
         if action.requestId not in pending:
             _invalid("action.requestId")
@@ -130,17 +131,19 @@ def validate_judge_output(raw, request):
     elif action.type == "ask_participant":
         if action.participantId not in participants:
             _invalid("action.participantId")
-        if action.topicId is not None and action.topicId not in topics:
+        if action.topicId != request.investigation.currentTopicId:
             _invalid("action.topicId")
-        if action.evidenceGroupId is not None and action.evidenceGroupId not in groups:
-            _invalid("action.evidenceGroupId")
     elif action.type == "set_context":
-        if action.topicId is not None and action.topicId not in topics:
+        if action.topicId not in topics:
             _invalid("action.topicId")
-        if action.evidenceGroupId is not None and action.evidenceGroupId not in groups:
-            _invalid("action.evidenceGroupId")
+        if (len(action.evidenceGroupIds) != len(set(action.evidenceGroupIds)) or
+                any(item not in groups for item in action.evidenceGroupIds) or
+                action.evidenceGroupIds != [
+                    item for item in group_order if item in action.evidenceGroupIds
+                ]):
+            _invalid("action.evidenceGroupIds")
         if (action.topicId == request.investigation.currentTopicId and
-                action.evidenceGroupId == request.investigation.currentEvidenceGroupId):
+                action.evidenceGroupIds == request.investigation.currentEvidenceGroupIds):
             _invalid("action")
     elif action.type == "close_investigation" and pending:
         _invalid("action")

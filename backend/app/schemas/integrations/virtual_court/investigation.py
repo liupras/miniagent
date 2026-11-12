@@ -1,4 +1,4 @@
-"""V1 contracts for the unified investigation Agent APIs."""
+"""Contracts for the unified investigation Agent APIs."""
 
 from typing import Annotated, Literal, Union
 
@@ -78,6 +78,7 @@ class ActiveTurn(StrictModel):
     taskText: Annotated[str, Field(max_length=8000)]
     topicId: Id | None
     evidenceGroupId: Id | None
+    contextEvidenceGroupIds: list[Id]
     replyToTurnId: Id | None
     targetParticipantId: Id | None
 
@@ -87,7 +88,7 @@ class InvestigationState(StrictModel):
     status: Literal["ready", "awaiting_speech", "presenting", "completed"]
     decisionRevision: Revision
     currentTopicId: Id | None
-    currentEvidenceGroupId: Id | None
+    currentEvidenceGroupIds: list[Id]
     pendingRequests: list[FloorRequest]
     activeTurn: ActiveTurn | None
 
@@ -106,6 +107,7 @@ class Record(StrictModel):
     text: Text
     topicId: Id | None
     evidenceGroupId: Id | None
+    contextEvidenceGroupIds: list[Id]
 
 
 class InvestigationInput(StrictModel):
@@ -120,13 +122,20 @@ class InvestigationInput(StrictModel):
             raise ValueError("investigation_id mismatch")
         participants = {item.participantId for item in self.case_context.participants}
         topics = {item.topicId for item in self.case_context.topics}
-        evidence = {item.evidenceGroupId for item in self.case_context.evidenceGroups}
+        evidence_order = [item.evidenceGroupId for item in self.case_context.evidenceGroups]
+        evidence = set(evidence_order)
         def refs(topic, group):
             if topic is not None and topic not in topics:
                 raise ValueError("unknown topicId")
             if group is not None and group not in evidence:
                 raise ValueError("unknown evidenceGroupId")
-        refs(self.investigation.currentTopicId, self.investigation.currentEvidenceGroupId)
+        def focus(ids):
+            if len(ids) != len(set(ids)) or any(item not in evidence for item in ids):
+                raise ValueError("invalid contextEvidenceGroupIds")
+            if ids != [item for item in evidence_order if item in ids]:
+                raise ValueError("evidence context must follow case order")
+        refs(self.investigation.currentTopicId, None)
+        focus(self.investigation.currentEvidenceGroupIds)
         turns = [item.turnId for item in self.records]
         if len(turns) != len(set(turns)):
             raise ValueError("duplicate record turnId")
@@ -137,6 +146,9 @@ class InvestigationInput(StrictModel):
             if item.speakerId != "judge" and item.speakerId not in participants:
                 raise ValueError("unknown record speakerId")
             refs(item.topicId, item.evidenceGroupId)
+            focus(item.contextEvidenceGroupIds)
+            if item.evidenceGroupId is not None and item.evidenceGroupId not in item.contextEvidenceGroupIds:
+                raise ValueError("record evidence missing from context")
         for item in self.investigation.pendingRequests:
             if item.participantId not in participants:
                 raise ValueError("unknown request participantId")
@@ -150,6 +162,9 @@ class InvestigationInput(StrictModel):
             if turn.targetParticipantId is not None and turn.targetParticipantId not in participants:
                 raise ValueError("unknown targetParticipantId")
             refs(turn.topicId, turn.evidenceGroupId)
+            focus(turn.contextEvidenceGroupIds)
+            if turn.evidenceGroupId is not None and turn.evidenceGroupId not in turn.contextEvidenceGroupIds:
+                raise ValueError("turn evidence missing from context")
             if turn.replyToTurnId is not None and turn.replyToTurnId not in turns:
                 raise ValueError("unknown turn replyToTurnId")
         return self
@@ -270,20 +285,12 @@ class AskParticipant(StrictModel):
     participantId: Id
     text: Text
     topicId: Id | None
-    evidenceGroupId: Id | None
 
 
 class SetContext(StrictModel):
     type: Literal["set_context"]
-    topicId: Id | None
-    evidenceGroupId: Id | None
-
-    @model_validator(mode="after")
-    def nonempty(self):
-        if self.topicId is None and self.evidenceGroupId is None:
-            raise ValueError("context requires topic or evidence")
-        return self
-
+    topicId: Id
+    evidenceGroupIds: list[Id]
 
 class CloseInvestigation(StrictModel):
     type: Literal["close_investigation"]
