@@ -66,7 +66,7 @@ def base():
         "records": [
             {"sequence": 1, "speakerId": "p", "turnId": "turn_1",
              "kind": "present_evidence", "text": "出示图片记录。",
-             "topicId": "t", "evidenceGroupId": "e",
+             "topicId": "t", "evidenceGroupIds": ["e"],
              "contextEvidenceGroupIds": ["e"]}
         ],
     }
@@ -83,7 +83,7 @@ def active_intent_request(status="presenting"):
         "status": status,
         "activeTurn": {
             "turnId": "turn_1", "speakerId": "p", "kind": "present_evidence",
-            "taskText": "出示图片记录。", "topicId": "t", "evidenceGroupId": "e",
+            "taskText": "出示图片记录。", "topicId": "t", "evidenceGroupIds": ["e"],
             "contextEvidenceGroupIds": ["e"],
             "replyToTurnId": None, "targetParticipantId": None,
         },
@@ -96,7 +96,7 @@ def speech_request():
     data["investigation"] = data["investigation"] | {
         "status": "awaiting_speech", "activeTurn": {
             "turnId": "turn_2", "speakerId": "d", "kind": "respond",
-            "taskText": "回应图片来源。", "topicId": "t", "evidenceGroupId": "e",
+            "taskText": "回应图片来源。", "topicId": "t", "evidenceGroupIds": ["e"],
             "contextEvidenceGroupIds": ["e"],
             "replyToTurnId": "turn_1", "targetParticipantId": None,
         },
@@ -258,14 +258,14 @@ def test_intent_can_follow_committed_speech_without_taking_the_floor():
     question = active_intent_request()
     question["investigation"]["activeTurn"] = {
         "turnId": "turn_2", "speakerId": "judge", "kind": "question",
-        "taskText": "请说明图片来源。", "topicId": "t", "evidenceGroupId": "e",
+        "taskText": "请说明图片来源。", "topicId": "t", "evidenceGroupIds": ["e"],
         "contextEvidenceGroupIds": ["e"],
         "replyToTurnId": None, "targetParticipantId": "d",
     }
     question["records"].append({
         "sequence": 2, "speakerId": "judge", "turnId": "turn_2",
         "kind": "question", "text": "请说明图片来源。",
-        "topicId": "t", "evidenceGroupId": "e",
+        "topicId": "t", "evidenceGroupIds": ["e"],
         "contextEvidenceGroupIds": ["e"],
     })
     with pytest.raises(ValidationError):
@@ -418,3 +418,37 @@ def test_http_routes_auth_body_and_response_shapes():
         response = http.post(PREFIX + "/investigation/participant/intent", headers=HEADERS, content=oversized)
         assert response.status_code == 422
         assert response.json()["error"]["details"]["reason"] == "body_size"
+
+
+def test_multi_evidence_turn_and_examination():
+    data = base()
+    data["case_context"]["evidenceGroups"].append({
+        "evidenceGroupId": "e2", "offeringParticipantId": "p",
+        "name": "第二组图片记录", "proofPurpose": "证明使用范围。",
+        "materials": ["另一页截图。"],
+    })
+    data["records"][0]["evidenceGroupIds"] = ["e", "e2"]
+    data["records"][0]["contextEvidenceGroupIds"] = ["e", "e2"]
+    data["investigation"]["currentEvidenceGroupIds"] = ["e", "e2"]
+    intent = ParticipantIntentRequest.model_validate(
+        data | {"decision_revision": 2, "participant_id": "d"}
+    )
+    assert validate_intent_output(json.dumps({
+        "investigation_id": "inv_1", "decision_revision": 2,
+        "decision": "request", "speech_kind": "examine_evidence",
+        "reason": "质证第二组证据。", "topic_id": "t",
+        "evidence_group_id": "e2", "reply_to_turn_id": None,
+    }), intent).evidence_group_id == "e2"
+    judge = JudgeNextActionRequest.model_validate(data | {"decision_revision": 2})
+    assert validate_judge_output(json.dumps({
+        "investigation_id": "inv_1", "decision_revision": 2,
+        "decision": "action", "action": {
+            "type": "invite_participant", "participantId": "d",
+            "speechKind": "examine_evidence", "taskText": "质证两组证据。",
+            "topicId": "t", "evidenceGroupIds": ["e", "e2"],
+        },
+    }), judge).action.evidenceGroupIds == ["e", "e2"]
+    bad = json.loads(json.dumps(data))
+    bad["records"][0]["evidenceGroupIds"] = ["e2", "e"]
+    with pytest.raises(ValidationError):
+        JudgeNextActionRequest.model_validate(bad | {"decision_revision": 2})

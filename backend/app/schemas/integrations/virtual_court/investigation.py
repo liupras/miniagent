@@ -77,7 +77,7 @@ class ActiveTurn(StrictModel):
     kind: TurnKind
     taskText: Annotated[str, Field(max_length=8000)]
     topicId: Id | None
-    evidenceGroupId: Id | None
+    evidenceGroupIds: list[Id]
     contextEvidenceGroupIds: list[Id]
     replyToTurnId: Id | None
     targetParticipantId: Id | None
@@ -106,7 +106,7 @@ class Record(StrictModel):
     kind: TurnKind
     text: Text
     topicId: Id | None
-    evidenceGroupId: Id | None
+    evidenceGroupIds: list[Id]
     contextEvidenceGroupIds: list[Id]
 
 
@@ -145,9 +145,10 @@ class InvestigationInput(StrictModel):
         for item in self.records:
             if item.speakerId != "judge" and item.speakerId not in participants:
                 raise ValueError("unknown record speakerId")
-            refs(item.topicId, item.evidenceGroupId)
+            refs(item.topicId, None)
+            focus(item.evidenceGroupIds)
             focus(item.contextEvidenceGroupIds)
-            if item.evidenceGroupId is not None and item.evidenceGroupId not in item.contextEvidenceGroupIds:
+            if not set(item.evidenceGroupIds) <= set(item.contextEvidenceGroupIds):
                 raise ValueError("record evidence missing from context")
         for item in self.investigation.pendingRequests:
             if item.participantId not in participants:
@@ -161,9 +162,10 @@ class InvestigationInput(StrictModel):
                 raise ValueError("unknown turn speakerId")
             if turn.targetParticipantId is not None and turn.targetParticipantId not in participants:
                 raise ValueError("unknown targetParticipantId")
-            refs(turn.topicId, turn.evidenceGroupId)
+            refs(turn.topicId, None)
+            focus(turn.evidenceGroupIds)
             focus(turn.contextEvidenceGroupIds)
-            if turn.evidenceGroupId is not None and turn.evidenceGroupId not in turn.contextEvidenceGroupIds:
+            if not set(turn.evidenceGroupIds) <= set(turn.contextEvidenceGroupIds):
                 raise ValueError("turn evidence missing from context")
             if turn.replyToTurnId is not None and turn.replyToTurnId not in turns:
                 raise ValueError("unknown turn replyToTurnId")
@@ -276,7 +278,7 @@ class InviteParticipant(StrictModel):
     speechKind: SpeechKind
     taskText: Annotated[str, Field(min_length=1, max_length=1000, pattern=r"\S")]
     topicId: Id | None
-    evidenceGroupId: Id | None
+    evidenceGroupIds: list[Id]
     replyToTurnId: Id | None = None
 
 

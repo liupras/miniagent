@@ -51,7 +51,7 @@ def _references(request, *, participant, kind, topic, evidence, reply):
             _invalid("evidenceGroupId")
     if kind == "examine_evidence":
         if (evidence is None or groups[evidence].offeringParticipantId == participant or
-                not any(item.kind == "present_evidence" and item.evidenceGroupId == evidence for item in request.records)):
+                not any(item.kind == "present_evidence" and evidence in item.evidenceGroupIds for item in request.records)):
             _invalid("evidenceGroupId")
     if kind == "respond" and reply not in records:
         _invalid("replyToTurnId")
@@ -125,9 +125,15 @@ def validate_judge_output(raw, request):
     elif action.type == "invite_participant":
         if action.participantId not in participants:
             _invalid("action.participantId")
-        _references(request, participant=action.participantId,
-                    kind=action.speechKind, topic=action.topicId,
-                    evidence=action.evidenceGroupId, reply=action.replyToTurnId)
+        if (len(action.evidenceGroupIds) != len(set(action.evidenceGroupIds)) or
+                action.evidenceGroupIds != [
+                    item for item in group_order if item in action.evidenceGroupIds
+                ]):
+            _invalid("action.evidenceGroupIds")
+        for evidence_id in action.evidenceGroupIds or [None]:
+            _references(request, participant=action.participantId,
+                        kind=action.speechKind, topic=action.topicId,
+                        evidence=evidence_id, reply=action.replyToTurnId)
     elif action.type == "ask_participant":
         if action.participantId not in participants:
             _invalid("action.participantId")
