@@ -67,7 +67,7 @@ def base():
             {"sequence": 1, "speakerId": "p", "turnId": "turn_1",
              "kind": "present_evidence", "text": "出示图片记录。",
              "topicId": "t", "evidenceGroupIds": ["e"],
-             "contextEvidenceGroupIds": ["e"]}
+             "contextEvidenceGroupIds": ["e"], "sourceRequestId": None}
         ],
     }
 
@@ -85,7 +85,7 @@ def active_intent_request(status="presenting"):
             "turnId": "turn_1", "speakerId": "p", "kind": "present_evidence",
             "taskText": "出示图片记录。", "topicId": "t", "evidenceGroupIds": ["e"],
             "contextEvidenceGroupIds": ["e"],
-            "replyToTurnId": None, "targetParticipantId": None,
+            "replyToTurnId": None, "targetParticipantId": None, "sourceRequestId": None,
         },
     }
     return data
@@ -98,7 +98,7 @@ def speech_request():
             "turnId": "turn_2", "speakerId": "d", "kind": "respond",
             "taskText": "回应图片来源。", "topicId": "t", "evidenceGroupIds": ["e"],
             "contextEvidenceGroupIds": ["e"],
-            "replyToTurnId": "turn_1", "targetParticipantId": None,
+            "replyToTurnId": "turn_1", "targetParticipantId": None, "sourceRequestId": None,
         },
     }
     return ParticipantSpeechRequest.model_validate(data)
@@ -109,7 +109,9 @@ def judge_request():
     data["investigation"] = data["investigation"] | {
         "pendingRequests": [{"requestId": "req_1", "participantId": "d",
                              "speechKind": "respond", "reason": "回应图片来源。",
-                             "topicId": "t", "evidenceGroupId": "e",
+                             "topicId": "t", "evidenceGroupIds": ["e"],
+                             "pendingEvidenceGroupIds": ["e"], "grantedEvidenceGroupIds": [],
+                             "rejectedEvidenceGroupIds": [],
                              "replyToTurnId": "turn_1"}]
     }
     return JudgeNextActionRequest.model_validate(data)
@@ -120,14 +122,14 @@ def test_frozen_shapes_and_reference_validation():
     response = validate_intent_output(json.dumps({
         "investigation_id": "inv_1", "decision_revision": 2,
         "decision": "request", "speech_kind": "examine_evidence",
-        "reason": "质证图片记录。", "topic_id": "t", "evidence_group_id": "e",
+        "reason": "质证图片记录。", "topic_id": "t", "evidence_group_ids": ["e"],
         "reply_to_turn_id": None,
     }), intent)
     assert response.speech_kind == "examine_evidence"
     assert validate_speech_output('{"investigation_id":"inv_1","turn_id":"turn_2","speech":"我方回应。"}', speech_request()).turn_id == "turn_2"
-    assert validate_judge_output('{"investigation_id":"inv_1","decision_revision":2,"decision":"action","action":{"type":"grant_request","requestId":"req_1"}}', judge_request()).action.requestId == "req_1"
+    assert validate_judge_output('{"investigation_id":"inv_1","decision_revision":2,"decision":"action","action":{"type":"grant_request","requestId":"req_1","evidenceGroupIds":["e"]}}', judge_request()).action.requestId == "req_1"
     for raw in (
-        '{"investigation_id":"inv_1","decision_revision":2,"decision":"request","speech_kind":"examine_evidence","reason":"质证。","topic_id":"t","evidence_group_id":"invented","reply_to_turn_id":null}',
+        '{"investigation_id":"inv_1","decision_revision":2,"decision":"request","speech_kind":"examine_evidence","reason":"质证。","topic_id":"t","evidence_group_ids":["invented"],"reply_to_turn_id":null}',
         '{"investigation_id":"inv_1","decision_revision":2,"decision":"pass","reason":null}',
         '{"investigation_id":"inv_1","decision_revision":2,"decision":"pass","decision":"request"}',
         '{"investigation_id":"other","decision_revision":2,"decision":"pass"}',
@@ -135,7 +137,7 @@ def test_frozen_shapes_and_reference_validation():
         with pytest.raises(InvestigationInvalidResponseError):
             validate_intent_output(raw, intent)
     with pytest.raises(InvestigationInvalidResponseError):
-        validate_judge_output('{"investigation_id":"inv_1","decision_revision":2,"decision":"action","action":{"type":"grant_request","requestId":"invented"}}', judge_request())
+        validate_judge_output('{"investigation_id":"inv_1","decision_revision":2,"decision":"action","action":{"type":"grant_request","requestId":"invented","evidenceGroupIds":["e"]}}', judge_request())
     with pytest.raises(InvestigationInvalidResponseError):
         validate_judge_output('{"investigation_id":"inv_1","decision_revision":2,"decision":"action","action":{"type":"close_investigation","text":"总结。"}}', judge_request())
     with pytest.raises(ValidationError):
@@ -147,7 +149,7 @@ def test_frozen_shapes_and_reference_validation():
         validate_intent_output(json.dumps({
             "investigation_id": "inv_1", "decision_revision": 2,
             "decision": "request", "speech_kind": "respond",
-            "reason": "回应图片来源。", "topic_id": "t", "evidence_group_id": "e",
+            "reason": "回应图片来源。", "topic_id": "t", "evidence_group_ids": ["e"],
             "reply_to_turn_id": "turn_1",
         }), duplicate_request)
 
@@ -199,7 +201,7 @@ def test_judge_consultation_uses_same_contract_and_agent():
     selected = JudgeNextActionRequest.model_validate(request)
     advice = validate_judge_output(json.dumps({
         "investigation_id": "inv_1", "decision_revision": 2, "scope": "request",
-        "decision": "action", "action": {"type": "grant_request", "requestId": "req_1"},
+        "decision": "action", "action": {"type": "grant_request", "requestId": "req_1", "evidenceGroupIds": ["e"]},
     }), selected)
     assert advice.action.requestId == "req_1"
     assert validate_judge_output(json.dumps({
@@ -207,8 +209,8 @@ def test_judge_consultation_uses_same_contract_and_agent():
         "decision": "defer", "reason": "先核对记录。",
     }), selected).decision == "defer"
     for bad in (
-        {"scope": "next", "decision": "action", "action": {"type": "grant_request", "requestId": "req_1"}},
-        {"scope": "request", "decision": "action", "action": {"type": "grant_request", "requestId": "req_other"}},
+        {"scope": "next", "decision": "action", "action": {"type": "grant_request", "requestId": "req_1", "evidenceGroupIds": ["e"]}},
+        {"scope": "request", "decision": "action", "action": {"type": "grant_request", "requestId": "req_other", "evidenceGroupIds": ["e"]}},
         {"scope": "request", "decision": "action", "action": {"type": "close_investigation", "text": "总结。"}},
         {"scope": "next", "decision": "defer", "reason": "稍后。"},
         {"decision": "handoff", "reason": "稍后。"},
@@ -260,13 +262,13 @@ def test_intent_can_follow_committed_speech_without_taking_the_floor():
         "turnId": "turn_2", "speakerId": "judge", "kind": "question",
         "taskText": "请说明图片来源。", "topicId": "t", "evidenceGroupIds": ["e"],
         "contextEvidenceGroupIds": ["e"],
-        "replyToTurnId": None, "targetParticipantId": "d",
+        "replyToTurnId": None, "targetParticipantId": "d", "sourceRequestId": None,
     }
     question["records"].append({
         "sequence": 2, "speakerId": "judge", "turnId": "turn_2",
         "kind": "question", "text": "请说明图片来源。",
         "topicId": "t", "evidenceGroupIds": ["e"],
-        "contextEvidenceGroupIds": ["e"],
+        "contextEvidenceGroupIds": ["e"], "sourceRequestId": None,
     })
     with pytest.raises(ValidationError):
         ParticipantIntentRequest.model_validate(question)
@@ -335,7 +337,7 @@ async def test_three_distinct_agents_and_one_repair():
     cases = (
         ("intent", intent_request(), '{"investigation_id":"inv_1","decision_revision":2,"decision":"pass"}', "virtual_court_investigation_participant_intent"),
         ("speech", speech_request(), '{"investigation_id":"inv_1","turn_id":"turn_2","speech":"我方回应。"}', "virtual_court_investigation_participant_speech"),
-        ("next_action", judge_request(), '{"investigation_id":"inv_1","decision_revision":2,"decision":"action","action":{"type":"grant_request","requestId":"req_1"}}', "virtual_court_investigation_judge_dispatch"),
+        ("next_action", judge_request(), '{"investigation_id":"inv_1","decision_revision":2,"decision":"action","action":{"type":"grant_request","requestId":"req_1","evidenceGroupIds":["e"]}}', "virtual_court_investigation_judge_dispatch"),
     )
     for method, request, output, expected_name in cases:
         runner = Runner([AgentExecution("{}"), AgentExecution(output)])
@@ -437,8 +439,8 @@ def test_multi_evidence_turn_and_examination():
         "investigation_id": "inv_1", "decision_revision": 2,
         "decision": "request", "speech_kind": "examine_evidence",
         "reason": "质证第二组证据。", "topic_id": "t",
-        "evidence_group_id": "e2", "reply_to_turn_id": None,
-    }), intent).evidence_group_id == "e2"
+        "evidence_group_ids": ["e2"], "reply_to_turn_id": None,
+    }), intent).evidence_group_ids == ["e2"]
     judge = JudgeNextActionRequest.model_validate(data | {"decision_revision": 2})
     assert validate_judge_output(json.dumps({
         "investigation_id": "inv_1", "decision_revision": 2,
@@ -452,3 +454,96 @@ def test_multi_evidence_turn_and_examination():
     bad["records"][0]["evidenceGroupIds"] = ["e2", "e"]
     with pytest.raises(ValidationError):
         JudgeNextActionRequest.model_validate(bad | {"decision_revision": 2})
+
+
+
+def test_multi_evidence_request_and_partial_judge_decisions():
+    data = base()
+    data["case_context"]["evidenceGroups"].extend([
+        {"evidenceGroupId": "e2", "offeringParticipantId": "p",
+         "name": "第二组", "proofPurpose": "证明范围。", "materials": []},
+        {"evidenceGroupId": "e3", "offeringParticipantId": "p",
+         "name": "第三组", "proofPurpose": "证明时间。", "materials": []},
+    ])
+    request = ParticipantIntentRequest.model_validate(
+        data | {"decision_revision": 2, "participant_id": "p"})
+    output = {
+        "investigation_id": "inv_1", "decision_revision": 2,
+        "decision": "request", "speech_kind": "present_evidence",
+        "reason": "出示三组材料。", "topic_id": "t",
+        "evidence_group_ids": ["e", "e2", "e3"], "reply_to_turn_id": None,
+    }
+    assert validate_intent_output(json.dumps(output), request).evidence_group_ids == ["e", "e2", "e3"]
+    for ids in ([], ["e2", "e"], ["e", "e"], ["missing"]):
+        with pytest.raises(InvestigationInvalidResponseError):
+            validate_intent_output(json.dumps(output | {"evidence_group_ids": ids}), request)
+
+    data["investigation"]["pendingRequests"] = [{
+        "requestId": "req_multi", "participantId": "p",
+        "speechKind": "present_evidence", "reason": "出示三组材料。",
+        "topicId": "t", "evidenceGroupIds": ["e", "e2", "e3"],
+        "pendingEvidenceGroupIds": ["e2", "e3"],
+        "grantedEvidenceGroupIds": ["e"], "rejectedEvidenceGroupIds": [],
+        "replyToTurnId": None,
+    }]
+    judge = JudgeNextActionRequest.model_validate(data | {"decision_revision": 2})
+    for action in (
+        {"type": "grant_request", "requestId": "req_multi", "evidenceGroupIds": ["e2"]},
+        {"type": "reject_request", "requestId": "req_multi",
+         "evidenceGroupIds": ["e3"], "reason": "与本轮无关。"},
+    ):
+        response = validate_judge_output(json.dumps({
+            "investigation_id": "inv_1", "decision_revision": 2,
+            "decision": "action", "action": action,
+        }), judge)
+        assert response.action.evidenceGroupIds == action["evidenceGroupIds"]
+    for ids in ([], ["e"], ["e2", "e2"], ["e3", "e2"], ["missing"]):
+        with pytest.raises(InvestigationInvalidResponseError):
+            validate_judge_output(json.dumps({
+                "investigation_id": "inv_1", "decision_revision": 2,
+                "decision": "action", "action": {
+                    "type": "grant_request", "requestId": "req_multi",
+                    "evidenceGroupIds": ids,
+                },
+            }), judge)
+    broken = json.loads(json.dumps(data))
+    broken["investigation"]["pendingRequests"][0]["rejectedEvidenceGroupIds"] = ["e2"]
+    with pytest.raises(ValidationError):
+        JudgeNextActionRequest.model_validate(broken | {"decision_revision": 2})
+
+
+def test_empty_evidence_request_and_old_protocol_rejected():
+    data = base()
+    data["investigation"]["pendingRequests"] = [{
+        "requestId": "req_empty", "participantId": "p",
+        "speechKind": "supplement", "reason": "补充说明。",
+        "topicId": "t", "evidenceGroupIds": [],
+        "pendingEvidenceGroupIds": [], "grantedEvidenceGroupIds": [],
+        "rejectedEvidenceGroupIds": [], "replyToTurnId": None,
+    }]
+    judge = JudgeNextActionRequest.model_validate(data | {"decision_revision": 2})
+    valid = {"investigation_id": "inv_1", "decision_revision": 2,
+             "decision": "action", "action": {
+                 "type": "grant_request", "requestId": "req_empty",
+                 "evidenceGroupIds": []}}
+    assert validate_judge_output(json.dumps(valid), judge).action.evidenceGroupIds == []
+    for ids in (["e"], None):
+        action = valid["action"] | ({"evidenceGroupIds": ids} if ids is not None else {})
+        if ids is None:
+            del action["evidenceGroupIds"]
+        with pytest.raises(InvestigationInvalidResponseError):
+            validate_judge_output(json.dumps(valid | {"action": action}), judge)
+
+    intent = intent_request()
+    old = {"investigation_id": "inv_1", "decision_revision": 2,
+           "decision": "request", "speech_kind": "supplement",
+           "reason": "补充说明。", "topic_id": "t",
+           "evidence_group_id": "e", "reply_to_turn_id": None}
+    with pytest.raises(InvestigationInvalidResponseError):
+        validate_intent_output(json.dumps(old), intent)
+    old_request = json.loads(json.dumps(data))
+    pending = old_request["investigation"]["pendingRequests"][0]
+    pending["evidenceGroupId"] = "e"
+    del pending["evidenceGroupIds"]
+    with pytest.raises(ValidationError):
+        JudgeNextActionRequest.model_validate(old_request | {"decision_revision": 2})

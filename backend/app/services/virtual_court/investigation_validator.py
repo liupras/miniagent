@@ -37,25 +37,35 @@ def _parse(raw, response_type):
         _invalid(field, exc)
 
 
-def _references(request, *, participant, kind, topic, evidence, reply):
+def _case_order(ids, order, field):
+    if len(ids) != len(set(ids)) or ids != [item for item in order if item in ids]:
+        _invalid(field)
+
+
+def _references(request, *, participant, kind, topic, evidence_ids, reply):
     context = request.case_context
     topics = {item.topicId for item in context.topics}
     groups = {item.evidenceGroupId: item for item in context.evidenceGroups}
+    order = list(groups)
     records = {item.turnId: item for item in request.records}
-    if topic is not None and topic not in topics:
+    if topic not in topics:
         _invalid("topicId")
-    if evidence is not None and evidence not in groups:
-        _invalid("evidenceGroupId")
+    _case_order(evidence_ids, order, "evidenceGroupIds")
     if kind == "present_evidence":
-        if evidence is None or groups[evidence].offeringParticipantId != participant:
-            _invalid("evidenceGroupId")
+        if not evidence_ids or any(groups[item].offeringParticipantId != participant for item in evidence_ids):
+            _invalid("evidenceGroupIds")
     if kind == "examine_evidence":
-        if (evidence is None or groups[evidence].offeringParticipantId == participant or
-                not any(item.kind == "present_evidence" and evidence in item.evidenceGroupIds for item in request.records)):
-            _invalid("evidenceGroupId")
-    if kind == "respond" and reply not in records:
-        _invalid("replyToTurnId")
-    if kind != "respond" and reply is not None:
+        if not evidence_ids or any(
+            groups[item].offeringParticipantId == participant or
+            not any(record.kind == "present_evidence" and item in record.evidenceGroupIds
+                    for record in request.records)
+            for item in evidence_ids
+        ):
+            _invalid("evidenceGroupIds")
+    if kind == "respond":
+        if reply not in records or records[reply].kind == "summary":
+            _invalid("replyToTurnId")
+    elif reply is not None:
         _invalid("replyToTurnId")
 
 
@@ -67,13 +77,13 @@ def validate_intent_output(raw, request):
     if response.decision == "request":
         _references(request, participant=request.participant_id,
                     kind=response.speech_kind, topic=response.topic_id,
-                    evidence=response.evidence_group_id, reply=response.reply_to_turn_id)
+                    evidence_ids=response.evidence_group_ids, reply=response.reply_to_turn_id)
         if any(
             item.participantId == request.participant_id and
             item.speechKind == response.speech_kind and
             item.reason.strip() == response.reason.strip() and
             item.topicId == response.topic_id and
-            item.evidenceGroupId == response.evidence_group_id and
+            item.evidenceGroupIds == response.evidence_group_ids and
             item.replyToTurnId == response.reply_to_turn_id
             for item in request.investigation.pendingRequests
         ):
@@ -115,25 +125,30 @@ def validate_judge_output(raw, request):
         _invalid("action.requestId")
     context = request.case_context
     participants = {item.participantId for item in context.participants}
-    pending = {item.requestId for item in request.investigation.pendingRequests}
+    pending = {item.requestId: item for item in request.investigation.pendingRequests}
     topics = {item.topicId for item in context.topics}
     group_order = [item.evidenceGroupId for item in context.evidenceGroups]
     groups = set(group_order)
     if action.type in ("grant_request", "reject_request"):
-        if action.requestId not in pending:
+        selected = pending.get(action.requestId)
+        if selected is None:
             _invalid("action.requestId")
+        ids = action.evidenceGroupIds
+        if (len(ids) != len(set(ids)) or
+                ids != [item for item in group_order if item in ids] or
+                not set(ids) <= set(selected.pendingEvidenceGroupIds) or
+                bool(ids) != bool(selected.evidenceGroupIds)):
+            _invalid("action.evidenceGroupIds")
+        if action.type == "grant_request":
+            _references(request, participant=selected.participantId,
+                        kind=selected.speechKind, topic=selected.topicId,
+                        evidence_ids=ids, reply=selected.replyToTurnId)
     elif action.type == "invite_participant":
         if action.participantId not in participants:
             _invalid("action.participantId")
-        if (len(action.evidenceGroupIds) != len(set(action.evidenceGroupIds)) or
-                action.evidenceGroupIds != [
-                    item for item in group_order if item in action.evidenceGroupIds
-                ]):
-            _invalid("action.evidenceGroupIds")
-        for evidence_id in action.evidenceGroupIds or [None]:
-            _references(request, participant=action.participantId,
-                        kind=action.speechKind, topic=action.topicId,
-                        evidence=evidence_id, reply=action.replyToTurnId)
+        _references(request, participant=action.participantId,
+                    kind=action.speechKind, topic=action.topicId,
+                    evidence_ids=action.evidenceGroupIds, reply=action.replyToTurnId)
     elif action.type == "ask_participant":
         if action.participantId not in participants:
             _invalid("action.participantId")

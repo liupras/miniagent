@@ -67,8 +67,25 @@ class FloorRequest(StrictModel):
     speechKind: SpeechKind
     reason: Reason
     topicId: Id | None
-    evidenceGroupId: Id | None
+    evidenceGroupIds: list[Id]
+    pendingEvidenceGroupIds: list[Id]
+    grantedEvidenceGroupIds: list[Id]
+    rejectedEvidenceGroupIds: list[Id]
     replyToTurnId: Id | None
+
+    @model_validator(mode="after")
+    def evidence_partition(self):
+        original = self.evidenceGroupIds
+        parts = (self.pendingEvidenceGroupIds, self.grantedEvidenceGroupIds,
+                 self.rejectedEvidenceGroupIds)
+        if (len(original) != len(set(original)) or
+                any(len(part) != len(set(part)) for part in parts) or
+                set(original) != set().union(*map(set, parts)) or
+                sum(map(len, parts)) != len(original)):
+            raise ValueError("request evidence partition is invalid")
+        if self.speechKind in ("present_evidence", "examine_evidence") and not original:
+            raise ValueError("presentation and examination require evidence")
+        return self
 
 
 class ActiveTurn(StrictModel):
@@ -81,6 +98,7 @@ class ActiveTurn(StrictModel):
     contextEvidenceGroupIds: list[Id]
     replyToTurnId: Id | None
     targetParticipantId: Id | None
+    sourceRequestId: Id | None
 
 
 class InvestigationState(StrictModel):
@@ -108,6 +126,7 @@ class Record(StrictModel):
     topicId: Id | None
     evidenceGroupIds: list[Id]
     contextEvidenceGroupIds: list[Id]
+    sourceRequestId: Id | None
 
 
 class InvestigationInput(StrictModel):
@@ -153,7 +172,12 @@ class InvestigationInput(StrictModel):
         for item in self.investigation.pendingRequests:
             if item.participantId not in participants:
                 raise ValueError("unknown request participantId")
-            refs(item.topicId, item.evidenceGroupId)
+            refs(item.topicId, None)
+            if item.topicId is None and topics:
+                raise ValueError("request topicId is required")
+            for ids in (item.evidenceGroupIds, item.pendingEvidenceGroupIds,
+                        item.grantedEvidenceGroupIds, item.rejectedEvidenceGroupIds):
+                focus(ids)
             if item.replyToTurnId is not None and item.replyToTurnId not in turns:
                 raise ValueError("unknown request replyToTurnId")
         turn = self.investigation.activeTurn
@@ -239,19 +263,24 @@ class ParticipantIntentResponse(StrictModel):
     speech_kind: SpeechKind | None = None
     reason: Reason | None = None
     topic_id: Id | None = None
-    evidence_group_id: Id | None = None
+    evidence_group_ids: list[Id] | None = None
     reply_to_turn_id: Id | None = None
 
     @model_validator(mode="after")
     def decision_shape(self):
         supplied = set(self.model_fields_set)
-        optional = {"speech_kind", "reason", "topic_id", "evidence_group_id", "reply_to_turn_id"}
+        optional = {"speech_kind", "reason", "topic_id", "evidence_group_ids", "reply_to_turn_id"}
         if self.decision == "request" and not optional <= supplied:
             raise ValueError("request must include all association fields")
         if self.decision == "pass" and supplied & optional:
             raise ValueError("pass cannot include request fields")
-        if self.decision == "request" and (self.speech_kind is None or self.reason is None):
-            raise ValueError("request requires kind and reason")
+        if self.decision == "request":
+            if self.speech_kind is None or self.reason is None or self.evidence_group_ids is None:
+                raise ValueError("request requires kind, reason and evidence list")
+            if self.speech_kind in ("present_evidence", "examine_evidence") and not self.evidence_group_ids:
+                raise ValueError("presentation and examination require evidence")
+            if (self.speech_kind == "respond") != (self.reply_to_turn_id is not None):
+                raise ValueError("reply target does not match speech kind")
         return self
 
 
@@ -264,11 +293,13 @@ class ParticipantSpeechResponse(StrictModel):
 class GrantRequest(StrictModel):
     type: Literal["grant_request"]
     requestId: Id
+    evidenceGroupIds: list[Id]
 
 
 class RejectRequest(StrictModel):
     type: Literal["reject_request"]
     requestId: Id
+    evidenceGroupIds: list[Id]
     reason: Reason
 
 
