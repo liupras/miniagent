@@ -95,6 +95,10 @@ class InvestigationAgentService:
                         "上次输出未通过校验。请仅根据原始输入修正 JSON；错误："
                         + json.dumps(invalid.params, ensure_ascii=False)
                     )
+                    if operation == "judge" and invalid.params.get("field", "").endswith("speechKind"):
+                        query += ("。invite_participant.speechKind 只能是 "
+                                  "present_evidence、examine_evidence、respond 或 supplement；"
+                                  "如需提问，请使用 ask_participant 的 text 字段。")
         except TimeoutError as exc:
             raise InvestigationTimeoutError(
                 params={"timeout": self._timeout_seconds}, cause=exc

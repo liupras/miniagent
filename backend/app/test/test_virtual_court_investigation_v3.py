@@ -302,6 +302,8 @@ def test_new_agents_have_separate_prompts_and_no_tools():
     assert "scope=summary" in judge_prompt and "AI 自动主持" in judge_prompt
     assert "set_context(type,topicId,evidenceGroupIds)" in judge_prompt
     assert "contextEvidenceGroupIds" in judge_prompt
+    assert all(kind in judge_prompt for kind in (
+        "present_evidence", "examine_evidence", "respond", "supplement"))
     assert all(item["is_active"] for item in rows)
     assert not any(item["_agent_name"] in names for item in relations)
     assert {"virtual_court_investigation_judge", "virtual_court_party_responder"} <= {
@@ -349,6 +351,28 @@ async def test_three_distinct_agents_and_one_repair():
         assert json.loads(runner.calls[0]["query"])["case_context"]["summary"] == "图片来源有争议。"
         assert runner.calls[1]["history"][0]["content"] == runner.calls[0]["query"]
 
+
+@pytest.mark.anyio
+async def test_judge_speech_kind_repair_lists_allowed_values():
+    request = JudgeNextActionRequest.model_validate(
+        judge_request().model_dump(mode="json", exclude_unset=True) | {"scope": "next"}
+    )
+    def output(kind):
+        return json.dumps({
+            "investigation_id": "inv_1", "decision_revision": 2, "scope": "next",
+            "decision": "action", "action": {
+                "type": "invite_participant", "participantId": "d",
+                "speechKind": kind, "taskText": "请补充说明。",
+                "topicId": "t", "evidenceGroupIds": [], "replyToTurnId": None,
+            },
+        })
+    runner = Runner([AgentExecution(output("question")),
+                     AgentExecution(output("supplement"))])
+    result = await InvestigationAgentService(Factory(runner)).next_action(request)
+    assert result.action.speechKind == "supplement"
+    assert len(runner.calls) == 2
+    assert all(kind in runner.calls[1]["query"] for kind in (
+        "present_evidence", "examine_evidence", "respond", "supplement"))
 
 @pytest.mark.anyio
 async def test_timeout_does_not_return_pass_or_change_state():
