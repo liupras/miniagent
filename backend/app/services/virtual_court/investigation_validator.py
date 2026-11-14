@@ -1,10 +1,16 @@
-"""Validate V4 investigation Agent outputs against the current room context."""
+"""Validate V4 model decisions and assembled HTTP responses."""
+
+import json
+import unicodedata
 
 from pydantic import ValidationError
 
 from app.schemas.integrations.strict_json import strict_json
 from app.schemas.integrations.virtual_court.investigation import (
     JudgeNextActionResponse, ParticipantIntentResponse, ParticipantSpeechResponse,
+)
+from app.schemas.integrations.virtual_court.investigation_model import (
+    IntentModelOutput, JudgeModelOutput, SpeechModelOutput,
 )
 from .exceptions import InvestigationInvalidResponseError
 
@@ -38,6 +44,11 @@ def validate_intent_output(raw, request):
     if (response.investigation_id != request.investigation_id or
             response.decision_revision != request.decision_revision):
         _invalid("investigation_id")
+    _validate_intent_choice(response, request)
+    return response
+
+
+def _validate_intent_choice(response, request):
     if response.decision == "request":
         topics = {item.topicId for item in request.case_context.topics}
         if response.topic_id not in topics:
@@ -45,10 +56,19 @@ def validate_intent_output(raw, request):
         if any(item.participantId == request.participant_id and
                item.speechKind == response.speech_kind and
                item.topicId == response.topic_id and
-               item.reason.strip() == (response.reason or "").strip()
+               _reason_fingerprint(item.reason) ==
+               _reason_fingerprint(response.reason or "")
                for item in request.investigation.pendingRequests):
             _invalid("decision")
-    return response
+
+
+def _reason_fingerprint(value):
+    """Match VirtualCourt's duplicate-request normalization."""
+    return "".join(
+        character for character in value
+        if not character.isspace() and
+        not unicodedata.category(character).startswith("P")
+    ).lower()
 
 
 def validate_speech_output(raw, request):
@@ -69,8 +89,15 @@ def validate_judge_output(raw, request):
             _invalid("scope")
     elif response.scope != request.scope or "scope" not in response.model_fields_set:
         _invalid("scope")
+    _validate_judge_choice(response, request)
+    return response
+
+
+def _validate_judge_choice(response, request):
+    if response.decision == "defer" and request.scope != "request":
+        _invalid("decision")
     if response.decision != "action":
-        return response
+        return
     action = response.action
     allowed = {
         "request": ("grant_request", "reject_request"),
@@ -93,4 +120,36 @@ def validate_judge_output(raw, request):
             _invalid("action.topicId")
     elif action.type == "close_investigation" and pending:
         _invalid("action.type")
-    return response
+
+
+def validate_intent_model_output(raw, request):
+    """Validate the model's choice, then restore the HTTP binding fields."""
+    model = _parse(raw, IntentModelOutput)
+    _validate_intent_choice(model, request)
+    payload = model.model_dump(mode="json", exclude_unset=True)
+    payload["investigation_id"] = request.investigation_id
+    payload["decision_revision"] = request.decision_revision
+    return validate_intent_output(json.dumps(payload, ensure_ascii=False), request)
+
+
+def validate_speech_model_output(raw, request):
+    model = _parse(raw, SpeechModelOutput)
+    payload = {
+        "investigation_id": request.investigation_id,
+        "turn_id": request.turn_id,
+        "speech": model.speech,
+    }
+    return validate_speech_output(json.dumps(payload, ensure_ascii=False), request)
+
+
+def validate_judge_model_output(raw, request):
+    model = _parse(raw, JudgeModelOutput)
+    _validate_judge_choice(model, request)
+    payload = model.model_dump(mode="json", exclude_unset=True)
+    if model.decision == "action":
+        payload["utterance"] = {"mode": "text", "text": model.utterance}
+    payload["investigation_id"] = request.investigation_id
+    payload["decision_revision"] = request.decision_revision
+    if request.scope is not None:
+        payload["scope"] = request.scope
+    return validate_judge_output(json.dumps(payload, ensure_ascii=False), request)

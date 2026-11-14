@@ -17,10 +17,15 @@ from .exceptions import (
     InvestigationTimeoutError,
     InvestigationUnavailableError,
 )
+from .investigation_model_input import (
+    build_intent_model_input,
+    build_judge_model_input,
+    build_speech_model_input,
+)
 from .investigation_validator import (
-    validate_intent_output,
-    validate_judge_output,
-    validate_speech_output,
+    validate_intent_model_output,
+    validate_judge_model_output,
+    validate_speech_model_output,
 )
 
 
@@ -29,9 +34,12 @@ logger = get_logger(__name__)
 
 class InvestigationAgentService:
     AGENTS = {
-        "intent": ("virtual_court_investigation_participant_intent", validate_intent_output),
-        "speech": ("virtual_court_investigation_participant_speech", validate_speech_output),
-        "judge": ("virtual_court_investigation_judge_dispatch", validate_judge_output),
+        "intent": ("virtual_court_investigation_participant_intent",
+                   build_intent_model_input, validate_intent_model_output),
+        "speech": ("virtual_court_investigation_participant_speech",
+                   build_speech_model_input, validate_speech_model_output),
+        "judge": ("virtual_court_investigation_judge_dispatch",
+                  build_judge_model_input, validate_judge_model_output),
     }
 
     def __init__(self, agent_factory, *, timeout_seconds=120.0):
@@ -48,9 +56,9 @@ class InvestigationAgentService:
         return await self._run("judge", request)
 
     async def _run(self, operation, request):
-        agent_name, validator = self.AGENTS[operation]
+        agent_name, projector, validator = self.AGENTS[operation]
         business_query = json.dumps(
-            request.model_dump(mode="json", exclude_unset=True),
+            projector(request),
             ensure_ascii=False,
         )
         try:
@@ -95,10 +103,14 @@ class InvestigationAgentService:
                         "上次输出未通过校验。请仅根据原始输入修正 JSON；错误："
                         + json.dumps(invalid.params, ensure_ascii=False)
                     )
+                    if operation == "judge" and invalid.params.get("field") == "decision":
+                        query += ("。顶层 decision 仅可为 action、handoff、defer；"
+                                  "有 action 对象时 decision 必须为 action，"
+                                  "具体动作名仅写入 action.type。")
                     if operation == "judge" and invalid.params.get("field", "").endswith("speechKind"):
                         query += ("。invite_participant.speechKind 只能是 "
                                   "present_evidence、examine_evidence、respond、supplement 或 answer；"
-                                  "如需提问，请选择 answer 并在 utterance.text 中提出问题。")
+                                  "如需提问，请选择 answer 并在 utterance 字符串中提出问题。")
         except TimeoutError as exc:
             raise InvestigationTimeoutError(
                 params={"timeout": self._timeout_seconds}, cause=exc
