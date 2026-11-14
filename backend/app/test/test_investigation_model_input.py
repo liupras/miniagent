@@ -63,7 +63,7 @@ def test_intent_projection_keeps_current_turn_and_pending_meaning():
     data["investigation"]["pendingRequests"] = [
         {
             "requestId": "request-01", "participantId": "participant_claimant",
-            "speechKind": "supplement", "topicId": "topic_authorization",
+            "speechKind": "statement", "topicId": "topic_authorization",
             "reason": "补充说明。", "locked": True,
         }
     ]
@@ -82,7 +82,7 @@ def test_intent_projection_keeps_current_turn_and_pending_meaning():
     }
     assert projected["pending_requests"] == [
         {
-            "participantId": "participant_claimant", "speechKind": "supplement",
+            "participantId": "participant_claimant", "speechKind": "statement",
             "topicId": "topic_authorization", "reason": "补充说明。",
         }
     ]
@@ -114,7 +114,7 @@ def test_intent_announcement_projection_does_not_expose_planned_action():
         "topicId": "topic_authorization",
         "plannedAction": {
             "type": "invite_participant", "participantId": "participant_claimant",
-            "speechKind": "answer",
+            "speechKind": "statement",
         },
         "sourceRequestId": None,
     }
@@ -168,7 +168,7 @@ def test_judge_projection_distinguishes_auto_and_advice_scope():
     assert projected_selected["pending_requests"] == [
         {
             "requestId": "request_01", "participantId": "participant_defense",
-            "speechKind": "respond", "topicId": "topic_authorization",
+            "speechKind": "statement", "topicId": "topic_authorization",
             "reason": "", "locked": False,
         }
     ]

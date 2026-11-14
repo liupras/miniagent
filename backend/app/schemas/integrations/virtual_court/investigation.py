@@ -8,8 +8,8 @@ Id = Annotated[str, Field(min_length=1, max_length=128, pattern=r"\S")]
 Text = Annotated[str, Field(min_length=1, max_length=8000, pattern=r"\S")]
 Reason = Annotated[str, Field(max_length=500)]
 Revision = Annotated[int, Field(ge=0)]
-SpeechKind = Literal["present_evidence", "examine_evidence", "respond", "supplement"]
-ScheduledSpeechKind = Literal["present_evidence", "examine_evidence", "respond", "supplement", "answer"]
+SpeechKind = Literal["present_evidence", "examine_evidence", "statement"]
+ScheduledSpeechKind = SpeechKind
 
 
 class Participant(StrictModel):

@@ -52,7 +52,7 @@ def test_intent_pass_and_request_restore_only_request_binding():
         "decision": "pass",
     }
     applied = validate_intent_model_output(_raw({
-        "decision": "request", "speech_kind": "respond", "topic_id": "other",
+        "decision": "request", "speech_kind": "statement", "topic_id": "other",
     }), request)
     assert applied.decision == "request"
     assert applied.topic_id == "other"
@@ -75,7 +75,7 @@ def test_auto_judge_action_uses_text_utterance_without_scope():
         "decision": "action",
         "action": {
             "type": "invite_participant", "participantId": "participant_claimant",
-            "speechKind": "answer", "topicId": "topic_authorization",
+            "speechKind": "statement", "topicId": "topic_authorization",
         },
         "utterance": "请原告说明授权文件形成时间。",
     }), request)
@@ -157,7 +157,7 @@ def test_model_choice_must_match_current_case_and_scope():
     intent = ParticipantIntentRequest.model_validate(_fixture("participantIntentRequest"))
     with pytest.raises(InvestigationInvalidResponseError) as error:
         validate_intent_model_output(_raw({
-            "decision": "request", "speech_kind": "respond", "topic_id": "unknown",
+            "decision": "request", "speech_kind": "statement", "topic_id": "unknown",
         }), intent)
     assert _field(error) == "topic_id"
 
@@ -205,14 +205,14 @@ def test_intent_rejects_normalized_duplicate_request():
     data["investigation"]["pendingRequests"] = [
         {
             "requestId": "request-01", "participantId": data["participant_id"],
-            "speechKind": "respond", "topicId": "topic_authorization",
+            "speechKind": "statement", "topicId": "topic_authorization",
             "reason": "说明 授权来源。", "locked": False,
         }
     ]
     request = ParticipantIntentRequest.model_validate(data)
     with pytest.raises(InvestigationInvalidResponseError) as error:
         validate_intent_model_output(_raw({
-            "decision": "request", "speech_kind": "respond",
+            "decision": "request", "speech_kind": "statement",
             "topic_id": "topic_authorization", "reason": "说明授权来源",
         }), request)
     assert _field(error) == "decision"

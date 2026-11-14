@@ -109,8 +109,8 @@ class InvestigationAgentService:
                                   "具体动作名仅写入 action.type。")
                     if operation == "judge" and invalid.params.get("field", "").endswith("speechKind"):
                         query += ("。invite_participant.speechKind 只能是 "
-                                  "present_evidence、examine_evidence、respond、supplement 或 answer；"
-                                  "如需提问，请选择 answer 并在 utterance 字符串中提出问题。")
+                                  "present_evidence、examine_evidence 或 statement；"
+                                  "如需提问，请选择 statement 并在 utterance 字符串中提出问题。")
         except TimeoutError as exc:
             raise InvestigationTimeoutError(
                 params={"timeout": self._timeout_seconds}, cause=exc

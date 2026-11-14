@@ -47,7 +47,7 @@ def test_request_reason_optional_and_evidence_is_global_context():
             validate_intent_output(json.dumps({
                 "investigation_id": request.investigation_id,
                 "decision_revision": request.decision_revision,
-                "decision": "request", "speech_kind": "supplement", "topic_id": "other",
+                "decision": "request", "speech_kind": "statement", "topic_id": "other",
                 **extra,
             }), request)
 
@@ -74,13 +74,13 @@ def test_answer_is_a_scheduled_speech_kind_and_summary_must_be_spoken():
     base = {"investigation_id": request.investigation_id,
             "decision_revision": request.decision_revision, "decision": "action"}
     invite = {"type": "invite_participant", "participantId": "participant_claimant",
-              "speechKind": "answer"}
+              "speechKind": "statement"}
     # This example has no participants, so add the person whom the judge will invite.
     data["case_context"]["participants"] = [
         {"participantId": "participant_claimant", "displayName": "原告"}]
     request = JudgeNextActionRequest.model_validate(data)
     assert validate_judge_output(json.dumps(base | {"action": invite,
-        "utterance": {"mode": "text", "text": "请说明授权文件形成时间。"}}), request).action.speechKind == "answer"
+        "utterance": {"mode": "text", "text": "请说明授权文件形成时间。"}}), request).action.speechKind == "statement"
     with pytest.raises(InvestigationInvalidResponseError):
         validate_judge_output(json.dumps(base | {"action": {"type": "close_investigation"},
             "utterance": {"mode": "text", "text": ""}}), request)

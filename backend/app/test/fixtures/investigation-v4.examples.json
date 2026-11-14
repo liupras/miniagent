@@ -9,7 +9,7 @@
       {
         "requestId": "request_01",
         "participantId": "participant_defense",
-        "speechKind": "respond",
+        "speechKind": "statement",
         "topicId": "topic_authorization",
         "reason": "",
         "locked": false
@@ -26,7 +26,7 @@
     "type": "RequestInvestigationFloor",
     "payload": {
       "investigationId": "inv_001",
-      "speechKind": "respond",
+      "speechKind": "statement",
       "topicId": "topic_authorization"
     }
   },
@@ -121,7 +121,7 @@
       {
         "requestId": "request_01",
         "participantId": "participant_defense",
-        "speechKind": "respond",
+        "speechKind": "statement",
         "topicId": "topic_authorization",
         "reason": "",
         "locked": true
@@ -196,7 +196,7 @@
       "turnId": "turn_party_01",
       "speakerId": "participant_defense",
       "kind": "participant",
-      "speechKind": "respond",
+      "speechKind": "statement",
       "topicId": "topic_authorization",
       "sourceRequestId": "request_01"
     },
@@ -207,7 +207,7 @@
     "turnId": "turn_party_01",
     "speakerId": "participant_defense",
     "kind": "participant",
-    "speechKind": "respond",
+    "speechKind": "statement",
     "topicId": "topic_authorization",
     "text": "我方先回应授权来源，再补充说明收到照片的时间。",
     "sourceRequestId": "request_01"
@@ -272,7 +272,7 @@
     "investigation_id": "inv_001",
     "decision_revision": 10,
     "decision": "request",
-    "speech_kind": "supplement",
+    "speech_kind": "statement",
     "topic_id": "other"
   },
   "participantIntentRequest": {
@@ -367,7 +367,7 @@
         "turnId": "turn_party_02",
         "speakerId": "participant_defense",
         "kind": "participant",
-        "speechKind": "respond",
+        "speechKind": "statement",
         "topicId": "topic_authorization",
         "sourceRequestId": "request_01"
       }
@@ -427,7 +427,7 @@
         {
           "requestId": "request_01",
           "participantId": "participant_defense",
-          "speechKind": "respond",
+          "speechKind": "statement",
           "topicId": "topic_authorization",
           "reason": "",
           "locked": false
@@ -454,7 +454,7 @@
     "action": {
       "type": "invite_participant",
       "participantId": "participant_claimant",
-      "speechKind": "answer",
+      "speechKind": "statement",
       "topicId": "topic_authorization"
     },
     "utterance": {
