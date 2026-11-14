@@ -1,4 +1,4 @@
-"""Dedicated V3 endpoints for the unified investigation agents."""
+"""Dedicated V4 endpoints for the unified investigation agents."""
 
 from time import perf_counter
 
@@ -45,7 +45,7 @@ async def participant_intent(
 ) -> ParticipantIntentResponse:
     started = perf_counter()
     result = await service.intent(body)
-    logger.info("[InvestigationV3] intent: decision={}, records={}, elapsed_ms={:.1f}",
+    logger.info("[InvestigationV4] intent: decision={}, records={}, elapsed_ms={:.1f}",
                 result.decision, len(body.records), (perf_counter() - started) * 1000)
     return result
 
@@ -63,7 +63,7 @@ async def participant_speech(
 ) -> ParticipantSpeechResponse:
     started = perf_counter()
     result = await service.speech(body)
-    logger.info("[InvestigationV3] speech: records={}, speech_codepoints={}, elapsed_ms={:.1f}",
+    logger.info("[InvestigationV4] speech: records={}, speech_codepoints={}, elapsed_ms={:.1f}",
                 len(body.records), len(result.speech), (perf_counter() - started) * 1000)
     return result
 
@@ -82,6 +82,6 @@ async def judge_next_action(
 ) -> JudgeNextActionResponse:
     started = perf_counter()
     result = await service.next_action(body)
-    logger.info("[InvestigationV3] judge: decision={}, records={}, elapsed_ms={:.1f}",
+    logger.info("[InvestigationV4] judge: decision={}, records={}, elapsed_ms={:.1f}",
                 result.decision, len(body.records), (perf_counter() - started) * 1000)
     return result

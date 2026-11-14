@@ -1,0 +1,476 @@
+{
+  "investigation": {
+    "investigationId": "inv_001",
+    "status": "ready",
+    "decisionRevision": 7,
+    "currentTopicId": "topic_authorization",
+    "displayedEvidenceGroupIds": ["evidence_screenshot"],
+    "pendingRequests": [
+      {
+        "requestId": "request_01",
+        "participantId": "participant_defense",
+        "speechKind": "respond",
+        "topicId": "topic_authorization",
+        "reason": "",
+        "locked": false
+      }
+    ],
+    "activeTurn": null,
+    "agentFailures": []
+  },
+  "requestFloorCommand": {
+    "commandId": "command_101",
+    "roomEpoch": "room_epoch_001",
+    "clientInstanceId": "client_defense",
+    "expectedStateVersion": 18,
+    "type": "RequestInvestigationFloor",
+    "payload": {
+      "investigationId": "inv_001",
+      "speechKind": "respond",
+      "topicId": "topic_authorization"
+    }
+  },
+  "requestFloorOnOtherTopicCommand": {
+    "commandId": "command_102",
+    "roomEpoch": "room_epoch_001",
+    "clientInstanceId": "client_claimant",
+    "expectedStateVersion": 18,
+    "type": "RequestInvestigationFloor",
+    "payload": {
+      "investigationId": "inv_001",
+      "speechKind": "present_evidence",
+      "topicId": "other",
+      "reason": "想说明案卷中照片的拍摄时间。"
+    }
+  },
+  "grantRequestWithDefaultSpeechCommand": {
+    "commandId": "command_103",
+    "roomEpoch": "room_epoch_001",
+    "clientInstanceId": "client_judge",
+    "expectedStateVersion": 19,
+    "type": "ApplyInvestigationAction",
+    "payload": {
+      "investigationId": "inv_001",
+      "expectedDecisionRevision": 7,
+      "action": { "type": "grant_request", "requestId": "request_01" },
+      "utterance": { "mode": "text", "text": "" }
+    }
+  },
+  "rejectRequestWithEditedSpeechCommand": {
+    "commandId": "command_104",
+    "roomEpoch": "room_epoch_001",
+    "clientInstanceId": "client_judge",
+    "expectedStateVersion": 19,
+    "type": "ApplyInvestigationAction",
+    "payload": {
+      "investigationId": "inv_001",
+      "expectedDecisionRevision": 7,
+      "action": { "type": "reject_request", "requestId": "request_01" },
+      "utterance": {
+        "mode": "text",
+        "text": "本次申请暂不准许，请先听完当前说明。"
+      }
+    }
+  },
+  "inviteParticipantByJudgeVoiceCommand": {
+    "commandId": "command_105",
+    "roomEpoch": "room_epoch_001",
+    "clientInstanceId": "client_judge",
+    "expectedStateVersion": 20,
+    "type": "ApplyInvestigationAction",
+    "payload": {
+      "investigationId": "inv_001",
+      "expectedDecisionRevision": 8,
+      "action": {
+        "type": "invite_participant",
+        "participantId": "participant_claimant",
+        "speechKind": "examine_evidence",
+        "topicId": "topic_authorization"
+      },
+      "utterance": { "mode": "voice" }
+    }
+  },
+  "judgeVoiceAnnouncementState": {
+    "investigationId": "inv_001",
+    "status": "awaiting_speech",
+    "decisionRevision": 9,
+    "currentTopicId": "topic_authorization",
+    "displayedEvidenceGroupIds": ["evidence_screenshot"],
+    "pendingRequests": [],
+    "activeTurn": {
+      "turnId": "turn_judge_01",
+      "speakerId": "judge",
+      "kind": "announcement",
+      "topicId": "topic_authorization",
+      "plannedAction": {
+        "type": "invite_participant",
+        "participantId": "participant_claimant",
+        "speechKind": "examine_evidence",
+        "topicId": "topic_authorization"
+      }
+    },
+    "agentFailures": []
+  },
+  "lockedRequestDuringJudgeVoiceState": {
+    "investigationId": "inv_001",
+    "status": "awaiting_speech",
+    "decisionRevision": 8,
+    "currentTopicId": "topic_authorization",
+    "displayedEvidenceGroupIds": [],
+    "pendingRequests": [
+      {
+        "requestId": "request_01",
+        "participantId": "participant_defense",
+        "speechKind": "respond",
+        "topicId": "topic_authorization",
+        "reason": "",
+        "locked": true
+      }
+    ],
+    "activeTurn": {
+      "turnId": "turn_judge_02",
+      "speakerId": "judge",
+      "kind": "announcement",
+      "topicId": "topic_authorization",
+      "plannedAction": { "type": "grant_request", "requestId": "request_01" }
+    },
+    "agentFailures": []
+  },
+  "submitJudgeVoiceTranscriptCommand": {
+    "commandId": "command_106",
+    "roomEpoch": "room_epoch_001",
+    "clientInstanceId": "client_judge",
+    "expectedStateVersion": 22,
+    "type": "SubmitSpeech",
+    "payload": {
+      "investigationId": "inv_001",
+      "turnId": "turn_judge_02",
+      "text": "准许被告就授权来源问题发言。"
+    }
+  },
+  "useDefaultAnnouncementAfterVoiceFailureCommand": {
+    "commandId": "command_106_default",
+    "roomEpoch": "room_epoch_001",
+    "clientInstanceId": "client_judge",
+    "expectedStateVersion": 22,
+    "type": "UseInvestigationDefaultAnnouncement",
+    "payload": {
+      "investigationId": "inv_001",
+      "turnId": "turn_judge_02"
+    }
+  },
+  "cancelJudgeVoiceAnnouncementCommand": {
+    "commandId": "command_106_cancel",
+    "roomEpoch": "room_epoch_001",
+    "clientInstanceId": "client_judge",
+    "expectedStateVersion": 22,
+    "type": "CancelInvestigationJudgeAnnouncement",
+    "payload": {
+      "investigationId": "inv_001",
+      "turnId": "turn_judge_02"
+    }
+  },
+  "judgeDecisionRecordedEvent": {
+    "investigationId": "inv_001",
+    "announcementTurnId": "turn_judge_02",
+    "actor": "human_judge",
+    "action": { "type": "grant_request", "requestId": "request_01" }
+  },
+  "judgeSpeechRecord": {
+    "sequence": 15,
+    "turnId": "turn_judge_02",
+    "speakerId": "judge",
+    "kind": "announcement",
+    "topicId": "topic_authorization",
+    "text": "准许被告就授权来源问题发言。",
+    "sourceRequestId": "request_01"
+  },
+  "grantedParticipantTurnStateAfterAnnouncement": {
+    "investigationId": "inv_001",
+    "status": "awaiting_speech",
+    "decisionRevision": 9,
+    "currentTopicId": "topic_authorization",
+    "displayedEvidenceGroupIds": ["evidence_screenshot"],
+    "pendingRequests": [],
+    "activeTurn": {
+      "turnId": "turn_party_01",
+      "speakerId": "participant_defense",
+      "kind": "participant",
+      "speechKind": "respond",
+      "topicId": "topic_authorization",
+      "sourceRequestId": "request_01"
+    },
+    "agentFailures": []
+  },
+  "partySpeechRecordWithoutEvidenceBinding": {
+    "sequence": 16,
+    "turnId": "turn_party_01",
+    "speakerId": "participant_defense",
+    "kind": "participant",
+    "speechKind": "respond",
+    "topicId": "topic_authorization",
+    "text": "我方先回应授权来源，再补充说明收到照片的时间。",
+    "sourceRequestId": "request_01"
+  },
+  "setTopicCommand": {
+    "commandId": "command_107",
+    "roomEpoch": "room_epoch_001",
+    "clientInstanceId": "client_judge",
+    "expectedStateVersion": 23,
+    "type": "SetInvestigationTopic",
+    "payload": {
+      "investigationId": "inv_001",
+      "expectedDecisionRevision": 9,
+      "topicId": "other"
+    }
+  },
+  "setDisplayedEvidenceDuringPartySpeechCommand": {
+    "commandId": "command_108",
+    "roomEpoch": "room_epoch_001",
+    "clientInstanceId": "client_judge",
+    "expectedStateVersion": 24,
+    "type": "SetInvestigationDisplayedEvidence",
+    "payload": {
+      "investigationId": "inv_001",
+      "displayedEvidenceGroupIds": ["evidence_screenshot", "evidence_contract"]
+    }
+  },
+  "stopPartyTurnCommand": {
+    "commandId": "command_109",
+    "roomEpoch": "room_epoch_001",
+    "clientInstanceId": "client_judge",
+    "expectedStateVersion": 25,
+    "type": "ForceEndInvestigationTurn",
+    "payload": {
+      "investigationId": "inv_001",
+      "turnId": "turn_party_01",
+      "reason": "发言偏离当前调查事项"
+    }
+  },
+  "turnEndedEvent": {
+    "investigationId": "inv_001",
+    "turnId": "turn_party_01",
+    "reason": "发言偏离当前调查事项"
+  },
+  "closeInvestigationWithSummaryCommand": {
+    "commandId": "command_110",
+    "roomEpoch": "room_epoch_001",
+    "clientInstanceId": "client_judge",
+    "expectedStateVersion": 26,
+    "type": "ApplyInvestigationAction",
+    "payload": {
+      "investigationId": "inv_001",
+      "expectedDecisionRevision": 10,
+      "action": { "type": "close_investigation" },
+      "utterance": {
+        "mode": "text",
+        "text": "各方关于授权来源和使用时间的意见已经记录，法庭调查结束。"
+      }
+    }
+  },
+  "participantIntentResponseWithNoReason": {
+    "investigation_id": "inv_001",
+    "decision_revision": 10,
+    "decision": "request",
+    "speech_kind": "supplement",
+    "topic_id": "other"
+  },
+  "participantIntentRequest": {
+    "investigation_id": "inv_001",
+    "decision_revision": 10,
+    "participant_id": "participant_defense",
+    "case_context": {
+      "summary": "图片授权来源存在争议。",
+      "participants": [
+        { "participantId": "participant_claimant", "displayName": "原告" },
+        { "participantId": "participant_defense", "displayName": "被告" }
+      ],
+      "positions": [
+        { "participantId": "participant_claimant", "text": "主张未经许可使用图片。" },
+        { "participantId": "participant_defense", "text": "主张图片取得合法授权。" }
+      ],
+      "topics": [
+        { "topicId": "topic_authorization", "text": "图片是否经过授权。" },
+        { "topicId": "other", "text": "其他／临时事项" }
+      ],
+      "evidenceGroups": [
+        {
+          "evidenceGroupId": "evidence_screenshot",
+          "offeringParticipantId": "participant_claimant",
+          "name": "网页截图",
+          "proofPurpose": "说明图片使用情况。",
+          "materials": ["截图显示网页上的图片。"]
+        }
+      ]
+    },
+    "investigation": {
+      "investigationId": "inv_001",
+      "status": "presenting",
+      "decisionRevision": 10,
+      "currentTopicId": "topic_authorization",
+      "displayedEvidenceGroupIds": ["evidence_screenshot"],
+      "pendingRequests": [],
+      "activeTurn": {
+        "turnId": "turn_party_01",
+        "speakerId": "participant_claimant",
+        "kind": "participant",
+        "speechKind": "present_evidence",
+        "topicId": "topic_authorization",
+        "sourceRequestId": null
+      }
+    },
+    "records": [
+      {
+        "sequence": 15,
+        "turnId": "turn_judge_02",
+        "speakerId": "judge",
+        "kind": "announcement",
+        "topicId": "topic_authorization",
+        "text": "请原告就图片授权来源发言。",
+        "sourceRequestId": null
+      },
+      {
+        "sequence": 16,
+        "turnId": "turn_party_01",
+        "speakerId": "participant_claimant",
+        "kind": "participant",
+        "speechKind": "present_evidence",
+        "topicId": "topic_authorization",
+        "text": "我方说明网页截图中图片的使用情况。",
+        "sourceRequestId": null
+      }
+    ]
+  },
+  "participantSpeechRequest": {
+    "investigation_id": "inv_001",
+    "participant_id": "participant_defense",
+    "turn_id": "turn_party_02",
+    "case_context": {
+      "summary": "图片授权来源存在争议。",
+      "participants": [
+        { "participantId": "participant_defense", "displayName": "被告" }
+      ],
+      "positions": [],
+      "topics": [
+        { "topicId": "topic_authorization", "text": "图片是否经过授权。" }
+      ],
+      "evidenceGroups": []
+    },
+    "investigation": {
+      "investigationId": "inv_001",
+      "status": "awaiting_speech",
+      "decisionRevision": 11,
+      "currentTopicId": "topic_authorization",
+      "displayedEvidenceGroupIds": [],
+      "pendingRequests": [],
+      "activeTurn": {
+        "turnId": "turn_party_02",
+        "speakerId": "participant_defense",
+        "kind": "participant",
+        "speechKind": "respond",
+        "topicId": "topic_authorization",
+        "sourceRequestId": "request_01"
+      }
+    },
+    "records": []
+  },
+  "judgeAgentRequest": {
+    "investigation_id": "inv_001",
+    "decision_revision": 11,
+    "case_context": {
+      "summary": "图片授权来源存在争议。",
+      "participants": [
+        { "participantId": "participant_claimant", "displayName": "原告" },
+        { "participantId": "participant_defense", "displayName": "被告" }
+      ],
+      "positions": [],
+      "topics": [
+        { "topicId": "topic_authorization", "text": "图片是否经过授权。" }
+      ],
+      "evidenceGroups": []
+    },
+    "investigation": {
+      "investigationId": "inv_001",
+      "status": "ready",
+      "decisionRevision": 11,
+      "currentTopicId": "topic_authorization",
+      "displayedEvidenceGroupIds": [],
+      "pendingRequests": [],
+      "activeTurn": null
+    },
+    "records": []
+  },
+  "judgeAdviceRequest": {
+    "investigation_id": "inv_001",
+    "decision_revision": 11,
+    "scope": "request",
+    "request_id": "request_01",
+    "case_context": {
+      "summary": "图片授权来源存在争议。",
+      "participants": [
+        { "participantId": "participant_claimant", "displayName": "原告" },
+        { "participantId": "participant_defense", "displayName": "被告" }
+      ],
+      "positions": [],
+      "topics": [
+        { "topicId": "topic_authorization", "text": "图片是否经过授权。" }
+      ],
+      "evidenceGroups": []
+    },
+    "investigation": {
+      "investigationId": "inv_001",
+      "status": "ready",
+      "decisionRevision": 11,
+      "currentTopicId": "topic_authorization",
+      "displayedEvidenceGroupIds": [],
+      "pendingRequests": [
+        {
+          "requestId": "request_01",
+          "participantId": "participant_defense",
+          "speechKind": "respond",
+          "topicId": "topic_authorization",
+          "reason": "",
+          "locked": false
+        }
+      ],
+      "activeTurn": null
+    },
+    "records": []
+  },
+  "participantIntentPassResponse": {
+    "investigation_id": "inv_001",
+    "decision_revision": 10,
+    "decision": "pass"
+  },
+  "participantSpeechResponse": {
+    "investigation_id": "inv_001",
+    "turn_id": "turn_party_01",
+    "speech": "我方就授权来源补充说明。"
+  },
+  "judgeAgentResponse": {
+    "investigation_id": "inv_001",
+    "decision_revision": 10,
+    "decision": "action",
+    "action": {
+      "type": "invite_participant",
+      "participantId": "participant_claimant",
+      "speechKind": "answer",
+      "topicId": "topic_authorization"
+    },
+    "utterance": {
+      "mode": "text",
+      "text": "请原告说明照片授权文件的形成时间。"
+    }
+  },
+  "judgeAdviceResponse": {
+    "investigation_id": "inv_001",
+    "decision_revision": 10,
+    "scope": "request",
+    "decision": "action",
+    "action": { "type": "reject_request", "requestId": "request_01" },
+    "utterance": {
+      "mode": "text",
+      "text": "本次申请暂不准许。"
+    }
+  }
+}

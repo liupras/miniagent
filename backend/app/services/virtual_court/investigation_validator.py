@@ -1,16 +1,12 @@
-"""Validate untrusted outputs from the three new investigation agents."""
+"""Validate V4 investigation Agent outputs against the current room context."""
 
 from pydantic import ValidationError
 
 from app.schemas.integrations.strict_json import strict_json
 from app.schemas.integrations.virtual_court.investigation import (
-    JudgeNextActionResponse,
-    ParticipantIntentResponse,
-    ParticipantSpeechResponse,
+    JudgeNextActionResponse, ParticipantIntentResponse, ParticipantSpeechResponse,
 )
-
 from .exceptions import InvestigationInvalidResponseError
-
 
 RESPONSE_MAX_BYTES = 131072
 
@@ -37,56 +33,20 @@ def _parse(raw, response_type):
         _invalid(field, exc)
 
 
-def _case_order(ids, order, field):
-    if len(ids) != len(set(ids)) or ids != [item for item in order if item in ids]:
-        _invalid(field)
-
-
-def _references(request, *, participant, kind, topic, evidence_ids, reply):
-    context = request.case_context
-    topics = {item.topicId for item in context.topics}
-    groups = {item.evidenceGroupId: item for item in context.evidenceGroups}
-    order = list(groups)
-    records = {item.turnId: item for item in request.records}
-    if topic not in topics:
-        _invalid("topicId")
-    _case_order(evidence_ids, order, "evidenceGroupIds")
-    if kind == "present_evidence":
-        if not evidence_ids or any(groups[item].offeringParticipantId != participant for item in evidence_ids):
-            _invalid("evidenceGroupIds")
-    if kind == "examine_evidence":
-        if not evidence_ids or any(
-            groups[item].offeringParticipantId == participant or
-            not any(record.kind == "present_evidence" and item in record.evidenceGroupIds
-                    for record in request.records)
-            for item in evidence_ids
-        ):
-            _invalid("evidenceGroupIds")
-    if kind == "respond":
-        if reply not in records or records[reply].kind == "summary":
-            _invalid("replyToTurnId")
-    elif reply is not None:
-        _invalid("replyToTurnId")
-
-
 def validate_intent_output(raw, request):
     response = _parse(raw, ParticipantIntentResponse)
     if (response.investigation_id != request.investigation_id or
             response.decision_revision != request.decision_revision):
         _invalid("investigation_id")
     if response.decision == "request":
-        _references(request, participant=request.participant_id,
-                    kind=response.speech_kind, topic=response.topic_id,
-                    evidence_ids=response.evidence_group_ids, reply=response.reply_to_turn_id)
-        if any(
-            item.participantId == request.participant_id and
-            item.speechKind == response.speech_kind and
-            item.reason.strip() == response.reason.strip() and
-            item.topicId == response.topic_id and
-            item.evidenceGroupIds == response.evidence_group_ids and
-            item.replyToTurnId == response.reply_to_turn_id
-            for item in request.investigation.pendingRequests
-        ):
+        topics = {item.topicId for item in request.case_context.topics}
+        if response.topic_id not in topics:
+            _invalid("topic_id")
+        if any(item.participantId == request.participant_id and
+               item.speechKind == response.speech_kind and
+               item.topicId == response.topic_id and
+               item.reason.strip() == (response.reason or "").strip()
+               for item in request.investigation.pendingRequests):
             _invalid("decision")
     return response
 
@@ -109,63 +69,28 @@ def validate_judge_output(raw, request):
             _invalid("scope")
     elif response.scope != request.scope or "scope" not in response.model_fields_set:
         _invalid("scope")
-    if response.decision == "handoff":
-        return response
-    if response.decision == "defer":
+    if response.decision != "action":
         return response
     action = response.action
     allowed = {
         "request": ("grant_request", "reject_request"),
-        "next": ("invite_participant", "ask_participant"),
+        "next": ("invite_participant",),
         "summary": ("close_investigation",),
     }
     if request.scope is not None and action.type not in allowed[request.scope]:
         _invalid("action.type")
-    if request.scope == "request" and action.requestId != request.request_id:
-        _invalid("action.requestId")
-    context = request.case_context
-    participants = {item.participantId for item in context.participants}
     pending = {item.requestId: item for item in request.investigation.pendingRequests}
-    topics = {item.topicId for item in context.topics}
-    group_order = [item.evidenceGroupId for item in context.evidenceGroups]
-    groups = set(group_order)
+    participants = {item.participantId for item in request.case_context.participants}
+    topics = {item.topicId for item in request.case_context.topics}
     if action.type in ("grant_request", "reject_request"):
         selected = pending.get(action.requestId)
-        if selected is None:
+        if selected is None or selected.locked or request.scope == "request" and action.requestId != request.request_id:
             _invalid("action.requestId")
-        ids = action.evidenceGroupIds
-        if (len(ids) != len(set(ids)) or
-                ids != [item for item in group_order if item in ids] or
-                not set(ids) <= set(selected.pendingEvidenceGroupIds) or
-                bool(ids) != bool(selected.evidenceGroupIds)):
-            _invalid("action.evidenceGroupIds")
-        if action.type == "grant_request":
-            _references(request, participant=selected.participantId,
-                        kind=selected.speechKind, topic=selected.topicId,
-                        evidence_ids=ids, reply=selected.replyToTurnId)
     elif action.type == "invite_participant":
         if action.participantId not in participants:
             _invalid("action.participantId")
-        _references(request, participant=action.participantId,
-                    kind=action.speechKind, topic=action.topicId,
-                    evidence_ids=action.evidenceGroupIds, reply=action.replyToTurnId)
-    elif action.type == "ask_participant":
-        if action.participantId not in participants:
-            _invalid("action.participantId")
-        if action.topicId != request.investigation.currentTopicId:
+        if action.topicId is not None and action.topicId not in topics:
             _invalid("action.topicId")
-    elif action.type == "set_context":
-        if action.topicId not in topics:
-            _invalid("action.topicId")
-        if (len(action.evidenceGroupIds) != len(set(action.evidenceGroupIds)) or
-                any(item not in groups for item in action.evidenceGroupIds) or
-                action.evidenceGroupIds != [
-                    item for item in group_order if item in action.evidenceGroupIds
-                ]):
-            _invalid("action.evidenceGroupIds")
-        if (action.topicId == request.investigation.currentTopicId and
-                action.evidenceGroupIds == request.investigation.currentEvidenceGroupIds):
-            _invalid("action")
     elif action.type == "close_investigation" and pending:
-        _invalid("action")
+        _invalid("action.type")
     return response
