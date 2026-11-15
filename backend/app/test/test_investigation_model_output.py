@@ -110,6 +110,30 @@ def test_manual_judge_action_defer_and_handoff_bind_scope():
     assert handoff.scope == "next" and handoff.reason == "现有记录不足。"
 
 
+def test_next_invite_requires_valid_topic():
+    request = _judge("next")
+    action = {"type": "invite_participant", "participantId": "participant_claimant",
+              "speechKind": "statement"}
+    with pytest.raises(InvestigationInvalidResponseError) as error:
+        validate_judge_model_output(_raw({"decision": "action", "action": action,
+                                          "utterance": "请说明。"}), request)
+    assert _field(error) == "action.topicId"
+    accepted = validate_judge_model_output(_raw({"decision": "action",
+        "action": action | {"topicId": "topic_authorization"},
+        "utterance": "请说明。"}), request)
+    assert accepted.action.topicId == "topic_authorization"
+
+
+def test_nested_invite_utterance_is_rejected():
+    action = {"type": "invite_participant", "participantId": "participant_claimant",
+              "speechKind": "statement", "topicId": "topic_authorization",
+              "utterance": "请说明。"}
+    with pytest.raises(InvestigationInvalidResponseError) as error:
+        validate_judge_model_output(_raw({"decision": "action", "action": action,
+                                          "utterance": "请说明。"}), _judge("next"))
+    assert _field(error) == "action.invite_participant.utterance"
+
+
 def test_summary_requires_spoken_text():
     request = _judge("summary")
     response = validate_judge_model_output(_raw({

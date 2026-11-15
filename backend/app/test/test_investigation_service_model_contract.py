@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from app.runtime.agent.execution import AgentExecution
+from app.services.virtual_court import InvestigationInvalidResponseError
 from app.schemas.integrations.virtual_court.investigation import (
     JudgeNextActionRequest,
     ParticipantIntentRequest,
@@ -116,6 +117,46 @@ async def test_service_repairs_missing_decision_using_only_projected_context():
     assert "investigation_id" not in runner.calls[1]["history"][0]["content"]
 
 
+@pytest.mark.anyio
+async def test_next_invite_repairs_nested_utterance():
+    data = _fixture("judgeAgentRequest")
+    data["scope"] = "next"
+    data["case_context"]["participants"] = [
+        {"participantId": "participant_claimant", "displayName": "原告"}]
+    request = JudgeNextActionRequest.model_validate(data)
+    action = {"type": "invite_participant", "participantId": "participant_claimant",
+              "speechKind": "statement", "topicId": "topic_authorization"}
+    malformed = {"decision": "action", "action": action | {"utterance": "请说明。"},
+                 "utterance": "请说明。"}
+    corrected = {"decision": "action", "action": action, "utterance": "请说明。"}
+    runner = Runner([json.dumps(malformed, ensure_ascii=False),
+                     json.dumps(corrected, ensure_ascii=False)])
+    result = await InvestigationAgentService(Factory(runner)).next_action(request)
+    assert result.action.topicId == "topic_authorization"
+    assert result.utterance.text == "请说明。"
+    assert len(runner.calls) == 2
+    assert "utterance 是与 action 并列的顶层字符串" in runner.calls[1]["query"]
+
+
+@pytest.mark.anyio
+async def test_next_invite_rejects_repeated_nested_utterance():
+    data = _fixture("judgeAgentRequest")
+    data["scope"] = "next"
+    data["case_context"]["participants"] = [
+        {"participantId": "participant_claimant", "displayName": "原告"}]
+    request = JudgeNextActionRequest.model_validate(data)
+    malformed = {"decision": "action", "action": {
+        "type": "invite_participant", "participantId": "participant_claimant",
+        "speechKind": "statement", "topicId": "topic_authorization",
+        "utterance": "请说明。"}, "utterance": "请说明。"}
+    raw = json.dumps(malformed, ensure_ascii=False)
+    runner = Runner([raw, raw])
+    with pytest.raises(InvestigationInvalidResponseError) as error:
+        await InvestigationAgentService(Factory(runner)).next_action(request)
+    assert error.value.params["field"] == "action.invite_participant.utterance"
+    assert len(runner.calls) == 2
+
+
 def test_three_seed_prompts_match_model_only_contract():
     rows = json.loads(SEED.read_text(encoding="utf-8"))
     prompts = {row["name"]: row["system_prompt"] for row in rows}
@@ -129,5 +170,7 @@ def test_three_seed_prompts_match_model_only_contract():
         if operation == "judge":
             assert "scope=auto" in prompt
             assert "utterance 字符串" in prompt
+            assert "utterance 是与 action 并列的字符串" in prompt
+            assert "scope=next 时 topicId 必填" in prompt
         if operation == "speech":
             assert '"speech":"本方实际发言"' in prompt

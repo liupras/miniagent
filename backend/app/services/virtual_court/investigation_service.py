@@ -107,6 +107,11 @@ class InvestigationAgentService:
                         query += ("。顶层 decision 仅可为 action、handoff、defer；"
                                   "有 action 对象时 decision 必须为 action，"
                                   "具体动作名仅写入 action.type。")
+                    if operation == "judge" and invalid.params.get("field") == "action.invite_participant.utterance":
+                        query += ("。utterance 是与 action 并列的顶层字符串；"
+                                  "从 action 内移出，不要放入 action。")
+                    if operation == "judge" and invalid.params.get("field") == "action.topicId" and request.scope == "next":
+                        query += "。scope=next 时，action.topicId 必须从 case_context.topics 中选择。"
                     if operation == "judge" and invalid.params.get("field", "").endswith("speechKind"):
                         query += ("。invite_participant.speechKind 只能是 "
                                   "present_evidence、examine_evidence 或 statement；"

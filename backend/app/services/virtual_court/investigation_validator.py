@@ -116,6 +116,8 @@ def _validate_judge_choice(response, request):
     elif action.type == "invite_participant":
         if action.participantId not in participants:
             _invalid("action.participantId")
+        if request.scope == "next" and action.topicId is None:
+            _invalid("action.topicId")
         if action.topicId is not None and action.topicId not in topics:
             _invalid("action.topicId")
     elif action.type == "close_investigation" and pending:
