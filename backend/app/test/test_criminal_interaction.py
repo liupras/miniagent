@@ -109,11 +109,26 @@ def test_witness_cannot_speak_in_debate():
         CriminalInteractionRequest.model_validate(data)
 
 
+def test_kanglei_witness_sees_only_own_statement_material():
+    request = body("witness_speech", "witness")
+    projected = model_input(request)
+    materials = [material for group in projected["case"]["evidenceGroups"]
+                 for material in group["materials"]]
+    assert {item["materialId"] for item in materials} == {
+        "zhanggenbai-statement"}
+    assert all(ref["pageStart"] >= 46 and ref["pageEnd"] <= 48
+               for item in materials for ref in item["sourceRefs"])
+    assert projected["witnessProfiles"][0]["participantId"] == \
+        request.targetParticipantId
+    assert "charges" not in projected["case"]
+
+
 def test_four_dedicated_agents_are_seeded():
     prompts = {row["name"]: row["system_prompt"] for row in
                json.loads(SEED.read_text(encoding="utf-8"))}
     assert all(name in prompts for name in AGENTS.values())
     assert "witnessProfiles" in prompts[AGENTS["witness_speech"]]
+    assert "sourceRefs 只标注出处页码" in prompts[AGENTS["witness_speech"]]
 
 
 def test_startup_seed_creates_and_refreshes_four_agents():
