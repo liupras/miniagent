@@ -507,6 +507,7 @@ class DatabaseManager:
                         "virtual_court_criminal_party_speech",
                         "virtual_court_criminal_witness",
                         "virtual_court_criminal_judge",
+                        "virtual_court_criminal_verdict",
                     }
                 ),
             )
@@ -527,6 +528,7 @@ class DatabaseManager:
             "virtual_court_criminal_party_speech",
             "virtual_court_criminal_witness",
             "virtual_court_criminal_judge",
+            "virtual_court_criminal_verdict",
         }
         if existing is None and row["name"] == "virtual_court_investigation_judge":
             existing = db.query(Agent).filter_by(name="virtual_court_solo_judge").first()

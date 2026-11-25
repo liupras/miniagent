@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://virtualcourt.local/schemas/criminal-verdict-request-v1.schema.json",
+  "title": "Criminal training verdict request V1",
+  "type": "object", "additionalProperties": false,
+  "required": ["contractVersion", "decisionRunId", "roomEpoch", "stepRunId", "caseRevisionId", "caseContentSha256", "procedureVersionId", "procedureSha256", "sourceStateVersion", "basisSha256", "basis"],
+  "properties": {
+    "contractVersion": { "const": "criminal-verdict-v1" },
+    "decisionRunId": { "$ref": "#/$defs/id" },
+    "roomEpoch": { "$ref": "#/$defs/id" },
+    "stepRunId": { "$ref": "#/$defs/id" },
+    "caseRevisionId": { "$ref": "#/$defs/id" },
+    "caseContentSha256": { "$ref": "#/$defs/sha256" },
+    "procedureVersionId": { "const": "criminal-first-instance-v1" },
+    "procedureSha256": { "$ref": "#/$defs/sha256" },
+    "sourceStateVersion": { "type": "integer", "minimum": 0 },
+    "basisSha256": { "$ref": "#/$defs/sha256" },
+    "basis": { "$ref": "#/$defs/basis" }
+  },
+  "$defs": {
+    "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "\\S" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "idList": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/id" } },
+    "basis": {
+      "type": "object", "additionalProperties": false,
+      "required": ["caseSummary", "participants", "charges", "disputeFocuses", "evidenceMaterials", "legalSources", "records", "lastStatementSequence"],
+      "properties": {
+        "caseSummary": { "type": "string", "minLength": 1 },
+        "participants": { "type": "array", "minItems": 5, "items": { "$ref": "#/$defs/participant" } },
+        "charges": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/charge" } },
+        "disputeFocuses": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/focus" } },
+        "evidenceMaterials": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+        "legalSources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/legal" } },
+        "records": { "type": "array", "minItems": 1, "maxItems": 512, "items": { "$ref": "#/$defs/record" } },
+        "lastStatementSequence": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "participant": {
+      "type": "object", "additionalProperties": false,
+      "required": ["participantId", "roleId", "displayName"],
+      "properties": {
+        "participantId": { "$ref": "#/$defs/id" },
+        "roleId": { "enum": ["judge", "clerk", "prosecutor", "defense_counsel", "accused", "witness"] },
+        "displayName": { "$ref": "#/$defs/id" }
+      }
+    },
+    "charge": {
+      "type": "object", "additionalProperties": false,
+      "required": ["chargeId", "crimeName", "allegedFacts", "legalSourceIds"],
+      "properties": {
+        "chargeId": { "$ref": "#/$defs/id" },
+        "crimeName": { "$ref": "#/$defs/id" },
+        "allegedFacts": { "type": "string", "minLength": 1 },
+        "legalSourceIds": { "$ref": "#/$defs/idList" }
+      }
+    },
+    "focus": {
+      "type": "object", "additionalProperties": false,
+      "required": ["focusId", "text"],
+      "properties": { "focusId": { "$ref": "#/$defs/id" }, "text": { "type": "string", "minLength": 1 } }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["materialId", "displayText", "usageStatus", "speechSequences", "sourceRefs"],
+      "properties": {
+        "materialId": { "$ref": "#/$defs/id" },
+        "displayText": { "type": "string", "minLength": 1 },
+        "usageStatus": { "enum": ["listed", "presented", "examined"] },
+        "speechSequences": { "type": "array", "maxItems": 512, "items": { "type": "integer", "minimum": 1 } },
+        "sourceRefs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/sourceRef" } }
+      }
+    },
+    "sourceRef": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sourceDocumentId", "pageStart", "pageEnd"],
+      "properties": {
+        "sourceDocumentId": { "$ref": "#/$defs/id" },
+        "pageStart": { "type": "integer", "minimum": 1 },
+        "pageEnd": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "legal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["legalSourceId", "citation", "text"],
+      "properties": {
+        "legalSourceId": { "$ref": "#/$defs/id" },
+        "citation": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "minLength": 1 }
+      }
+    },
+    "record": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sequence", "stepId", "participantId", "roleId", "text", "evidenceMaterialIds"],
+      "properties": {
+        "sequence": { "type": "integer", "minimum": 1 },
+        "stepId": { "$ref": "#/$defs/id" },
+        "participantId": { "$ref": "#/$defs/id" },
+        "roleId": { "enum": ["judge", "clerk", "prosecutor", "defense_counsel", "accused", "witness"] },
+        "text": { "type": "string", "minLength": 1 },
+        "evidenceMaterialIds": { "$ref": "#/$defs/idList" }
+      }
+    }
+  }
+}

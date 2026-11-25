@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://virtualcourt.local/schemas/criminal-verdict-response-v1.schema.json",
+  "title": "Criminal training verdict response V1",
+  "type": "object", "additionalProperties": false,
+  "required": ["contractVersion", "decisionRunId", "roomEpoch", "stepRunId", "sourceStateVersion", "basisSha256", "status"],
+  "properties": {
+    "contractVersion": { "const": "criminal-verdict-v1" },
+    "decisionRunId": { "$ref": "#/$defs/id" },
+    "roomEpoch": { "$ref": "#/$defs/id" },
+    "stepRunId": { "$ref": "#/$defs/id" },
+    "sourceStateVersion": { "type": "integer", "minimum": 0 },
+    "basisSha256": { "$ref": "#/$defs/sha256" },
+    "status": { "enum": ["decision", "handoff"] },
+    "decision": { "$ref": "#/$defs/decision" },
+    "handoffReason": { "type": "string", "minLength": 1 }
+  },
+  "if": { "properties": { "status": { "const": "decision" } }, "required": ["status"] },
+  "then": { "required": ["decision"], "properties": { "handoffReason": { "type": "null" } } },
+  "else": { "required": ["handoffReason"], "properties": { "decision": { "type": "null" } } },
+  "$defs": {
+    "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "\\S" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "reference": { "type": "string", "pattern": "^(evidence|speech|legal):[A-Za-z0-9][A-Za-z0-9._-]*$" },
+    "references": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/reference" } },
+    "decision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["findings", "chargeDecisions", "pronouncementText"],
+      "properties": {
+        "findings": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/finding" } },
+        "chargeDecisions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/chargeDecision" } },
+        "pronouncementText": { "type": "string", "minLength": 1, "pattern": "\\S" }
+      }
+    },
+    "finding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["focusId", "conclusion", "supportRefs", "contraryRefs"],
+      "properties": {
+        "focusId": { "$ref": "#/$defs/id" },
+        "conclusion": { "type": "string", "minLength": 1 },
+        "supportRefs": { "$ref": "#/$defs/references" },
+        "contraryRefs": { "$ref": "#/$defs/references" }
+      }
+    },
+    "chargeDecision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["chargeId", "outcome", "reason", "dispositionText", "legalSourceIds", "basisRefs"],
+      "properties": {
+        "chargeId": { "$ref": "#/$defs/id" },
+        "outcome": { "enum": ["convicted", "acquitted"] },
+        "reason": { "type": "string", "minLength": 1 },
+        "dispositionText": { "type": "string" },
+        "legalSourceIds": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/id" } },
+        "basisRefs": { "$ref": "#/$defs/references" }
+      }
+    }
+  }
+}
