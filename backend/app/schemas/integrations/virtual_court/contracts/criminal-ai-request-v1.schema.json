@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://virtualcourt.local/schemas/criminal-ai-request-v1.schema.json",
+  "title": "Criminal court AI request V1",
+  "description": "casePackage additionally follows criminal-case-v1.schema.json and the publication business rules.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "operation", "callId", "roomEpoch", "stepId", "stepRunId", "sourceStateVersion", "caseRevisionId", "caseContentSha256", "procedureVersionId", "procedureSha256", "targetParticipantId", "targetRoleId", "casePackage", "interaction", "records"],
+  "properties": {
+    "contractVersion": { "const": "criminal-ai-v1" },
+    "operation": { "enum": ["intent", "participant_speech", "witness_speech", "judge_action"] },
+    "callId": { "$ref": "#/$defs/id" },
+    "roomEpoch": { "$ref": "#/$defs/id" },
+    "stepId": { "$ref": "#/$defs/id" },
+    "stepRunId": { "$ref": "#/$defs/id" },
+    "sourceStateVersion": { "type": "integer", "minimum": 0 },
+    "caseRevisionId": { "$ref": "#/$defs/id" },
+    "caseContentSha256": { "$ref": "#/$defs/sha256" },
+    "procedureVersionId": { "const": "criminal-first-instance-v1" },
+    "procedureSha256": { "$ref": "#/$defs/sha256" },
+    "targetParticipantId": { "$ref": "#/$defs/id" },
+    "targetRoleId": { "enum": ["judge", "prosecutor", "defense_counsel", "accused", "witness"] },
+    "casePackage": { "type": "object" },
+    "interaction": { "$ref": "#/$defs/interaction" },
+    "records": { "type": "array", "maxItems": 512, "items": { "$ref": "#/$defs/record" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "\\S" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "idList": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/id" } },
+    "interaction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["investigationId", "mode", "status", "decisionRevision", "roundIndex", "roundLabels", "currentTopicId", "displayedEvidenceGroupIds", "presentedEvidenceGroupIds", "pendingRequests", "activeTurn"],
+      "properties": {
+        "investigationId": { "$ref": "#/$defs/id" },
+        "mode": { "enum": ["criminal_investigation", "criminal_debate"] },
+        "status": { "enum": ["ready", "awaiting_speech", "presenting"] },
+        "decisionRevision": { "type": "integer", "minimum": 0 },
+        "roundIndex": { "type": "integer", "minimum": 0 },
+        "roundLabels": { "type": "array", "maxItems": 20, "items": { "type": "string" } },
+        "currentTopicId": { "type": ["string", "null"] },
+        "displayedEvidenceGroupIds": { "$ref": "#/$defs/idList" },
+        "presentedEvidenceGroupIds": { "$ref": "#/$defs/idList" },
+        "pendingRequests": { "type": "array", "maxItems": 100, "items": { "type": "object" } },
+        "activeTurn": { "type": ["object", "null"] }
+      }
+    },
+    "record": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sequence", "stepId", "participantId", "roleId", "text", "turnId", "speechKind", "topicId", "evidenceGroupIds", "contextEvidenceGroupIds"],
+      "properties": {
+        "sequence": { "type": "integer", "minimum": 1 },
+        "stepId": { "$ref": "#/$defs/id" },
+        "participantId": { "$ref": "#/$defs/id" },
+        "roleId": { "enum": ["judge", "clerk", "prosecutor", "defense_counsel", "accused", "witness"] },
+        "text": { "type": "string", "minLength": 1 },
+        "turnId": { "type": "string" },
+        "speechKind": { "type": "string" },
+        "topicId": { "type": "string" },
+        "evidenceGroupIds": { "$ref": "#/$defs/idList" },
+        "contextEvidenceGroupIds": { "$ref": "#/$defs/idList" }
+      }
+    }
+  }
+}

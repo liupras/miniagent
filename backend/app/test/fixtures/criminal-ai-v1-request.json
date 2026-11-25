@@ -1,0 +1,307 @@
+{
+  "contractVersion": "criminal-ai-v1",
+  "operation": "judge_action",
+  "callId": "call-1",
+  "roomEpoch": "epoch-1",
+  "stepId": "调查 / 调查",
+  "stepRunId": "step-run-1",
+  "sourceStateVersion": 10,
+  "caseRevisionId": "revision-1",
+  "caseContentSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "procedureVersionId": "criminal-first-instance-v1",
+  "procedureSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "targetParticipantId": "judge-01",
+  "targetRoleId": "judge",
+  "casePackage": {
+    "contractVersion": "1.0",
+    "frozenRequirementsVersion": "CRIMINAL-V1",
+    "caseInfo": {
+      "caseId": "demo-kanglei-contract-001",
+      "caseNumber": "模拟-康磊-001",
+      "courtName": "虚拟人民法院",
+      "procedure": "刑事一审模拟庭审",
+      "causeOfAction": "过失致人死亡罪（赛题指控）",
+      "subjectMatter": "康磊过失致人死亡案契约样例",
+      "summary": "赛题设定公诉机关指控康磊构成过失致人死亡罪；康磊否认犯法，辩护人认为不构成所指控罪名。死因及行为与死亡的关系需要在庭审中调查。",
+      "isSimulated": true,
+      "legalEffectDisclaimer": "仅供教学模拟，不产生司法效力。"
+    },
+    "sourceDocuments": [
+      {
+        "sourceDocumentId": "kanglei-original",
+        "title": "第二届康磊过失致人死亡案赛题卷宗",
+        "kind": "original",
+        "fileName": "附件3：第二届 康磊过失致人死亡案.pdf",
+        "pageCount": 58,
+        "sha256": "e218c8f597dad985ee90872bcc1a994b50527dd62c5657f5f7a934d0dd2c35de"
+      }
+    ],
+    "participants": [
+      {
+        "participantId": "judge-01",
+        "role": "judge",
+        "displayName": "审判长",
+        "entityType": "natural_person",
+        "controlType": "human_or_ai",
+        "description": "模拟审判长，姓名待设定。"
+      },
+      {
+        "participantId": "clerk-01",
+        "role": "clerk",
+        "displayName": "书记员",
+        "entityType": "natural_person",
+        "controlType": "system",
+        "description": "系统表演的书记员，姓名待设定。"
+      },
+      {
+        "participantId": "prosecutor-01",
+        "role": "prosecutor",
+        "displayName": "公诉人",
+        "entityType": "natural_person",
+        "controlType": "human_or_ai",
+        "description": "三江市平原区检察院公诉人，姓名待设定。"
+      },
+      {
+        "participantId": "defense-01",
+        "role": "defense_counsel",
+        "displayName": "辩护人",
+        "entityType": "natural_person",
+        "controlType": "human_or_ai",
+        "description": "康磊的辩护人，姓名待设定。"
+      },
+      {
+        "participantId": "accused-01",
+        "role": "accused",
+        "displayName": "康磊",
+        "entityType": "natural_person",
+        "controlType": "human_or_ai",
+        "description": "赛题被告人。"
+      },
+      {
+        "participantId": "witness-zhanggenbai",
+        "role": "witness",
+        "displayName": "张根柏",
+        "entityType": "natural_person",
+        "controlType": "agent_only",
+        "description": "赛题证人；出庭范围待审核。"
+      }
+    ],
+    "charges": [
+      {
+        "chargeId": "charge-01",
+        "sequence": 1,
+        "crimeName": "过失致人死亡罪",
+        "allegedFacts": "赛题设定公诉机关认为康磊在纠纷中伤害穆辉并致其死亡。此处是控方指控，不是法院认定。",
+        "prosecutionText": "公诉机关指控康磊涉嫌过失致人死亡罪；完整演示起诉书待依据卷宗编写并审核。",
+        "legalSourceIds": [
+          "law-233"
+        ],
+        "sourceRefs": [
+          {
+            "sourceDocumentId": "kanglei-original",
+            "pageStart": 4,
+            "pageEnd": 5
+          }
+        ]
+      }
+    ],
+    "positions": [
+      {
+        "positionId": "position-prosecution",
+        "sequence": 1,
+        "side": "prosecution",
+        "speakerParticipantId": "prosecutor-01",
+        "text": "公诉机关认为被告人构成过失致人死亡罪。",
+        "sourceRefs": [
+          {
+            "sourceDocumentId": "kanglei-original",
+            "pageStart": 4,
+            "pageEnd": 5
+          }
+        ]
+      },
+      {
+        "positionId": "position-defense",
+        "sequence": 2,
+        "side": "defense",
+        "speakerParticipantId": "defense-01",
+        "text": "辩护人认为被告人不构成所指控罪名。",
+        "sourceRefs": [
+          {
+            "sourceDocumentId": "kanglei-original",
+            "pageStart": 4,
+            "pageEnd": 4
+          }
+        ]
+      },
+      {
+        "positionId": "position-accused",
+        "sequence": 3,
+        "side": "accused",
+        "speakerParticipantId": "accused-01",
+        "text": "康磊辩称自己没有犯法。",
+        "sourceRefs": [
+          {
+            "sourceDocumentId": "kanglei-original",
+            "pageStart": 4,
+            "pageEnd": 4
+          }
+        ]
+      }
+    ],
+    "disputeFocuses": [
+      {
+        "focusId": "focus-cause-of-death",
+        "sequence": 1,
+        "text": "穆辉的死亡原因及鉴定意见应如何理解"
+      },
+      {
+        "focusId": "focus-causal-link",
+        "sequence": 2,
+        "text": "康磊的行为与穆辉死亡之间的关系"
+      }
+    ],
+    "evidenceGroups": [
+      {
+        "evidenceGroupId": "evidence-forensics",
+        "sequence": 1,
+        "offeringParticipantId": "prosecutor-01",
+        "name": "法医鉴定材料",
+        "proofPurpose": "供庭审讨论死亡原因及相关因素；目录收录不表示结论已经采信。",
+        "materials": [
+          {
+            "materialId": "forensic-original",
+            "sequence": 1,
+            "name": "法医病理检查报告",
+            "source": "赛题卷宗",
+            "displayText": "报告称可排除外力直接导致死亡，综合分析认为心脏肥大、损伤、饮酒及纠纷中情绪激动等因素作用下发生急性心功能衰竭。",
+            "mediaType": "document",
+            "sourceRefs": [
+              {
+                "sourceDocumentId": "kanglei-original",
+                "pageStart": 13,
+                "pageEnd": 14
+              }
+            ]
+          },
+          {
+            "materialId": "forensic-supplement",
+            "sequence": 2,
+            "name": "法医病理补充鉴定书",
+            "source": "赛题卷宗",
+            "displayText": "补充鉴定书对头部损伤在死亡过程中的参与度作了分析；分析说明与结论中的区间表述应在审核和庭审中分别核对。",
+            "mediaType": "document",
+            "sourceRefs": [
+              {
+                "sourceDocumentId": "kanglei-original",
+                "pageStart": 23,
+                "pageEnd": 23
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "evidenceGroupId": "evidence-witness",
+        "sequence": 2,
+        "offeringParticipantId": "prosecutor-01",
+        "name": "证人询问笔录",
+        "proofPurpose": "供庭审讨论现场经过；是否传唤证人由审判长决定。",
+        "materials": [
+          {
+            "materialId": "zhanggenbai-statement",
+            "sequence": 1,
+            "name": "张根柏询问笔录",
+            "source": "赛题卷宗",
+            "displayText": "卷宗收录张根柏关于当晚现场情况的询问笔录；本契约样例未代替原文摘录。",
+            "mediaType": "document",
+            "sourceRefs": [
+              {
+                "sourceDocumentId": "kanglei-original",
+                "pageStart": 46,
+                "pageEnd": 48
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "witnessProfiles": [
+      {
+        "participantId": "witness-zhanggenbai",
+        "statementMaterialIds": [
+          "zhanggenbai-statement"
+        ],
+        "knownFacts": [
+          {
+            "text": "张根柏就当晚现场情况接受过警方询问。",
+            "sourceRefs": [
+              {
+                "sourceDocumentId": "kanglei-original",
+                "pageStart": 46,
+                "pageEnd": 47
+              }
+            ]
+          }
+        ],
+        "uncertainties": [
+          {
+            "text": "不同日期的询问记录及其细节须在制作完整证人档案时核对。",
+            "sourceRefs": [
+              {
+                "sourceDocumentId": "kanglei-original",
+                "pageStart": 46,
+                "pageEnd": 48
+              }
+            ]
+          }
+        ],
+        "reviewStatus": "approved"
+      }
+    ],
+    "legalSources": [
+      {
+        "legalSourceId": "law-233",
+        "title": "赛题所引刑法条款",
+        "citation": "《中华人民共和国刑法》第二百三十三条（赛题引用，适用版本待审核）",
+        "text": "赛题引用该条款；完整条文文本与本次教学使用的法律资料版本待课程负责人核对。",
+        "reviewStatus": "approved"
+      }
+    ],
+    "segmentContents": [
+      {
+        "stepId": "read_indictment",
+        "segmentId": "read_indictment_text",
+        "speakerRole": "prosecutor",
+        "contentSource": "case",
+        "text": "教学起诉书草案，待审核：公诉机关指控康磊涉嫌过失致人死亡罪。完整起诉书正文须依据卷宗编写并核准后方可用于演示。",
+        "sourceRefs": [
+          {
+            "sourceDocumentId": "kanglei-original",
+            "pageStart": 4,
+            "pageEnd": 5
+          }
+        ],
+        "reviewStatus": "approved"
+      }
+    ]
+  },
+  "interaction": {
+    "investigationId": "interaction-1",
+    "mode": "criminal_investigation",
+    "status": "ready",
+    "decisionRevision": 4,
+    "roundIndex": 0,
+    "roundLabels": [],
+    "currentTopicId": "focus-causal-link",
+    "displayedEvidenceGroupIds": [
+      "evidence-forensics"
+    ],
+    "presentedEvidenceGroupIds": [
+      "evidence-forensics"
+    ],
+    "pendingRequests": [],
+    "activeTurn": null
+  },
+  "records": []
+}

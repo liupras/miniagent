@@ -74,6 +74,7 @@ from app.services.virtual_court import (
     CaseDraftService,
     InvestigationAgentService,
 )
+from app.services.virtual_court.criminal_interaction_service import CriminalInteractionService
 from app.services.workplace_agent import WorkplaceAgentService
 
 from app.runtime.conversation.service_conversation import ConversationService
@@ -182,6 +183,10 @@ class ServiceContainer:
             timeout_seconds=settings.virtual_court_case_draft_timeout_seconds,
         )
         self.investigation_agent_service = InvestigationAgentService(
+            self.agent_factory,
+            timeout_seconds=settings.virtual_court_judge_timeout_seconds,
+        )
+        self.criminal_interaction_service = CriminalInteractionService(
             self.agent_factory,
             timeout_seconds=settings.virtual_court_judge_timeout_seconds,
         )
