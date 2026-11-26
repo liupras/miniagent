@@ -65,6 +65,16 @@ def test_response_model_matches_frozen_schema_cases(case):
             TranscriptGenerateResponseV3.model_validate(data)
 
 
+@pytest.mark.parametrize("role", ["prosecutor", "defense_counsel", "accused", "witness"])
+def test_criminal_roles_use_shared_transcript_request(role):
+    data = load("cases/transcript-speech-request.json")
+    data["participants"][0]["role"] = role
+    data["records"][0]["role"] = role
+    request = TranscriptGenerateRequestV3.model_validate(data)
+    assert request.participants[0].role == role
+    assert request.records[0].role == role
+
+
 def test_request_uses_virtual_court_transcript_domain_names():
     fields = TranscriptGenerateRequestV3.model_fields
     assert set(fields) == {

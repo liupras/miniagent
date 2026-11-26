@@ -118,7 +118,7 @@ def _model_result(raw: str, request: CriminalInteractionRequest) -> dict:
                item.get("speechKind") == result["speechKind"] and
                item.get("topicId") == result["topicId"]
                for item in state["pendingRequests"]):
-            _invalid("pendingRequests")
+            return {"decision": "pass"}
         return result
     if operation in {"participant_speech", "witness_speech"}:
         if (set(result) not in ({"speech"}, {"speech", "evidenceGroupIds"}) or
@@ -135,12 +135,20 @@ def _model_result(raw: str, request: CriminalInteractionRequest) -> dict:
         return {"speech": result["speech"], "evidenceGroupIds": ids}
 
     decision = result.get("decision")
-    # Some models place the action type in decision while keeping a valid action.
+    # Accept a redundant action name in decision, including a missing action.type.
     if (decision in {"grant_request", "reject_request", "invite_participant",
                     "next_round", "close_investigation"} and
             isinstance(result.get("action"), dict) and
-            result["action"].get("type") == decision):
+            result["action"].get("type", decision) == decision):
+        result["action"].setdefault("type", decision)
         result["decision"] = decision = "action"
+    action = result.get("action")
+    if (decision == "action" and isinstance(action, dict) and
+            state["mode"] == "criminal_investigation" and
+            action.get("type") == "invite_participant" and
+            people.get(action.get("participantId")) == "accused" and
+            action.get("speechKind") == "answer_accused"):
+        action["speechKind"] = "statement"
     if decision == "handoff":
         if (set(result) != {"decision", "reason"} or
                 not isinstance(result.get("reason"), str) or
@@ -229,8 +237,15 @@ class CriminalInteractionService:
                         {"role": "user", "content": json.dumps(model_input(request), ensure_ascii=False)},
                         {"role": "assistant", "content": execution.text if execution else ""},
                     ]
-                    query = ("请仅修正 JSON。错误字段：" +
-                             str(error.params.get("field", "response")))
+                    field = str(error.params.get("field", "response"))
+                    if field == "evidenceGroupIds":
+                        allowed = request.interaction["presentedEvidenceGroupIds"]
+                        query = ("请仅修正 JSON。evidenceGroupIds 只能从已出示证据组 " +
+                                 json.dumps(allowed, ensure_ascii=False) +
+                                 " 中选择；若为空，删去对未出示具体证据的引用，" +
+                                 "仅围绕庭审已记录的发言表达，并填 []。")
+                    else:
+                        query = "请仅修正 JSON。错误字段：" + field
         except TimeoutError as exc:
             raise InvestigationTimeoutError(cause=exc) from exc
         except ContextBudgetExceeded as exc:

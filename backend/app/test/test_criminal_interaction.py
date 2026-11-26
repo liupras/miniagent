@@ -92,6 +92,23 @@ async def test_four_isolated_agents(operation, role, output):
 
 
 @pytest.mark.anyio
+async def test_duplicate_pending_intent_is_treated_as_pass():
+    data = body("intent", "defense_counsel").model_dump()
+    data["interaction"]["pendingRequests"] = [{
+        "requestId": "request-1", "participantId": "defense-01",
+        "speechKind": "debate_statement", "topicId": "focus-causal-link",
+    }]
+    data["interaction"]["mode"] = "criminal_debate"
+    request = CriminalInteractionRequest.model_validate(data)
+    repeated = {"decision": "request", "speechKind": "debate_statement",
+                "topicId": "focus-causal-link"}
+    runner = Runner([json.dumps(repeated)])
+    response = await CriminalInteractionService(Factory(runner)).run(request)
+    assert response.result == {"decision": "pass"}
+    assert len(runner.calls) == 1
+
+
+@pytest.mark.anyio
 async def test_unpresented_evidence_is_rejected_after_one_retry():
     request = body("participant_speech", "defense_counsel")
     answer = json.dumps({"speech": "发言。", "evidenceGroupIds": ["evidence-witness"]},
@@ -100,6 +117,9 @@ async def test_unpresented_evidence_is_rejected_after_one_retry():
     with pytest.raises(InvestigationInvalidResponseError):
         await CriminalInteractionService(Factory(runner)).run(request)
     assert len(runner.calls) == 2
+    assert ("已出示证据组 " + json.dumps(
+        request.interaction["presentedEvidenceGroupIds"], ensure_ascii=False)) in runner.calls[1]["query"]
+    assert "删去对未出示具体证据的引用" in runner.calls[1]["query"]
 
 
 @pytest.mark.anyio
@@ -113,6 +133,21 @@ async def test_judge_action_type_in_decision_is_normalized_then_validated():
     response = await CriminalInteractionService(Factory(runner)).run(request)
     assert response.result["decision"] == "action"
     assert response.result["action"] == answer["action"]
+    assert len(runner.calls) == 1
+
+
+@pytest.mark.anyio
+async def test_judge_invited_accused_response_is_normalized_then_validated():
+    request = body("judge_action", "judge")
+    answer = {"decision": "invite_participant", "action": {
+        "participantId": "accused-01", "speechKind": "answer_accused",
+        "topicId": "focus-causal-link",
+    }, "utterance": "请被告人说明。"}
+    runner = Runner([json.dumps(answer, ensure_ascii=False)])
+    response = await CriminalInteractionService(Factory(runner)).run(request)
+    assert response.result["decision"] == "action"
+    assert response.result["action"]["type"] == "invite_participant"
+    assert response.result["action"]["speechKind"] == "statement"
     assert len(runner.calls) == 1
 
 

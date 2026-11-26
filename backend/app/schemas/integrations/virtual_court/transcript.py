@@ -15,7 +15,8 @@ from .judge import (
 
 TRANSCRIPT_MAX_CODEPOINTS = 64000
 TRANSCRIPT_RESPONSE_MAX_BYTES = 524288
-TranscriptRole = Literal["judge", "clerk", "plaintiff", "defendant", "system"]
+TranscriptRole = Literal["judge", "clerk", "plaintiff", "defendant",
+                         "prosecutor", "defense_counsel", "accused", "witness", "system"]
 
 
 class TranscriptCaseInfo(StrictModel):

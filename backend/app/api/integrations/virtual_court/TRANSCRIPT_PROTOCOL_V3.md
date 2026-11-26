@@ -37,7 +37,7 @@
 - `stage_name`：数据库配置的阶段名称，非空，最多 256 个 Unicode 码点；
 - `step_name`：步骤名称，非空，最多 256 个 Unicode 码点；
 - `segment_name`：环节名称，非空，最多 1024 个 Unicode 码点；
-- `role`：`judge`、`clerk`、`plaintiff`、`defendant` 或 `system`；
+- `role`：`judge`、`clerk`、`plaintiff`、`defendant`、`prosecutor`、`defense_counsel`、`accused`、`witness` 或 `system`；
 - `text`：非空，最多 8000 个 Unicode 码点；
 - `is_intervention`：是否为临时插问。
 
