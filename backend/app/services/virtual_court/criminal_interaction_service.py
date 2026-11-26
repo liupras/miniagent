@@ -135,6 +135,12 @@ def _model_result(raw: str, request: CriminalInteractionRequest) -> dict:
         return {"speech": result["speech"], "evidenceGroupIds": ids}
 
     decision = result.get("decision")
+    # Some models place the action type in decision while keeping a valid action.
+    if (decision in {"grant_request", "reject_request", "invite_participant",
+                    "next_round", "close_investigation"} and
+            isinstance(result.get("action"), dict) and
+            result["action"].get("type") == decision):
+        result["decision"] = decision = "action"
     if decision == "handoff":
         if (set(result) != {"decision", "reason"} or
                 not isinstance(result.get("reason"), str) or

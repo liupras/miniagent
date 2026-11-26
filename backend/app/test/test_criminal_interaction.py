@@ -102,6 +102,33 @@ async def test_unpresented_evidence_is_rejected_after_one_retry():
     assert len(runner.calls) == 2
 
 
+@pytest.mark.anyio
+async def test_judge_action_type_in_decision_is_normalized_then_validated():
+    request = body("judge_action", "judge")
+    answer = {"decision": "invite_participant", "action": {
+        "type": "invite_participant", "participantId": "prosecutor-01",
+        "speechKind": "statement", "topicId": "focus-causal-link",
+    }, "utterance": "请公诉人说明。"}
+    runner = Runner([json.dumps(answer, ensure_ascii=False)])
+    response = await CriminalInteractionService(Factory(runner)).run(request)
+    assert response.result["decision"] == "action"
+    assert response.result["action"] == answer["action"]
+    assert len(runner.calls) == 1
+
+
+@pytest.mark.anyio
+async def test_judge_action_type_mismatch_still_fails():
+    request = body("judge_action", "judge")
+    answer = {"decision": "grant_request", "action": {
+        "type": "invite_participant", "participantId": "prosecutor-01",
+        "speechKind": "statement", "topicId": "focus-causal-link",
+    }, "utterance": "请公诉人说明。"}
+    raw = json.dumps(answer, ensure_ascii=False)
+    runner = Runner([raw, raw])
+    with pytest.raises(InvestigationInvalidResponseError):
+        await CriminalInteractionService(Factory(runner)).run(request)
+
+
 def test_witness_cannot_speak_in_debate():
     data = body("witness_speech", "witness").model_dump()
     data["interaction"]["mode"] = "criminal_debate"
