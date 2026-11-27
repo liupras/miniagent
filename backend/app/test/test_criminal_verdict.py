@@ -144,7 +144,9 @@ async def test_handoff_is_explicit():
 
 def test_final_statement_must_be_in_frozen_basis():
     body = request_body()
-    body["basis"]["records"][0]["stepId"] = "criminal_debate"
+    body["basis"]["records"][0]["stepId"] = "最后陈述 / 被告人陈述"
+    assert CriminalVerdictRequest.model_validate(body).basis["records"][0]["stepId"] == "最后陈述 / 被告人陈述"
+    body["basis"]["records"][0]["roleId"] = "prosecutor"
     with pytest.raises(ValidationError):
         CriminalVerdictRequest.model_validate(body)
 

@@ -44,7 +44,7 @@ class CriminalInteractionRequest(StrictModel):
     sourceStateVersion: int = Field(ge=0)
     caseRevisionId: Id
     caseContentSha256: str = Field(pattern=r"^[a-f0-9]{64}$")
-    procedureVersionId: Literal["criminal-first-instance-v1"]
+    procedureVersionId: str = Field(min_length=1, max_length=128)
     procedureSha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     targetParticipantId: Id
     targetRoleId: Role
@@ -95,11 +95,7 @@ class CriminalInteractionRequest(StrictModel):
         if self.operation == "summary_speech" and (
                 mode != "criminal_investigation" or
                 state.get("summaryTask") != "法庭调查小结" or
-                self.stepId not in {"investigation_prosecutor_summary",
-                                    "investigation_defense_summary"} or
-                self.targetRoleId != ("prosecutor" if
-                    self.stepId == "investigation_prosecutor_summary"
-                    else "defense_counsel")):
+                self.targetRoleId not in {"prosecutor", "defense_counsel"}):
             raise ValueError("invalid investigation summary target")
         turn = state.get("activeTurn")
         if self.operation == "judge_action":

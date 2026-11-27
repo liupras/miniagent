@@ -16,7 +16,7 @@
     "sourceStateVersion": { "type": "integer", "minimum": 0 },
     "caseRevisionId": { "$ref": "#/$defs/id" },
     "caseContentSha256": { "$ref": "#/$defs/sha256" },
-    "procedureVersionId": { "const": "criminal-first-instance-v1" },
+    "procedureVersionId": { "$ref": "#/$defs/id" },
     "procedureSha256": { "$ref": "#/$defs/sha256" },
     "targetParticipantId": { "$ref": "#/$defs/id" },
     "targetRoleId": { "enum": ["judge", "prosecutor", "defense_counsel", "accused", "witness"] },

@@ -24,7 +24,7 @@ class CriminalVerdictRequest(StrictModel):
     stepRunId: str
     caseRevisionId: str
     caseContentSha256: str
-    procedureVersionId: Literal["criminal-first-instance-v1"]
+    procedureVersionId: str = Field(min_length=1, max_length=128)
     procedureSha256: str
     sourceStateVersion: int = Field(ge=0)
     basisSha256: str
@@ -43,8 +43,7 @@ class CriminalVerdictRequest(StrictModel):
             raise ValueError("verdict records must be ordered and unique")
         last = next((row for row in records if row["sequence"] ==
                      basis["lastStatementSequence"]), None)
-        if last is None or last["stepId"] != "accused_final_statement" or \
-                last["roleId"] != "accused":
+        if last is None or last["roleId"] != "accused":
             raise ValueError("the accused's final statement is missing")
         participant_roles = {row["participantId"]: row["roleId"]
                              for row in basis["participants"]}

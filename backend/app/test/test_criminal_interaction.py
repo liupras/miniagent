@@ -106,7 +106,9 @@ async def test_investigation_summary_uses_record_and_role():
     projected = json.loads(runner.calls[0]["query"])
     assert projected["task"] == "法庭调查小结"
     assert projected["records"] == request.records
-    data["stepId"] = "investigation_defense_summary"
+    data["stepId"] = "法庭调查小结 / 公诉人小结（新版流程）"
+    assert CriminalInteractionRequest.model_validate(data).stepId == data["stepId"]
+    data["targetRoleId"] = "accused"
     with pytest.raises(ValidationError):
         CriminalInteractionRequest.model_validate(data)
 

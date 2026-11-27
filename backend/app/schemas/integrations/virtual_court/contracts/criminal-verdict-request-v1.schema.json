@@ -11,7 +11,7 @@
     "stepRunId": { "$ref": "#/$defs/id" },
     "caseRevisionId": { "$ref": "#/$defs/id" },
     "caseContentSha256": { "$ref": "#/$defs/sha256" },
-    "procedureVersionId": { "const": "criminal-first-instance-v1" },
+    "procedureVersionId": { "$ref": "#/$defs/id" },
     "procedureSha256": { "$ref": "#/$defs/sha256" },
     "sourceStateVersion": { "type": "integer", "minimum": 0 },
     "basisSha256": { "$ref": "#/$defs/sha256" },
