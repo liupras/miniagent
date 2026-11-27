@@ -85,7 +85,7 @@ async def test_next_action_uses_the_investigation_agent():
 
     assert response.state_version == req.state_version
     assert response.decision == 'ASK'
-    assert factory.names == ['virtual_court_investigation_judge']
+    assert factory.names == ['virtual_court_civil_legacy_investigation_judge']
     call = runner.calls[0]
     assert call['history'] is None and call['preserve_context'] is True
     assert json.loads(call['query']) == req.model_dump(

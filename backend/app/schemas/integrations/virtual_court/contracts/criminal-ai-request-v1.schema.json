@@ -8,7 +8,7 @@
   "required": ["contractVersion", "operation", "callId", "roomEpoch", "stepId", "stepRunId", "sourceStateVersion", "caseRevisionId", "caseContentSha256", "procedureVersionId", "procedureSha256", "targetParticipantId", "targetRoleId", "casePackage", "interaction", "records"],
   "properties": {
     "contractVersion": { "const": "criminal-ai-v1" },
-    "operation": { "enum": ["intent", "participant_speech", "witness_speech", "judge_action"] },
+    "operation": { "enum": ["intent", "participant_speech", "summary_speech", "witness_speech", "judge_action"] },
     "callId": { "$ref": "#/$defs/id" },
     "roomEpoch": { "$ref": "#/$defs/id" },
     "stepId": { "$ref": "#/$defs/id" },
@@ -42,7 +42,8 @@
         "displayedEvidenceGroupIds": { "$ref": "#/$defs/idList" },
         "presentedEvidenceGroupIds": { "$ref": "#/$defs/idList" },
         "pendingRequests": { "type": "array", "maxItems": 100, "items": { "type": "object" } },
-        "activeTurn": { "type": ["object", "null"] }
+        "activeTurn": { "type": ["object", "null"] },
+        "summaryTask": { "const": "法庭调查小结" }
       }
     },
     "record": {

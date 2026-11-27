@@ -18,7 +18,7 @@ def seed_rows(filename):
 
 def test_law_check_agent_has_isolated_prompt_and_tool():
     rows = seed_rows("agent.json")
-    row = next(row for row in rows if row["name"] == "virtual_court_law_check_judge")
+    row = next(row for row in rows if row["name"] == "virtual_court_civil_legacy_law_check_judge")
     prompt = row["system_prompt"]
 
     assert row["is_active"] and row["max_output_tokens"] == 2048
@@ -44,7 +44,7 @@ def test_law_check_agent_has_isolated_prompt_and_tool():
 
 
 def test_investigation_agent_prompt_contains_only_investigation_rules():
-    name = "virtual_court_investigation_judge"
+    name = "virtual_court_civil_legacy_investigation_judge"
     row = next(row for row in seed_rows("agent.json") if row["name"] == name)
     prompt = row["system_prompt"]
 
@@ -113,8 +113,8 @@ def test_two_judge_agents_load_and_only_law_check_has_law_tool():
             db.flush()
 
             names = {
-                "virtual_court_law_check_judge",
-                "virtual_court_investigation_judge",
+                "virtual_court_civil_legacy_law_check_judge",
+                "virtual_court_civil_legacy_investigation_judge",
             }
             agents = db.query(Agent).filter(Agent.name.in_(names)).all()
             assert {agent.name for agent in agents} == names
@@ -126,8 +126,8 @@ def test_two_judge_agents_load_and_only_law_check_has_law_tool():
                 for agent in agents
             }
             assert bindings == {
-                "virtual_court_law_check_judge": 1,
-                "virtual_court_investigation_judge": 0,
+                "virtual_court_civil_legacy_law_check_judge": 1,
+                "virtual_court_civil_legacy_investigation_judge": 0,
             }
     finally:
         engine.dispose()

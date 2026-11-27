@@ -1,11 +1,11 @@
 # TranscriptAPI V3 配置名称接口验收
 
-`POST /api/v3/integrations/virtual-court/transcript/generate` 使用当前唯一协议：记录携带 `stage_name`、`step_name`、`segment_name`。系统尚未发布，不保留旧实例池、旧字段或版本兼容通道。
+`POST /api/v3/integrations/virtual-court/common/transcript/generate` 使用当前唯一协议：记录携带 `stage_name`、`step_name`、`segment_name`。旧接口路径保留为已弃用的兼容入口；请求和响应仍使用当前 V3 协议。
 
 ## 启动前检查
 
 1. VirtualCourt 与 MiniAgent 同步使用名称字段；`phase` 和 `step_id` 请求返回 422。
-2. SQLite 中 `virtual_court_transcript_writer` 存在、启用且无工具绑定。启动时种子流程将其提示词同步为 `agent.json` 中的当前内容。
+2. SQLite 中 `virtual_court_common_transcript_writer` 存在、启用且无工具绑定。启动时种子流程将其提示词同步为 `agent.json` 中的当前内容。
 3. Agent 对应模型可用；`VIRTUAL_COURT_INTERNAL_SERVICE_TOKEN` 与 VirtualCourt 一致。
 4. 修改代码或 SQLite 提示词后重启 MiniAgent，重新建立缓存的 AgentRunner。
 

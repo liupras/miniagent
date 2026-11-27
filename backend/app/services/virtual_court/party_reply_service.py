@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 
 
 class PartyReplyService:
-    AGENT_NAME = "virtual_court_party_responder"
+    AGENT_NAME = "virtual_court_civil_legacy_party_reply"
 
     def __init__(self, agent_factory, *, timeout_seconds=120.0):
         self._agent_factory = agent_factory

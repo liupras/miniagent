@@ -13,7 +13,7 @@
 
 法律检查请求只包含 `state_version`、`role`、`text` 和可选 `context`。Agent 只能接收 `latest_speech` 与 `reference_context`，不能接收完整庭审记录。
 
-响应决策仅允许 `NO_ACTION`、`EXPLAIN_LAW`、`HANDOFF`。`EXPLAIN_LAW` 必须具有本次调用产生的有效法律检索证据；检索失败、空结果或工具不可用时返回 `HANDOFF`。只有 `virtual_court_law_check_judge` 绑定 `intellectual_property_law_search`。
+响应决策仅允许 `NO_ACTION`、`EXPLAIN_LAW`、`HANDOFF`。`EXPLAIN_LAW` 必须具有本次调用产生的有效法律检索证据；检索失败、空结果或工具不可用时返回 `HANDOFF`。只有 `virtual_court_civil_legacy_law_check_judge` 绑定 `intellectual_property_law_search`。
 
 ## 下一步动作
 
@@ -23,7 +23,7 @@
 - 不允许 `NO_ACTION` 或 `EXPLAIN_LAW`。
 - `ASK.target` 必须属于请求的 `allowed_targets`，其他动作的 `target` 必须为 `null`。
 
-该接口固定使用 `virtual_court_investigation_judge`，且不绑定法律检索工具。
+该接口固定使用 `virtual_court_civil_legacy_investigation_judge`，且不绑定法律检索工具。
 
 ## 响应与错误
 

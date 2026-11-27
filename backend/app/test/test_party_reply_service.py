@@ -70,7 +70,7 @@ async def test_reply_uses_dedicated_agent_and_trusted_state_version():
 
     assert response.state_version == req.state_version
     assert response.speech == "没有核验页面展示的授权范围。"
-    assert factory.names == ["virtual_court_party_responder"]
+    assert factory.names == ["virtual_court_civil_legacy_party_reply"]
     call = runner.calls[0]
     assert call["history"] is None
     assert call["preserve_context"] is True

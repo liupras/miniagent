@@ -282,49 +282,46 @@ from app.api.integrations.virtual_court.judge import router as virtual_court_jud
 app.include_router(
     virtual_court_judge_router,
     prefix="/api/v2/integrations/virtual-court",
-    tags=["Integration - VirtualCourt"],
+    tags=["VirtualCourt Civil Legacy"],
 )
 
 from app.api.integrations.virtual_court.transcript import router as virtual_court_transcript_router
 app.include_router(
     virtual_court_transcript_router,
     prefix="/api/v3/integrations/virtual-court",
-    tags=["Integration - VirtualCourt"],
 )
 
 from app.api.integrations.virtual_court.party import router as virtual_court_party_router
 app.include_router(
     virtual_court_party_router,
     prefix="/api/v2/integrations/virtual-court",
-    tags=["Integration - VirtualCourt"],
+    tags=["VirtualCourt Civil Legacy"],
 )
 
 from app.api.integrations.virtual_court.case_draft import router as virtual_court_case_draft_router
 app.include_router(
     virtual_court_case_draft_router,
     prefix="/api/v1/integrations/virtual-court",
-    tags=["Integration - VirtualCourt"],
 )
 
 from app.api.integrations.virtual_court.investigation import router as virtual_court_investigation_router
 app.include_router(
     virtual_court_investigation_router,
     prefix="/api/v3/integrations/virtual-court",
-    tags=["Integration - VirtualCourt"],
 )
 
 from app.api.integrations.virtual_court.criminal_interaction import router as virtual_court_criminal_interaction_router
 app.include_router(
     virtual_court_criminal_interaction_router,
     prefix="/api/v3/integrations/virtual-court",
-    tags=["Integration - VirtualCourt"],
+    tags=["VirtualCourt Criminal"],
 )
 
 from app.api.integrations.virtual_court.criminal_verdict import router as virtual_court_criminal_verdict_router
 app.include_router(
     virtual_court_criminal_verdict_router,
     prefix="/api/v3/integrations/virtual-court",
-    tags=["Integration - VirtualCourt"],
+    tags=["VirtualCourt Criminal"],
 )
 
 from app.api.auth.login import router as auth_router

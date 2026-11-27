@@ -35,9 +35,18 @@ def get_case_draft_service(request: Request):
 
 
 @router.post(
+    "/common/case-drafts/generate",
+    response_model=CaseDraftGenerateResponseV1,
+    responses=ERROR_RESPONSES,
+    tags=["VirtualCourt Common"],
+    summary="Generate a reviewable case draft under a supplied JSON contract",
+)
+@router.post(
     "/case-drafts/generate",
     response_model=CaseDraftGenerateResponseV1,
     responses=ERROR_RESPONSES,
+    deprecated=True,
+    tags=["VirtualCourt Compatibility"],
     summary="Generate a reviewable case draft under a supplied JSON contract",
 )
 async def generate_case_draft(

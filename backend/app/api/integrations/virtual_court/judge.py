@@ -43,6 +43,7 @@ def get_next_action_service(request: Request):
     '/judge/law-check',
     response_model=JudgeLawCheckResponseV2,
     responses=ERROR_RESPONSES,
+    deprecated=True,
     summary='Check one committed party speech for a legal question',
 )
 async def law_check(
@@ -72,6 +73,7 @@ async def law_check(
     '/judge/next-action',
     response_model=JudgeNextActionResponseV2,
     responses=ERROR_RESPONSES,
+    deprecated=True,
     summary='Choose one constrained investigation action',
 )
 async def next_action(

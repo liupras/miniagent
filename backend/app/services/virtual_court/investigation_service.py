@@ -34,11 +34,11 @@ logger = get_logger(__name__)
 
 class InvestigationAgentService:
     AGENTS = {
-        "intent": ("virtual_court_investigation_participant_intent",
+        "intent": ("virtual_court_civil_investigation_party_intent",
                    build_intent_model_input, validate_intent_model_output),
-        "speech": ("virtual_court_investigation_participant_speech",
+        "speech": ("virtual_court_civil_investigation_party_speech",
                    build_speech_model_input, validate_speech_model_output),
-        "judge": ("virtual_court_investigation_judge_dispatch",
+        "judge": ("virtual_court_civil_investigation_judge",
                   build_judge_model_input, validate_judge_model_output),
     }
 

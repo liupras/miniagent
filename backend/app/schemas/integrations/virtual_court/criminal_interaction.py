@@ -11,7 +11,7 @@ from pydantic import Field, model_validator
 from .judge import StrictModel
 
 
-Operation = Literal["intent", "participant_speech", "witness_speech", "judge_action"]
+Operation = Literal["intent", "participant_speech", "summary_speech", "witness_speech", "judge_action"]
 Role = Literal["judge", "prosecutor", "defense_counsel", "accused", "witness"]
 Id = str
 PARTY_ROLES = {"prosecutor", "defense_counsel", "accused"}
@@ -92,6 +92,15 @@ class CriminalInteractionRequest(StrictModel):
                 not isinstance(state.get("roundIndex"), int) or
                 state["roundIndex"] < 0):
             raise ValueError("invalid interaction state")
+        if self.operation == "summary_speech" and (
+                mode != "criminal_investigation" or
+                state.get("summaryTask") != "法庭调查小结" or
+                self.stepId not in {"investigation_prosecutor_summary",
+                                    "investigation_defense_summary"} or
+                self.targetRoleId != ("prosecutor" if
+                    self.stepId == "investigation_prosecutor_summary"
+                    else "defense_counsel")):
+            raise ValueError("invalid investigation summary target")
         turn = state.get("activeTurn")
         if self.operation == "judge_action":
             if (self.targetRoleId != "judge" or state["status"] != "ready" or

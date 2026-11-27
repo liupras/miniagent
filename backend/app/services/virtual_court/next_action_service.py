@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 
 
 class NextActionService:
-    AGENT_NAME = 'virtual_court_investigation_judge'
+    AGENT_NAME = 'virtual_court_civil_legacy_investigation_judge'
 
     def __init__(self, agent_factory, *, timeout_seconds=120.0):
         self._agent_factory = agent_factory

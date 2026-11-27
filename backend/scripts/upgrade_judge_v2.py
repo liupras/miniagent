@@ -21,8 +21,8 @@ from app.infra.db.database import (
 from app.infra.db.initializer import DatabaseManager, SEED_DIR
 
 
-LAW_CHECK_AGENT = "virtual_court_law_check_judge"
-FLOW_AGENT = "virtual_court_investigation_judge"
+LAW_CHECK_AGENT = "virtual_court_civil_legacy_law_check_judge"
+FLOW_AGENT = "virtual_court_civil_legacy_investigation_judge"
 JUDGE_AGENTS = (LAW_CHECK_AGENT, FLOW_AGENT)
 LAW_TOOL = "intellectual_property_law_search"
 

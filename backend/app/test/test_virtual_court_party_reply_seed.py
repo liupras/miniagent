@@ -9,7 +9,7 @@ from app.infra.db.initializer import DatabaseManager
 
 
 ROOT = Path(__file__).parents[1] / "infra" / "db" / "seed"
-AGENT_NAME = "virtual_court_party_responder"
+AGENT_NAME = "virtual_court_civil_legacy_party_reply"
 
 
 def seed_rows(filename):

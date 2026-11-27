@@ -2,7 +2,7 @@
 
 ## 1. 职责边界
 
-`POST /api/v3/integrations/virtual-court/transcript/generate` 不再让 AI 生成整份庭审笔录。
+`POST /api/v3/integrations/virtual-court/common/transcript/generate` 不再让 AI 生成整份庭审笔录。
 
 - VirtualCourt 负责案件基本信息、到庭人员、发言人、阶段、步骤、环节、顺序、章节和最终文本渲染。
 - MiniAgent 只整理每条已提交发言的 `text`。

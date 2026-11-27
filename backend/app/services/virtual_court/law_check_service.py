@@ -32,7 +32,7 @@ logger = get_logger(__name__)
 
 
 class LawCheckService:
-    AGENT_NAME = 'virtual_court_law_check_judge'
+    AGENT_NAME = 'virtual_court_civil_legacy_law_check_judge'
 
     def __init__(self, agent_factory, *, timeout_seconds=120.0):
         self._agent_factory = agent_factory

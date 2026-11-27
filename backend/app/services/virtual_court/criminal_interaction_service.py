@@ -25,6 +25,7 @@ from app.services.virtual_court.exceptions import (
 AGENTS = {
     "intent": "virtual_court_criminal_intent",
     "participant_speech": "virtual_court_criminal_party_speech",
+    "summary_speech": "virtual_court_criminal_party_speech",
     "witness_speech": "virtual_court_criminal_witness",
     "judge_action": "virtual_court_criminal_judge",
 }
@@ -81,6 +82,7 @@ def model_input(request: CriminalInteractionRequest) -> dict:
             "pendingRequests", "activeTurn",
         )},
         "records": records,
+        **({"task": state["summaryTask"]} if request.operation == "summary_speech" else {}),
     }
 
 
@@ -120,7 +122,7 @@ def _model_result(raw: str, request: CriminalInteractionRequest) -> dict:
                for item in state["pendingRequests"]):
             return {"decision": "pass"}
         return result
-    if operation in {"participant_speech", "witness_speech"}:
+    if operation in {"participant_speech", "summary_speech", "witness_speech"}:
         if (set(result) not in ({"speech"}, {"speech", "evidenceGroupIds"}) or
                 not isinstance(result.get("speech"), str) or
                 not result["speech"].strip() or len(result["speech"]) > 8000):
@@ -223,7 +225,7 @@ class CriminalInteractionService:
                             investigationId=request.interaction["investigationId"],
                             decisionRevision=request.interaction["decisionRevision"],
                             turnId=turn.get("turnId") if request.operation in
-                                {"participant_speech", "witness_speech"} else None,
+                                {"participant_speech", "summary_speech", "witness_speech"} else None,
                             result=result,
                         )
                     except ToolNotRegisteredError:

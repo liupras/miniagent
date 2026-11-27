@@ -11,7 +11,7 @@ from app.infra.db.initializer import DatabaseManager
 
 
 ROOT = Path(__file__).parents[1] / "infra" / "db" / "seed"
-AGENT_NAME = "virtual_court_transcript_writer"
+AGENT_NAME = "virtual_court_common_transcript_writer"
 
 
 def seed_rows(filename):
@@ -88,14 +88,14 @@ def test_existing_database_is_supplemented_idempotently_without_tools():
             db.add_all(
                 [
                     Agent(
-                        name="virtual_court_law_check_judge",
+                        name="virtual_court_civil_legacy_law_check_judge",
                         description="existing",
                         system_prompt="existing",
                         llm_id=llms["bailian_qwen_plus"].id,
                         is_active=True,
                     ),
                     Agent(
-                        name="virtual_court_investigation_judge",
+                        name="virtual_court_civil_legacy_investigation_judge",
                         description="existing",
                         system_prompt="existing",
                         llm_id=llms["bailian_qwen_plus"].id,

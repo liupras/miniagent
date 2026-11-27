@@ -169,7 +169,7 @@ async def test_service_uses_generic_agent_and_repairs_once():
     factory = Factory(runner)
     result = await CaseDraftService(factory).generate(request)
     assert result.draft["plaintiff"]["name"] == "林某"
-    assert factory.names == ["virtual_court_case_draft_generator"]
+    assert factory.names == ["virtual_court_common_case_draft_generator"]
     assert len(runner.calls) == 2
     assert runner.calls[0]["preserve_context"] is True
     assert json.loads(runner.calls[0]["query"]) == REQUEST

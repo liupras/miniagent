@@ -32,6 +32,7 @@ def get_party_reply_service(request: Request):
     "/party/reply",
     response_model=PartyReplyResponseV1,
     responses=ERROR_RESPONSES,
+    deprecated=True,
     summary="Generate one party answer to one courtroom inquiry question",
 )
 async def party_reply(

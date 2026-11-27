@@ -34,9 +34,18 @@ def get_transcript_service(request: Request):
 
 
 @router.post(
+    "/common/transcript/generate",
+    response_model=TranscriptGenerateResponseV3,
+    responses=ERROR_RESPONSES,
+    tags=["VirtualCourt Common"],
+    summary="Organize complete committed VirtualCourt speech records",
+)
+@router.post(
     "/transcript/generate",
     response_model=TranscriptGenerateResponseV3,
     responses=ERROR_RESPONSES,
+    deprecated=True,
+    tags=["VirtualCourt Compatibility"],
     summary="Organize complete committed VirtualCourt speech records",
 )
 async def generate_transcript(

@@ -22,7 +22,7 @@ python verify_fixtures.py
 ## 运行配置
 
 MiniAgent 启动时会执行 SQLite 的幂等种子流程，确保名为
-`virtual_court_party_responder` 的 Agent 存在。已有数据库缺少该记录时会自动补种；
+`virtual_court_civil_legacy_party_reply` 的 Agent 存在。已有数据库缺少该记录时会自动补种；
 已有同名记录会保留模型选择并刷新由代码管理的系统提示词，不需要手工修改 SQLite。
 
 接口读取以下环境配置：

@@ -32,10 +32,20 @@ def get_investigation_service(request: Request):
 
 
 @router.post(
+    "/civil/investigation/participant/intent",
+    response_model=ParticipantIntentResponse,
+    response_model_exclude_unset=True,
+    responses=ERROR_RESPONSES,
+    tags=["VirtualCourt Civil"],
+    summary="Decide whether one party requests the floor",
+)
+@router.post(
     "/investigation/participant/intent",
     response_model=ParticipantIntentResponse,
     response_model_exclude_unset=True,
     responses=ERROR_RESPONSES,
+    deprecated=True,
+    tags=["VirtualCourt Compatibility"],
     summary="Decide whether one party requests the floor",
 )
 async def participant_intent(
@@ -51,9 +61,18 @@ async def participant_intent(
 
 
 @router.post(
+    "/civil/investigation/participant/speech",
+    response_model=ParticipantSpeechResponse,
+    responses=ERROR_RESPONSES,
+    tags=["VirtualCourt Civil"],
+    summary="Generate speech for an authorized party turn",
+)
+@router.post(
     "/investigation/participant/speech",
     response_model=ParticipantSpeechResponse,
     responses=ERROR_RESPONSES,
+    deprecated=True,
+    tags=["VirtualCourt Compatibility"],
     summary="Generate speech for an authorized party turn",
 )
 async def participant_speech(
@@ -69,10 +88,20 @@ async def participant_speech(
 
 
 @router.post(
+    "/civil/investigation/judge/next-action",
+    response_model=JudgeNextActionResponse,
+    response_model_exclude_unset=True,
+    responses=ERROR_RESPONSES,
+    tags=["VirtualCourt Civil"],
+    summary="Choose one constrained investigation judge action",
+)
+@router.post(
     "/investigation/judge/next-action",
     response_model=JudgeNextActionResponse,
     response_model_exclude_unset=True,
     responses=ERROR_RESPONSES,
+    deprecated=True,
+    tags=["VirtualCourt Compatibility"],
     summary="Choose one constrained investigation judge action",
 )
 async def judge_next_action(

@@ -92,6 +92,26 @@ async def test_four_isolated_agents(operation, role, output):
 
 
 @pytest.mark.anyio
+async def test_investigation_summary_uses_record_and_role():
+    data = body("participant_speech", "prosecutor").model_dump()
+    data["operation"] = "summary_speech"
+    data["stepId"] = "investigation_prosecutor_summary"
+    data["interaction"]["summaryTask"] = "法庭调查小结"
+    request = CriminalInteractionRequest.model_validate(data)
+    runner = Runner([json.dumps({"speech": "公诉人依据庭审记录发表小结。",
+                                 "evidenceGroupIds": []}, ensure_ascii=False)])
+    response = await CriminalInteractionService(Factory(runner)).run(request)
+    assert response.operation == "summary_speech"
+    assert response.turnId == request.interaction["activeTurn"]["turnId"]
+    projected = json.loads(runner.calls[0]["query"])
+    assert projected["task"] == "法庭调查小结"
+    assert projected["records"] == request.records
+    data["stepId"] = "investigation_defense_summary"
+    with pytest.raises(ValidationError):
+        CriminalInteractionRequest.model_validate(data)
+
+
+@pytest.mark.anyio
 async def test_duplicate_pending_intent_is_treated_as_pass():
     data = body("intent", "defense_counsel").model_dump()
     data["interaction"]["pendingRequests"] = [{

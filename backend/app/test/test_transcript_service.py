@@ -98,7 +98,7 @@ async def test_generate_uses_dedicated_agent_and_complete_material():
 
     assert response.state_version == req.state_version
     assert [record.sequence for record in response.records] == [1, 2]
-    assert factory.names == ["virtual_court_transcript_writer"]
+    assert factory.names == ["virtual_court_common_transcript_writer"]
     call = runner.calls[0]
     assert call["history"] is None
     assert call["preserve_context"] is True

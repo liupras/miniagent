@@ -28,7 +28,7 @@ logger = get_logger(__name__)
 
 
 class TranscriptService:
-    AGENT_NAME = "virtual_court_transcript_writer"
+    AGENT_NAME = "virtual_court_common_transcript_writer"
 
     def __init__(self, agent_factory, *, timeout_seconds=180.0):
         self._agent_factory = agent_factory

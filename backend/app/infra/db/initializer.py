@@ -497,12 +497,12 @@ class DatabaseManager:
                 refresh_prompt=(
                     raw.get("name")
                     in {
-                        "virtual_court_transcript_writer",
-                        "virtual_court_party_responder",
-                        "virtual_court_case_draft_generator",
-                        "virtual_court_investigation_participant_intent",
-                        "virtual_court_investigation_participant_speech",
-                        "virtual_court_investigation_judge_dispatch",
+                        "virtual_court_common_transcript_writer",
+                        "virtual_court_civil_legacy_party_reply",
+                        "virtual_court_common_case_draft_generator",
+                        "virtual_court_civil_investigation_party_intent",
+                        "virtual_court_civil_investigation_party_speech",
+                        "virtual_court_civil_investigation_judge",
                         "virtual_court_criminal_intent",
                         "virtual_court_criminal_party_speech",
                         "virtual_court_criminal_witness",
@@ -516,24 +516,42 @@ class DatabaseManager:
         row = _strip_meta(raw)
         existing = db.query(Agent).filter_by(name=row["name"]).first()
         managed_virtual_court_names = {
-            "virtual_court_law_check_judge",
-            "virtual_court_investigation_judge",
-            "virtual_court_transcript_writer",
-            "virtual_court_party_responder",
-            "virtual_court_case_draft_generator",
-            "virtual_court_investigation_participant_intent",
-            "virtual_court_investigation_participant_speech",
-            "virtual_court_investigation_judge_dispatch",
+            "virtual_court_civil_legacy_law_check_judge",
+            "virtual_court_civil_legacy_investigation_judge",
+            "virtual_court_common_transcript_writer",
+            "virtual_court_civil_legacy_party_reply",
+            "virtual_court_common_case_draft_generator",
+            "virtual_court_civil_investigation_party_intent",
+            "virtual_court_civil_investigation_party_speech",
+            "virtual_court_civil_investigation_judge",
             "virtual_court_criminal_intent",
             "virtual_court_criminal_party_speech",
             "virtual_court_criminal_witness",
             "virtual_court_criminal_judge",
             "virtual_court_criminal_verdict",
         }
-        if existing is None and row["name"] == "virtual_court_investigation_judge":
-            existing = db.query(Agent).filter_by(name="virtual_court_solo_judge").first()
-            if existing:
-                existing.name = row["name"]
+        if existing is None:
+            previous_names = {
+                "virtual_court_civil_legacy_law_check_judge": ("virtual_court_law_check_judge",),
+                "virtual_court_civil_legacy_investigation_judge": (
+                    "virtual_court_investigation_judge", "virtual_court_solo_judge"),
+                "virtual_court_civil_legacy_party_reply": ("virtual_court_party_responder",),
+                "virtual_court_civil_investigation_party_intent": (
+                    "virtual_court_investigation_participant_intent",),
+                "virtual_court_civil_investigation_party_speech": (
+                    "virtual_court_investigation_participant_speech",),
+                "virtual_court_civil_investigation_judge": (
+                    "virtual_court_investigation_judge_dispatch",),
+                "virtual_court_common_case_draft_generator": (
+                    "virtual_court_case_draft_generator",),
+                "virtual_court_common_transcript_writer": (
+                    "virtual_court_transcript_writer",),
+            }
+            for previous_name in previous_names.get(row["name"], ()):
+                existing = db.query(Agent).filter_by(name=previous_name).first()
+                if existing is not None:
+                    existing.name = row["name"]
+                    break
         # Existing tuned models do not depend on the seed's default LLM still existing.
         if existing is None or force:
             llm_name = raw.get("_llm_name")

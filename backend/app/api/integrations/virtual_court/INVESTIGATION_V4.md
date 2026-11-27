@@ -4,11 +4,11 @@
 
 | POST 路径（前缀 `/api/v3/integrations/virtual-court`） | Agent | 返回内容 |
 | --- | --- | --- |
-| `/investigation/participant/intent` | `virtual_court_investigation_participant_intent` | 申请发言或 `pass` |
-| `/investigation/participant/speech` | `virtual_court_investigation_participant_speech` | 当前 `turn_id` 的自由发言 |
-| `/investigation/judge/next-action` | `virtual_court_investigation_judge_dispatch` | 一项程序动作及实际宣布语，或移交人工 |
+| `/civil/investigation/participant/intent` | `virtual_court_civil_investigation_party_intent` | 申请发言或 `pass` |
+| `/civil/investigation/participant/speech` | `virtual_court_civil_investigation_party_speech` | 当前 `turn_id` 的自由发言 |
+| `/civil/investigation/judge/next-action` | `virtual_court_civil_investigation_judge` | 一项程序动作及实际宣布语，或移交人工 |
 
-请求和响应以 VirtualCourt 仓库的 `Docs/Contracts/investigation-v4.schema.json` 与同目录样例为准。接口路径沿用现有服务地址，协议内容直接切换 V4。JSON 使用 UTF-8，内部 Bearer 令牌认证；拒绝重复和未知字段。请求上限 512 KiB，记录最多 512 项，响应上限 128 KiB。每个响应必须回填调查 ID 及对应修订号或轮次 ID。失败不会被解释为 `pass`、拒绝申请或结束调查。
+请求和响应以 VirtualCourt 仓库的 `Docs/Contracts/investigation-v4.schema.json` 与同目录样例为准。旧路径保留为已弃用的兼容入口，协议内容直接切换 V4。JSON 使用 UTF-8，内部 Bearer 令牌认证；拒绝重复和未知字段。请求上限 512 KiB，记录最多 512 项，响应上限 128 KiB。每个响应必须回填调查 ID 及对应修订号或轮次 ID。失败不会被解释为 `pass`、拒绝申请或结束调查。
 
 当事人意向只选择 `speech_kind`、`topic_id`，可选 `reason`。事项可为案件焦点或 `other`。申请不含证据 ID、回应轮次或预设发言正文。法官批准申请后，当事人根据全案材料、现有发言和法官实际宣布语自行发言；共享展示的证据不是该轮的绑定证据。
 

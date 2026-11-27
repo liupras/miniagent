@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 
 
 class CaseDraftService:
-    AGENT_NAME = "virtual_court_case_draft_generator"
+    AGENT_NAME = "virtual_court_common_case_draft_generator"
 
     def __init__(self, agent_factory, *, timeout_seconds=300.0):
         self._agent_factory = agent_factory
